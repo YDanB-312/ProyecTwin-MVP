@@ -1,0 +1,76 @@
+/* Nuevo Proyecto - Estilos específicos */
+
+.modulo-aprendiz .contenedor-formulario {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.modulo-aprendiz .formulario-proyecto {
+    background: white;
+    border-radius: var(--radio-borde);
+    padding: 30px;
+    box-shadow: var(--sombra-media);
+    margin-bottom: 30px;
+}
+
+.modulo-aprendiz .seccion-formulario {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--color-borde);
+}
+
+.modulo-aprendiz .seccion-formulario:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.modulo-aprendiz .contador-caracteres {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+    margin-top: 5px;
+}
+
+.modulo-aprendiz .etiqueta-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+.modulo-aprendiz .etiqueta-checkbox-card {
+    padding: 10px 14px;
+    background: var(--color-fondo);
+    border-radius: 6px;
+}
+
+.modulo-aprendiz .checkbox-proyecto {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive específico */
+@media (max-width: 1024px) {
+    .modulo-aprendiz .grupo-campos {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .modulo-aprendiz .encabezado-pagina {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .modulo-aprendiz .acciones-formulario {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .modulo-aprendiz .acciones-izquierda {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

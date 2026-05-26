@@ -1,0 +1,403 @@
+﻿/* Detalle Compartido - Estilos para pÃ¡ginas de detalle */
+
+/* === Grid de informaciÃ³n === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px 0;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-full {
+    grid-column: 1 / -1;
+}
+
+/* === Campos de formulario (solo lectura) === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-label {
+    font-size: 0.85rem;
+    color: var(--color-texto-claro);
+    font-weight: 500;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-valor {
+    font-size: 1.05rem;
+    color: var(--color-texto);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-valor strong {
+    font-weight: 600;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .texto-descripcion {
+    font-size: 1rem;
+    color: var(--color-texto);
+    line-height: 1.6;
+}
+
+/* === Acciones al final de la pÃ¡gina === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-finales {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .flex-row {
+    display: flex;
+    gap: 12px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .flex-between {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* === Actividad / Historial === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-actividad {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-item {
+    background: var(--color-fondo);
+    padding: 12px;
+    border-radius: 6px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-item.borde-primario {
+    border-left: 3px solid var(--color-primario);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-item.borde-advertencia {
+    border-left: 3px solid var(--color-advertencia);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-item.borde-exito {
+    border-left: 3px solid var(--color-exito);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-header strong {
+    font-size: 0.9rem;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .actividad-fecha {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+}
+
+/* === Proyecto comparaciÃ³n (detalle similitud) === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-proyecto-compacto {
+    background: var(--color-fondo);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--color-borde);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-titulo-verde {
+    color: var(--color-primario);
+    margin-bottom: 12px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-titulo-amarillo {
+    color: var(--color-advertencia);
+    margin-bottom: 12px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .info-linea {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-linea {
+    font-size: 0.9rem;
+    color: var(--color-texto-claro);
+    margin-bottom: 4px;
+}
+
+/* === Alerta roja de similitud === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .alerta-roja {
+    padding: 15px;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    margin-bottom: 20px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .alerta-roja h4 {
+    color: #b91c1c;
+    margin-bottom: 10px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .alerta-roja .texto-ayuda {
+    color: var(--color-texto-claro);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+/* === Grid coincidencias === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .grid-coincidencias {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-coincidencia {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-coincidencias {
+    padding-left: 20px;
+    color: var(--color-texto-claro);
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+/* === Tabla scroll === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tabla-scroll {
+    overflow-x: auto;
+}
+
+/* === Tarjeta con padding === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-padded {
+    padding: 20px;
+}
+
+/* === Meta revision info (detalle_revision) === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .meta-info-linea {
+    display: flex;
+    gap: 8px;
+    color: var(--color-texto-claro);
+    font-size: 0.85rem;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-borde);
+}
+
+/* === Tarjeta de revisiÃ³n (detalle revisiones y similitudes) === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-revision {
+    background: white;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    padding: 25px;
+    margin-bottom: 25px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-revision {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-borde);
+    margin-bottom: 20px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .info-revision {
+    flex: 1;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .info-revision h3 {
+    font-size: 1.1rem;
+    color: var(--color-texto);
+    margin-bottom: 8px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .meta-revision {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--color-texto-claro);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .meta-revision span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* === Detalles de revisiÃ³n === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalles-revision {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-revision {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-revision label {
+    font-size: 0.85rem;
+    color: var(--color-texto-claro);
+    font-weight: 500;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-revision span {
+    font-size: 1rem;
+    color: var(--color-texto);
+    font-weight: 500;
+}
+
+/* === Comentarios de revisiÃ³n === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .comentarios-revision {
+    border-top: 1px solid var(--color-borde);
+    padding-top: 20px;
+    margin-bottom: 16px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .comentarios-revision h4 {
+    font-size: 0.95rem;
+    color: var(--color-texto);
+    margin-bottom: 12px;
+}
+
+/* === Observaciones del proyecto === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-observaciones {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 25px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-item {
+    background: rgba(5, 153, 102, 0.05);
+    border-left: 4px solid var(--color-primario);
+    padding: 16px;
+    border-radius: var(--radio-borde);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-autor {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-texto);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-fecha {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-contenido p {
+    color: var(--color-texto-claro);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-acciones {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono.editar {
+    color: var(--color-primario);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono.editar:hover {
+    background: rgba(5, 153, 102, 0.1);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono.eliminar {
+    color: var(--color-peligro);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono.eliminar:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-edit-form {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(5, 153, 102, 0.03);
+    border: 1px solid var(--color-borde);
+    border-radius: 6px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-edit-form .textarea {
+    width: 100%;
+    min-height: 80px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-formulario .btn-sm {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-edit {
+    margin-top: 10px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenido-comentarios {
+    background: var(--color-fondo);
+    padding: 16px;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: var(--color-texto);
+    font-size: 0.95rem;
+}
+
+/* === Margen helpers === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .mb-30 {
+    margin-bottom: 30px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .mb-20 {
+    margin-bottom: 20px;
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .mt-20 {
+    margin-top: 20px;
+}
+
+/* === Flex helpers === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+/* === Avatar pequeÃ±o === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* === Texto helpers === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .texto-claro {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .texto-md {
+    font-size: 0.9rem;
+}
+
+/* === Texto peligro === */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .texto-peligro {
+    color: var(--color-peligro);
+}
+
+/* === Info header similitud (admin) === */
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-grid {
+        grid-template-columns: 1fr;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalles-revision {
+        grid-template-columns: 1fr;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .grid-coincidencias {
+        grid-template-columns: 1fr;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-revision {
+        flex-direction: column;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-finales {
+        flex-direction: column;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-finales .btn-primario, :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .acciones-finales .btn-secundario {
+        width: 100%;
+        text-align: center;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .flex-row {
+        flex-direction: column;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .observacion-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .meta-info-linea {
+        flex-wrap: wrap;
+    }
+}
+

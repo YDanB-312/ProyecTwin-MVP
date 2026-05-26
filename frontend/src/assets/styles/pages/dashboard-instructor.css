@@ -1,0 +1,77 @@
+/* Dashboard Instructor - Estilos específicos */
+
+.modulo-instructor body {
+    display: flex;
+}
+
+.modulo-instructor .contenedor-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Grafico circular específico */
+.modulo-instructor .grafico-circular {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--color-primario) 0% 85%, var(--color-secundario) 85% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.modulo-instructor .grafico-circular::before { content: ""; position: absolute; width: 80px; height: 80px; background: white; border-radius: 50%; }
+.modulo-instructor .texto-progreso { position: relative; font-weight: 700; color: var(--color-texto); font-size: 1.2rem; }
+
+/* Proyectos pendientes */
+.modulo-instructor .seccion-proyectos { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); margin-bottom: 30px; }
+
+.modulo-instructor .tarjeta-proyecto {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--color-fondo);
+    border-radius: var(--radio-borde);
+    border-left: 4px solid var(--color-advertencia);
+}
+
+.modulo-instructor .info-proyecto h3 { font-size: 1.1rem; margin-bottom: 5px; color: var(--color-texto); font-weight: 600; }
+.modulo-instructor .info-proyecto p { font-size: 0.9rem; color: var(--color-texto-claro); margin-bottom: 2px; }
+.modulo-instructor .estado-proyecto { padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+
+.modulo-instructor .acciones-proyecto { display: flex; gap: 10px; }
+
+/* Sección de Estadísticas Generales */
+.modulo-instructor .seccion-estadisticas {
+    background: white;
+    border-radius: var(--radio-borde);
+    padding: 25px;
+    box-shadow: var(--sombra-media);
+    margin-bottom: 30px;
+}
+
+.modulo-instructor .icono-propuestas {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-advertencia);
+}
+
+/* Alertas de dashboard */
+.modulo-instructor .seccion-alertas { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); }
+
+.modulo-instructor .info-alerta {
+    flex: 1;
+}
+
+/* Responsive específico */
+@media (max-width: 1024px) { .modulo-instructor .grid-acciones { grid-template-columns: repeat(2, 1fr); } }
+
+@media (max-width: 768px) {
+    .modulo-instructor .tarjeta-bienvenida { flex-direction: column; gap: 30px; }
+    .modulo-instructor .grid-acciones { grid-template-columns: 1fr; }
+    .modulo-instructor .tarjeta-proyecto { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .modulo-instructor .contenido-alerta { flex-direction: column; align-items: flex-start; }
+    .modulo-instructor .acciones-proyecto { width: 100%; justify-content: center; }
+}

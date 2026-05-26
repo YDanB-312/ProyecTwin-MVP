@@ -1,0 +1,93 @@
+/* directorio.css - Directorio de miembros de ficha */
+
+.modulo-aprendiz .seccion-directorio {
+    margin-bottom: 30px;
+}
+
+.modulo-aprendiz .seccion-directorio .titulo-seccion {
+    margin-bottom: 16px;
+}
+
+.modulo-aprendiz .directorio-usuarios {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modulo-aprendiz .tarjeta-usuario {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 16px 20px;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    transition: all 0.3s;
+}
+
+.modulo-aprendiz .tarjeta-usuario:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-media);
+}
+
+.modulo-aprendiz .avatar-secundario {
+    background: var(--color-secundario);
+}
+
+.modulo-aprendiz .avatar-usuario {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-primario);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.modulo-aprendiz .info-usuario {
+    flex: 1;
+    min-width: 0;
+}
+
+.modulo-aprendiz .info-usuario h4 {
+    font-size: 1rem;
+    color: var(--color-texto);
+    margin-bottom: 3px;
+}
+
+.modulo-aprendiz .info-usuario p {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+}
+
+.modulo-aprendiz .tarjeta-usuario .btn-sm {
+    flex-shrink: 0;
+}
+
+.modulo-aprendiz .avatar-usuario-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-primario);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .modulo-aprendiz .tarjeta-usuario {
+        flex-wrap: wrap;
+    }
+
+    .modulo-aprendiz .tarjeta-usuario .btn-sm {
+        width: 100%;
+    }
+}

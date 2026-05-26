@@ -1,0 +1,48 @@
+/* Reportes de Fallas - Estilos especÃ­ficos */
+
+/* Filtros */
+.modulo-admin .formulario-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; align-items: end; }
+.modulo-admin .grupo-campo { display: flex; flex-direction: column; gap: 6px; }
+.modulo-admin .grupo-campo label { font-size: 0.9rem; font-weight: 500; color: var(--color-texto); }
+
+.modulo-admin .grupo-campo select, .modulo-admin .grupo-campo input[type="text"], .modulo-admin .grupo-campo input[type="date"] { padding: 10px 14px; border: 1px solid var(--color-borde); border-radius: 6px; font-size: 0.95rem; color: var(--color-texto); background: var(--color-fondo); transition: all 0.3s; }
+.modulo-admin .grupo-campo select:focus, .modulo-admin .grupo-campo input[type="text"]:focus, .modulo-admin .grupo-campo input[type="date"]:focus { outline: none; border-color: var(--color-primario); box-shadow: var(--sombra-foco); }
+
+.modulo-admin .botones-filtros { display: flex; gap: 10px; }
+
+/* Tabla de reportes */
+.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-suave); overflow: hidden; }
+.modulo-admin .encabezado-tabla { background: var(--color-fondo); }
+
+.modulo-admin .tabla-reportes { width: 100%; border-collapse: collapse; }
+.modulo-admin .tabla-reportes thead { background: var(--color-header); color: white; }
+.modulo-admin .tabla-reportes th { padding: 14px 20px; text-align: left; font-weight: 600; font-size: 0.9rem; }
+.modulo-admin .tabla-reportes td { padding: 14px 20px; border-bottom: 1px solid var(--color-borde); font-size: 0.9rem; }
+.modulo-admin .tabla-reportes tbody tr:hover { background: var(--color-fondo); }
+
+.modulo-admin .descripcion-corta { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Grid de estadÃ­sticas: 2 columnas fijas */
+.modulo-admin .seccion-reporte .grid-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Paginacion especÃ­fica */
+.modulo-admin .contenedor-paginacion { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; background: var(--color-fondo); border-top: 1px solid var(--color-borde); }
+.modulo-admin .info-paginacion { font-size: 0.9rem; color: var(--color-texto-claro); }
+
+.modulo-admin .paginacion { display: flex; gap: 5px; }
+
+.modulo-admin .texto-archivo { color: var(--color-texto-claro); margin-top: 5px; display: block; }
+
+/* Responsive especÃ­fico */
+@media (max-width: 768px) {
+    .modulo-admin .encabezado-pagina { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .modulo-admin .formulario-filtros { grid-template-columns: 1fr; }
+    .modulo-admin .botones-filtros { flex-direction: column; }
+    .modulo-admin .botones-filtros .btn-primario, .modulo-admin .botones-filtros .btn-secundario { width: 100%; justify-content: center; }
+    .modulo-admin .tabla-reportes { font-size: 0.8rem; }
+    .modulo-admin .tabla-reportes th, .modulo-admin .tabla-reportes td { padding: 10px; }
+    .modulo-admin .descripcion-corta { max-width: 150px; }
+    .modulo-admin .contenedor-paginacion { flex-direction: column; gap: 15px; }
+}

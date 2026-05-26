@@ -1,0 +1,45 @@
+/* 404.css - Página de error no encontrada */
+
+.modulo-invitado .contenido-404 {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.modulo-invitado .card-404 {
+    text-align: center;
+    max-width: 500px;
+}
+
+.modulo-invitado .icono-404 {
+    font-size: 4rem;
+    color: #ef4444;
+    margin-bottom: 20px;
+}
+
+.modulo-invitado .titulo-404 {
+    font-size: 6rem;
+    font-weight: 800;
+    color: var(--color-texto);
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.modulo-invitado .subtitulo-404 {
+    font-size: 1.5rem;
+    color: var(--color-texto);
+    margin-bottom: 16px;
+}
+
+.modulo-invitado .texto-404 {
+    font-size: 1rem;
+    color: var(--color-texto-claro);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.modulo-invitado .card-404 .btn-primario {
+    display: inline-flex;
+}

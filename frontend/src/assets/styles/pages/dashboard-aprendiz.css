@@ -1,0 +1,65 @@
+/* Dashboard Aprendiz - Estilos específicos */
+
+.modulo-aprendiz body {
+    display: flex;
+}
+
+.modulo-aprendiz .contenedor-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Boton de acción principal (Aprendiz) */
+.modulo-aprendiz .btn-accion-principal {
+    text-decoration: none;
+    margin-top: 20px;
+    width: auto;
+    padding: 12px 30px;
+}
+
+/* Grafico circular (25% progreso) */
+.modulo-aprendiz .grafico-circular {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--color-primario) 0% 25%, var(--color-secundario) 25% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.modulo-aprendiz .grafico-circular::before { content: ""; position: absolute; width: 80px; height: 80px; background: white; border-radius: 50%; }
+.modulo-aprendiz .texto-progreso { position: relative; font-weight: 700; color: var(--color-texto); }
+
+/* Sección de Estadísticas Generales */
+.modulo-aprendiz .seccion-estadisticas {
+    background: white;
+    border-radius: var(--radio-borde);
+    padding: 25px;
+    box-shadow: var(--sombra-media);
+    margin-bottom: 30px;
+}
+
+.modulo-aprendiz .icono-alertas {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-advertencia);
+}
+
+.modulo-aprendiz .icono-mensajes {
+    background: rgba(5, 153, 102, 0.1);
+    color: var(--color-primario);
+}
+
+/* Secciones */
+.modulo-aprendiz .seccion-proyectos { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); margin-bottom: 30px; }
+.modulo-aprendiz .seccion-alertas { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); }
+
+/* Responsive específico */
+@media (max-width: 1024px) { .modulo-aprendiz .grid-acciones { grid-template-columns: repeat(2, 1fr); } }
+
+@media (max-width: 768px) {
+    .modulo-aprendiz .tarjeta-bienvenida { flex-direction: column; gap: 30px; }
+    .modulo-aprendiz .grid-acciones { grid-template-columns: 1fr; }
+}

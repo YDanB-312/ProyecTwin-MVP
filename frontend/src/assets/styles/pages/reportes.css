@@ -1,0 +1,67 @@
+/* Reportes y Estadísticas - Estilos específicos */
+
+/* Grafico de barras */
+.modulo-admin .contenedor-grafico { background: white; border-radius: var(--radio-borde); padding: 30px; box-shadow: var(--sombra-suave); }
+.modulo-admin .grafico-barras { display: flex; flex-direction: column; gap: 15px; }
+
+.modulo-admin .barra-item { display: flex; align-items: center; gap: 15px; }
+.modulo-admin .barra-etiqueta { min-width: 150px; font-size: 0.9rem; color: var(--color-texto); font-weight: 500; text-align: right; }
+.modulo-admin .barra-contenedor { flex: 1; height: 30px; background: var(--color-fondo); border-radius: 15px; overflow: hidden; position: relative; }
+
+.modulo-admin .barra-relleno { height: 100%; border-radius: 15px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 0.8rem; font-weight: 600; color: white; transition: width 0.5s ease; }
+.modulo-admin .barra-activo { background: linear-gradient(90deg, var(--color-primario), var(--color-accento)); }
+.modulo-admin .barra-pendiente { background: linear-gradient(90deg, var(--color-advertencia), #fbbf24); }
+.modulo-admin .barra-aprobado { background: linear-gradient(90deg, var(--color-exito), #34d399); }
+.modulo-admin .barra-rechazado { background: linear-gradient(90deg, var(--color-peligro), #f87171); }
+.modulo-admin .barra-completado { background: linear-gradient(90deg, var(--color-secundario), #0d9488); }
+.modulo-admin .barra-cantidad { min-width: 50px; font-size: 1.1rem; font-weight: 700; color: var(--color-texto); text-align: center; }
+
+/* Grid de estadísticas: 3 columnas fijas (2 filas × 3 tarjetas) */
+.modulo-admin .seccion-reporte .grid-estadisticas {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Tabla de similitudes (Estilo con header oscuro) */
+.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-suave); overflow: hidden; }
+.modulo-admin .encabezado-tabla { background: var(--color-fondo); }
+.modulo-admin .titulo-tabla { font-size: 1.1rem; }
+.modulo-admin .total-registros { font-size: 0.85rem; color: var(--color-texto-claro); }
+
+.modulo-admin .tabla-similitudes { width: 100%; border-collapse: collapse; }
+.modulo-admin .tabla-similitudes thead { background: var(--color-header); color: white; }
+.modulo-admin .tabla-similitudes th { padding: 14px 20px; text-align: left; font-weight: 600; font-size: 0.9rem; }
+.modulo-admin .tabla-similitudes td { padding: 14px 20px; border-bottom: 1px solid var(--color-borde); font-size: 0.9rem; }
+.modulo-admin .tabla-similitudes tbody tr:hover { background: var(--color-fondo); }
+
+/* Top instructores */
+.modulo-admin .grid-instructores { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+.modulo-admin .tarjeta-instructor { background: white; border-radius: var(--radio-borde); padding: 20px; box-shadow: var(--sombra-suave); display: flex; align-items: center; gap: 15px; transition: all 0.3s; }
+.modulo-admin .tarjeta-instructor:hover { transform: translateY(-3px); box-shadow: var(--sombra-media); }
+
+.modulo-admin .tarjeta-instructor-ranking { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primario); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0; }
+.modulo-admin .ranking-1 { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.modulo-admin .ranking-2 { background: linear-gradient(135deg, #94a3b8, #cbd5e1); }
+.modulo-admin .ranking-3 { background: linear-gradient(135deg, #047857, #059669); }
+
+.modulo-admin .tarjeta-instructor-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--color-fondo); display: flex; align-items: center; justify-content: center; color: var(--color-texto-claro); font-size: 1.3rem; flex-shrink: 0; }
+.modulo-admin .tarjeta-instructor-info { flex: 1; }
+.modulo-admin .tarjeta-instructor-info h4 { font-size: 1rem; color: var(--color-texto); margin-bottom: 3px; }
+.modulo-admin .tarjeta-instructor-info p { font-size: 0.85rem; color: var(--color-texto-claro); }
+
+.modulo-admin .tarjeta-instructor-revisiones { text-align: right; }
+.modulo-admin .tarjeta-instructor-revisiones .numero { font-size: 1.5rem; font-weight: 700; color: var(--color-primario); }
+.modulo-admin .tarjeta-instructor-revisiones .texto { font-size: 0.75rem; color: var(--color-texto-claro); }
+
+/* Responsive específico */
+@media (max-width: 1024px) {
+    .modulo-admin .barra-etiqueta { min-width: 100px; font-size: 0.8rem; }
+}
+
+@media (max-width: 768px) {
+    .modulo-admin .encabezado-pagina { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .modulo-admin .acciones-exportar { flex-direction: column; }
+    .modulo-admin .grid-instructores { grid-template-columns: 1fr; }
+    .modulo-admin .tabla-similitudes { font-size: 0.8rem; }
+    .modulo-admin .tabla-similitudes th, .modulo-admin .tabla-similitudes td { padding: 10px; }
+}

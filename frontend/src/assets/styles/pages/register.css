@@ -1,0 +1,303 @@
+/* ========================================
+   REGISTER - ProyecTwin
+   ======================================== */
+
+/* Contenedor centrado */
+.modulo-invitado .contenedor-register {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 40px);
+    padding: 40px 16px 20px;
+}
+
+/* Tarjeta */
+.modulo-invitado .tarjeta-register {
+    width: 100%;
+    max-width: 650px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+    padding: 35px 30px;
+}
+
+/* Encabezado */
+.modulo-invitado .encabezado-register {
+    text-align: center;
+    margin-bottom: 28px;
+    position: relative;
+}
+
+.modulo-invitado .encabezado-register img {
+    height: 48px;
+    margin: 0 auto 8px;
+    display: block;
+}
+
+.modulo-invitado .encabezado-register h1 {
+    font-size: 1.6rem;
+    color: var(--color-texto);
+    font-weight: 700;
+}
+
+.modulo-invitado .encabezado-register h1 span {
+    color: var(--color-header);
+}
+
+.modulo-invitado .encabezado-register p {
+    color: var(--color-texto-claro);
+    font-size: .9rem;
+    margin-top: 4px;
+}
+
+/* Secciones del formulario */
+.modulo-invitado .seccion-register {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-borde);
+}
+
+.modulo-invitado .seccion-register:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.modulo-invitado .titulo-seccion-register {
+    font-size: 1.1rem;
+    color: var(--color-texto);
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modulo-invitado .titulo-seccion-register i {
+    color: var(--color-header);
+}
+
+/* Grid de campos */
+.modulo-invitado .formulario-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.modulo-invitado .grupo-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modulo-invitado .grupo-campo.campo-completo {
+    grid-column: 1 / -1;
+}
+
+.modulo-invitado .grupo-campo label {
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--color-texto);
+}
+
+.modulo-invitado .requerido {
+    color: var(--color-peligro);
+}
+
+.modulo-invitado .grupo-campo input, .modulo-invitado .grupo-campo select {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--color-borde);
+    border-radius: 7px;
+    font-size: .93rem;
+    color: var(--color-texto);
+    background: var(--color-fondo);
+    transition: border-color .3s, box-shadow .3s;
+}
+
+.modulo-invitado .grupo-campo input:focus, .modulo-invitado .grupo-campo select:focus {
+    outline: 0;
+    border-color: var(--color-primario);
+    box-shadow: var(--sombra-foco);
+}
+
+/* Selector de rol */
+.modulo-invitado .selector-rol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.modulo-invitado .tarjeta-rol {
+    border: 2px solid var(--color-borde);
+    border-radius: 10px;
+    padding: 20px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+}
+
+.modulo-invitado .tarjeta-rol:hover {
+    border-color: var(--color-primario);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+}
+
+.modulo-invitado .tarjeta-rol input[type="radio"] {
+    display: none;
+}
+
+.modulo-invitado .tarjeta-rol input[type="radio"]:checked + .icono-rol {
+    background: var(--color-primario);
+    color: #fff;
+}
+
+.modulo-invitado .tarjeta-rol:has(input:checked) {
+    border-color: var(--color-primario);
+    background: rgba(5, 153, 102, .04);
+}
+
+.modulo-invitado .icono-rol {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.4rem;
+    color: var(--color-header);
+    transition: all .3s;
+}
+
+.modulo-invitado .tarjeta-rol h3 {
+    font-size: .95rem;
+    color: var(--color-texto);
+    margin-bottom: 4px;
+}
+
+.modulo-invitado .tarjeta-rol p {
+    font-size: .78rem;
+    color: var(--color-texto-claro);
+    margin: 0;
+}
+
+/* Link a login */
+/* Botón volver al login en encabezado */
+.modulo-invitado .encabezado-register .btn-secundario {
+    position: absolute;
+    left: 0;
+    top: 2px;
+}
+
+/* Botón registrarse ancho completo */
+.modulo-invitado .tarjeta-register form > .btn-primario {
+    width: 100%;
+    justify-content: center;
+}
+
+.modulo-invitado .login-link {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-borde);
+    color: var(--color-texto-claro);
+    font-size: .9rem;
+}
+
+.modulo-invitado .login-link a {
+    color: var(--color-header);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.modulo-invitado .login-link a:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+.modulo-invitado .pie-pagina-register {
+    text-align: center;
+    padding: 14px 20px;
+    font-size: 0.85rem;
+    color: #ffffff;
+    background: var(--color-header);
+    border-top: 2px solid var(--color-header);
+}
+
+.modulo-invitado .pie-pagina-register > .contenedor-pie {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.modulo-invitado .pie-pagina-register > .contenedor-pie > span {
+    font-weight: 500;
+}
+
+.modulo-invitado .pie-pagina-register .info-contacto {
+    display: flex;
+    gap: 20px;
+}
+
+.modulo-invitado .pie-pagina-register .info-contacto span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    transition: color 0.3s;
+}
+
+.modulo-invitado .pie-pagina-register .info-contacto span:hover {
+    color: #a7f3d0;
+}
+
+.modulo-invitado .pie-pagina-register .info-contacto i {
+    color: #ffffff;
+    font-size: 0.8rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 650px) {
+    .modulo-invitado .contenedor-register {
+        padding: 35px 10px 10px;
+    }
+
+    .modulo-invitado .tarjeta-register {
+        padding: 24px 16px;
+    }
+
+    .modulo-invitado .formulario-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-invitado .selector-rol {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-invitado .encabezado-register .btn-secundario {
+        position: relative;
+        justify-content: center;
+        margin-bottom: 10px;
+        top: auto;
+        left: auto;
+    }
+
+    .modulo-invitado .pie-pagina-register > .contenedor-pie {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modulo-invitado .pie-pagina-register .info-contacto {
+        flex-direction: column;
+        gap: 6px;
+    }
+}

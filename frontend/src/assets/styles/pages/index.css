@@ -1,0 +1,376 @@
+/* ========================================
+   INDEX - Página de Inicio (Landing Page)
+   ======================================== */
+
+/* Header estilo landing */
+.modulo-invitado .header-principal {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.modulo-invitado .titulo-header {
+    color: var(--color-primario);
+}
+
+/* ========================================
+   CONTENEDOR PRINCIPAL
+   ======================================== */
+.modulo-invitado .home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Contenido principal sin sidebar */
+.modulo-invitado .contenido-principal {
+    margin-left: 0;
+    margin-top: 90px;
+    min-height: calc(100vh - 200px);
+    max-width: 1200px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+.modulo-invitado .hero-section {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.modulo-invitado .hero-titulo {
+    color: var(--color-texto);
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.modulo-invitado .hero-titulo span {
+    color: var(--color-primario);
+}
+
+.modulo-invitado .hero-descripcion {
+    color: var(--color-texto-claro);
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto 30px;
+    line-height: 1.8;
+}
+
+.modulo-invitado .hero-botones {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* ========================================
+   TARJETAS DE CARACTERÍSTICAS
+   ======================================== */
+.modulo-invitado .tarjetas-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+.modulo-invitado .tarjeta {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.modulo-invitado .tarjeta:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(5, 153, 102, 0.15);
+}
+
+.modulo-invitado .tarjeta-icono {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.modulo-invitado .tarjeta-icono i {
+    font-size: 1.5rem;
+}
+
+.modulo-invitado .tarjeta-icono-buscar {
+    background: rgba(5, 153, 102, 0.1);
+}
+
+.modulo-invitado .tarjeta-icono-buscar i {
+    color: var(--color-primario);
+}
+
+.modulo-invitado .tarjeta-icono-gestionar {
+    background: rgba(6, 95, 70, 0.1);
+}
+
+.modulo-invitado .tarjeta-icono-gestionar i {
+    color: var(--color-header);
+}
+
+.modulo-invitado .tarjeta-icono-seguimiento {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.modulo-invitado .tarjeta-icono-seguimiento i {
+    color: var(--color-exito);
+}
+
+.modulo-invitado .tarjeta-titulo {
+    color: var(--color-texto);
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+}
+
+.modulo-invitado .tarjeta-texto {
+    color: var(--color-texto-claro);
+    line-height: 1.6;
+}
+
+/* ========================================
+   SECCIÓN ESTADÍSTICAS
+   ======================================== */
+.modulo-invitado .estadisticas-section {
+    background: linear-gradient(135deg, var(--color-header), var(--color-secundario));
+    padding: 50px 40px;
+    border-radius: 16px;
+    color: white;
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.modulo-invitado .estadisticas-titulo {
+    font-size: 1.8rem;
+    margin-bottom: 30px;
+}
+
+.modulo-invitado .estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+}
+
+.modulo-invitado .estadistica-numero {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.modulo-invitado .estadistica-label {
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   LLAMADO A LA ACCIÓN
+   ======================================== */
+.modulo-invitado .cta-section {
+    text-align: center;
+    background: var(--color-fondo);
+    padding: 40px;
+    border-radius: 12px;
+    border: 2px solid var(--color-borde);
+}
+
+.modulo-invitado .cta-titulo {
+    color: var(--color-texto);
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.modulo-invitado .cta-titulo i {
+    color: var(--color-primario);
+    margin-right: 10px;
+}
+
+.modulo-invitado .cta-texto {
+    color: var(--color-texto-claro);
+    margin-bottom: 25px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ========================================
+   SECCIÓN: TIPOS DE USUARIO
+   ======================================== */
+.modulo-invitado .usuarios-section {
+    margin-bottom: 60px;
+}
+
+.modulo-invitado .usuarios-titulo {
+    text-align: center;
+    color: var(--color-texto);
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.modulo-invitado .usuarios-subtitulo {
+    text-align: center;
+    color: var(--color-texto-claro);
+    margin-bottom: 40px;
+    font-size: 1rem;
+}
+
+.modulo-invitado .usuarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.modulo-invitado .tarjeta-usuario {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    border-top: 4px solid transparent;
+}
+
+.modulo-invitado .tarjeta-usuario:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(5, 153, 102, 0.15);
+}
+
+.modulo-invitado .tarjeta-usuario.aprendiz {
+    border-top-color: var(--color-exito);
+}
+
+.modulo-invitado .tarjeta-usuario.instructor {
+    border-top-color: var(--color-advertencia);
+}
+
+.modulo-invitado .tarjeta-usuario.admin {
+    border-top-color: var(--color-peligro);
+}
+
+.modulo-invitado .tarjeta-usuario-icono {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.modulo-invitado .tarjeta-usuario.aprendiz .tarjeta-usuario-icono {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.modulo-invitado .tarjeta-usuario.instructor .tarjeta-usuario-icono {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.modulo-invitado .tarjeta-usuario.admin .tarjeta-usuario-icono {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.modulo-invitado .tarjeta-usuario-icono i {
+    font-size: 1.8rem;
+}
+
+.modulo-invitado .tarjeta-usuario.aprendiz .tarjeta-usuario-icono i {
+    color: var(--color-exito);
+}
+
+.modulo-invitado .tarjeta-usuario.instructor .tarjeta-usuario-icono i {
+    color: var(--color-advertencia);
+}
+
+.modulo-invitado .tarjeta-usuario.admin .tarjeta-usuario-icono i {
+    color: var(--color-peligro);
+}
+
+.modulo-invitado .tarjeta-usuario h3 {
+    color: var(--color-texto);
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+}
+
+.modulo-invitado .tarjeta-usuario p {
+    color: var(--color-texto-claro);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.modulo-invitado .tarjeta-usuario ul {
+    list-style: none;
+    text-align: left;
+}
+
+.modulo-invitado .tarjeta-usuario ul li {
+    padding: 8px 0;
+    color: var(--color-texto-claro);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modulo-invitado .tarjeta-usuario ul li i {
+    color: var(--color-primario);
+    font-size: 0.8rem;
+}
+
+/* ========================================
+   SECCIÓN: CÓMO FUNCIONA
+   ======================================== */
+.modulo-invitado .como-funciona {
+    margin-bottom: 60px;
+}
+
+.modulo-invitado .como-funciona-titulo {
+    text-align: center;
+    color: var(--color-texto);
+    font-size: 1.8rem;
+    margin-bottom: 40px;
+}
+
+.modulo-invitado .pasos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.modulo-invitado .paso {
+    text-align: center;
+    padding: 20px;
+}
+
+.modulo-invitado .paso-numero {
+    width: 50px;
+    height: 50px;
+    background: var(--color-primario);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 auto 15px;
+}
+
+.modulo-invitado .paso h4 {
+    color: var(--color-texto);
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.modulo-invitado .paso p {
+    color: var(--color-texto-claro);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
