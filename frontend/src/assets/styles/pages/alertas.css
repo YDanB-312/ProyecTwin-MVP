@@ -1,0 +1,50 @@
+/* Alertas - Estilos específicos de página */
+
+:is(.modulo-aprendiz, .modulo-instructor) .contenedor-alertas {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor) .contador-alertas {
+    background: var(--color-primario);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor) .proyecto-alerta {
+    font-size: 0.85rem;
+    color: var(--color-primario);
+    font-weight: 500;
+}
+
+/* Responsive específico */
+@media (max-width: 768px) {
+    :is(.modulo-aprendiz, .modulo-instructor) .encabezado-pagina {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    :is(.modulo-aprendiz, .modulo-instructor) .contenedor-filtros {
+        flex-direction: column;
+    }
+    
+    :is(.modulo-aprendiz, .modulo-instructor) .contenido-alerta {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    :is(.modulo-aprendiz, .modulo-instructor) .meta-alerta {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    :is(.modulo-aprendiz, .modulo-instructor) .acciones-alerta {
+        width: 100%;
+        justify-content: center;
+    }
+}

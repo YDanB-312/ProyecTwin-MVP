@@ -1,0 +1,80 @@
+/* Dashboard Admin - Estilos específicos */
+
+.modulo-admin body {
+    display: flex;
+}
+
+/* Indicadores rápidos específicos */
+.modulo-admin .indicador {
+    text-align: center;
+    background: var(--color-fondo);
+    padding: 15px;
+    border-radius: var(--radio-borde);
+    flex: 1;
+    border: 1px solid var(--color-borde);
+    transition: all 0.3s;
+}
+
+.modulo-admin .indicador:hover { transform: translateY(-5px); box-shadow: var(--sombra-suave); }
+
+/* Secciones del dashboard sin margen */
+.modulo-admin .seccion-estadisticas, .modulo-admin .seccion-acciones {
+    margin-bottom: 30px;
+}
+
+/* Grid de estadísticas: 3 columnas fijas (2 filas × 3 tarjetas) */
+.modulo-admin .grid-estadisticas {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Alertas recientes */
+.modulo-admin .seccion-alertas {
+    background: white;
+    border-radius: var(--radio-borde);
+    padding: 25px;
+    box-shadow: var(--sombra-media);
+    margin-bottom: 30px;
+}
+
+.modulo-admin .tarjeta-alerta {
+    transition: all 0.3s;
+}
+
+.modulo-admin .tarjeta-alerta:hover {
+    transform: translateX(4px);
+    box-shadow: var(--sombra-media);
+}
+
+.modulo-admin .info-alerta {
+    flex: 1;
+}
+
+.modulo-admin .fecha-alerta { font-size: 0.85rem; color: var(--color-texto-claro); display: flex; align-items: center; gap: 5px; }
+.modulo-admin .fecha-alerta i { font-size: 0.75rem; }
+.modulo-admin .btn-alerta-accion { background: var(--color-primario); color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s; }
+.modulo-admin .btn-alerta-accion:hover { background: var(--color-secundario); transform: translateY(-1px); }
+
+/* Tabla: header verde oscuro (unificado con reportes) */
+.modulo-admin .tabla-usuarios thead {
+    background: var(--color-header);
+    color: white;
+}
+.modulo-admin .tabla-usuarios th {
+    color: white;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Responsive específico */
+@media (max-width: 1024px) { .modulo-admin .grid-acciones { grid-template-columns: repeat(2, 1fr); } }
+
+@media (max-width: 768px) {
+    .modulo-admin .tarjeta-bienvenida { flex-direction: column; gap: 30px; }
+    .modulo-admin .indicadores-rapidos { flex-direction: column; }
+    .modulo-admin .grid-estadisticas { grid-template-columns: repeat(2, 1fr); }
+    .modulo-admin .grid-acciones { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .modulo-admin .grid-estadisticas { grid-template-columns: 1fr; }
+}

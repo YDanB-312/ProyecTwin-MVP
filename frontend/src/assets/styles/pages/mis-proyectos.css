@@ -1,0 +1,50 @@
+/* Mis Proyectos - Estilos específicos de página */
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-proyectos {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Filtros específicos de mis_proyectos */
+/* (La mayoría de estilos de filtros y encabezados están en global.css) */
+
+/* Badge de equipo */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .equipo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #059669;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contador-equipo {
+    font-size: 0.85rem;
+}
+
+/* Botón pequeño */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+/* Responsive específico */
+@media (max-width: 768px) {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-pagina {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-filtros {
+        flex-direction: column;
+    }
+
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-proyecto {
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,43 @@
+/* Barra de gobierno */
+.barra-gobierno {
+    background: var(--color-texto);
+    color: white;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.contenedor-barra {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.accesibilidad {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-accesibilidad {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-accesibilidad:hover {
+    background: rgba(0, 0, 0, 0.05);
+}

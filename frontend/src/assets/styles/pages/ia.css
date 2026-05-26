@@ -1,0 +1,255 @@
+/* ia.css - Estilos para páginas de análisis IA */
+
+.modulo-instructor .contenedor-ia {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.modulo-instructor .card-analisis {
+    background: white;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modulo-instructor .card-analisis.resultado-exitoso {
+    border-left: 4px solid var(--color-exito);
+}
+
+.modulo-instructor .ia-spinner {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primario), var(--color-accento));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+    animation: latido 1.5s ease-in-out infinite;
+}
+
+.modulo-instructor .ia-spinner i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+@keyframes latido {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.modulo-instructor .titulo-ia {
+    font-size: 1.5rem;
+    color: var(--color-texto);
+    margin-bottom: 12px;
+}
+
+.modulo-instructor .descripcion-ia {
+    font-size: 0.95rem;
+    color: var(--color-texto-claro);
+    line-height: 1.6;
+    margin-bottom: 25px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.modulo-instructor .barra-progreso-ia {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: var(--color-fondo);
+    border-radius: 3px;
+    margin: 0 auto 25px;
+    overflow: hidden;
+}
+
+.modulo-instructor .progreso-ia {
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primario), var(--color-accento));
+    border-radius: 3px;
+    animation: progreso 3s ease-in-out infinite;
+}
+
+@keyframes progreso {
+    0% { width: 10%; }
+    50% { width: 70%; }
+    100% { width: 90%; }
+}
+
+.modulo-instructor .lista-pasos-ia {
+    list-style: none;
+    max-width: 350px;
+    margin: 0 auto 20px;
+    text-align: left;
+}
+
+.modulo-instructor .paso-ia {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--color-texto-claro);
+}
+
+.modulo-instructor .paso-ia.completado {
+    color: var(--color-exito);
+}
+
+.modulo-instructor .paso-ia.activo {
+    color: var(--color-primario);
+    font-weight: 600;
+}
+
+.modulo-instructor .paso-ia.pendiente {
+    color: var(--color-texto-claro);
+}
+
+.modulo-instructor .paso-ia i {
+    width: 20px;
+    text-align: center;
+}
+
+.modulo-instructor .nota-ia {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+    background: var(--color-fondo);
+    padding: 10px 16px;
+    border-radius: var(--radio-borde);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Resultados */
+.modulo-instructor .ia-icono-resultado {
+    font-size: 3rem;
+    color: var(--color-exito);
+    margin-bottom: 15px;
+}
+
+.modulo-instructor .grid-resultados {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.modulo-instructor .tarjeta-resultado {
+    background: white;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s;
+}
+
+.modulo-instructor .tarjeta-resultado:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sombra-media);
+}
+
+.modulo-instructor .tarjeta-resultado.verde { border-left: 4px solid var(--color-exito); }
+.modulo-instructor .tarjeta-resultado.amarillo { border-left: 4px solid var(--color-advertencia); }
+.modulo-instructor .tarjeta-resultado.rojo { border-left: 4px solid var(--color-peligro); }
+.modulo-instructor .tarjeta-resultado.info { border-left: 4px solid var(--color-primario); }
+
+.modulo-instructor .resultado-icono {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.modulo-instructor .tarjeta-resultado.verde .resultado-icono { background: rgba(16, 185, 129, 0.1); color: var(--color-exito); }
+.modulo-instructor .tarjeta-resultado.amarillo .resultado-icono { background: rgba(245, 158, 11, 0.1); color: var(--color-advertencia); }
+.modulo-instructor .tarjeta-resultado.rojo .resultado-icono { background: rgba(239, 68, 68, 0.1); color: var(--color-peligro); }
+.modulo-instructor .tarjeta-resultado.info .resultado-icono { background: rgba(5, 153, 102, 0.1); color: var(--color-primario); }
+
+.modulo-instructor .resultado-contenido {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modulo-instructor .resultado-label {
+    font-size: 0.8rem;
+    color: var(--color-texto-claro);
+}
+
+.modulo-instructor .resultado-valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-texto);
+}
+
+.modulo-instructor .resultado-badge {
+    align-self: flex-start;
+    font-size: 0.7rem;
+}
+
+/* Recomendaciones */
+.modulo-instructor .lista-recomendaciones {
+    list-style: none;
+    text-align: left;
+}
+
+.modulo-instructor .lista-recomendaciones li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    color: var(--color-texto);
+    border-bottom: 1px solid var(--color-fondo);
+}
+
+.modulo-instructor .lista-recomendaciones li:last-child {
+    border-bottom: none;
+}
+
+.modulo-instructor .lista-recomendaciones li i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.modulo-instructor .texto-exito { color: var(--color-exito); }
+.modulo-instructor .texto-advertencia { color: var(--color-advertencia); }
+.modulo-instructor .texto-info { color: var(--color-primario); }
+
+.modulo-instructor .card-analisis .tabla-scroll {
+    text-align: left;
+    margin-top: 20px;
+}
+
+.modulo-instructor .card-analisis .titulo-seccion {
+    text-align: left;
+    margin-bottom: 0;
+}
+
+.modulo-instructor .acciones-centro {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .modulo-instructor .grid-resultados {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-instructor .card-analisis {
+        padding: 25px;
+    }
+}

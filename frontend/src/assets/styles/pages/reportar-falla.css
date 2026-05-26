@@ -1,0 +1,67 @@
+/* Reportar Falla - Estilos especÃ­ficos */
+
+:is(.modulo-aprendiz, .modulo-instructor) .contenedor-gestion {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor) .subtitulo-pagina { font-size: 1rem; color: var(--color-texto-claro); margin: 0; }
+
+/* Seccion formulario tipo card */
+:is(.modulo-aprendiz, .modulo-instructor) .seccion-formulario-card {
+    background: white;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-borde);
+    background: var(--color-fondo);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-titulo { font-size: 1.2rem; color: var(--color-texto); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-titulo i { color: var(--color-advertencia); }
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo { padding: 24px; }
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-pie { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--color-borde); background: var(--color-fondo); }
+
+/* Grid de campos */
+:is(.modulo-aprendiz, .modulo-instructor) .grupo-campos { display: flex; flex-direction: column; gap: 20px; }
+:is(.modulo-aprendiz, .modulo-instructor) .grupo-campo { display: flex; flex-direction: column; gap: 8px; }
+:is(.modulo-aprendiz, .modulo-instructor) .campo-completo { grid-column: 1 / -1; }
+:is(.modulo-aprendiz, .modulo-instructor) .grupo-campo label { font-size: 0.9rem; font-weight: 500; color: var(--color-texto); }
+:is(.modulo-aprendiz, .modulo-instructor) .requerido { color: var(--color-peligro); }
+
+/* Inputs especÃ­ficos para reportes */
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo select, :is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo textarea, :is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo .input-text {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+    color: var(--color-texto);
+    transition: all 0.3s;
+    font-family: inherit;
+}
+:is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo select:focus, :is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo textarea:focus, :is(.modulo-aprendiz, .modulo-instructor) .formulario-cuerpo .input-text:focus { outline: none; border-color: var(--color-primario); box-shadow: var(--sombra-foco); }
+:is(.modulo-aprendiz, .modulo-instructor) textarea { resize: vertical; min-height: 120px; }
+
+:is(.modulo-aprendiz, .modulo-instructor) .input-file { padding: 10px; border: 1px dashed var(--color-borde); border-radius: 6px; background: var(--color-fondo); cursor: pointer; transition: all 0.3s; }
+:is(.modulo-aprendiz, .modulo-instructor) .input-file:hover { border-color: var(--color-primario); background: rgba(5, 153, 102, 0.02); }
+
+:is(.modulo-aprendiz, .modulo-instructor) .campo-info { font-size: 0.8rem; color: var(--color-texto-claro); font-style: italic; }
+
+/* Estados de reportes */
+:is(.modulo-aprendiz, .modulo-instructor) .estado-resuelto { background: rgba(16, 185, 129, 0.1); color: var(--color-exito); }
+:is(.modulo-aprendiz, .modulo-instructor) .estado-en-proceso { background: rgba(5, 153, 102, 0.1); color: var(--color-primario); }
+/* Responsive especÃ­fico */
+@media (max-width: 768px) {
+    :is(.modulo-aprendiz, .modulo-instructor) .formulario-pie { flex-direction: column; }
+    :is(.modulo-aprendiz, .modulo-instructor) .formulario-pie .btn-primario, :is(.modulo-aprendiz, .modulo-instructor) .formulario-pie .btn-secundario { width: 100%; justify-content: center; }
+}

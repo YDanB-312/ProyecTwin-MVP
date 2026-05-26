@@ -1,0 +1,380 @@
+/* ========================================
+   LOGIN - ProyecTwin
+   ======================================== */
+
+/* Contenedor centrado */
+.modulo-invitado .contenedor-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 40px);
+    padding: 20px 16px;
+}
+
+/* Tarjeta principal */
+.modulo-invitado .tarjeta-login {
+    display: flex;
+    width: 100%;
+    max-width: 860px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+}
+
+/* Lado formulario */
+.modulo-invitado .formulario-login {
+    flex: 1;
+    padding: 35px 30px;
+}
+
+/* Encabezado con logo */
+.modulo-invitado .encabezado-login {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.modulo-invitado .encabezado-login img {
+    height: 50px;
+    margin: 0 auto 8px;
+    display: block;
+}
+
+.modulo-invitado .encabezado-login h1 {
+    font-size: 1.8rem;
+    color: var(--color-texto);
+    font-weight: 700;
+}
+
+.modulo-invitado .encabezado-login h1 span {
+    color: var(--color-header);
+}
+
+.modulo-invitado .encabezado-login p {
+    color: var(--color-texto-claro);
+    font-size: .9rem;
+    margin-top: 4px;
+}
+
+/* Campos del formulario */
+.modulo-invitado .grupo-campo {
+    margin-bottom: 16px;
+}
+
+.modulo-invitado .grupo-campo label {
+    display: block;
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--color-texto);
+    margin-bottom: 5px;
+}
+
+.modulo-invitado .grupo-campo label i {
+    color: var(--color-header);
+    margin-right: 5px;
+    width: 16px;
+    text-align: center;
+}
+
+.modulo-invitado .grupo-campo input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--color-borde);
+    border-radius: 8px;
+    font-size: .95rem;
+    color: var(--color-texto);
+    background: var(--color-fondo);
+    transition: border-color .3s, box-shadow .3s;
+}
+
+.modulo-invitado .grupo-campo input:focus {
+    outline: 0;
+    border-color: var(--color-primario);
+    box-shadow: var(--sombra-foco);
+}
+
+/* Password con boton ver */
+.modulo-invitado .contenedor-password {
+    position: relative;
+}
+
+.modulo-invitado .contenedor-password input {
+    padding-right: 44px;
+}
+
+/* Opciones (recordar / olvide) */
+.modulo-invitado .opciones-login {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .83rem;
+    margin-bottom: 18px;
+}
+
+.modulo-invitado .opciones-login label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-texto-claro);
+    cursor: pointer;
+}
+
+.modulo-invitado .opciones-login a {
+    color: var(--color-header);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.modulo-invitado .opciones-login a:hover {
+    text-decoration: underline;
+}
+
+/* Separador */
+.modulo-invitado .separador {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 16px 0;
+    color: var(--color-texto-claro);
+    font-size: .85rem;
+}
+
+.modulo-invitado .separador::before, .modulo-invitado .separador::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-borde);
+}
+
+/* Info usuarios prueba */
+.modulo-invitado .info-prueba {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: var(--color-fondo);
+    border-radius: 8px;
+    border: 1px solid var(--color-borde);
+}
+
+.modulo-invitado .info-prueba h4 {
+    font-size: .83rem;
+    color: var(--color-texto);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.modulo-invitado .info-prueba h4 i {
+    color: var(--color-header);
+}
+
+.modulo-invitado .item-prueba {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .78rem;
+    margin-bottom: 5px;
+}
+
+.modulo-invitado .item-prueba:last-child {
+    margin-bottom: 0;
+}
+
+.modulo-invitado .texto-prueba {
+    color: var(--color-texto-claro);
+    font-family: monospace;
+    font-size: .77rem;
+}
+
+/* Lado info */
+.modulo-invitado .panel-info-login {
+    flex: .85;
+    background: linear-gradient(135deg, var(--color-header), var(--color-header));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 25px;
+}
+
+.modulo-invitado .panel-info-login h2 {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+}
+
+.modulo-invitado .panel-info-login > div > p {
+    font-size: .88rem;
+    opacity: .9;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.modulo-invitado .panel-info-login ul {
+    list-style: none;
+    padding: 0;
+}
+
+.modulo-invitado .panel-info-login li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .83rem;
+    margin-bottom: 6px;
+    opacity: .9;
+}
+
+.modulo-invitado .panel-info-login li i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Footer */
+.modulo-invitado .pie-pagina-login {
+    text-align: center;
+    padding: 14px 20px;
+    font-size: 0.85rem;
+    color: #ffffff;
+    background: var(--color-header);
+    border-top: 2px solid var(--color-header);
+}
+
+.modulo-invitado .pie-pagina-login > .contenedor-pie {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.modulo-invitado .pie-pagina-login > .contenedor-pie > span {
+    font-weight: 500;
+}
+
+.modulo-invitado .pie-pagina-login .info-contacto {
+    display: flex;
+    gap: 20px;
+}
+
+.modulo-invitado .pie-pagina-login .info-contacto span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    transition: color 0.3s;
+}
+
+.modulo-invitado .pie-pagina-login .info-contacto span:hover {
+    color: #a7f3d0;
+}
+
+.modulo-invitado .pie-pagina-login .info-contacto i {
+    color: #ffffff;
+    font-size: 0.8rem;
+}
+
+/* Botones ancho completo */
+.modulo-invitado .formulario-login form .btn-primario, .modulo-invitado .formulario-login form .btn-secundario {
+    width: 100%;
+    justify-content: center;
+}
+
+/* === Recuperar contraseña === */
+.modulo-invitado .texto-instruccion {
+    text-align: center;
+    color: var(--color-texto-claro);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+.modulo-invitado .contenedor-enlace-volver {
+    text-align: center;
+    margin-top: 16px;
+}
+.modulo-invitado .contenedor-enlace-volver a {
+    color: var(--color-header);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* === Confirmación === */
+.modulo-invitado .tarjeta-confirmacion {
+    max-width: 500px;
+}
+.modulo-invitado .formulario-confirmacion {
+    text-align: center;
+}
+.modulo-invitado .icono-exito-confirmacion {
+    font-size: 4rem;
+    color: var(--color-exito);
+    margin-bottom: 16px;
+}
+.modulo-invitado .titulo-confirmacion {
+    font-size: 1.5rem;
+    color: var(--color-texto);
+    margin-bottom: 8px;
+}
+.modulo-invitado .texto-confirmacion {
+    color: var(--color-texto-claro);
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   RESPONSIVE TABLET
+   ======================================== */
+@media (max-width: 800px) {
+    .modulo-invitado .tarjeta-login {
+        flex-direction: column;
+        max-width: 440px;
+    }
+
+    .modulo-invitado .panel-info-login {
+        padding: 20px 16px;
+    }
+
+    .modulo-invitado .panel-info-login ul {
+        display: none;
+    }
+
+    .modulo-invitado .panel-info-login > div > p {
+        margin-bottom: 0;
+    }
+}
+
+/* ========================================
+   RESPONSIVE MOVIL
+   ======================================== */
+@media (max-width: 480px) {
+    .modulo-invitado .contenedor-login {
+        padding: 15px 8px;
+    }
+
+    .modulo-invitado .formulario-login {
+        padding: 24px 16px;
+    }
+
+    .modulo-invitado .encabezado-login h1 {
+        font-size: 1.4rem;
+    }
+
+    .modulo-invitado .opciones-login {
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
+    }
+
+    .modulo-invitado .panel-info-login {
+        display: none;
+    }
+
+    .modulo-invitado .pie-pagina-login > .contenedor-pie {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modulo-invitado .pie-pagina-login .info-contacto {
+        flex-direction: column;
+        gap: 6px;
+    }
+}

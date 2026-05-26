@@ -1,0 +1,102 @@
+.header-principal {
+  background: var(--color-header);
+  padding: 8px 0;
+  position: fixed;
+  top: 40px;
+  width: 100%;
+  z-index: 999;
+  box-shadow: var(--sombra-media);
+}
+
+.contenedor-header {
+  max-width: 100%;
+  padding: 0 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grupo-izquierdo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-header-img {
+  height: 35px;
+  width: auto;
+}
+
+.titulo-header {
+  color: white;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.grupo-derecho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-sena-header {
+  height: 30px;
+  margin-right: 15px;
+}
+
+.notificaciones, .usuario {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  color: white;
+  padding: 6px 15px;
+  border-radius: var(--radio-pill);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-cerrar-sesion-rojo {
+  background-color: var(--color-peligro);
+  color: white;
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: var(--radio-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.btn-cerrar-sesion-rojo:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+.btn-hamburguesa {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radio-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-hamburguesa:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+  .btn-hamburguesa {
+    display: flex;
+  }
+}

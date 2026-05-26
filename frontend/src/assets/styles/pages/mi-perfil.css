@@ -1,0 +1,29 @@
+/* Mi Perfil - Estilos específicos de página */
+
+.modulo-aprendiz .contenedor-perfil {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Layout específico: El perfil del aprendiz usa 1fr 2fr, global usa 300px 1fr */
+.modulo-aprendiz .layout-perfil {
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+    margin-bottom: 30px;
+    align-items: start;
+}
+
+/* Ajustes de botón para formularios de perfil */
+.modulo-aprendiz .formulario-perfil .btn-primario, .modulo-aprendiz .formulario-perfil .btn-secundario {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+/* Responsive específico */
+@media (max-width: 768px) {
+    .modulo-aprendiz .estadisticas-perfil {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
