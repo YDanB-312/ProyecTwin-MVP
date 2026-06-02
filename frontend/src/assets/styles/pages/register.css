@@ -17,8 +17,9 @@
     max-width: 650px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+    box-shadow: var(--sombra-ring-md);
     padding: 35px 30px;
+    border: 1px solid rgba(0,0,0,0.02);
 }
 
 /* Encabezado */
@@ -106,17 +107,17 @@
 
 .modulo-invitado .grupo-campo input, .modulo-invitado .grupo-campo select {
     width: 100%;
-    padding: 10px 13px;
-    border: 1.5px solid var(--color-borde);
-    border-radius: 7px;
-    font-size: .93rem;
+    padding: 12px 15px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-sm);
+    font-size: .95rem;
     color: var(--color-texto);
-    background: var(--color-fondo);
-    transition: border-color .3s, box-shadow .3s;
+    background: white;
+    transition: all var(--transition-fast);
 }
 
 .modulo-invitado .grupo-campo input:focus, .modulo-invitado .grupo-campo select:focus {
-    outline: 0;
+    outline: none;
     border-color: var(--color-primario);
     box-shadow: var(--sombra-foco);
 }
@@ -215,52 +216,6 @@
 
 .modulo-invitado .login-link a:hover {
     text-decoration: underline;
-}
-
-/* Footer */
-.modulo-invitado .pie-pagina-register {
-    text-align: center;
-    padding: 14px 20px;
-    font-size: 0.85rem;
-    color: #ffffff;
-    background: var(--color-header);
-    border-top: 2px solid var(--color-header);
-}
-
-.modulo-invitado .pie-pagina-register > .contenedor-pie {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.modulo-invitado .pie-pagina-register > .contenedor-pie > span {
-    font-weight: 500;
-}
-
-.modulo-invitado .pie-pagina-register .info-contacto {
-    display: flex;
-    gap: 20px;
-}
-
-.modulo-invitado .pie-pagina-register .info-contacto span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #ffffff;
-    transition: color 0.3s;
-}
-
-.modulo-invitado .pie-pagina-register .info-contacto span:hover {
-    color: #a7f3d0;
-}
-
-.modulo-invitado .pie-pagina-register .info-contacto i {
-    color: #ffffff;
-    font-size: 0.8rem;
 }
 
 /* ========================================

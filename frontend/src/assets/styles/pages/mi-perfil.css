@@ -1,29 +1,538 @@
-/* Mi Perfil - Estilos específicos de página */
+/* ========================================
+   PREMIUM - Mi Perfil
+   ======================================== */
 
 .modulo-aprendiz .contenedor-perfil {
     max-width: 1000px;
     margin: 0 auto;
 }
 
-/* Layout específico: El perfil del aprendiz usa 1fr 2fr, global usa 300px 1fr */
-.modulo-aprendiz .layout-perfil {
-    grid-template-columns: 1fr 2fr;
-    gap: 30px;
-    margin-bottom: 30px;
-    align-items: start;
+/* ── Header ── */
+.modulo-aprendiz .perfil-header {
+    margin-bottom: 32px;
 }
 
-/* Ajustes de botón para formularios de perfil */
-.modulo-aprendiz .formulario-perfil .btn-primario, .modulo-aprendiz .formulario-perfil .btn-secundario {
-    width: 100%;
+.modulo-aprendiz .perfil-titulo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    position: relative;
+    padding-bottom: 8px;
+    margin-bottom: 0;
+}
+
+.modulo-aprendiz .perfil-titulo::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background-color: #059669;
+    border-radius: 2px;
+}
+
+/* ── Volver link ── */
+.modulo-aprendiz .volver-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    margin-bottom: 16px;
+}
+
+.modulo-aprendiz .volver-link:hover {
+    color: #059669;
+}
+
+/* ── Badge Activo ── */
+.modulo-aprendiz .badge-activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #ecfdf5;
+    color: #059669;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.modulo-aprendiz .badge-activo i {
+    font-size: 0.5rem;
+}
+
+/* ── Perfil Card ── */
+.modulo-aprendiz .perfil-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+    padding: 28px;
+    margin-bottom: 32px;
+}
+
+/* ── Card Titulo ── */
+.modulo-aprendiz .card-titulo {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #059669;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modulo-aprendiz .card-titulo i {
+    font-size: 1rem;
+    color: #059669;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    margin-top: 10px;
+    background: rgba(5, 153, 102, 0.08);
+    border-radius: 8px;
+    flex-shrink: 0;
 }
 
-/* Responsive específico */
+/* ── Cabecera Card ── */
+.modulo-aprendiz .cabecera-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.modulo-aprendiz .cabecera-izquierda {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.modulo-aprendiz .perfil-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #ecfdf5;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.modulo-aprendiz .perfil-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modulo-aprendiz .perfil-nombre {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.modulo-aprendiz .perfil-rol {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.modulo-aprendiz .cabecera-derecha {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+.modulo-aprendiz .perfil-metricas {
+    display: flex;
+    gap: 24px;
+}
+
+.modulo-aprendiz .metrica-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #374151;
+    background: #f9fafb;
+    padding: 8px 16px;
+    border-radius: 10px;
+}
+
+.modulo-aprendiz .metrica-icono {
+    font-size: 1rem;
+    color: #059669;
+}
+
+.modulo-aprendiz .metrica-valor {
+    font-weight: 700;
+    color: #111827;
+}
+
+.modulo-aprendiz .metrica-label {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.modulo-aprendiz .cabecera-botones {
+    display: flex;
+    gap: 12px;
+}
+
+/* ── Botones ── */
+.modulo-aprendiz .btn-primario {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #059669;
+    color: #ffffff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.modulo-aprendiz .btn-primario:hover {
+    background-color: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
+}
+
+.modulo-aprendiz .btn-secundario {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.modulo-aprendiz .btn-secundario:hover {
+    border-color: #059669;
+    color: #059669;
+}
+
+/* ── Campos obligatorios ── */
+.modulo-aprendiz .campos-obligatorios {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+.modulo-aprendiz .obligatorio {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* ── Form Grid ── */
+.modulo-aprendiz .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.modulo-aprendiz .campo-completo {
+    grid-column: 1 / -1;
+}
+
+/* ── Campo grupo ── */
+.modulo-aprendiz .campo-grupo {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Campo label ── */
+.modulo-aprendiz .campo-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1f2937;
+    margin-bottom: 6px;
+}
+
+/* ── Campo input ── */
+.modulo-aprendiz .campo-input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #1f2937;
+    background-color: #ffffff;
+    transition: all 150ms ease;
+    box-sizing: border-box;
+}
+
+.modulo-aprendiz .campo-input:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
+}
+
+.modulo-aprendiz .campo-input::placeholder {
+    color: #9ca3af;
+}
+
+/* ── Campo select ── */
+.modulo-aprendiz .campo-select {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #1f2937;
+    background-color: #ffffff;
+    transition: all 150ms ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.modulo-aprendiz .campo-select:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
+}
+
+/* ── Campo info / ayuda ── */
+.modulo-aprendiz .campo-info {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.modulo-aprendiz .campo-ayuda {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* ── Form botones ── */
+.modulo-aprendiz .form-botones {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* ── Banner Advertencia ── */
+.modulo-aprendiz .banner-advertencia {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background-color: #fffbeb;
+    border-left: 4px solid #d97706;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+
+.modulo-aprendiz .banner-icono {
+    font-size: 1.3rem;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.modulo-aprendiz .banner-texto strong {
+    font-size: 0.9rem;
+    color: #92400e;
+}
+
+.modulo-aprendiz .banner-texto p {
+    font-size: 0.8rem;
+    color: #a16207;
+    margin: 4px 0 0 0;
+}
+
+.modulo-aprendiz .btn-cambiar-ahora {
+    background-color: #ffffff;
+    border: 1px solid #d97706;
+    color: #92400e;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 150ms ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.modulo-aprendiz .btn-cambiar-ahora:hover {
+    background-color: #fef3c7;
+}
+
+/* ── Cambio password ── */
+.modulo-aprendiz .cambio-password {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Preferencias ── */
+.modulo-aprendiz .preferencias-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modulo-aprendiz .checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 150ms ease;
+}
+
+.modulo-aprendiz .checkbox-item:hover {
+    border-color: #a7f3d0;
+    background-color: #f9fafb;
+}
+
+.modulo-aprendiz .checkbox-item input[type="checkbox"] {
+    display: none;
+}
+
+.modulo-aprendiz .checkbox-custom {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 150ms ease;
+    margin-top: 2px;
+}
+
+.modulo-aprendiz .checkbox-item input:checked + .checkbox-custom {
+    background-color: #059669;
+    border-color: #059669;
+}
+
+.modulo-aprendiz .checkbox-item input:checked + .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.modulo-aprendiz .checkbox-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.modulo-aprendiz .checkbox-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.modulo-aprendiz .checkbox-desc {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
-    .modulo-aprendiz .estadisticas-perfil {
+    .modulo-aprendiz .perfil-card {
+        padding: 20px;
+    }
+
+    .modulo-aprendiz .cabecera-card {
         flex-direction: column;
-        gap: 15px;
+        align-items: stretch;
+    }
+
+    .modulo-aprendiz .cabecera-izquierda {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .modulo-aprendiz .perfil-info {
+        align-items: center;
+    }
+
+    .modulo-aprendiz .cabecera-derecha {
+        align-items: stretch;
+    }
+
+    .modulo-aprendiz .perfil-metricas {
+        justify-content: center;
+    }
+
+    .modulo-aprendiz .cabecera-botones {
+        flex-direction: column-reverse;
+    }
+
+    .modulo-aprendiz .cabecera-botones .btn-primario,
+    .modulo-aprendiz .cabecera-botones .btn-secundario {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modulo-aprendiz .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-aprendiz .form-botones {
+        flex-direction: column-reverse;
+    }
+
+    .modulo-aprendiz .form-botones .btn-primario,
+    .modulo-aprendiz .form-botones .btn-secundario {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modulo-aprendiz .banner-advertencia {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .modulo-aprendiz .btn-cambiar-ahora {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modulo-aprendiz .checkbox-item {
+        padding: 12px;
     }
 }

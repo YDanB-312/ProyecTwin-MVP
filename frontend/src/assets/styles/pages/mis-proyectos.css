@@ -1,50 +1,286 @@
-/* Mis Proyectos - Estilos específicos de página */
-
+/* ── Contenedor principal ── */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-proyectos {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
 }
 
-/* Filtros específicos de mis_proyectos */
-/* (La mayoría de estilos de filtros y encabezados están en global.css) */
+/* ── Header con título + botón ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-con-boton {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+}
 
-/* Badge de equipo */
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .equipo-badge {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-con-boton .btn-primario {
+    flex-shrink: 0;
+    padding: 12px 24px;
+    border-radius: 8px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-subtitulo {
+    display: block;
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-bottom: 2px;
+    letter-spacing: 0.3px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .titulo-seccion-dashboard {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    position: relative;
+    padding-left: 14px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .titulo-seccion-dashboard::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    width: 3px;
+    background: var(--color-primario);
+    border-radius: 2px;
+}
+
+/* ── Projects Grid ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyectos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+/* ── Project Card ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+    transition: all 200ms ease;
+    display: flex;
+    flex-direction: column;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5, 153, 102, 0.12);
+}
+
+/* ── Card Top Accent ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-accent {
+    height: 4px;
+    background: var(--gradient-primario);
+}
+
+/* ── Card Header ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-header {
+    padding: 20px 24px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-icono {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-nombre {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+/* ── Instructor ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-instructor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .instructor-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(5, 153, 102, 0.1);
+    color: var(--color-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-instructor span {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* ── Card Body (meta info) ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-body {
+    padding: 16px 24px;
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-meta i {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+/* ── Card Footer ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-footer {
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ── Status Badges ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .estado-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: rgba(99, 102, 241, 0.1);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .estado-revision {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .estado-aprobado {
+    background: rgba(5, 153, 102, 0.1);
     color: #059669;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contador-equipo {
-    font-size: 0.85rem;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .estado-borrador {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
 }
 
-/* Botón pequeño */
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-sm {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+/* ── Icon Buttons ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-acciones {
+    display: flex;
+    gap: 4px;
 }
 
-/* Responsive específico */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: all 150ms ease;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono:hover {
+    background: #f3f4f6;
+    color: var(--color-primario);
+}
+
+/* ── Paginación ── */
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .paginacion {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion {
+    min-width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion:hover:not(:disabled) {
+    border-color: var(--color-primario);
+    color: var(--color-primario);
+    background: rgba(5, 153, 102, 0.05);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion.activa {
+    background: var(--color-primario);
+    color: white;
+    border-color: var(--color-primario);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyectos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
-    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-pagina {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-con-boton {
         flex-direction: column;
-        gap: 15px;
         align-items: flex-start;
-    }
-    
-    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-filtros {
-        flex-direction: column;
+        gap: 16px;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-proyecto {
-        flex-wrap: wrap;
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-con-boton .btn-primario {
+        width: 100%;
+        justify-content: center;
+    }
+
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyectos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-proyectos {
+        gap: 20px;
     }
 }

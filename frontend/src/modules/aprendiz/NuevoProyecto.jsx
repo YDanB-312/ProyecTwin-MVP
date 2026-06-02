@@ -1,34 +1,44 @@
-// NuevoProyecto - Pagina de formulario para registrar un nuevo proyecto formativo en el sistema
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar';
-import Header from '../../components/Header/Header';
-import SidebarAprendiz from '../../components/SidebarAprendiz/SidebarAprendiz';
-import FooterAprendiz from '../../components/FooterAprendiz/FooterAprendiz';
-import '../../assets/styles/pages/nuevo-proyecto.css';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import '../../assets/styles/pages/nuevo-proyecto.css'
 
 function NuevoProyecto() {
+  const [palabrasClave, setPalabrasClave] = useState('')
+  const [resumenTexto, setResumenTexto] = useState('')
+  const [objetivosTexto, setObjetivosTexto] = useState('')
+  const [entregablesTexto, setEntregablesTexto] = useState('')
+  const [observacionesTexto, setObservacionesTexto] = useState('')
   return (
-    <div className="modulo-aprendiz">
-      <GovernmentBar />
-      <Header titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5} />
-      <SidebarAprendiz />
-      <main className="contenido-principal">
-        <div className="contenedor-formulario">
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-plus-circle"></i> Nuevo proyecto</h1>
-            <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver a Mis proyectos</Link>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <div className="contenedor-formulario">
+
+        <Link to="/aprendiz/mis-proyectos" className="volver-link"><i className="fas fa-arrow-left"></i> Volver a Mis proyectos</Link>
+
+        <div className="encabezado-con-boton">
+          <div>
+            <span className="encabezado-subtitulo">Panel del Aprendiz</span>
+            <h2 className="titulo-seccion-dashboard">Nuevo proyecto</h2>
           </div>
-          <div className="mensaje-feedback mensaje-exito oculto">
-            <i className="fas fa-check-circle"></i>
-            <span>Operacion realizada exitosamente.</span>
-          </div>
-          <div className="mensaje-feedback mensaje-error oculto">
-            <i className="fas fa-exclamation-circle"></i>
-            <span>Ha ocurrido un error. Intenta nuevamente.</span>
-          </div>
-          <form className="formulario-proyecto" action="#">
-            <section className="seccion-formulario">
-              <h2 className="titulo-seccion"><i className="fas fa-info-circle"></i> Informacion Basica</h2>
+        </div>
+
+        <div className="mensaje-feedback mensaje-exito oculto">
+          <i className="fas fa-check-circle"></i><span>Operacion realizada exitosamente.</span>
+        </div>
+        <div className="mensaje-feedback mensaje-error oculto">
+          <i className="fas fa-exclamation-circle"></i><span>Ha ocurrido un error. Intenta nuevamente.</span>
+        </div>
+
+        <p className="campos-obligatorios">Los campos marcados con <span className="obligatorio">*</span> son obligatorios.</p>
+
+        <form className="formulario-card" action="#">
+
+          <div className="seccion-formulario">
+            <div className="seccion-formulario-header">
+              <i className="fas fa-info-circle"></i>
+              <h3>Informacion Basica</h3>
+            </div>
+            <div className="seccion-formulario-body">
               <div className="grupo-formulario">
                 <label htmlFor="titulo" className="etiqueta requerido">Titulo del proyecto</label>
                 <input type="text" id="titulo" className="input-text" placeholder="Ingresa un titulo descriptivo para tu proyecto" required name="titulo" />
@@ -36,18 +46,25 @@ function NuevoProyecto() {
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="resumen" className="etiqueta requerido">Resumen del proyecto</label>
-                <textarea id="resumen" className="textarea" placeholder="Describe brevemente tu proyecto, incluyendo objetivos principales y metodologia..." maxLength="2000" required name="resumen"></textarea>
-                <div className="contador-caracteres"><span id="contador-resumen">0</span>/2000 caracteres</div>
+                <textarea id="resumen" className="textarea" placeholder="Describe brevemente tu proyecto, incluyendo objetivos principales y metodologia..." maxLength="2000" required name="resumen" value={resumenTexto} onChange={e => setResumenTexto(e.target.value)}></textarea>
+                <div className="contador-caracteres">{resumenTexto.length}/2000 caracteres</div>
                 <div className="campo-informacion">Maximo 300 palabras. Este resumen sera usado para detectar Similitudes con otros proyectos.</div>
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="palabras-clave" className="etiqueta requerido">Palabras Clave</label>
-                <input type="text" id="palabras-clave" className="input-text" placeholder="Ej: desarrollo web, aplicacion movil, base de datos" required name="palabras_clave" />
+                <input type="text" id="palabras-clave" className="input-text" placeholder="Ej: desarrollo web, aplicacion movil, base de datos" required name="palabras_clave" value={palabrasClave} onChange={e => setPalabrasClave(e.target.value)} />
+                <div className="contador-palabras">{palabrasClave ? palabrasClave.split(',').filter(p => p.trim()).length : 0} de 10 palabras clave (mínimo 3)</div>
                 <div className="campo-informacion">Separa cada palabra clave con comas. Minimo 3, maximo 10.</div>
               </div>
-            </section>
-            <section className="seccion-formulario">
-              <h2 className="titulo-seccion"><i className="fas fa-cogs"></i> Detalles Tecnicos</h2>
+            </div>
+          </div>
+
+          <div className="seccion-formulario">
+            <div className="seccion-formulario-header">
+              <i className="fas fa-cogs"></i>
+              <h3>Detalles Tecnicos</h3>
+            </div>
+            <div className="seccion-formulario-body">
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="linea-tecnologica" className="etiqueta requerido">Linea de Aprendizaje</label>
@@ -70,46 +87,82 @@ function NuevoProyecto() {
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="objetivos" className="etiqueta requerido">Objetivos Especificos</label>
-                <textarea id="objetivos" className="textarea" placeholder="Describe los objetivos especificos de tu proyecto..." required name="objetivos"></textarea>
+                <textarea id="objetivos" className="textarea" placeholder="Describe los objetivos especificos de tu proyecto..." required name="objetivos" value={objetivosTexto} onChange={e => setObjetivosTexto(e.target.value)}></textarea>
+                <div className="contador-caracteres">{objetivosTexto.length} caracteres</div>
                 <div className="campo-informacion">Enumera los objetivos de manera clara y medible.</div>
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="entregables" className="etiqueta requerido">Entregables Esperados</label>
-                <textarea id="entregables" className="textarea" placeholder="Describe los productos o resultados que entregaras al finalizar el proyecto..." required name="entregables"></textarea>
+                <textarea id="entregables" className="textarea" placeholder="Describe los productos o resultados que entregaras al finalizar el proyecto..." required name="entregables" value={entregablesTexto} onChange={e => setEntregablesTexto(e.target.value)}></textarea>
+                <div className="contador-caracteres">{entregablesTexto.length} caracteres</div>
                 <div className="campo-informacion">Especifica los entregables tangibles de tu proyecto.</div>
               </div>
-            </section>
-            <section className="seccion-formulario">
-              <h2 className="titulo-seccion"><i className="fas fa-users"></i> Integrantes del Equipo</h2>
+            </div>
+          </div>
+
+          <div className="seccion-formulario">
+            <div className="seccion-formulario-header">
+              <i className="fas fa-users"></i>
+              <h3>Integrantes del Equipo</h3>
+            </div>
+            <div className="seccion-formulario-body">
               <div className="grupo-formulario">
-                <label className="etiqueta">Selecciona los integrantes de tu ficha que participaran en este proyecto</label>
-                <div className="grid-miembros grid-miembros-sm">
-                  <label className="etiqueta-checkbox etiqueta-checkbox-card">
-                    <input type="checkbox" name="integrantes" value="1" className="checkbox-proyecto" checked />
-                    <div className="avatar-miembro avatar-sm">MG</div>
-                    <span className="texto-md">Maria Gonzalez (tu)</span>
+                <div className="integrantes-encabezado">
+                  <label className="etiqueta">Selecciona los integrantes de tu ficha</label>
+                  <div className="integrantes-controles">
+                    <label className="seleccionar-todos">
+                      <input type="checkbox" className="checkbox-personalizado-input" />
+                      <span className="checkbox-personalizado"></span>
+                      <span>Seleccionar todos</span>
+                    </label>
+                    <span className="contador-seleccionados">1 seleccionado</span>
+                  </div>
+                </div>
+                <div className="grid-miembros">
+                  <label className="miembro-card seleccionado">
+                    <input type="checkbox" name="integrantes" value="1" className="checkbox-personalizado-input" defaultChecked />
+                    <span className="checkbox-personalizado"></span>
+                    <div className="miembro-avatar">MG</div>
+                    <div className="miembro-info">
+                      <span className="miembro-nombre">Maria Gonzalez</span>
+                      <span className="miembro-rol">(tu)</span>
+                    </div>
                   </label>
-                  <label className="etiqueta-checkbox etiqueta-checkbox-card">
-                    <input type="checkbox" name="integrantes" value="2" className="checkbox-proyecto" />
-                    <div className="avatar-miembro avatar-sm">JP</div>
-                    <span className="texto-md">Juan Perez</span>
+                  <label className="miembro-card">
+                    <input type="checkbox" name="integrantes" value="2" className="checkbox-personalizado-input" />
+                    <span className="checkbox-personalizado"></span>
+                    <div className="miembro-avatar">JP</div>
+                    <div className="miembro-info">
+                      <span className="miembro-nombre">Juan Perez</span>
+                    </div>
                   </label>
-                  <label className="etiqueta-checkbox etiqueta-checkbox-card">
-                    <input type="checkbox" name="integrantes" value="3" className="checkbox-proyecto" />
-                    <div className="avatar-miembro avatar-sm">LG</div>
-                    <span className="texto-md">Laura Gomez</span>
+                  <label className="miembro-card">
+                    <input type="checkbox" name="integrantes" value="3" className="checkbox-personalizado-input" />
+                    <span className="checkbox-personalizado"></span>
+                    <div className="miembro-avatar">LG</div>
+                    <div className="miembro-info">
+                      <span className="miembro-nombre">Laura Gomez</span>
+                    </div>
                   </label>
-                  <label className="etiqueta-checkbox etiqueta-checkbox-card">
-                    <input type="checkbox" name="integrantes" value="4" className="checkbox-proyecto" />
-                    <div className="avatar-miembro avatar-sm">AM</div>
-                    <span className="texto-md">Ana Martinez</span>
+                  <label className="miembro-card">
+                    <input type="checkbox" name="integrantes" value="4" className="checkbox-personalizado-input" />
+                    <span className="checkbox-personalizado"></span>
+                    <div className="miembro-avatar">AM</div>
+                    <div className="miembro-info">
+                      <span className="miembro-nombre">Ana Martinez</span>
+                    </div>
                   </label>
                 </div>
-                <div className="campo-informacion">Selecciona a los companeros de tu ficha que trabajaran contigo en este proyecto.</div>
               </div>
-            </section>
-            <section className="seccion-formulario">
-              <h2 className="titulo-seccion"><i className="fas fa-clipboard-list"></i> Informacion Adicional</h2>
+            </div>
+          </div>
+
+          <div className="seccion-formulario">
+            <div className="seccion-formulario-header">
+              <i className="fas fa-clipboard-list"></i>
+              <h3>Informacion Adicional</h3>
+            </div>
+            <div className="seccion-formulario-body">
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="duracion" className="etiqueta">Duracion Estimada (meses)</label>
@@ -122,30 +175,33 @@ function NuevoProyecto() {
               </div>
               <div className="grupo-formulario">
                 <label className="etiqueta">Tipo de proyecto</label>
-                <div>
-                  <label className="etiqueta-checkbox">
-                    <input type="radio" name="tipo_proyecto" value="aplicacion" className="checkbox-proyecto" checked />
-                    Aplicacion/Software
+                <div className="radio-grupo">
+                  <label className="radio-item">
+                    <input type="radio" name="tipo_proyecto" value="aplicacion" className="radio-personalizado-input" defaultChecked />
+                    <span className="radio-personalizado"></span>
+                    <span>Aplicacion/Software</span>
                   </label>
                 </div>
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="observaciones" className="etiqueta">Observaciones Adicionales</label>
-                <textarea id="observaciones" className="textarea" placeholder="Agrega cualquier informacion adicional que consideres relevante..." name="observaciones"></textarea>
+                <textarea id="observaciones" className="textarea" placeholder="Agrega cualquier informacion adicional que consideres relevante..." name="observaciones" value={observacionesTexto} onChange={e => setObservacionesTexto(e.target.value)}></textarea>
+                <div className="contador-caracteres">{observacionesTexto.length} caracteres</div>
               </div>
-            </section>
-            <div className="acciones-formulario">
-              <div className="acciones-izquierda">
-                <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Guardar proyecto</button>
-                <button type="button" className="btn-secundario"><i className="fas fa-file-alt"></i> Guardar como Borrador</button>
-              </div>
-              <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-times"></i> Cancelar</Link>
             </div>
-          </form>
-        </div>
-      </main>
-      <FooterAprendiz />
-    </div>
+          </div>
+
+          <div className="acciones-formulario">
+            <div className="acciones-izquierda">
+              <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Guardar proyecto</button>
+              <button type="button" className="btn-outline"><i className="fas fa-file-alt"></i> Guardar como Borrador</button>
+            </div>
+            <Link to="/aprendiz/mis-proyectos" className="btn-enlace"><i className="fas fa-times"></i> Cancelar</Link>
+          </div>
+
+        </form>
+      </div>
+    </DashboardLayout>
   );
 }
 

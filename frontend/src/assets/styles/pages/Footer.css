@@ -84,6 +84,17 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
+.derechos-autor {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.derechos-autor p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
 @media (max-width: 768px) {
   .contenedor-pie {
     grid-template-columns: 1fr;

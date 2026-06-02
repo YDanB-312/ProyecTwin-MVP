@@ -21,13 +21,14 @@
     background: white;
     padding: 16px 20px;
     border-radius: var(--radio-borde);
-    box-shadow: var(--sombra-suave);
-    transition: all 0.3s;
+    box-shadow: var(--sombra-ring);
+    transition: all var(--transition-fast);
+    border: 1px solid rgba(0,0,0,0.02);
 }
 
 .modulo-aprendiz .tarjeta-usuario:hover {
     transform: translateY(-2px);
-    box-shadow: var(--sombra-media);
+    box-shadow: var(--sombra-ring-md);
 }
 
 .modulo-aprendiz .avatar-secundario {

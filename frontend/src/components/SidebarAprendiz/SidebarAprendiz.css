@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #475569;
+  color: var(--color-texto-secundario);
   text-decoration: none;
   padding: 12px var(--space-lg);
   margin: 0 var(--space-sm);
@@ -37,7 +37,7 @@
 
 .enlace-nav:hover {
   color: var(--color-texto);
-  background: #f1f5f9;
+  background: var(--color-borde-suave);
 }
 
 .enlace-nav.activo {
@@ -47,20 +47,20 @@
   border-left-color: var(--color-primario);
 }
 
+.enlace-nav.activo .icono-nav {
+  color: var(--color-primario);
+}
+
 .icono-nav {
   width: 20px;
   text-align: center;
   font-size: 1.1rem;
-  color: #94a3b8;
+  color: var(--color-texto-muted);
   transition: color var(--transition-fast);
 }
 
 .enlace-nav:hover .icono-nav {
   color: var(--color-texto);
-}
-
-.enlace-nav.activo .icono-nav {
-  color: var(--color-primario);
 }
 
 .cerrar-sidebar {

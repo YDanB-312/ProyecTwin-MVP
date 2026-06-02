@@ -78,17 +78,17 @@
 
 .modulo-invitado .grupo-campo input {
     width: 100%;
-    padding: 11px 14px;
-    border: 1.5px solid var(--color-borde);
-    border-radius: 8px;
+    padding: 12px 15px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-sm);
     font-size: .95rem;
     color: var(--color-texto);
-    background: var(--color-fondo);
-    transition: border-color .3s, box-shadow .3s;
+    background: white;
+    transition: all var(--transition-fast);
 }
 
 .modulo-invitado .grupo-campo input:focus {
-    outline: 0;
+    outline: none;
     border-color: var(--color-primario);
     box-shadow: var(--sombra-foco);
 }
@@ -149,9 +149,9 @@
 /* Info usuarios prueba */
 .modulo-invitado .info-prueba {
     margin-top: 20px;
-    padding: 14px 16px;
-    background: var(--color-fondo);
-    border-radius: 8px;
+    padding: 16px;
+    background: var(--color-borde-suave);
+    border-radius: var(--radio-borde);
     border: 1px solid var(--color-borde);
 }
 
@@ -189,7 +189,7 @@
 /* Lado info */
 .modulo-invitado .panel-info-login {
     flex: .85;
-    background: linear-gradient(135deg, var(--color-header), var(--color-header));
+    background: var(--gradient-header);
     color: #fff;
     display: flex;
     align-items: center;

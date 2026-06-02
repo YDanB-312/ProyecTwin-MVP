@@ -1,106 +1,96 @@
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/gestion-usuarios.css'
-import Header from '../../components/Header/Header';
-import SidebarAdmin from '../../components/SidebarAdmin/SidebarAdmin';
-import FooterAdmin from '../../components/FooterAdmin/FooterAdmin';
+
+const proyectos = [
+  { nombre: 'Sistema IoT para Agricultura de Precision', estado: 'Activo', badge: 'exito', fecha: '15/03/2026' },
+  { nombre: 'App Movil para Inventarios', estado: 'Pendiente', badge: 'advertencia', fecha: '20/02/2026' },
+]
+
+const breadcrumb = [
+  { to: '/admin/dashboard', icon: 'home', label: 'Inicio' },
+  { to: '/admin/gestion-usuarios', label: 'Gestion Usuarios' },
+  { label: 'Detalle de Usuario' },
+]
 
 export default function DetalleUsuario() {
   return (
-    <div className="modulo-admin">
-      <GovernmentBar />
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12}>
+      <div className="contenedor-gestion">
+        <PageHeader
+          title="Detalle de Usuario"
+          icon="user"
+          breadcrumb={breadcrumb}
+          actions={<Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
+        />
 
-      <Header titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12} />
-
-      <SidebarAdmin />
-
-      <main className="contenido-principal">
-        <div className="contenedor-gestion">
-          <div className="breadcrumb">
-            <Link to="/admin/dashboard"><i className="fas fa-home"></i> Inicio</Link>
-            <span className="separador"><i className="fas fa-chevron-right"></i></span>
-            <Link to="/admin/gestion-usuarios">Gestion Usuarios</Link>
-            <span className="separador"><i className="fas fa-chevron-right"></i></span>
-            <span className="actual">Detalle de Usuario</span>
-          </div>
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-user"></i> Detalle de Usuario</h1>
-            <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
-          </div>
-
-          <div className="seccion-filtros">
-            <div className="filtros-titulo"><i className="fas fa-id-card"></i> Informacion Personal</div>
-            <div className="detalle-grid">
-              <div>
-                <label className="campo-label">Nombre Completo</label>
-                <p className="campo-valor">Ana Martinez Lopez</p>
-              </div>
-              <div>
-                <label className="campo-label">Rol</label>
-                <p><span className="badge badge-exito"><i className="fas fa-user-graduate"></i> Aprendiz</span></p>
-              </div>
-              <div>
-                <label className="campo-label">Documento</label>
-                <p className="campo-valor">1023456789</p>
-              </div>
-              <div>
-                <label className="campo-label">Estado</label>
-                <p><span className="badge badge-exito"><i className="fas fa-circle"></i> Activo</span></p>
-              </div>
-              <div>
-                <label className="campo-label">Correo Electronico</label>
-                <p className="campo-valor">ana.martinez@soy.sena.edu.co</p>
-              </div>
-              <div>
-                <label className="campo-label">Telefono</label>
-                <p className="campo-valor">3235421165</p>
-              </div>
-              <div>
-                <label className="campo-label">Programa de Formacion</label>
-                <p className="campo-valor">ADSO - Analisis y Desarrollo de Sistemas</p>
-              </div>
-              <div>
-                <label className="campo-label">Fecha de Registro</label>
-                <p className="campo-valor">10/01/2026</p>
-              </div>
+        <DataPanel title="Informacion Personal" icon="id-card">
+          <div className="detalle-grid-moderno">
+            <div>
+              <div className="detalle-label">Nombre Completo</div>
+              <div className="detalle-valor">Ana Martinez Lopez</div>
+            </div>
+            <div>
+              <div className="detalle-label">Rol</div>
+              <p><span className="badge badge-exito"><i className="fas fa-user-graduate"></i> Aprendiz</span></p>
+            </div>
+            <div>
+              <div className="detalle-label">Documento</div>
+              <div className="detalle-valor">1023456789</div>
+            </div>
+            <div>
+              <div className="detalle-label">Estado</div>
+              <p><span className="badge badge-exito"><i className="fas fa-circle"></i> Activo</span></p>
+            </div>
+            <div>
+              <div className="detalle-label">Correo Electronico</div>
+              <div className="detalle-valor">ana.martinez@soy.sena.edu.co</div>
+            </div>
+            <div>
+              <div className="detalle-label">Telefono</div>
+              <div className="detalle-valor">3235421165</div>
+            </div>
+            <div>
+              <div className="detalle-label">Programa de Formacion</div>
+              <div className="detalle-valor">ADSO - Analisis y Desarrollo de Sistemas</div>
+            </div>
+            <div>
+              <div className="detalle-label">Fecha de Registro</div>
+              <div className="detalle-valor">10/01/2026</div>
             </div>
           </div>
+        </DataPanel>
 
-          <div className="tarjeta tarjeta-padded mb-30">
-            <h2 className="titulo-seccion"><i className="fas fa-folder-open"></i> Proyectos Asociados</h2>
-            <div className="tabla-scroll">
-              <table className="tabla-usuarios">
-                <thead>
-                  <tr>
-                    <th>Proyecto</th>
-                    <th>Estado</th>
-                    <th>Fecha Creacion</th>
+        <DataPanel title="Proyectos Asociados" icon="folder-open">
+          <div className="tabla-scroll">
+            <table className="tabla-usuarios">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th>Estado</th>
+                  <th>Fecha Creacion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proyectos.map((p, i) => (
+                  <tr key={i}>
+                    <td>{p.nombre}</td>
+                    <td><span className={`badge badge-${p.badge}`}>{p.estado}</span></td>
+                    <td>{p.fecha}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Sistema IoT para Agricultura de Precision</td>
-                    <td><span className="badge badge-exito">Activo</span></td>
-                    <td>15/03/2026</td>
-                  </tr>
-                  <tr>
-                    <td>App Movil para Inventarios</td>
-                    <td><span className="badge badge-advertencia">Pendiente</span></td>
-                    <td>20/02/2026</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </DataPanel>
 
-          <div className="acciones-finales">
-            <Link to="/admin/gestion-usuarios" className="btn-primario"><i className="fas fa-edit"></i> Editar Usuario</Link>
-            <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
-          </div>
+        <div className="acciones-finales" style={{ marginTop: 'var(--space-lg)', display: 'flex', gap: '10px' }}>
+          <Link to="/admin/gestion-usuarios" className="btn-primario"><i className="fas fa-edit"></i> Editar Usuario</Link>
+          <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
         </div>
-      </main>
-
-      <FooterAdmin />
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }

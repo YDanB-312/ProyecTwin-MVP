@@ -1,99 +1,105 @@
-{/* DetalleFicha.jsx — Componente que muestra el detalle de la ficha a la que pertenece el aprendiz */}
 import { Link } from 'react-router-dom'
-import '../../assets/styles/pages/fichas.css';
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar';
-import Header from '../../components/Header/Header';
-import SidebarAprendiz from '../../components/SidebarAprendiz/SidebarAprendiz';
-import FooterAprendiz from '../../components/FooterAprendiz/FooterAprendiz';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import '../../assets/styles/pages/fichas.css'
 
 function DetalleFicha() {
   return (
-    <div className="modulo-aprendiz">
-      <GovernmentBar />
-      <Header titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5} />
-      <SidebarAprendiz />
-      <main className="contenido-principal">
-        <div className="contenedor-pagina">
-          <div className="breadcrumb">
-            <Link to="/aprendiz/dashboard"><i className="fas fa-home"></i> Inicio</Link>
-            <span className="separador"><i className="fas fa-chevron-right"></i></span>
-            <span className="actual">Mi Ficha</span>
-          </div>
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-users"></i> Mi Ficha</h1>
-            <Link to="/aprendiz/dashboard" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
-          </div>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <div className="contenedor-pagina">
 
-          <div className="tarjeta tarjeta-padded mb-30">
-            <div className="flex-between">
-              <div>
-                <h2 className="ficha-titulo">Analisis y Desarrollo 2568</h2>
-                <p className="ficha-subtitulo">ADSO - Trimestre 3</p>
-              </div>
-              <div className="texto-derecha">
-                <div className="codigo-ficha">ADSO-2568</div>
-                <span className="estado-ficha-activa"><i className="fas fa-circle"></i> Activa</span>
-              </div>
-            </div>
-          </div>
+        <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
 
-          <div className="info-ficha-actual mb-30">
-            <div className="ficha-detalle">
-              <h3><i className="fas fa-chalkboard-teacher"></i> Instructor Asignado</h3>
-              <p>Carlos Ruiz - Tecnologias de la Informacion</p>
-            </div>
-            </div>
+        <div className="ficha-header">
+          <h1 className="ficha-titulo">Mi Ficha</h1>
+        </div>
 
-          <h2 className="titulo-seccion mb-24"><i className="fas fa-user-graduate"></i> Compañeros (12)</h2>
-
-          <div className="grid-miembros">
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">MG</div>
-              <div className="info-miembro">
-                <h4>Maria Gonzalez</h4>
-                <p>maria.gonzalez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
+        <div className="ficha-card">
+          <div className="ficha-grid">
+            <div className="ficha-dato">
+              <span className="ficha-label">Programa</span>
+              <span className="ficha-valor">Analisis y Desarrollo 2568</span>
             </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">JP</div>
-              <div className="info-miembro">
-                <h4>Juan Perez</h4>
-                <p>juan.perez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
+            <div className="ficha-dato">
+              <span className="ficha-label">Codigo</span>
+              <span className="ficha-valor"><span className="codigo-ficha">ADSO-2568</span></span>
             </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">LG</div>
-              <div className="info-miembro">
-                <h4>Laura Gomez</h4>
-                <p>laura.gomez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
+            <div className="ficha-dato">
+              <span className="ficha-label">Trimestre</span>
+              <span className="ficha-valor">Trimestre 3</span>
             </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">AM</div>
-              <div className="info-miembro">
-                <h4>Ana Martinez</h4>
-                <p>ana.martinez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
+            <div className="ficha-dato">
+              <span className="ficha-label">Estado</span>
+              <span className="badge-activo"><i className="fas fa-circle"></i> Activa</span>
             </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">DS</div>
-              <div className="info-miembro">
-                <h4>Diana Sanchez</h4>
-                <p>diana.sanchez@soy.sena.edu.co</p>
+            <div className="ficha-dato ficha-dato-full">
+              <span className="ficha-label">Instructor</span>
+              <div className="instructor-info">
+                <div className="instructor-avatar">CR</div>
+                <div>
+                  <span className="ficha-valor">Carlos Ruiz</span>
+                  <span className="instructor-area">Tecnologias de la Informacion</span>
+                </div>
               </div>
-              <span className="badge badge-neutral">Inactivo</span>
             </div>
           </div>
         </div>
-      </main>
 
-      <FooterAprendiz />
-    </div>
-  );
+        <div className="seccion-header">
+          <h2 className="seccion-titulo">Companeros</h2>
+          <span className="contador-pill">5</span>
+        </div>
+
+        <div className="companeros-grid">
+
+          <div className="companero-card">
+            <div className="companero-avatar">MG</div>
+            <div className="companero-info">
+              <span className="companero-nombre">Maria Gonzalez</span>
+              <span className="companero-correo">maria.gonzalez@soy.sena.edu.co</span>
+            </div>
+            <span className="badge-activo">Activo</span>
+          </div>
+
+          <div className="companero-card">
+            <div className="companero-avatar">JP</div>
+            <div className="companero-info">
+              <span className="companero-nombre">Juan Perez</span>
+              <span className="companero-correo">juan.perez@soy.sena.edu.co</span>
+            </div>
+            <span className="badge-activo">Activo</span>
+          </div>
+
+          <div className="companero-card">
+            <div className="companero-avatar">LG</div>
+            <div className="companero-info">
+              <span className="companero-nombre">Laura Gomez</span>
+              <span className="companero-correo">laura.gomez@soy.sena.edu.co</span>
+            </div>
+            <span className="badge-activo">Activo</span>
+          </div>
+
+          <div className="companero-card">
+            <div className="companero-avatar">AM</div>
+            <div className="companero-info">
+              <span className="companero-nombre">Ana Martinez</span>
+              <span className="companero-correo">ana.martinez@soy.sena.edu.co</span>
+            </div>
+            <span className="badge-activo">Activo</span>
+          </div>
+
+          <div className="companero-card">
+            <div className="companero-avatar">DS</div>
+            <div className="companero-info">
+              <span className="companero-nombre">Diana Sanchez</span>
+              <span className="companero-correo">diana.sanchez@soy.sena.edu.co</span>
+            </div>
+            <span className="badge-inactivo">Inactivo</span>
+          </div>
+
+        </div>
+      </div>
+    </DashboardLayout>
+  )
 }
 
-export default DetalleFicha;
+export default DetalleFicha
