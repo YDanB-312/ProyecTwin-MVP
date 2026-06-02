@@ -1,65 +1,213 @@
-/* Dashboard Aprendiz - Estilos específicos */
-
-.modulo-aprendiz body {
-    display: flex;
-}
-
+/* ── Contenedor principal ── */
 .modulo-aprendiz .contenedor-dashboard {
     max-width: 1200px;
     margin: 0 auto;
-}
-
-/* Boton de acción principal (Aprendiz) */
-.modulo-aprendiz .btn-accion-principal {
-    text-decoration: none;
-    margin-top: 20px;
-    width: auto;
-    padding: 12px 30px;
-}
-
-/* Grafico circular (25% progreso) */
-.modulo-aprendiz .grafico-circular {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: conic-gradient(var(--color-primario) 0% 25%, var(--color-secundario) 25% 100%);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 56px;
+}
+
+/* ── Section wrapper ── */
+.modulo-aprendiz .dashboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── Welcome Card Animation ── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modulo-aprendiz .tarjeta-bienvenida-moderna {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* ── Saludo personal dentro del welcome card ── */
+.modulo-aprendiz .saludo-personal {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.75;
+    margin-bottom: 2px;
+    letter-spacing: 0.3px;
+}
+
+/* ─── Hover sutil en ilustración welcome ── */
+.modulo-aprendiz .bienvenida-ilustracion {
+    transition: all 300ms ease;
+}
+
+.modulo-aprendiz .tarjeta-bienvenida-moderna:hover .bienvenida-ilustracion {
+    transform: scale(1.06);
+    background: rgba(255,255,255,0.18);
+}
+
+/* ── Section Titles ── */
+.modulo-aprendiz .titulo-seccion-dashboard {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
     position: relative;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    padding-left: 14px;
 }
 
-.modulo-aprendiz .grafico-circular::before { content: ""; position: absolute; width: 80px; height: 80px; background: white; border-radius: 50%; }
-.modulo-aprendiz .texto-progreso { position: relative; font-weight: 700; color: var(--color-texto); }
-
-/* Sección de Estadísticas Generales */
-.modulo-aprendiz .seccion-estadisticas {
-    background: white;
-    border-radius: var(--radio-borde);
-    padding: 25px;
-    box-shadow: var(--sombra-media);
-    margin-bottom: 30px;
+.modulo-aprendiz .titulo-seccion-dashboard::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    width: 3px;
+    background: var(--color-primario);
+    border-radius: 2px;
 }
 
-.modulo-aprendiz .icono-alertas {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--color-advertencia);
+/* ── Actions Grid (3 columnas fijas) ── */
+.modulo-aprendiz .acciones-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
 }
 
-.modulo-aprendiz .icono-mensajes {
+/* ── Action Cards como link clickable ── */
+.modulo-aprendiz a.tarjeta-accion-moderna {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.modulo-aprendiz a.tarjeta-accion-moderna:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5, 153, 102, 0.12);
+    border-color: rgba(5, 153, 102, 0.15);
+}
+
+.modulo-aprendiz a.tarjeta-accion-moderna:active {
+    transform: scale(0.98);
+}
+
+.modulo-aprendiz a.tarjeta-accion-moderna p {
+    margin-bottom: 0;
+}
+
+.modulo-aprendiz a.tarjeta-accion-moderna h3 {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* ── Action Card Icons (gris → verde en hover) ── */
+.modulo-aprendiz a.tarjeta-accion-moderna .accion-icono {
+    color: #6b7280;
+    background: #f3f4f6;
+}
+
+.modulo-aprendiz a.tarjeta-accion-moderna:hover .accion-icono {
     background: rgba(5, 153, 102, 0.1);
     color: var(--color-primario);
+    transform: scale(1.05);
 }
 
-/* Secciones */
-.modulo-aprendiz .seccion-proyectos { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); margin-bottom: 30px; }
-.modulo-aprendiz .seccion-alertas { background: white; border-radius: var(--radio-borde); padding: 25px; box-shadow: var(--sombra-media); }
+/* ── Override global button radius ── */
+.modulo-aprendiz .btn-accion-principal {
+    border-radius: 8px;
+}
 
-/* Responsive específico */
-@media (max-width: 1024px) { .modulo-aprendiz .grid-acciones { grid-template-columns: repeat(2, 1fr); } }
+/* ── Empty State Cards ── */
+.modulo-aprendiz .estado-vacio-card {
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 40px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 250ms ease;
+}
+
+.modulo-aprendiz .estado-vacio-card:hover {
+    background: #f3f4f6;
+    border-color: rgba(5, 153, 102, 0.25);
+}
+
+.modulo-aprendiz .estado-vacio-icono {
+    font-size: 2.5rem;
+    color: rgba(5, 153, 102, 0.45);
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.modulo-aprendiz .estado-vacio-titulo {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.modulo-aprendiz .estado-vacio-descripcion {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 12px;
+    line-height: 1.5;
+}
+
+.modulo-aprendiz .estado-vacio-card .btn-accion-principal {
+    margin-top: 8px;
+    padding: 14px 32px;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
+    transition: all 200ms ease;
+}
+
+.modulo-aprendiz .estado-vacio-card .btn-accion-principal:hover {
+    background: var(--color-secundario);
+    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
+    transform: translateY(-1px);
+}
+
+/* ── Empty State sin icono (notificaciones) ── */
+.modulo-aprendiz .estado-vacio-card-sin-icono {
+    gap: 4px;
+    padding: 32px 24px;
+}
+
+.modulo-aprendiz .estado-vacio-card-sin-icono .estado-vacio-descripcion {
+    margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .modulo-aprendiz .acciones-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 
 @media (max-width: 768px) {
-    .modulo-aprendiz .tarjeta-bienvenida { flex-direction: column; gap: 30px; }
-    .modulo-aprendiz .grid-acciones { grid-template-columns: 1fr; }
+    .modulo-aprendiz .acciones-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-aprendiz .contenedor-dashboard {
+        gap: 36px;
+    }
+
+    .modulo-aprendiz .estado-vacio-card {
+        padding: 32px 20px;
+    }
 }

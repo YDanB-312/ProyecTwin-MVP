@@ -1,28 +1,29 @@
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
-import Header from '../../components/Header/Header';
-import SidebarAdmin from '../../components/SidebarAdmin/SidebarAdmin';
-import FooterAdmin from '../../components/FooterAdmin/FooterAdmin';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/gestion-usuarios.css'
+
+const breadcrumb = [
+  { to: '/admin/dashboard', icon: 'home', label: 'Inicio' },
+  { to: '/admin/gestion-usuarios', label: 'Gestion Usuarios' },
+  { label: 'Nuevo Usuario' },
+]
 
 export default function NuevoUsuario() {
   return (
-    <div className="modulo-admin">
-      <GovernmentBar />
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12}>
+      <div className="contenedor-pagina">
+        <PageHeader
+          title="Nuevo Usuario"
+          icon="user-plus"
+          breadcrumb={breadcrumb}
+          actions={<Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
+        />
 
-      <Header titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12} />
-
-      <SidebarAdmin />
-
-      <main className="contenido-principal">
-        <div className="contenedor-pagina">
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-user-plus"></i> Nuevo Usuario</h1>
-            <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
-          </div>
-
-          <div className="tarjeta tarjeta-padded">
-            <form className="formulario-proyecto" action="#">
+        <DataPanel title="Datos del Usuario" icon="id-card">
+          <form className="formulario-proyecto" action="#">
+            <div style={{ padding: 'var(--space-xl)' }}>
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="nombre" className="etiqueta requerido">Nombre</label>
@@ -61,16 +62,14 @@ export default function NuevoUsuario() {
                   </select>
                 </div>
               </div>
-              <div className="acciones-formulario">
+              <div className="acciones-formulario" style={{ marginTop: 'var(--space-lg)' }}>
                 <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Guardar Usuario</button>
                 <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-times"></i> Cancelar</Link>
               </div>
-            </form>
-          </div>
-        </div>
-      </main>
-
-      <FooterAdmin />
-    </div>
+            </div>
+          </form>
+        </DataPanel>
+      </div>
+    </DashboardLayout>
   )
 }

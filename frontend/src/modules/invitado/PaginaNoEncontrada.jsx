@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import '../../assets/styles/pages/404.css'
+import '../../assets/styles/pages/Footer.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 
 export default function PaginaNoEncontrada() {
@@ -22,12 +23,15 @@ export default function PaginaNoEncontrada() {
       <main className="contenido-404">
         <div className="card-404">
           <div className="icono-404">
-            <i className="fas fa-exclamation-triangle"></i>
+            <i className="fas fa-map-signs"></i>
           </div>
           <h1 className="titulo-404">404</h1>
           <h2 className="subtitulo-404">Pagina no encontrada</h2>
           <p className="texto-404">La pagina que buscas no existe o ha sido movida. Verifica la direccion o vuelve al inicio.</p>
-          <Link to="/" className="btn-primario"><i className="fas fa-home"></i> Volver al inicio</Link>
+          <div className="acciones-404">
+            <Link to="/" className="btn-primario"><i className="fas fa-home"></i> Volver al inicio</Link>
+            <Link to="/login" className="btn-secundario"><i className="fas fa-sign-in-alt"></i> Iniciar sesion</Link>
+          </div>
         </div>
       </main>
 

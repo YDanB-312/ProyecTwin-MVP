@@ -1,5 +1,5 @@
 .header-principal {
-  background: var(--color-header);
+  background: var(--gradient-header);
   padding: 8px 0;
   position: fixed;
   top: 40px;
@@ -58,23 +58,40 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.btn-cerrar-sesion-rojo {
-  background-color: var(--color-peligro);
+.notificaciones span {
+  background: var(--color-peligro);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radio-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-cerrar-sesion {
+  background: rgba(255, 255, 255, 0.08);
   color: white;
   text-decoration: none;
   padding: 8px 18px;
-  border-radius: var(--radio-sm);
+  border-radius: var(--radio-pill);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: transform var(--transition-fast), background var(--transition-fast);
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.btn-cerrar-sesion-rojo:hover {
-  background-color: #dc2626;
-  transform: scale(1.05);
+.btn-cerrar-sesion:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .btn-hamburguesa {

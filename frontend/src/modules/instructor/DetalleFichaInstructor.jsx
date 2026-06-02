@@ -1,97 +1,71 @@
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar';
-import Header from '../../components/Header/Header';
-import SidebarInstructor from '../../components/SidebarInstructor/SidebarInstructor';
-import FooterInstructor from '../../components/FooterInstructor/FooterInstructor';
-import '../../assets/styles/pages/fichas.css';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import DataPanel from '../../components/DataPanel/DataPanel'
+import '../../assets/styles/pages/fichas.css'
+
+const miembros = [
+  { iniciales: 'MG', nombre: 'Maria Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
+  { iniciales: 'JP', nombre: 'Juan Perez', correo: 'juan.perez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
+  { iniciales: 'LG', nombre: 'Laura Gomez', correo: 'laura.gomez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
+  { iniciales: 'AM', nombre: 'Ana Martinez', correo: 'ana.martinez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
+  { iniciales: 'DS', nombre: 'Diana Sanchez', correo: 'diana.sanchez@soy.sena.edu.co', estado: 'Inactivo', badge: 'neutral' },
+]
+
+const breadcrumb = [
+  { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
+  { to: '/instructor/gestionar-fichas', label: 'Gestionar Fichas' },
+  { label: 'Detalle de Ficha' },
+]
 
 function DetalleFichaInstructor() {
   return (
-    <div className="modulo-instructor">
-      <GovernmentBar />
-      <Header titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8} />
-      <SidebarInstructor />
-      <main className="contenido-principal">
-        <div className="contenedor-pagina">
-          <div className="breadcrumb">
-            <Link to="/instructor/dashboard"><i className="fas fa-home"></i> Inicio</Link>
-            <span className="separador"><i className="fas fa-chevron-right"></i></span>
-            <Link to="/instructor/gestionar-fichas">Gestionar Fichas</Link>
-            <span className="separador"><i className="fas fa-chevron-right"></i></span>
-            <span className="actual">Detalle de Ficha</span>
-          </div>
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-users"></i> Detalle de Ficha</h1>
-            <Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
-          </div>
-          <div className="tarjeta tarjeta-padded mb-30">
-            <div className="flex-between">
-              <div>
-                <h2 className="ficha-titulo">Análisis y Desarrollo 2568</h2>
-                <p className="ficha-subtitulo">ADSO - Trimestre 3</p>
-              </div>
-              <div className="texto-derecha">
-                <div className="codigo-ficha">ADSO-2568</div>
-                <span className="estado-ficha-activa"><i className="fas fa-circle"></i> Activa</span>
-              </div>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+      <div className="contenedor-pagina">
+        <PageHeader
+          title="Detalle de Ficha"
+          icon="users"
+          breadcrumb={breadcrumb}
+          actions={<Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
+        />
+
+        <DataPanel title="Informacion de la Ficha" icon="info-circle">
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-lg) var(--space-xl)', alignItems: 'center' }}>
+            <div>
+              <h2 className="ficha-titulo">Analisis y Desarrollo 2568</h2>
+              <p className="ficha-subtitulo">ADSO - Trimestre 3</p>
+            </div>
+            <div className="texto-derecha" style={{ textAlign: 'right' }}>
+              <div className="codigo-ficha">ADSO-2568</div>
+              <span className="estado-ficha-activa"><i className="fas fa-circle"></i> Activa</span>
             </div>
           </div>
-          <div className="invite-card">
-            <i className="fas fa-link icono-link"></i>
-            <h3>Código de Invitación</h3>
-            <div className="codigo-grande">ADSO-2568</div>
-            <p>Comparte este código con tus aprendices para que se unan a la ficha.</p>
-            <div className="acciones-invite">
-              <button className="btn-primario" type="button"><i className="fas fa-copy"></i> Copiar Código</button>
-            </div>
+        </DataPanel>
+
+        <DataPanel title="Codigo de Invitacion" icon="link">
+          <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+            <div className="codigo-grande" style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '4px', padding: 'var(--space-lg)', background: 'var(--color-fondo)', borderRadius: 'var(--radio-lg)', display: 'inline-block', marginBottom: '12px' }}>ADSO-2568</div>
+            <p style={{ color: 'var(--color-texto-secundario)' }}>Comparte este codigo con tus aprendices para que se unan a la ficha.</p>
+            <button className="btn-primario" type="button" style={{ marginTop: '12px' }}><i className="fas fa-copy"></i> Copiar Codigo</button>
           </div>
-          <h2 className="titulo-seccion mb-24"><i className="fas fa-user-graduate"></i> Aprendices (28)</h2>
-          <div className="grid-miembros">
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">MG</div>
-              <div className="info-miembro">
-                <h4>María González</h4>
-                <p>maria.gonzalez@soy.sena.edu.co</p>
+        </DataPanel>
+
+        <DataPanel title="Aprendices (28)" icon="user-graduate">
+          <div className="grid-miembros" style={{ padding: 'var(--space-xl)' }}>
+            {miembros.map((m, i) => (
+              <div key={i} className="tarjeta-miembro">
+                <div className="avatar-miembro">{m.iniciales}</div>
+                <div className="info-miembro">
+                  <h4>{m.nombre}</h4>
+                  <p>{m.correo}</p>
+                </div>
+                <span className={`badge badge-${m.badge}`}>{m.estado}</span>
               </div>
-              <span className="badge badge-exito">Activo</span>
-            </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">JP</div>
-              <div className="info-miembro">
-                <h4>Juan Pérez</h4>
-                <p>juan.perez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
-            </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">LG</div>
-              <div className="info-miembro">
-                <h4>Laura Gómez</h4>
-                <p>laura.gomez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
-            </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">AM</div>
-              <div className="info-miembro">
-                <h4>Ana Martínez</h4>
-                <p>ana.martinez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-exito">Activo</span>
-            </div>
-            <div className="tarjeta-miembro">
-              <div className="avatar-miembro">DS</div>
-              <div className="info-miembro">
-                <h4>Diana Sánchez</h4>
-                <p>diana.sanchez@soy.sena.edu.co</p>
-              </div>
-              <span className="badge badge-neutral">Inactivo</span>
-            </div>
+            ))}
           </div>
-        </div>
-      </main>
-      <FooterInstructor />
-    </div>
+        </DataPanel>
+      </div>
+    </DashboardLayout>
   );
 }
 

@@ -1,202 +1,93 @@
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
-import Header from '../../components/Header/Header';
-import SidebarAdmin from '../../components/SidebarAdmin/SidebarAdmin';
-import FooterAdmin from '../../components/FooterAdmin/FooterAdmin';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/reportes.css'
+
+const similitudes = [
+  { num: 1, p1: 'Sistema de gestion Academica', p2: 'Plataforma Educativa SENA', pct: 85, badge: 'peligro', fecha: '10/04/2026' },
+  { num: 2, p1: 'App Movil para Turismo', p2: 'Turismo Colombia Digital', pct: 72, badge: 'peligro', fecha: '09/04/2026' },
+  { num: 3, p1: 'Sistema IoT Agricultura', p2: 'Monitoreo Agricola Inteligente', pct: 58, badge: 'advertencia', fecha: '08/04/2026' },
+  { num: 4, p1: 'E-commerce Artesanias', p2: 'Mercado Artesanal Virtual', pct: 45, badge: 'advertencia', fecha: '07/04/2026' },
+  { num: 5, p1: 'Chatbot Soporte Tecnico', p2: 'Asistente Virtual SENA', pct: 30, badge: 'exito', fecha: '06/04/2026' },
+]
+
+const instructores = [
+  { rank: 1, nombre: 'Carlos Rodriguez Diaz', area: 'desarrollo de Software', revisiones: 45, rankClase: 'ranking-1' },
+  { rank: 2, nombre: 'Maria Gonzalez Torres', area: 'Analisis y desarrollo de Software', revisiones: 38, rankClase: 'ranking-2' },
+  { rank: 3, nombre: 'Andres Martinez Lopez', area: 'Programacion de Software', revisiones: 32, rankClase: 'ranking-3' },
+  { rank: 4, nombre: 'Laura Sanchez Perez', area: 'desarrollo de Software', revisiones: 28, rankClase: '' },
+  { rank: 5, nombre: 'Diego Ramirez Castro', area: 'Infraestructura de Redes', revisiones: 22, rankClase: '' },
+  { rank: 6, nombre: 'Patricia Morales Vega', area: 'desarrollo de Medios Audiovisuales', revisiones: 18, rankClase: '' },
+]
 
 export default function Reportes() {
   return (
-    <div className="modulo-admin">
-      <GovernmentBar />
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12}>
+      <div className="contenedor-gestion">
+        <PageHeader title="Reportes y Estadisticas" icon="chart-bar" />
 
-      <Header titulo="ProyecTwin - Panel de Administracion" usuario="Admin Sistema" notificaciones={12} />
+        <DataPanel
+          title="Ultimas Similitudes Detectadas"
+          icon="clone"
+          action={<span className="total-registros">Mostrando 5 de 15 Similitudes</span>}
+        >
+          <table className="tabla-similitudes">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Proyecto 1</th>
+                <th>Proyecto 2</th>
+                <th>Porcentaje</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {similitudes.map((s, i) => (
+                <tr key={i}>
+                  <td>{s.num}</td>
+                  <td>{s.p1}</td>
+                  <td>{s.p2}</td>
+                  <td><span className={`badge badge-${s.badge}`}>{s.pct}%</span></td>
+                  <td>{s.fecha}</td>
+                  <td>
+                    <div className="acciones-tabla">
+                      <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                      <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </DataPanel>
 
-      <SidebarAdmin />
-
-      <main className="contenido-principal">
-        <div className="contenedor-gestion">
-
-          <div className="encabezado-pagina">
-            <h1 className="titulo-pagina"><i className="fas fa-chart-bar"></i> Reportes y Estadisticas</h1>
+        <div className="seccion-reporte">
+          <h2 className="titulo-seccion"><i className="fas fa-trophy"></i> Top Instructores</h2>
+          <div className="grid-instructores">
+            {instructores.map((inst, i) => (
+              <div key={i} className="tarjeta-instructor">
+                <div className={`tarjeta-instructor-ranking ${inst.rankClase}`}>{inst.rank}</div>
+                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
+                <div className="tarjeta-instructor-info">
+                  <h4>{inst.nombre}</h4>
+                  <p>{inst.area}</p>
+                </div>
+                <div className="tarjeta-instructor-revisiones">
+                  <div className="numero">{inst.revisiones}</div>
+                  <div className="texto">Revisiones</div>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <section className="seccion-reporte">
-            <h2 className="titulo-seccion"><i className="fas fa-clone"></i> Ultimas Similitudes Detectadas</h2>
-            <div className="contenedor-tabla">
-              <div className="encabezado-tabla">
-                <h3 className="titulo-tabla"><i className="fas fa-table"></i> Registro de Similitudes</h3>
-                <span className="total-registros">Mostrando 5 de 15 Similitudes</span>
-              </div>
-              <table className="tabla-similitudes">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Proyecto 1</th>
-                    <th>Proyecto 2</th>
-                    <th>Porcentaje</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>Sistema de gestion Academica</td>
-                    <td>Plataforma Educativa SENA</td>
-                    <td><span className="badge badge-peligro">85%</span></td>
-                    <td>10/04/2026</td>
-                    <td>
-                      <div className="acciones-tabla">
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>App Movil para Turismo</td>
-                    <td>Turismo Colombia Digital</td>
-                    <td><span className="badge badge-peligro">72%</span></td>
-                    <td>09/04/2026</td>
-                    <td>
-                      <div className="acciones-tabla">
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>3</td>
-                    <td>Sistema IoT Agricultura</td>
-                    <td>Monitoreo Agricola Inteligente</td>
-                    <td><span className="badge badge-advertencia">58%</span></td>
-                    <td>08/04/2026</td>
-                    <td>
-                      <div className="acciones-tabla">
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>4</td>
-                    <td>E-commerce Artesanias</td>
-                    <td>Mercado Artesanal Virtual</td>
-                    <td><span className="badge badge-advertencia">45%</span></td>
-                    <td>07/04/2026</td>
-                    <td>
-                      <div className="acciones-tabla">
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>5</td>
-                    <td>Chatbot Soporte Tecnico</td>
-                    <td>Asistente Virtual SENA</td>
-                    <td><span className="badge badge-exito">30%</span></td>
-                    <td>06/04/2026</td>
-                    <td>
-                      <div className="acciones-tabla">
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                        <Link to="/admin/detalle-similitud" className="btn-accion-tabla btn-ver" title="Revisar"><i className="fas fa-search"></i></Link>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="seccion-reporte">
-            <h2 className="titulo-seccion"><i className="fas fa-trophy"></i> Top Instructores</h2>
-            <div className="grid-instructores">
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking ranking-1">1</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Carlos Rodriguez Diaz</h4>
-                  <p>desarrollo de Software</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">45</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking ranking-2">2</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Maria Gonzalez Torres</h4>
-                  <p>Analisis y desarrollo de Software</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">38</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking ranking-3">3</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Andres Martinez Lopez</h4>
-                  <p>Programacion de Software</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">32</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking">4</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Laura Sanchez Perez</h4>
-                  <p>desarrollo de Software</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">28</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking">5</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Diego Ramirez Castro</h4>
-                  <p>Infraestructura de Redes</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">22</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-              <div className="tarjeta-instructor">
-                <div className="tarjeta-instructor-ranking">6</div>
-                <div className="tarjeta-instructor-avatar"><i className="fas fa-user-tie"></i></div>
-                <div className="tarjeta-instructor-info">
-                  <h4>Patricia Morales Vega</h4>
-                  <p>desarrollo de Medios Audiovisuales</p>
-                </div>
-                <div className="tarjeta-instructor-revisiones">
-                  <div className="numero">18</div>
-                  <div className="texto">Revisiones</div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="acciones-exportar">
-            <button className="btn-secundario" type="button"><i className="fas fa-file-csv"></i> Exportar CSV</button>
-            <button className="btn-secundario" type="button"><i className="fas fa-file-pdf"></i> Generar PDF</button>
-          </div>
-
         </div>
-      </main>
 
-      <FooterAdmin />
-    </div>
+        <div className="acciones-exportar">
+          <button className="btn-secundario" type="button"><i className="fas fa-file-csv"></i> Exportar CSV</button>
+          <button className="btn-secundario" type="button"><i className="fas fa-file-pdf"></i> Generar PDF</button>
+        </div>
+      </div>
+    </DashboardLayout>
   )
 }

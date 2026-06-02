@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '.././../assets/styles/pages/register.css'
+import '../../assets/styles/pages/register.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
 

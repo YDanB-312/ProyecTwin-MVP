@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '.././../assets/styles/pages/index.css'
+import '../../assets/styles/pages/index.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterHome from '../../components/FooterHome/FooterHome'
 
@@ -30,6 +30,11 @@ export default function Home() {
         <div className="home-container">
 
           <div className="hero-section">
+            <div className="hero-decoration">
+              <i className="fas fa-code"></i>
+              <i className="fas fa-graduation-cap"></i>
+              <i className="fas fa-brain"></i>
+            </div>
             <h1 className="hero-titulo">
               Bienvenido a <span>ProyecTwin</span>
             </h1>

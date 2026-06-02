@@ -161,9 +161,10 @@
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-revision {
     background: white;
     border-radius: var(--radio-borde);
-    box-shadow: var(--sombra-suave);
+    box-shadow: var(--sombra-ring);
     padding: 25px;
     margin-bottom: 25px;
+    border: 1px solid rgba(0,0,0,0.02);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-revision {
     display: flex;

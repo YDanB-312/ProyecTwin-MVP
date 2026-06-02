@@ -1,77 +1,65 @@
 import { Link } from 'react-router-dom'
-import GovernmentBar from '../../components/GovernmentBar/GovernmentBar';
-import Header from '../../components/Header/Header';
-import SidebarAprendiz from '../../components/SidebarAprendiz/SidebarAprendiz';
-import FooterAprendiz from '../../components/FooterAprendiz/FooterAprendiz';
-import '../../assets/styles/pages/dashboard-aprendiz.css';
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import '../../assets/styles/pages/dashboard-aprendiz.css'
 
 function DashboardAprendiz() {
   return (
-    <div className="modulo-aprendiz">
-      <GovernmentBar />
-      <Header titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5} />
-      <SidebarAprendiz />
-      <main className="contenido-principal">
-        <div className="contenedor-dashboard">
-          <section className="seccion-bienvenida">
-            <div className="tarjeta-bienvenida">
-              <div className="contenido-bienvenida">
-                <h1>¡Bienvenida al Sistema ProyecTwin!</h1>
-                <p>Gestiona tus proyectos de Formacion y evita Similitudes con otras Propuestas. Comienza registrando tu primer proyecto para aprovechar todas las funcionalidades.</p>
-              </div>
-            </div>
-          </section>
-          <section className="seccion-acciones">
-            <h2 className="titulo-seccion"><i className="fas fa-bolt"></i> Acciones Rapidas</h2>
-            <div className="grid-acciones">
-              <div className="tarjeta-accion">
-                <div className="icono-accion"><i className="fas fa-plus-circle"></i></div>
-                <h3>Nuevo proyecto</h3>
-                <p>Registra una nueva Propuesta de proyecto en el sistema</p>
-                <Link to="/aprendiz/nuevo-proyecto" className="btn-accion-principal"><i className="fas fa-plus"></i> Crear proyecto</Link>
-              </div>
-              <div className="tarjeta-accion">
-                <div className="icono-accion"><i className="fas fa-folder-open"></i></div>
-                <h3>Mis proyectos</h3>
-                <p>Revisa y Gestiona tus proyectos existentes</p>
-                <Link to="/aprendiz/mis-proyectos" className="btn-accion-principal"><i className="fas fa-eye"></i> Ver proyectos</Link>
-              </div>
-              <div className="tarjeta-accion">
-                <div className="icono-accion"><i className="fas fa-bell"></i></div>
-                <h3>Notificaciones</h3>
-                <p>Revisa Notificaciones y Similitudes detectadas</p>
-                <Link to="/aprendiz/alertas" className="btn-accion-principal"><i className="fas fa-bell"></i> Ver Notificaciones</Link>
-              </div>
-            </div>
-          </section>
-          <section className="seccion-proyectos">
-            <div className="encabezado-seccion">
-              <h2 className="titulo-seccion"><i className="fas fa-folder"></i> Mis proyectos</h2>
-              <Link to="/aprendiz/mis-proyectos" className="enlace-ver-todo">Ver todos <i className="fas fa-arrow-right"></i></Link>
-            </div>
-            <div className="estado-vacio">
-              <div className="icono-vacio"><i className="fas fa-inbox"></i></div>
-              <h3>No tienes proyectos registrados</h3>
-              <p>Comienza registrando tu primer proyecto para aprovechar todas las funcionalidades del sistema.</p>
-              <Link to="/aprendiz/nuevo-proyecto" className="btn-accion-principal"><i className="fas fa-plus"></i> Crear mi primer proyecto</Link>
-            </div>
-          </section>
-          <section className="seccion-alertas">
-            <div className="encabezado-seccion">
-              <h2 className="titulo-seccion"><i className="fas fa-bell"></i> Notificaciones Recientes</h2>
-              <Link to="/aprendiz/alertas" className="enlace-ver-todo">Ver todas <i className="fas fa-arrow-right"></i></Link>
-            </div>
-            <div className="estado-vacio">
-              <div className="icono-vacio"><i className="fas fa-check-circle"></i></div>
-              <h3>No tienes Notificaciones pendientes</h3>
-              <p>Cuando tengas Notificaciones sobre tus proyectos, apareceran aqui.</p>
-            </div>
-          </section>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <div className="contenedor-dashboard">
+
+        <div className="tarjeta-bienvenida-moderna">
+          <div className="bienvenida-contenido">
+            <span className="saludo-personal">Hola, Maria</span>
+            <h1>Bienvenida al Sistema ProyecTwin!</h1>
+            <p>Gestiona tus proyectos de formacion y evita similitudes con otras propuestas. Comienza registrando tu primer proyecto para aprovechar todas las funcionalidades.</p>
+          </div>
+          <div className="bienvenida-ilustracion">
+            <i className="fas fa-rocket"></i>
+          </div>
         </div>
-      </main>
-      <FooterAprendiz />
-    </div>
-  );
+
+        <section className="dashboard-section">
+          <h2 className="titulo-seccion-dashboard">Acciones rápidas</h2>
+          <div className="acciones-grid">
+            <Link to="/aprendiz/nuevo-proyecto" className="tarjeta-accion-moderna">
+              <div className="accion-icono"><i className="fas fa-plus"></i></div>
+              <h3>Nuevo proyecto</h3>
+              <p>Inicia una idea desde cero</p>
+            </Link>
+            <Link to="/aprendiz/mis-proyectos" className="tarjeta-accion-moderna">
+              <div className="accion-icono"><i className="fas fa-folder-open"></i></div>
+              <h3>Mis proyectos</h3>
+              <p>Continúa donde lo dejaste</p>
+            </Link>
+            <Link to="/aprendiz/alertas" className="tarjeta-accion-moderna">
+              <div className="accion-icono"><i className="fas fa-bell"></i></div>
+              <h3>Notificaciones</h3>
+              <p>Mantente al día</p>
+            </Link>
+          </div>
+        </section>
+
+        <section className="dashboard-section">
+          <h2 className="titulo-seccion-dashboard">Mis proyectos</h2>
+          <div className="estado-vacio-card">
+            <div className="estado-vacio-icono"><i className="fas fa-folder-open"></i></div>
+            <p className="estado-vacio-titulo">Aún no tienes proyectos</p>
+            <p className="estado-vacio-descripcion">Crea tu primer proyecto y empieza a colaborar</p>
+            <Link to="/aprendiz/nuevo-proyecto" className="btn-accion-principal"><i className="fas fa-plus"></i> Crear mi primer proyecto</Link>
+          </div>
+        </section>
+
+        <section className="dashboard-section">
+          <h2 className="titulo-seccion-dashboard">Notificaciones</h2>
+          <div className="estado-vacio-card estado-vacio-card-sin-icono">
+            <p className="estado-vacio-titulo">No tienes notificaciones nuevas</p>
+            <p className="estado-vacio-descripcion">Cuando tengas notificaciones sobre tus proyectos, aparecerán aquí.</p>
+          </div>
+        </section>
+
+      </div>
+    </DashboardLayout>
+  )
 }
 
-export default DashboardAprendiz;
+export default DashboardAprendiz

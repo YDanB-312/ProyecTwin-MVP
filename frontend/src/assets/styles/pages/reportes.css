@@ -1,7 +1,7 @@
 /* Reportes y Estadísticas - Estilos específicos */
 
 /* Grafico de barras */
-.modulo-admin .contenedor-grafico { background: white; border-radius: var(--radio-borde); padding: 30px; box-shadow: var(--sombra-suave); }
+.modulo-admin .contenedor-grafico { background: white; border-radius: var(--radio-borde); padding: 30px; box-shadow: var(--sombra-ring); border: 1px solid rgba(0,0,0,0.02); }
 .modulo-admin .grafico-barras { display: flex; flex-direction: column; gap: 15px; }
 
 .modulo-admin .barra-item { display: flex; align-items: center; gap: 15px; }
@@ -22,7 +22,7 @@
 }
 
 /* Tabla de similitudes (Estilo con header oscuro) */
-.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-suave); overflow: hidden; }
+.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-ring); overflow: hidden; border: 1px solid rgba(0,0,0,0.02); }
 .modulo-admin .encabezado-tabla { background: var(--color-fondo); }
 .modulo-admin .titulo-tabla { font-size: 1.1rem; }
 .modulo-admin .total-registros { font-size: 0.85rem; color: var(--color-texto-claro); }
@@ -31,12 +31,13 @@
 .modulo-admin .tabla-similitudes thead { background: var(--color-header); color: white; }
 .modulo-admin .tabla-similitudes th { padding: 14px 20px; text-align: left; font-weight: 600; font-size: 0.9rem; }
 .modulo-admin .tabla-similitudes td { padding: 14px 20px; border-bottom: 1px solid var(--color-borde); font-size: 0.9rem; }
-.modulo-admin .tabla-similitudes tbody tr:hover { background: var(--color-fondo); }
+.modulo-admin .tabla-similitudes tbody tr:nth-child(even) { background: rgba(0,0,0,0.01); }
+.modulo-admin .tabla-similitudes tbody tr:hover { background: rgba(5, 153, 102, 0.04); }
 
 /* Top instructores */
 .modulo-admin .grid-instructores { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 
-.modulo-admin .tarjeta-instructor { background: white; border-radius: var(--radio-borde); padding: 20px; box-shadow: var(--sombra-suave); display: flex; align-items: center; gap: 15px; transition: all 0.3s; }
+.modulo-admin .tarjeta-instructor { background: white; border-radius: var(--radio-borde); padding: 20px; box-shadow: var(--sombra-ring); display: flex; align-items: center; gap: 15px; transition: all var(--transition-fast); border: 1px solid rgba(0,0,0,0.02); }
 .modulo-admin .tarjeta-instructor:hover { transform: translateY(-3px); box-shadow: var(--sombra-media); }
 
 .modulo-admin .tarjeta-instructor-ranking { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primario); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0; }
