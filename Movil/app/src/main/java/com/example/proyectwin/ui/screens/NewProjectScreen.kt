@@ -1,7 +1,9 @@
 package com.example.proyectwin.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -14,24 +16,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.proyectwin.ui.components.SenaButton
-import com.example.proyectwin.ui.components.SenaCard
-import com.example.proyectwin.ui.components.SenaTextField
-import com.example.proyectwin.ui.components.SenaTopBar
+import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 
 @Composable
 fun NewProjectScreen(onBack: () -> Unit) {
     var title by remember { mutableStateOf("") }
     var summary by remember { mutableStateOf("") }
+    var keywords by remember { mutableStateOf("") }
     var technologies by remember { mutableStateOf("") }
+    var objectives by remember { mutableStateOf("") }
+    var deliverables by remember { mutableStateOf("") }
+    
     val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
             SenaTopBar(title = "Nuevo Proyecto", showProfile = false, showNotifications = false)
         },
-        containerColor = SenaBackground
+        containerColor = SenaBackground,
+        bottomBar = {
+            Surface(tonalElevation = 8.dp, shadowElevation = 16.dp, color = Color.White) {
+                Row(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SenaButton(text = "Cancelar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
+                    SenaButton(text = "Guardar Proyecto", onClick = { /* Submit Logic */ }, modifier = Modifier.weight(1f))
+                }
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -41,111 +55,113 @@ fun NewProjectScreen(onBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with Back Button
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+            // Page Header (Breadcrumb style)
+            IconButton(onClick = onBack) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = SenaGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Volver a Mis proyectos", color = SenaGreen, style = MaterialTheme.typography.labelLarge)
                 }
-                Text(
-                    "Registro de Proyecto",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = SenaText
-                )
             }
 
-            // Section 1: Basic Info
-            NewProjectSectionTitle(Icons.Default.Info, "Información Básica")
+            // Section 1: Información Básica
+            SenaSectionHeader(title = "Información Básica")
             SenaCard {
                 SenaTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = "Título del Proyecto",
-                    placeholder = "Ej: Sistema de Riego Automatizado"
+                    label = "Título del proyecto",
+                    placeholder = "Ingresa un titulo descriptivo"
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 SenaTextField(
                     value = summary,
                     onValueChange = { summary = it },
-                    label = "Resumen",
-                    placeholder = "Describe tu proyecto...",
+                    label = "Resumen del proyecto",
+                    placeholder = "Describe brevemente tu proyecto...",
                     modifier = Modifier.heightIn(min = 120.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                SenaTextField(
+                    value = keywords,
+                    onValueChange = { keywords = it },
+                    label = "Palabras Clave",
+                    placeholder = "Ej: desarrollo web, app movil"
                 )
             }
 
-            // Section 2: Technical Details
-            NewProjectSectionTitle(Icons.Default.Settings, "Detalles Técnicos")
+            // Section 2: Detalles Técnicos
+            SenaSectionHeader(title = "Detalles Técnicos")
             SenaCard {
-                Text(
-                    "Línea de Aprendizaje",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = SenaText,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                // En un MVP real usaríamos un dropdown, aquí simulamos con un texto estilizado
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.small,
-                    color = Color.White,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorder)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Tecnologías de la Información", color = SenaText)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SenaTextLight)
-                    }
-                }
+                Text("Línea de Aprendizaje", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                Spacer(modifier = Modifier.height(8.dp))
+                DropdownSimulator(text = "Selecciona una línea tecnológica")
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 
                 SenaTextField(
                     value = technologies,
                     onValueChange = { technologies = it },
-                    label = "Tecnologías a utilizar",
-                    placeholder = "Ej: React, Kotlin, MongoDB"
+                    label = "Tecnologías a Utilizar",
+                    placeholder = "Ej: React, Node.js, MongoDB"
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                SenaTextField(
+                    value = objectives,
+                    onValueChange = { objectives = it },
+                    label = "Objetivos Específicos",
+                    placeholder = "Describe los objetivos específicos...",
+                    modifier = Modifier.heightIn(min = 100.dp)
                 )
             }
 
-            // Section 3: Team
-            NewProjectSectionTitle(Icons.Default.Groups, "Integrantes del Equipo")
+            // Section 3: Integrantes del Equipo
+            SenaSectionHeader(title = "Integrantes del Equipo")
             SenaCard {
-                TeamMemberItem("Maria Gonzalez (Tú)", true)
-                TeamMemberItem("Juan Perez", false)
-                TeamMemberItem("Laura Gomez", false)
+                Text("Selecciona los integrantes de tu ficha", style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
+                Spacer(modifier = Modifier.height(12.dp))
+                TeamMemberItem("Maria Gonzalez (Tú)", isSelected = true)
+                TeamMemberItem("Juan Perez", isSelected = false)
+                TeamMemberItem("Laura Gomez", isSelected = false)
+                TeamMemberItem("Ana Martinez", isSelected = false)
             }
 
-            // Actions
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SenaButton(
-                    text = "Registrar Proyecto",
-                    onClick = { /* TODO */ }
-                )
-                SenaButton(
-                    text = "Guardar como Borrador",
-                    onClick = { /* TODO */ },
-                    isPrimary = false
-                )
+            // Section 4: Información Adicional
+            SenaSectionHeader(title = "Información Adicional")
+            SenaCard {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Duración (meses)", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                        SenaTextField(value = "", onValueChange = {}, label = "", placeholder = "6")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Fecha Inicio", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                        SenaTextField(value = "", onValueChange = {}, label = "", placeholder = "dd/mm/aaaa")
+                    }
+                }
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
+
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
 
 @Composable
-fun NewProjectSectionTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(24.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = SenaText
-        )
+fun DropdownSimulator(text: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = SenaTextSecondary)
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = SenaGreen)
+        }
     }
 }
 
@@ -169,6 +185,6 @@ fun TeamMemberItem(name: String, isSelected: Boolean) {
 @Composable
 fun NewProjectScreenPreview() {
     ProyecTwinTheme {
-        NewProjectScreen(onBack = {})
+        NewProjectScreen {}
     }
 }

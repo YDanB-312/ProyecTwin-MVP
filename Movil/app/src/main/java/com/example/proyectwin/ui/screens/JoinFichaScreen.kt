@@ -28,7 +28,7 @@ fun JoinFichaScreen(onBack: () -> Unit) {
         topBar = {
             SenaTopBar(title = "Unirse a Ficha", showProfile = false, showNotifications = false)
         },
-        containerColor = SenaBackground
+        containerColor = SenaBackground,
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -106,6 +106,6 @@ fun JoinFichaScreen(onBack: () -> Unit) {
 @Composable
 fun JoinFichaScreenPreview() {
     ProyecTwinTheme {
-        JoinFichaScreen(onBack = {})
+        JoinFichaScreen {}
     }
 }
