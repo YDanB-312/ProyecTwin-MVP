@@ -15,12 +15,6 @@
     gap: 24px;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-con-boton .btn-primario {
-    flex-shrink: 0;
-    padding: 12px 24px;
-    border-radius: 8px;
-}
-
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-subtitulo {
     display: block;
     font-size: 0.8rem;
@@ -61,7 +55,7 @@
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card {
     background: white;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    box-shadow: var(--sombra-ring);
     overflow: hidden;
     transition: all 200ms ease;
     display: flex;
@@ -197,64 +191,6 @@
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .proyecto-card-acciones {
     display: flex;
     gap: 4px;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #9ca3af;
-    text-decoration: none;
-    transition: all 150ms ease;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-icono:hover {
-    background: #f3f4f6;
-    color: var(--color-primario);
-}
-
-/* ── Paginación ── */
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .paginacion {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 0;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion {
-    min-width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    background: white;
-    color: #6b7280;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 150ms ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion:hover:not(:disabled) {
-    border-color: var(--color-primario);
-    color: var(--color-primario);
-    background: rgba(5, 153, 102, 0.05);
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion.activa {
-    background: var(--color-primario);
-    color: white;
-    border-color: var(--color-primario);
-}
-
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-paginacion:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
 }
 
 /* ── Responsive ── */

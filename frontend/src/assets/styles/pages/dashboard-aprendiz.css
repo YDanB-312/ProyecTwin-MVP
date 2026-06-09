@@ -1,36 +1,79 @@
-/* ── Contenedor principal ── */
+/* ========================================
+   PREMIUM - Dashboard Aprendiz
+   ======================================== */
+
 .modulo-aprendiz .contenedor-dashboard {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 56px;
+    gap: 48px;
 }
 
 /* ── Section wrapper ── */
 .modulo-aprendiz .dashboard-section {
     display: flex;
     flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Dashboard Header ── */
+.modulo-aprendiz .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 16px;
 }
 
-/* ── Welcome Card Animation ── */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.modulo-aprendiz .dashboard-header-left {
+    flex: 1;
+    min-width: 280px;
 }
 
+.modulo-aprendiz .dashboard-titulo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+    position: relative;
+    padding-bottom: 10px;
+    margin: 0 0 8px 0;
+}
+
+.modulo-aprendiz .dashboard-titulo::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background-color: #059669;
+    border-radius: 2px;
+}
+
+.modulo-aprendiz .dashboard-subtitulo {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.modulo-aprendiz .dashboard-fecha {
+    font-size: 0.85rem;
+    color: #6b7280;
+    background-color: #f3f4f6;
+    padding: 6px 14px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ── Welcome Card ── */
 .modulo-aprendiz .tarjeta-bienvenida-moderna {
-    animation: fadeInUp 0.6s ease-out;
+    background: linear-gradient(135deg, #0d9488 0%, #059669 50%, #047857 100%);
 }
 
-/* ── Saludo personal dentro del welcome card ── */
 .modulo-aprendiz .saludo-personal {
     display: block;
     font-size: 0.85rem;
@@ -38,9 +81,9 @@
     opacity: 0.75;
     margin-bottom: 2px;
     letter-spacing: 0.3px;
+    color: white;
 }
 
-/* ─── Hover sutil en ilustración welcome ── */
 .modulo-aprendiz .bienvenida-ilustracion {
     transition: all 300ms ease;
 }
@@ -50,13 +93,13 @@
     background: rgba(255,255,255,0.18);
 }
 
-/* ── Section Titles ── */
+/* ── Section Titles (barra izquierda verde) ── */
 .modulo-aprendiz .titulo-seccion-dashboard {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: #111827;
     letter-spacing: -0.01em;
-    margin: 0 0 4px;
+    margin: 0;
     position: relative;
     padding-left: 14px;
 }
@@ -68,127 +111,164 @@
     top: 3px;
     bottom: 3px;
     width: 3px;
-    background: var(--color-primario);
+    background: #059669;
     border-radius: 2px;
 }
 
-/* ── Actions Grid (3 columnas fijas) ── */
+/* ── Seccion header (title + ver-todas) ── */
+.modulo-aprendiz .seccion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.modulo-aprendiz .seccion-titulo {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #111827;
+    position: relative;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #059669;
+    display: inline-block;
+    margin: 0;
+}
+
+/* ── Actions Grid ── */
 .modulo-aprendiz .acciones-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
 }
 
-/* ── Action Cards como link clickable ── */
-.modulo-aprendiz a.tarjeta-accion-moderna {
+/* ── Action Cards ── */
+.modulo-aprendiz .tarjeta-accion-moderna {
     text-decoration: none;
     color: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 32px 24px;
     cursor: pointer;
     transition: all 200ms ease;
 }
 
-.modulo-aprendiz a.tarjeta-accion-moderna:hover {
+.modulo-aprendiz .tarjeta-accion-moderna:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5, 153, 102, 0.12);
-    border-color: rgba(5, 153, 102, 0.15);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5, 153, 102, 0.15);
+    border-color: #a7f3d0;
 }
 
-.modulo-aprendiz a.tarjeta-accion-moderna:active {
+.modulo-aprendiz .tarjeta-accion-moderna:active {
     transform: scale(0.98);
 }
 
-.modulo-aprendiz a.tarjeta-accion-moderna p {
-    margin-bottom: 0;
-}
-
-.modulo-aprendiz a.tarjeta-accion-moderna h3 {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: #374151;
-}
-
-/* ── Action Card Icons (gris → verde en hover) ── */
-.modulo-aprendiz a.tarjeta-accion-moderna .accion-icono {
-    color: #6b7280;
+.modulo-aprendiz .tarjeta-accion-moderna .accion-icono {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     background: #f3f4f6;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+    transition: all 200ms ease;
 }
 
-.modulo-aprendiz a.tarjeta-accion-moderna:hover .accion-icono {
+.modulo-aprendiz .tarjeta-accion-moderna:hover .accion-icono {
     background: rgba(5, 153, 102, 0.1);
-    color: var(--color-primario);
+    color: #059669;
     transform: scale(1.05);
 }
 
-/* ── Override global button radius ── */
-.modulo-aprendiz .btn-accion-principal {
-    border-radius: 8px;
+.modulo-aprendiz .tarjeta-accion-moderna h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
 }
 
-/* ── Empty State Cards ── */
-.modulo-aprendiz .estado-vacio-card {
-    background: #f9fafb;
+.modulo-aprendiz .tarjeta-accion-moderna p {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Empty State ── */
+.modulo-aprendiz .empty-state-card {
+    background-color: #f9fafb;
     border: 1px dashed #d1d5db;
-    border-radius: 12px;
-    padding: 40px 24px;
-    text-align: center;
+    border-radius: 14px;
+    padding: 48px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    transition: all 250ms ease;
+    gap: 16px;
+    text-align: center;
 }
 
-.modulo-aprendiz .estado-vacio-card:hover {
-    background: #f3f4f6;
-    border-color: rgba(5, 153, 102, 0.25);
+.modulo-aprendiz .empty-icono {
+    font-size: 2.8rem;
+    color: rgba(5, 153, 102, 0.35);
+    display: block;
 }
 
-.modulo-aprendiz .estado-vacio-icono {
-    font-size: 2.5rem;
-    color: rgba(5, 153, 102, 0.45);
-    margin-bottom: 8px;
-    line-height: 1;
-}
-
-.modulo-aprendiz .estado-vacio-titulo {
-    font-size: 1rem;
+.modulo-aprendiz .empty-state-card h3 {
+    font-size: 1.1rem;
     font-weight: 600;
     color: #111827;
     margin: 0;
 }
 
-.modulo-aprendiz .estado-vacio-descripcion {
-    font-size: 14px;
+.modulo-aprendiz .empty-state-card p {
+    font-size: 0.9rem;
     color: #6b7280;
-    margin: 4px 0 12px;
-    line-height: 1.5;
-}
-
-.modulo-aprendiz .estado-vacio-card .btn-accion-principal {
-    margin-top: 8px;
-    padding: 14px 32px;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
-    transition: all 200ms ease;
-}
-
-.modulo-aprendiz .estado-vacio-card .btn-accion-principal:hover {
-    background: var(--color-secundario);
-    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
-    transform: translateY(-1px);
-}
-
-/* ── Empty State sin icono (notificaciones) ── */
-.modulo-aprendiz .estado-vacio-card-sin-icono {
-    gap: 4px;
-    padding: 32px 24px;
-}
-
-.modulo-aprendiz .estado-vacio-card-sin-icono .estado-vacio-descripcion {
     margin: 0;
+    max-width: 400px;
+}
+
+/* ── Botón primario ── */
+.modulo-aprendiz .btn-primario {
+    background-color: #059669;
+    color: #ffffff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+}
+
+.modulo-aprendiz .btn-primario:hover {
+    background-color: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
+}
+
+.modulo-aprendiz .btn-primario:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* ── Neutralizar estilos globales ── */
+.modulo-aprendiz .contenedor-dashboard ul,
+.modulo-aprendiz .contenedor-dashboard li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 /* ── Responsive ── */
@@ -199,15 +279,15 @@
 }
 
 @media (max-width: 768px) {
-    .modulo-aprendiz .acciones-grid {
-        grid-template-columns: 1fr;
-    }
-
     .modulo-aprendiz .contenedor-dashboard {
         gap: 36px;
     }
 
-    .modulo-aprendiz .estado-vacio-card {
-        padding: 32px 20px;
+    .modulo-aprendiz .acciones-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modulo-aprendiz .dashboard-fecha {
+        align-self: flex-start;
     }
 }

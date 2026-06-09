@@ -32,8 +32,6 @@
 .modulo-admin .contenedor-paginacion { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; background: var(--color-fondo); border-top: 1px solid var(--color-borde); }
 .modulo-admin .info-paginacion { font-size: 0.9rem; color: var(--color-texto-claro); }
 
-.modulo-admin .paginacion { display: flex; gap: 5px; }
-
 .modulo-admin .texto-archivo { color: var(--color-texto-claro); margin-top: 5px; display: block; }
 
 /* Responsive especÃ­fico */

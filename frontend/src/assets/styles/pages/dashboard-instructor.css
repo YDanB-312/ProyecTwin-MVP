@@ -301,16 +301,6 @@
     font-size: 0.65rem;
 }
 
-.modulo-instructor .badge-pendiente {
-    background-color: #fffbeb;
-    color: #d97706;
-}
-
-.modulo-instructor .badge-aprobado {
-    background-color: #ecfdf5;
-    color: #059669;
-}
-
 .modulo-instructor .badge-rechazado {
     background-color: #fef2f2;
     color: #dc2626;

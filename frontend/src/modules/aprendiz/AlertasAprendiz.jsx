@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/alertas.css'
 
 function AlertasAprendiz() {
@@ -7,12 +8,15 @@ function AlertasAprendiz() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-alertas">
 
-        <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-
-        <div className="notificaciones-header">
-          <h1 className="notificaciones-titulo">Notificaciones</h1>
-          <button className="btn-marcar-todas" type="button"><i className="fas fa-check-double"></i> Marcar todas como leidas</button>
-        </div>
+        <PageHeader
+          title="Notificaciones"
+          icon="bell"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Notificaciones' }
+          ]}
+          actions={<button className="btn-marcar-todas" type="button"><i className="fas fa-check-double"></i> Marcar todas como leidas</button>}
+        />
 
         <div className="filtros-card">
           <div className="grupo-filtro">

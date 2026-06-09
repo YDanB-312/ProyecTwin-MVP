@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
 function DetalleFicha() {
@@ -7,11 +8,14 @@ function DetalleFicha() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-pagina">
 
-        <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-
-        <div className="ficha-header">
-          <h1 className="ficha-titulo">Mi Ficha</h1>
-        </div>
+        <PageHeader
+          title="Mi Ficha"
+          icon="users"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Mi Ficha' }
+          ]}
+        />
 
         <div className="ficha-card">
           <div className="ficha-grid">

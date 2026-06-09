@@ -1,0 +1,205 @@
+/* ========================================
+   PREMIUM - Gestionar Fichas
+   ======================================== */
+
+/* ── Neutralización de estilos globales ── */
+.gestion-fichas-container table,
+.gestion-fichas-container th,
+.gestion-fichas-container td {
+    border: none;
+    border-collapse: collapse;
+}
+
+.gestion-fichas-container ul,
+.gestion-fichas-container li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gestion-fichas-container .contenedor-revision {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.gestion-fichas-container .filtros-card {
+    align-items: center;
+}
+
+.gestion-fichas-container .input-con-icono {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.gestion-fichas-container .input-con-icono i {
+    position: absolute;
+    left: 12px;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.gestion-fichas-container .filtro-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px 10px 36px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #374151;
+    background-color: #ffffff;
+    transition: all 150ms ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.gestion-fichas-container .filtro-input:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
+}
+
+.gestion-fichas-container .filtro-input::placeholder {
+    color: #9ca3af;
+}
+
+.gestion-fichas-container .btn-limpiar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #d1d5db;
+    color: #6b7280;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease;
+    white-space: nowrap;
+}
+
+.gestion-fichas-container .btn-limpiar:hover {
+    border-color: #059669;
+    color: #059669;
+}
+
+/* ── Tabla Container ── */
+.gestion-fichas-container .tabla-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+    overflow-x: auto;
+}
+
+/* ── Tabla Premium ── */
+.gestion-fichas-container .tabla-premium {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.gestion-fichas-container .tabla-premium thead th {
+    background-color: #f9fafb;
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.gestion-fichas-container .tabla-premium tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.gestion-fichas-container .tabla-premium tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.gestion-fichas-container .tabla-premium tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.gestion-fichas-container .codigo-cell {
+    font-weight: 600;
+    color: #059669;
+    font-size: 0.85rem;
+}
+
+.gestion-fichas-container .nombre-cell {
+    font-weight: 500;
+    color: #111827;
+}
+
+/* ── Acciones celda ── */
+.gestion-fichas-container .acciones-celda {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.gestion-fichas-container .btn-ghost-tabla {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    padding: 6px 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 150ms ease;
+    text-decoration: none;
+}
+
+.gestion-fichas-container .btn-ghost-tabla:hover {
+    color: #059669;
+    background-color: #f0fdf4;
+    transform: translateY(-1px);
+}
+
+.gestion-fichas-container .btn-ghost-tabla:active {
+    transform: translateY(0);
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .gestion-fichas-container .vista-titulo-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gestion-fichas-container .filtros-card {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .gestion-fichas-container .filtro-grupo {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .gestion-fichas-container .filtro-select {
+        width: 100%;
+    }
+
+    .gestion-fichas-container .filtro-input {
+        width: 100%;
+    }
+
+    .gestion-fichas-container .btn-limpiar {
+        width: 100%;
+        justify-content: center;
+    }
+}

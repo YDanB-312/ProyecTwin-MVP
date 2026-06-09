@@ -7,71 +7,11 @@
     margin: 0 auto;
 }
 
-/* ── Header ── */
-.modulo-aprendiz .perfil-header {
-    margin-bottom: 32px;
-}
-
-.modulo-aprendiz .perfil-titulo {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #111827;
-    position: relative;
-    padding-bottom: 8px;
-    margin-bottom: 0;
-}
-
-.modulo-aprendiz .perfil-titulo::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 40px;
-    height: 3px;
-    background-color: #059669;
-    border-radius: 2px;
-}
-
-/* ── Volver link ── */
-.modulo-aprendiz .volver-link {
-    color: #6b7280;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 150ms ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: fit-content;
-    margin-bottom: 16px;
-}
-
-.modulo-aprendiz .volver-link:hover {
-    color: #059669;
-}
-
-/* ── Badge Activo ── */
-.modulo-aprendiz .badge-activo {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: #ecfdf5;
-    color: #059669;
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.modulo-aprendiz .badge-activo i {
-    font-size: 0.5rem;
-}
-
 /* ── Perfil Card ── */
 .modulo-aprendiz .perfil-card {
     background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+    box-shadow: var(--sombra-ring);
     padding: 28px;
     margin-bottom: 32px;
 }
@@ -187,55 +127,7 @@
     font-size: 0.85rem;
 }
 
-.modulo-aprendiz .cabecera-botones {
-    display: flex;
-    gap: 12px;
-}
-
 /* ── Botones ── */
-.modulo-aprendiz .btn-primario {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #059669;
-    color: #ffffff;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 150ms ease;
-}
-
-.modulo-aprendiz .btn-primario:hover {
-    background-color: #047857;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
-}
-
-.modulo-aprendiz .btn-secundario {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: transparent;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    padding: 10px 22px;
-    border-radius: 10px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 150ms ease;
-}
-
-.modulo-aprendiz .btn-secundario:hover {
-    border-color: #059669;
-    color: #059669;
-}
-
 /* ── Campos obligatorios ── */
 .modulo-aprendiz .campos-obligatorios {
     font-size: 0.8rem;
@@ -389,6 +281,13 @@
 
 .modulo-aprendiz .btn-cambiar-ahora:hover {
     background-color: #fef3c7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+}
+
+.modulo-aprendiz .btn-cambiar-ahora:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 /* ── Cambio password ── */
@@ -494,16 +393,6 @@
     }
 
     .modulo-aprendiz .perfil-metricas {
-        justify-content: center;
-    }
-
-    .modulo-aprendiz .cabecera-botones {
-        flex-direction: column-reverse;
-    }
-
-    .modulo-aprendiz .cabecera-botones .btn-primario,
-    .modulo-aprendiz .cabecera-botones .btn-secundario {
-        width: 100%;
         justify-content: center;
     }
 
