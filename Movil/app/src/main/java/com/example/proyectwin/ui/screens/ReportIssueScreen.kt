@@ -131,6 +131,6 @@ fun IssueHistoryItem(id: String, desc: String, status: String, color: Color) {
 @Composable
 fun ReportIssueScreenPreview() {
     ProyecTwinTheme {
-        ReportIssueScreen(onBack = {})
+        ReportIssueScreen {}
     }
 }

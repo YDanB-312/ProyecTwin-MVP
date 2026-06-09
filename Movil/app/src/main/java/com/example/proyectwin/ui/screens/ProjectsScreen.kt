@@ -1,16 +1,16 @@
 package com.example.proyectwin.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -18,28 +18,20 @@ import androidx.compose.ui.unit.dp
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 
-data class ProjectItem(
-    val name: String,
-    val status: String,
-    val statusColor: Color,
-    val lastUpdate: String
-)
-
 @Composable
 fun ProjectsScreen(
+    onNavigate: (String) -> Unit,
     onNewProject: () -> Unit,
     onProjectDetail: (String) -> Unit
 ) {
     var selectedFilter by remember { mutableStateOf("Todos") }
     var searchQuery by remember { mutableStateOf("") }
-    val filters = listOf("Todos", "Aprobados", "Pendientes", "Revisión")
+    val filters = listOf("Todos", "Aprobado", "En revisión", "Borrador")
     
     val allProjects = listOf(
-        ProjectItem("Sistema de Riego Automatizado", "Pendiente", SenaWarning, "Hace 2 horas"),
-        ProjectItem("App de Gestión de Inventario", "Aprobado", SenaSuccess, "Ayer"),
-        ProjectItem("Plataforma de E-learning", "Revisión", SenaGreen, "Hace 3 días"),
-        ProjectItem("Control de Acceso Biométrico", "Aprobado", SenaSuccess, "Hace 1 semana"),
-        ProjectItem("Detección de Plagas con IA", "Pendiente", SenaWarning, "Hace 2 semanas")
+        ProjectItem("Sistema de Gestion Academica", "En revisión", SenaAccent, "15 mar 2023", 3, "Carlos Ruiz", "CR"),
+        ProjectItem("Aplicacion Web de Inventarios", "Aprobado", SenaSuccess, "22 abr 2023", 2, "Ana Gomez", "AG"),
+        ProjectItem("Plataforma E-Learning", "Borrador", SenaTextLight, "10 may 2023", 4, "Miguel Lopez", "ML")
     )
     
     val filteredProjects = allProjects.filter { project ->
@@ -50,14 +42,19 @@ fun ProjectsScreen(
 
     Scaffold(
         topBar = {
-            SenaTopBar(title = "Mis Proyectos")
+            SenaTopBar(
+                title = "Mis Proyectos",
+                onNavigateToProfile = { onNavigate("main/profile") },
+                onNavigateToAlerts = { onNavigate("main/alerts") }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNewProject,
                 containerColor = SenaGreen,
                 contentColor = Color.White,
-                shape = MaterialTheme.shapes.large
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nuevo Proyecto")
             }
@@ -68,105 +65,46 @@ fun ProjectsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            // Mobile Search & Filters
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SenaTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = "",
+                    placeholder = "Buscar proyectos...",
+                    leadingIcon = Icons.Default.Search
+                )
+                
+                SenaSegmentedFilter(
+                    options = filters,
+                    selectedOption = selectedFilter,
+                    onOptionSelected = { selectedFilter = it }
+                )
+            }
             
-            // Barra de Búsqueda Premium
-            SenaTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = "",
-                placeholder = "Buscar proyectos...",
-                leadingIcon = Icons.Default.Search
-            )
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            // Filtro Segmentado Moderno
-            Text(
-                text = "Estado del Proyecto",
-                style = MaterialTheme.typography.labelLarge,
-                color = SenaText,
-                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-            )
-            SenaSegmentedFilter(
-                options = filters,
-                selectedOption = selectedFilter,
-                onOptionSelected = { selectedFilter = it }
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Lista de Proyectos
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (filteredProjects.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 40.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No se encontraron proyectos",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = SenaTextLight
-                            )
-                        }
+                        EmptyStateCard(message = "No encontramos proyectos con estos filtros", icon = Icons.Default.SearchOff)
                     }
                 } else {
                     items(filteredProjects) { project ->
                         ProjectListItemCard(project, onClick = { onProjectDetail("1") })
                     }
                 }
+                item { Spacer(modifier = Modifier.height(80.dp)) }
             }
-        }
-    }
-}
-
-@Composable
-fun ProjectListItemCard(project: ProjectItem, onClick: () -> Unit) {
-    SenaCard(
-        onClick = onClick,
-        elevation = 2.dp,
-        modifier = Modifier.padding(bottom = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = SenaBackground
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Folder, contentDescription = null, tint = SenaTextLight)
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    project.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = SenaText,
-                    maxLines = 1
-                )
-                Text(
-                    project.lastUpdate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SenaTextLight
-                )
-            }
-            
-            SenaChip(text = project.status, color = project.statusColor)
         }
     }
 }
@@ -175,6 +113,6 @@ fun ProjectListItemCard(project: ProjectItem, onClick: () -> Unit) {
 @Composable
 fun ProjectsScreenPreview() {
     ProyecTwinTheme {
-        ProjectsScreen(onNewProject = {}, onProjectDetail = {})
+        ProjectsScreen(onNavigate = {}, onNewProject = {}, onProjectDetail = {})
     }
 }

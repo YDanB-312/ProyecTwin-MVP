@@ -3,22 +3,25 @@ package com.example.proyectwin.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.proyectwin.ui.components.SenaCard
-import com.example.proyectwin.ui.components.SenaTopBar
+import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 
 @Composable
@@ -27,7 +30,7 @@ fun SimilarityDetailScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            SenaTopBar(title = "Detalle de Similitud", showProfile = false, showNotifications = false)
+            SenaTopBar(title = "Análisis de Similitud", showProfile = false, showNotifications = false)
         },
         containerColor = SenaBackground
     ) { paddingValues ->
@@ -37,125 +40,99 @@ fun SimilarityDetailScreen(onBack: () -> Unit) {
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with Back
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                }
-                Text(
-                    "Comparación de Proyectos",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = SenaText
-                )
-            }
-
-            // Summary Card
-            SenaCard(containerColor = SenaDanger.copy(alpha = 0.05f)) {
+            IconButton(onClick = onBack) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Detectado: 25/04/2026", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                        Text(
-                            "Similitud: 65%",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = SenaDanger
-                        )
-                    }
-                    Surface(
-                        color = SenaDanger,
-                        shape = RoundedCornerShape(8.dp)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = SenaGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Regresar a Notificaciones", color = SenaGreen, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            // High Similitud Alert
+            SenaCard(containerColor = SenaDanger.copy(alpha = 0.05f), elevation = 0.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(56.dp).background(SenaDanger, CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Urgente",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("65%", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text("Similitud Crítica Detectada", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = SenaDanger)
+                        Text("Comparación automática del sistema", style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
                     }
                 }
             }
 
-            // Comparison Grid
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ComparisonProjectCard(
+            SenaSectionHeader(title = "Comparación de Proyectos")
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ComparisonCard(
                     title = "Proyecto 1",
                     name = "Sistema de Gestión Académica",
                     author = "Juan Perez",
-                    headerColor = SenaGreen,
+                    color = SenaGreen,
                     modifier = Modifier.weight(1f)
                 )
-                ComparisonProjectCard(
+                ComparisonCard(
                     title = "Proyecto 2",
                     name = "Plataforma Educativa SENA",
                     author = "Ana Martinez",
-                    headerColor = SenaWarning,
+                    color = SenaWarning,
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // Matches List
-            Text(
-                "Secciones Coincidentes",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = SenaText
+            Icon(
+                Icons.AutoMirrored.Filled.CompareArrows,
+                contentDescription = null,
+                tint = SenaTextLight,
+                modifier = Modifier.align(Alignment.CenterHorizontally).size(32.dp)
             )
+
+            SenaSectionHeader(title = "Secciones Coincidentes")
             SenaCard {
-                MatchRow("Descripción del proyecto", "72%")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = SenaBorder)
-                MatchRow("Tecnologías propuestas", "60%")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = SenaBorder)
-                MatchRow("Objetivos generales", "55%")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = SenaBorder)
-                MatchRow("Metodología", "45%")
+                MatchRowV2("Descripción del proyecto", 0.72f)
+                MatchRowV2("Tecnologías propuestas", 0.60f)
+                MatchRowV2("Objetivos generales", 0.55f)
+                MatchRowV2("Metodología", 0.45f)
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
 
 @Composable
-fun ComparisonProjectCard(
-    title: String,
-    name: String,
-    author: String,
-    headerColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+fun ComparisonCard(title: String, name: String, author: String, color: Color, modifier: Modifier = Modifier) {
+    SenaCard(elevation = 2.dp, modifier = modifier) {
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(headerColor)
-                    .padding(8.dp)
-            ) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(name, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = SenaText, maxLines = 2)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Autor:", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                Text(author, style = MaterialTheme.typography.labelSmall, color = SenaText)
-            }
+            Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = color)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = SenaText, maxLines = 2)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Autor: $author", style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
         }
     }
 }
 
 @Composable
-fun MatchRow(section: String, percentage: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(section, style = MaterialTheme.typography.bodyMedium, color = SenaText, modifier = Modifier.weight(1f))
-        Text(percentage, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaDanger)
+fun MatchRowV2(label: String, progress: Float) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = SenaText)
+            Text("${(progress * 100).toInt()}%", fontWeight = FontWeight.Bold, color = SenaDanger)
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+            color = SenaDanger,
+            trackColor = SenaDanger.copy(alpha = 0.1f)
+        )
     }
 }
 
@@ -163,6 +140,6 @@ fun MatchRow(section: String, percentage: String) {
 @Composable
 fun SimilarityDetailScreenPreview() {
     ProyecTwinTheme {
-        SimilarityDetailScreen(onBack = {})
+        SimilarityDetailScreen {}
     }
 }

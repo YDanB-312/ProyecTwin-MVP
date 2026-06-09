@@ -71,7 +71,10 @@ class MainActivity : ComponentActivity() {
                         SimilarityDetailScreen(onBack = { navController.popBackStack() })
                     }
                     composable("ficha/detail") {
-                        FichaDetailScreen(onBack = { navController.popBackStack() })
+                        FichaDetailScreen(
+                            onBack = { navController.popBackStack() },
+                            onNavigate = { navController.navigate(it) }
+                        )
                     }
                     composable("ficha/join") {
                         JoinFichaScreen(onBack = { navController.popBackStack() })
@@ -81,6 +84,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("report/issue") {
                         ReportIssueScreen(onBack = { navController.popBackStack() })
+                    }
+                    composable("profile/edit") {
+                        EditProfileScreen(onBack = { navController.popBackStack() })
                     }
                 }
             }
@@ -129,6 +135,7 @@ fun MainContainer(
             when (currentRoute) {
                 "main/home" -> DashboardScreen(onNavigate = onNavigate)
                 "main/projects" -> ProjectsScreen(
+                    onNavigate = onNavigate,
                     onNewProject = { onNavigate("project/new") },
                     onProjectDetail = { onNavigate("project/detail/$it") }
                 )

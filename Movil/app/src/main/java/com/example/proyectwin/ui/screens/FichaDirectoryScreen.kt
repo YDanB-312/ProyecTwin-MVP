@@ -26,7 +26,7 @@ fun FichaDirectoryScreen(onBack: () -> Unit) {
         topBar = {
             SenaTopBar(title = "Directorio de Ficha", showProfile = false, showNotifications = false)
         },
-        containerColor = SenaBackground
+        containerColor = SenaBackground,
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -133,6 +133,6 @@ data class MemberInfo(val initials: String, val name: String, val status: String
 @Composable
 fun FichaDirectoryScreenPreview() {
     ProyecTwinTheme {
-        FichaDirectoryScreen(onBack = {})
+        FichaDirectoryScreen {}
     }
 }
