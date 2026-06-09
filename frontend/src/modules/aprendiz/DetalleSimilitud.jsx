@@ -28,18 +28,18 @@ function DetalleSimilitud() {
         />
 
         <DataPanel title="Comparacion de Proyectos" icon="balance-scale">
-          <div className="tarjeta-revision">
-            <div className="encabezado-revision" style={{ padding: 'var(--space-lg) var(--space-xl)', borderBottom: '1px solid var(--color-borde)' }}>
+          <div className="similitud-encabezado">
+            <div className="encabezado-revision">
               <div className="info-revision">
-                <div className="meta-revision" style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', color: 'var(--color-texto-secundario)' }}>
+                <div className="similitud-meta">
                   <span><i className="fas fa-calendar"></i> Detectado: 25/04/2026</span>
-                  <span><i className="fas fa-percent"></i> Similitud: <strong className="texto-peligro" style={{ color: 'var(--color-peligro)' }}>65%</strong></span>
+                  <span><i className="fas fa-percent"></i> Similitud: <strong className="texto-peligro">65%</strong></span>
                 </div>
               </div>
               <span className="badge badge-peligro"><i className="fas fa-exclamation-circle"></i> Urgente</span>
             </div>
           </div>
-          <div className="detalle-grid" style={{ padding: 'var(--space-xl)' }}>
+          <div className="detalle-grid similitud-proyectos-grid">
             <div className="card-proyecto-compacto">
               <h4 className="card-titulo-verde"><i className="fas fa-file-alt"></i> Proyecto 1</h4>
               <p className="info-linea">Sistema de Gestion Academica</p>
@@ -55,11 +55,11 @@ function DetalleSimilitud() {
               <p className="detalle-linea"><strong>Fecha:</strong> 02/02/2026</p>
             </div>
           </div>
-          <div className="alerta-roja" style={{ padding: 'var(--space-lg) var(--space-xl)', borderTop: '1px solid var(--color-borde)' }}>
+          <div className="similitud-coincidencias">
             <h4><i className="fas fa-align-left"></i> Secciones Coincidentes</h4>
-            <ul className="lista-coincidencias" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginTop: '12px' }}>
+            <ul className="coincidencias-grid">
               {coincidencias.map((c, i) => (
-                <li key={i} style={{ padding: '8px 12px', background: 'var(--color-fondo)', borderRadius: '6px' }}>
+                <li key={i} className="coincidencia-item">
                   {c.seccion}: <strong>{c.pct}% de similitud</strong>
                 </li>
               ))}

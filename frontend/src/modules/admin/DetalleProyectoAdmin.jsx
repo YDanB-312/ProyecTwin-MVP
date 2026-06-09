@@ -63,7 +63,7 @@ export default function DetalleProyectoAdmin() {
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
             {miembros.map((m, i) => (
-              <div key={i} className="flex-row flex-wrap" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0' }}>
+              <div key={i} className="flex-row flex-wrap" style={{ padding: '8px 0' }}>
                 <div className={`avatar-miembro avatar-sm ${m.clase}`}>{m.iniciales}</div>
                 <div>
                   <strong className="texto-md">{m.nombre}</strong>

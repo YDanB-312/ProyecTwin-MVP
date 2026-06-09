@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/mi-perfil.css'
 
 function MiPerfil() {
@@ -8,10 +9,14 @@ function MiPerfil() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-perfil">
 
-        <div className="perfil-header">
-          <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-          <h1 className="perfil-titulo">Mi Perfil</h1>
-        </div>
+        <PageHeader
+          title="Mi Perfil"
+          icon="user-cog"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Mi Perfil' }
+          ]}
+        />
 
         <div className="perfil-card cabecera-card">
           <div className="cabecera-izquierda">
@@ -34,10 +39,6 @@ function MiPerfil() {
                 <span className="metrica-valor">12</span>
                 <span className="metrica-label">Meses</span>
               </div>
-            </div>
-            <div className="cabecera-botones">
-              <button className="btn-primario" type="button"><i className="fas fa-sync-alt"></i> Actualizar Informacion</button>
-              <button className="btn-secundario" type="button"><i className="fas fa-download"></i> Exportar Datos</button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
 function UnirseFicha() {
@@ -7,12 +8,17 @@ function UnirseFicha() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-pagina">
 
-        <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
+        <PageHeader
+          title="Unirse a una Ficha"
+          subtitle="Ingresa el codigo de tu ficha para unirte al grupo de formacion."
+          icon="user-plus"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Unirse a una Ficha' }
+          ]}
+        />
 
         <div className="unirse-card">
-
-          <h1 className="unirse-titulo">Unirse a una Ficha</h1>
-          <p className="unirse-subtitulo">Ingresa el codigo de tu ficha para unirte al grupo de formacion.</p>
 
           <div className="mensaje-feedback mensaje-exito oculto">
             <i className="fas fa-check-circle"></i>

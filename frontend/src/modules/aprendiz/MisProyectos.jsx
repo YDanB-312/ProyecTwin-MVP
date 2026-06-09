@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import FilterBar from '../../components/FilterBar/FilterBar'
 import '../../assets/styles/pages/mis-proyectos.css'
 
@@ -8,13 +9,15 @@ function MisProyectos() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-proyectos">
 
-        <div className="encabezado-con-boton">
-          <div>
-            <span className="encabezado-subtitulo">Panel del Aprendiz</span>
-            <h2 className="titulo-seccion-dashboard">Mis proyectos</h2>
-          </div>
-          <Link to="/aprendiz/nuevo-proyecto" className="btn-primario"><i className="fas fa-plus"></i> Nuevo Proyecto</Link>
-        </div>
+        <PageHeader
+          title="Mis proyectos"
+          icon="folder-open"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Mis proyectos' }
+          ]}
+          actions={<Link to="/aprendiz/nuevo-proyecto" className="btn-primario"><i className="fas fa-plus"></i> Nuevo Proyecto</Link>}
+        />
 
         <FilterBar title="Filtros de Búsqueda">
           <div className="grupo-filtro">

@@ -66,6 +66,7 @@ export default function App() {
         <Route path="/instructor/revision-propuestas" element={<RevisionPropuestas />} />
         <Route path="/instructor/alertas" element={<AlertasInstructor />} />
         <Route path="/instructor/perfil" element={<PerfilInstructor />} />
+        <Route path="/instructor/detalle-proyecto/:id" element={<DetalleProyectoInstructor />} />
         <Route path="/instructor/detalle-proyecto" element={<DetalleProyectoInstructor />} />
         <Route path="/instructor/detalle-similitud" element={<DetalleSimilitudInstructor />} />
         <Route path="/instructor/analizando-proyecto" element={<AnalizandoProyecto />} />

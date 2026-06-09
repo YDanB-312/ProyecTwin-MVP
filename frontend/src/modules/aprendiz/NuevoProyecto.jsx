@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/nuevo-proyecto.css'
 
 function NuevoProyecto() {
@@ -13,14 +14,15 @@ function NuevoProyecto() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-formulario">
 
-        <Link to="/aprendiz/mis-proyectos" className="volver-link"><i className="fas fa-arrow-left"></i> Volver a Mis proyectos</Link>
-
-        <div className="encabezado-con-boton">
-          <div>
-            <span className="encabezado-subtitulo">Panel del Aprendiz</span>
-            <h2 className="titulo-seccion-dashboard">Nuevo proyecto</h2>
-          </div>
-        </div>
+        <PageHeader
+          title="Nuevo proyecto"
+          icon="plus-circle"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { to: '/aprendiz/mis-proyectos', label: 'Mis proyectos' },
+            { label: 'Nuevo proyecto' }
+          ]}
+        />
 
         <div className="mensaje-feedback mensaje-exito oculto">
           <i className="fas fa-check-circle"></i><span>Operacion realizada exitosamente.</span>

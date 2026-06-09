@@ -27,8 +27,8 @@
   text-decoration: none;
   padding: 12px var(--space-lg);
   margin: 0 var(--space-sm);
-  border-radius: var(--radio-sm);
-  transition: all var(--transition-fast);
+  border-radius: 10px;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
   font-size: var(--text-sm);
   font-weight: 500;
   position: relative;
@@ -36,19 +36,19 @@
 }
 
 .enlace-nav:hover {
-  color: var(--color-texto);
-  background: var(--color-borde-suave);
+  color: #059669;
+  background: rgba(5, 153, 102, 0.04);
 }
 
 .enlace-nav.activo {
-  color: var(--color-primario);
+  color: #059669;
   background: rgba(5, 153, 102, 0.06);
   font-weight: 600;
-  border-left-color: var(--color-primario);
+  border-left-color: #059669;
 }
 
 .enlace-nav.activo .icono-nav {
-  color: var(--color-primario);
+  color: #059669;
 }
 
 .icono-nav {
@@ -56,11 +56,11 @@
   text-align: center;
   font-size: 1.1rem;
   color: var(--color-texto-muted);
-  transition: color var(--transition-fast);
+  transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .enlace-nav:hover .icono-nav {
-  color: var(--color-texto);
+  color: #059669;
 }
 
 .cerrar-sidebar {

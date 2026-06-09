@@ -2,25 +2,6 @@
 .modulo-aprendiz .contenedor-formulario {
     max-width: 900px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-}
-
-/* ── Breadcrumb Volver ── */
-.modulo-aprendiz .volver-link {
-    color: #6b7280;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 150ms ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: fit-content;
-}
-
-.modulo-aprendiz .volver-link:hover {
-    color: #059669;
 }
 
 /* ── Campos obligatorios ── */
@@ -62,7 +43,7 @@
 .modulo-aprendiz .formulario-card {
     background: white;
     border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+    box-shadow: var(--sombra-ring);
     padding: 0;
     margin-bottom: 0;
 }
@@ -81,25 +62,14 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 24px 32px 0;
-    position: relative;
-}
-
-.modulo-aprendiz .seccion-formulario-header::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 24px;
-    bottom: auto;
-    width: 3px;
-    height: 24px;
-    background: var(--color-primario);
-    border-radius: 2px;
+    padding: 24px 32px 12px;
+    border-bottom: 3px solid #059669;
+    margin: 0 32px;
 }
 
 .modulo-aprendiz .seccion-formulario-header i {
     font-size: 1.1rem;
-    color: var(--color-primario);
+    color: #059669;
     width: 36px;
     height: 36px;
     display: flex;
@@ -158,11 +128,11 @@
 .modulo-aprendiz .select {
     width: 100%;
     padding: 12px 16px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border: 1px solid var(--color-borde);
+    border-radius: 10px;
     font-size: 0.95rem;
-    color: #111827;
-    background: white;
+    color: var(--color-texto);
+    background: var(--color-fondo-elevado);
     transition: all 150ms ease;
 }
 
@@ -171,7 +141,7 @@
 .modulo-aprendiz .select:focus {
     outline: none;
     border-color: var(--color-primario);
-    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.12);
+    box-shadow: var(--sombra-foco);
 }
 
 .modulo-aprendiz .input-text::placeholder,
@@ -457,6 +427,7 @@
 .modulo-aprendiz .acciones-formulario .btn-primario {
     padding: 12px 28px;
     border-radius: 8px;
+    font-family: inherit;
     box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
     transition: all 200ms ease;
 }
@@ -467,12 +438,17 @@
     transform: translateY(-1px);
 }
 
+.modulo-aprendiz .acciones-formulario .btn-primario:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
+}
+
 .modulo-aprendiz .btn-outline {
     padding: 12px 24px;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    background: white;
-    color: #374151;
+    border-radius: 10px;
+    border: 1px solid var(--color-borde);
+    background: var(--color-fondo-elevado);
+    color: var(--color-texto-secundario);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -485,18 +461,21 @@
 }
 
 .modulo-aprendiz .btn-outline:hover {
-    border-color: #d1d5db;
-    background: #f9fafb;
-    color: #111827;
+    border-color: var(--color-primario);
+    background: rgba(5, 153, 102, 0.04);
+    color: var(--color-primario);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.15);
 }
 
 .modulo-aprendiz .btn-outline:active {
-    background: #f3f4f6;
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .modulo-aprendiz .btn-enlace {
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     background: transparent;
     color: #6b7280;
     font-size: 0.9rem;
@@ -511,8 +490,13 @@
 }
 
 .modulo-aprendiz .btn-enlace:hover {
-    background: #f3f4f6;
-    color: #ef4444;
+    background: #fef2f2;
+    color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.modulo-aprendiz .btn-enlace:active {
+    transform: translateY(0);
 }
 
 /* ── Responsive ── */
@@ -540,7 +524,8 @@
     }
 
     .modulo-aprendiz .seccion-formulario-header {
-        padding: 20px 20px 0;
+        padding: 20px 20px 12px;
+        margin: 0 20px;
     }
 
     .modulo-aprendiz .seccion-formulario-body {

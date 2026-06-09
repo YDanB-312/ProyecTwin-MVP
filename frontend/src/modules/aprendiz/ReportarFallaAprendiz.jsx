@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/reportar-falla.css'
 
 function ReportarFallaAprendiz() {
@@ -20,11 +21,14 @@ function ReportarFallaAprendiz() {
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-gestion">
 
-        <Link to="/aprendiz/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-
-        <div className="notificaciones-header" style={{ marginBottom: '32px' }}>
-          <h1 className="notificaciones-titulo">Reportar Falla</h1>
-        </div>
+        <PageHeader
+          title="Reportar Falla"
+          icon="bug"
+          breadcrumb={[
+            { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Reportar Falla' }
+          ]}
+        />
 
         <div className="seccion-card">
           <div className="seccion-card-header">
