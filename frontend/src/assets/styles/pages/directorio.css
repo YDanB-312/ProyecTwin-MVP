@@ -1,41 +1,46 @@
 /* directorio.css - Directorio de miembros de ficha */
 
-.modulo-aprendiz .seccion-directorio {
+:is(.modulo-aprendiz, .modulo-instructor) .seccion-directorio {
     margin-bottom: 30px;
 }
 
-.modulo-aprendiz .seccion-directorio .titulo-seccion {
+:is(.modulo-aprendiz, .modulo-instructor) .seccion-directorio .titulo-seccion {
     margin-bottom: 16px;
 }
 
-.modulo-aprendiz .directorio-usuarios {
+:is(.modulo-aprendiz, .modulo-instructor) .directorio-usuarios {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: var(--space-xl);
 }
 
-.modulo-aprendiz .tarjeta-usuario {
+:is(.modulo-aprendiz, .modulo-instructor) .tarjeta-usuario {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: var(--space-md);
     background: white;
-    padding: 16px 20px;
+    padding: var(--space-md) 0;
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     transition: all var(--transition-fast);
     border: 1px solid rgba(0,0,0,0.02);
+    border-bottom: 1px solid var(--color-borde);
+}
+:is(.modulo-aprendiz, .modulo-instructor) .tarjeta-usuario:last-child {
+    border-bottom: none;
 }
 
-.modulo-aprendiz .tarjeta-usuario:hover {
+:is(.modulo-aprendiz, .modulo-instructor) .tarjeta-usuario:hover {
     transform: translateY(-2px);
     box-shadow: var(--sombra-ring-md);
 }
 
-.modulo-aprendiz .avatar-secundario {
+:is(.modulo-aprendiz, .modulo-instructor) .avatar-secundario {
     background: var(--color-secundario);
 }
 
-.modulo-aprendiz .avatar-usuario {
+:is(.modulo-aprendiz, .modulo-instructor) .avatar-usuario {
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -49,18 +54,18 @@
     flex-shrink: 0;
 }
 
-.modulo-aprendiz .info-usuario {
+:is(.modulo-aprendiz, .modulo-instructor) .info-usuario {
     flex: 1;
     min-width: 0;
 }
 
-.modulo-aprendiz .info-usuario h4 {
+:is(.modulo-aprendiz, .modulo-instructor) .info-usuario h4 {
     font-size: 1rem;
     color: var(--color-texto);
     margin-bottom: 3px;
 }
 
-.modulo-aprendiz .info-usuario p {
+:is(.modulo-aprendiz, .modulo-instructor) .info-usuario p {
     font-size: 0.8rem;
     color: var(--color-texto-claro);
 }
@@ -69,7 +74,7 @@
     flex-shrink: 0;
 }
 
-.modulo-aprendiz .avatar-usuario-sm {
+:is(.modulo-aprendiz, .modulo-instructor) .avatar-usuario-sm {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -88,7 +93,7 @@
         flex-wrap: wrap;
     }
 
-    .modulo-aprendiz .tarjeta-usuario .btn-sm {
+:is(.modulo-aprendiz, .modulo-instructor) .tarjeta-usuario .btn-sm {
         width: 100%;
     }
 }

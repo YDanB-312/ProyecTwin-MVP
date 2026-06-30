@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
@@ -5,11 +6,11 @@ import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/fichas.css'
 
 const miembros = [
-  { iniciales: 'MG', nombre: 'Maria Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
-  { iniciales: 'JP', nombre: 'Juan Perez', correo: 'juan.perez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
-  { iniciales: 'LG', nombre: 'Laura Gomez', correo: 'laura.gomez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
-  { iniciales: 'AM', nombre: 'Ana Martinez', correo: 'ana.martinez@soy.sena.edu.co', estado: 'Activo', badge: 'exito' },
-  { iniciales: 'DS', nombre: 'Diana Sanchez', correo: 'diana.sanchez@soy.sena.edu.co', estado: 'Inactivo', badge: 'neutral' },
+  { iniciales: 'MG', nombre: 'Maria Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', estado: true },
+  { iniciales: 'JP', nombre: 'Juan Perez', correo: 'juan.perez@soy.sena.edu.co', estado: true },
+  { iniciales: 'LG', nombre: 'Laura Gomez', correo: 'laura.gomez@soy.sena.edu.co', estado: true },
+  { iniciales: 'AM', nombre: 'Ana Martinez', correo: 'ana.martinez@soy.sena.edu.co', estado: true },
+  { iniciales: 'DS', nombre: 'Diana Sanchez', correo: 'diana.sanchez@soy.sena.edu.co', estado: false },
 ]
 
 const breadcrumb = [
@@ -19,6 +20,19 @@ const breadcrumb = [
 ]
 
 function DetalleFichaInstructor() {
+  const [copiado, setCopiado] = useState(false)
+
+  useEffect(() => {
+    if (!copiado) return
+    const timer = setTimeout(() => setCopiado(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copiado])
+
+  const handleCopiar = () => {
+    navigator.clipboard?.writeText('ADSO-2568')
+    setCopiado(true)
+  }
+
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
       <div className="contenedor-pagina">
@@ -29,29 +43,29 @@ function DetalleFichaInstructor() {
           actions={<Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
         />
 
-        <DataPanel title="Informacion de la Ficha" icon="info-circle">
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-lg) var(--space-xl)', alignItems: 'center' }}>
+        <DataPanel title="Información de la Ficha" icon="info-circle">
+          <div className="ficha-info-header">
             <div>
-              <h2 className="ficha-titulo">Analisis y Desarrollo 2568</h2>
-              <p className="ficha-subtitulo">ADSO - Trimestre 3</p>
+              <h2 className="ficha-titulo">Análisis y Desarrollo 2568</h2>
+              <p className="ficha-subtitulo">ADSO</p>
             </div>
-            <div className="texto-derecha" style={{ textAlign: 'right' }}>
+            <div className="texto-derecha">
               <div className="codigo-ficha">ADSO-2568</div>
               <span className="estado-ficha-activa"><i className="fas fa-circle"></i> Activa</span>
             </div>
           </div>
         </DataPanel>
 
-        <DataPanel title="Codigo de Invitacion" icon="link">
-          <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-            <div className="codigo-grande" style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '4px', padding: 'var(--space-lg)', background: 'var(--color-fondo)', borderRadius: 'var(--radio-lg)', display: 'inline-block', marginBottom: '12px' }}>ADSO-2568</div>
-            <p style={{ color: 'var(--color-texto-secundario)' }}>Comparte este codigo con tus aprendices para que se unan a la ficha.</p>
-            <button className="btn-primario" type="button" style={{ marginTop: '12px' }}><i className="fas fa-copy"></i> Copiar Codigo</button>
+        <DataPanel title="Código de Invitación" icon="link">
+          <div className="codigo-invitacion-wrap">
+            <div className="codigo-grande">ADSO-2568</div>
+            <p>Comparte este código con tus aprendices para que se unan a la ficha.</p>
+            <button className="btn-primario btn-copy-mt" type="button" onClick={handleCopiar}><i className="fas fa-copy"></i> {copiado ? '¡Copiado!' : 'Copiar Código'}</button>
           </div>
         </DataPanel>
 
-        <DataPanel title="Aprendices (28)" icon="user-graduate">
-          <div className="grid-miembros" style={{ padding: 'var(--space-xl)' }}>
+        <DataPanel title={`Aprendices (${miembros.length})`} icon="user-graduate">
+          <div className="grid-miembros">
             {miembros.map((m, i) => (
               <div key={i} className="tarjeta-miembro">
                 <div className="avatar-miembro">{m.iniciales}</div>
@@ -59,7 +73,7 @@ function DetalleFichaInstructor() {
                   <h4>{m.nombre}</h4>
                   <p>{m.correo}</p>
                 </div>
-                <span className={`badge badge-${m.badge}`}>{m.estado}</span>
+                <span className={`badge badge-${m.estado ? 'exito' : 'neutral'}`}>{m.estado ? 'Activo' : 'Inactivo'}</span>
               </div>
             ))}
           </div>

@@ -2,117 +2,144 @@
    PREMIUM - Notificaciones (Alertas)
    ======================================== */
 
-:is(.modulo-aprendiz, .modulo-instructor) .contenedor-alertas {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-alertas {
     max-width: 1000px;
     margin: 0 auto;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-marcar-todas {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-marcar-todas {
     background: none;
-    border: 1px solid #d1d5db;
-    border-radius: 10px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 8px 16px;
     font-size: 0.85rem;
     font-family: inherit;
-    color: #374151;
+    color: var(--color-texto-secundario);
     cursor: pointer;
     transition: all 150ms ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-marcar-todas:hover {
-    border-color: #059669;
-    color: #059669;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-marcar-todas:hover {
+    border-color: var(--color-primario);
+    color: var(--color-primario);
     background: rgba(5, 153, 102, 0.04);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(5, 153, 102, 0.12);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-marcar-todas:active {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-marcar-todas:active {
     transform: translateY(0);
     box-shadow: none;
 }
 
 /* ── Filtros Card ── */
-:is(.modulo-aprendiz, .modulo-instructor) .filtros-card {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtros-card {
     box-shadow: var(--sombra-ring);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .filtros-card .grupo-filtro {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtros-card .grupo-filtro {
     flex: 1;
     min-width: 160px;
     margin-bottom: 0;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .filtro-select {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtro-select {
     width: 100%;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 10px 14px;
     font-size: 0.85rem;
     font-family: inherit;
-    color: #374151;
-    background-color: #ffffff;
+    color: var(--color-texto-secundario);
+    background-color: var(--color-fondo-elevado);
     cursor: pointer;
     transition: all 150ms ease;
     min-width: 140px;
 }
 
 /* ── Lista de Notificaciones ── */
-:is(.modulo-aprendiz, .modulo-instructor) .lista-notificaciones {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-notificaciones {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
 /* ── Notificacion Card ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card {
+    background: var(--color-fondo-elevado);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 20px;
     transition: all 200ms ease;
     display: flex;
-    gap: 16px;
+    gap: var(--space-md);
     align-items: flex-start;
     box-shadow: var(--sombra-xs);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-card:hover {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(5, 153, 102, 0.15);
-    border-color: #a7f3d0;
+    box-shadow: var(--sombra-card-hover);
+    border-color: var(--color-borde-hover);
 }
 
 /* ── Icono de tipo ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-icono {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background-color: #f3f4f6;
+    background-color: var(--color-borde-suave);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     flex-shrink: 0;
     transition: color 200ms ease, background-color 200ms ease;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-card:hover .notificacion-icono {
-    color: #059669;
-    background-color: #ecfdf5;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono {
+    color: var(--color-primario);
+    background-color: var(--color-fondo);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono.peligro {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--color-peligro);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono.peligro {
+    background-color: #fef2f2;
+    color: #b91c1c;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono.advertencia {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--color-advertencia);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono.advertencia {
+    background-color: #fffbeb;
+    color: #b45309;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono.informativa {
+    background-color: rgba(5, 153, 102, 0.1);
+    color: var(--color-primario);
+}
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono.informativa {
+    background-color: var(--color-fondo);
+    color: var(--color-secundario);
 }
 
 /* ── Cuerpo ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-cuerpo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-cuerpo {
     flex: 1;
     min-width: 0;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-fila-superior {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-fila-superior {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -120,18 +147,18 @@
     margin-bottom: 8px;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-titulo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-titulo {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
 /* ── Badges de leída ── */
-:is(.modulo-aprendiz, .modulo-instructor) .badge-no-leida {
-    background-color: #ecfdf5;
-    color: #059669;
-    border-radius: 20px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-no-leida {
+    background-color: var(--color-fondo);
+    color: var(--color-primario);
+    border-radius: var(--radio-borde);
     padding: 2px 10px;
     font-size: 0.7rem;
     font-weight: 600;
@@ -139,10 +166,10 @@
     white-space: nowrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .badge-leida {
-    background-color: #f3f4f6;
-    color: #6b7280;
-    border-radius: 20px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-leida {
+    background-color: var(--color-borde-suave);
+    color: var(--color-texto-claro);
+    border-radius: var(--radio-borde);
     padding: 2px 10px;
     font-size: 0.7rem;
     font-weight: 500;
@@ -151,7 +178,7 @@
 }
 
 /* ── Descripción ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-descripcion {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-descripcion {
     font-size: 0.85rem;
     color: #4b5563;
     margin-bottom: 10px;
@@ -163,7 +190,7 @@
 }
 
 /* ── Fila inferior ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-fila-inferior {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-fila-inferior {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -171,169 +198,192 @@
     gap: 12px;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-metas {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-metas {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-tiempo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-tiempo {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--color-texto-muted);
     white-space: nowrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-proyecto {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-proyecto {
     font-size: 0.8rem;
-    color: #059669;
+    color: var(--color-primario);
     font-weight: 500;
 }
 
 /* ── Badges de estado ── */
-:is(.modulo-aprendiz, .modulo-instructor) .badge-estado {
-    border-radius: 20px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-estado {
+    border-radius: var(--radio-borde);
     padding: 2px 10px;
     font-size: 0.7rem;
     font-weight: 600;
     white-space: nowrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .badge-urgente {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-similitud {
     background-color: #fef2f2;
-    color: #dc2626;
+    color: var(--color-peligro);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .badge-comentario {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-revision {
+    background-color: #fffbeb;
+    color: var(--color-advertencia);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-mensaje {
     background-color: #eff6ff;
     color: #2563eb;
 }
 
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-sistema {
+    background-color: rgba(5, 153, 102, 0.1);
+    color: var(--color-primario);
+}
+
 /* ── Acciones ── */
-:is(.modulo-aprendiz, .modulo-instructor) .notificacion-acciones {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-acciones {
     display: flex;
-    gap: 8px;
+    gap: var(--space-sm);
     flex-wrap: wrap;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-accion {
-    background: none;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 5px 12px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
     font-size: 0.8rem;
     font-family: inherit;
-    color: #374151;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--gradient-primario);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition: all 200ms ease;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     text-decoration: none;
+    box-shadow: 0 2px 8px rgba(5, 153, 102, 0.2);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-accion:hover {
-    border-color: #059669;
-    color: #059669;
-    background: rgba(5, 153, 102, 0.04);
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(5, 153, 102, 0.3);
+    background: var(--gradient-header);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(5, 153, 102, 0.2);
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion-secundaria {
+    background: transparent;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--color-texto-claro);
+    cursor: pointer;
+    transition: all 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion-secundaria:hover {
+    color: var(--color-texto);
+    border-color: var(--color-texto-muted);
+    background: var(--color-borde-suave);
     transform: translateY(-1px);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .btn-accion-secundaria {
-    background: none;
-    border: none;
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    font-family: inherit;
-    color: #6b7280;
-    cursor: pointer;
-    transition: all 150ms ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 6px;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .btn-accion-secundaria:hover {
-    color: #059669;
-    background: rgba(5, 153, 102, 0.06);
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion-secundaria:active {
+    transform: translateY(0);
 }
 
 /* ── Empty State ── */
-:is(.modulo-aprendiz, .modulo-instructor) .empty-state-notificaciones {
-    background-color: #f9fafb;
-    border: 1px dashed #d1d5db;
-    border-radius: 12px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .empty-state-notificaciones {
+    background-color: var(--color-fondo);
+    border: 1px dashed var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 48px 24px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .empty-state-notificaciones .empty-icono {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .empty-state-notificaciones .empty-icono {
     font-size: 2.5rem;
     color: rgba(5, 153, 102, 0.35);
     margin-bottom: 8px;
     line-height: 1;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .empty-state-notificaciones h3 {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .empty-state-notificaciones h3 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .empty-state-notificaciones p {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .empty-state-notificaciones p {
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin: 0;
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-    :is(.modulo-aprendiz, .modulo-instructor) .notificaciones-header {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificaciones-header {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .btn-marcar-todas {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-marcar-todas {
         width: 100%;
         justify-content: center;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .filtros-card {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtros-card {
         flex-direction: column;
         padding: 16px;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .filtros-card .grupo-filtro {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtros-card .grupo-filtro {
         width: 100%;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .notificacion-card {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card {
         padding: 16px;
         flex-direction: column;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .notificacion-icono {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono {
         width: 36px;
         height: 36px;
         font-size: 1rem;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .notificacion-fila-inferior {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-fila-inferior {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .notificacion-acciones {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-acciones {
         width: 100%;
     }
 
-    :is(.modulo-aprendiz, .modulo-instructor) .btn-accion {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-accion {
         flex: 1;
         justify-content: center;
     }

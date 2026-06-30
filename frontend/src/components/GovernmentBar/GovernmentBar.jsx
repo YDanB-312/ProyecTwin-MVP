@@ -1,18 +1,19 @@
-/*
-Componente: GovernmentBar
-Funcion: Muestra la barra de gobierno del SENA en la parte superior
-Proposito: Identificacion institucional
-*/
-
+import { useState, useEffect } from 'react'
 import './GovernmentBar.css'
 
 export default function GovernmentBar() {
+  const [altoContraste, setAltoContraste] = useState(false)
+
+  useEffect(() => {
+    document.body.classList.toggle('alto-contraste', altoContraste)
+  }, [altoContraste])
+
   return (
     <div className="barra-gobierno">
       <div className="contenedor-barra">
         <span>Portal del SENA - República de Colombia</span>
         <div className="accesibilidad">
-          <button className="btn-accesibilidad" aria-label="Alto contraste" type="button">
+          <button className={`btn-accesibilidad${altoContraste ? ' activo' : ''}`} aria-label="Alto contraste" type="button" onClick={() => setAltoContraste(prev => !prev)}>
             <i className="fas fa-adjust"></i>
           </button>
         </div>

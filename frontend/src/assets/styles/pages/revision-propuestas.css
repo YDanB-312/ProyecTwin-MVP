@@ -1,42 +1,32 @@
 /* ── Contenedor de página ── */
-.revision-propuestas-container .contenedor-revision {
+.modulo-instructor .revision-propuestas-container .contenedor-revision {
     width: 100%;
 }
 
-.revision-propuestas-container .propuestas-lista {
+.modulo-instructor .revision-propuestas-container .propuestas-lista {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 32px;
+    gap: var(--space-xl);
     align-items: start;
 }
 
 /* ── Neutralizar estilos globales que interfieren ── */
-.revision-propuestas-container ul,
-.revision-propuestas-container li,
-.revision-propuestas-container .propuesta-card ul,
-.revision-propuestas-container .propuesta-card li {
+.modulo-instructor .revision-propuestas-container ul,
+.modulo-instructor .revision-propuestas-container li,
+.modulo-instructor .revision-propuestas-container .propuesta-card ul,
+.modulo-instructor .revision-propuestas-container .propuesta-card li {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.revision-propuestas-container button {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-}
-
 /* ───────────────────────────────────
    Card
    ─────────────────────────────────── */
-.revision-propuestas-container .propuesta-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
+.modulo-instructor .revision-propuestas-container .propuesta-card {
+    background: var(--color-fondo-elevado);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -47,30 +37,30 @@
     transition: all 0.2s ease;
 }
 
-.revision-propuestas-container .propuesta-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    border-color: #a7f3d0;
+.modulo-instructor .revision-propuestas-container .propuesta-card:hover {
+    box-shadow: var(--sombra-media);
+    border-color: var(--color-borde-hover);
 }
 
 /* ── Zona 1 – Cabecera ── */
-.revision-propuestas-container .propuesta-cabecera {
+.modulo-instructor .revision-propuestas-container .propuesta-cabecera {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.revision-propuestas-container .cabecera-izquierda {
+.modulo-instructor .revision-propuestas-container .cabecera-izquierda {
     display: flex;
     align-items: center;
     gap: 14px;
 }
 
-.revision-propuestas-container .aprendiz-avatar {
+.modulo-instructor .revision-propuestas-container .aprendiz-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #e5e7eb;
-    color: #374151;
+    background-color: var(--color-borde);
+    color: var(--color-texto-secundario);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,59 +69,59 @@
     flex-shrink: 0;
 }
 
-.revision-propuestas-container .propuesta-titulo {
+.modulo-instructor .revision-propuestas-container .propuesta-titulo {
     font-size: 1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
 /* ── Zona 2 – Fila técnica ── */
-.revision-propuestas-container .propuesta-fila-tecnica {
+.modulo-instructor .revision-propuestas-container .propuesta-fila-tecnica {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
-.revision-propuestas-container .propuesta-meta {
+.modulo-instructor .revision-propuestas-container .propuesta-meta {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
 }
 
-.revision-propuestas-container .propuesta-meta i {
+.modulo-instructor .revision-propuestas-container .propuesta-meta i {
     margin-right: 3px;
-    color: #9ca3af;
+    color: var(--color-texto-muted);
     font-size: 0.75rem;
 }
 
-.revision-propuestas-container .meta-separador {
-    color: #9ca3af;
+.modulo-instructor .revision-propuestas-container .meta-separador {
+    color: var(--color-texto-muted);
     margin: 0 2px;
 }
 
-.revision-propuestas-container .propuesta-chips {
+.modulo-instructor .revision-propuestas-container .propuesta-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
-.revision-propuestas-container .tech-chip {
-    background-color: #f3f4f6;
-    color: #374151;
-    border-radius: 20px;
+.modulo-instructor .revision-propuestas-container .tech-chip {
+    background-color: var(--color-borde-suave);
+    color: var(--color-texto-secundario);
+    border-radius: var(--radio-borde);
     padding: 4px 12px;
     font-size: 0.75rem;
     font-weight: 500;
 }
 
 /* ── Zona 3 – Descripción ── */
-.revision-propuestas-container .propuesta-descripcion {
+.modulo-instructor .revision-propuestas-container .propuesta-descripcion {
     font-size: 0.9rem;
     color: #4b5563;
     line-height: 1.5;
@@ -143,29 +133,29 @@
 }
 
 /* ── Zona 4 – Alerta de similitud ── */
-.revision-propuestas-container .alerta-similitud {
+.modulo-instructor .revision-propuestas-container .alerta-similitud {
     display: flex;
     align-items: center;
     gap: 10px;
     background-color: #fef2f2;
-    border-left: 3px solid #dc2626;
+    border-left: 3px solid var(--color-peligro);
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: var(--radio-borde);
 }
 
-.revision-propuestas-container .alerta-similitud i {
-    color: #dc2626;
+.modulo-instructor .revision-propuestas-container .alerta-similitud i {
+    color: var(--color-peligro);
     font-size: 1rem;
 }
 
-.revision-propuestas-container .alerta-similitud span {
+.modulo-instructor .revision-propuestas-container .alerta-similitud span {
     font-size: 0.85rem;
-    color: #dc2626;
+    color: var(--color-peligro);
     font-weight: 500;
 }
 
 /* ── Zona 5 – Acciones ── */
-.revision-propuestas-container .propuesta-acciones {
+.modulo-instructor .revision-propuestas-container .propuesta-acciones {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -174,8 +164,8 @@
     margin-top: 4px;
 }
 
-.revision-propuestas-container .acciones-izquierda,
-.revision-propuestas-container .acciones-derecha {
+.modulo-instructor .revision-propuestas-container .acciones-izquierda,
+.modulo-instructor .revision-propuestas-container .acciones-derecha {
     display: flex;
     gap: 10px;
 }
@@ -184,41 +174,41 @@
    Responsive
    ─────────────────────────────────── */
 @media (max-width: 768px) {
-    .revision-propuestas-container .propuestas-lista {
+    .modulo-instructor .revision-propuestas-container .propuestas-lista {
         grid-template-columns: 1fr;
     }
 
-    .revision-propuestas-container .propuesta-card {
+    .modulo-instructor .revision-propuestas-container .propuesta-card {
         padding: 16px;
     }
 
-    .revision-propuestas-container .propuesta-cabecera {
+    .modulo-instructor .revision-propuestas-container .propuesta-cabecera {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: var(--space-sm);
     }
 
-    .revision-propuestas-container .propuesta-fila-tecnica {
+    .modulo-instructor .revision-propuestas-container .propuesta-fila-tecnica {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .revision-propuestas-container .propuesta-acciones {
+    .modulo-instructor .revision-propuestas-container .propuesta-acciones {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .revision-propuestas-container .acciones-izquierda,
-    .revision-propuestas-container .acciones-derecha {
+    .modulo-instructor .revision-propuestas-container .acciones-izquierda,
+    .modulo-instructor .revision-propuestas-container .acciones-derecha {
         width: 100%;
     }
 
-    .revision-propuestas-container .acciones-izquierda .btn-primario,
-    .revision-propuestas-container .acciones-izquierda .btn-rechazar {
+    .modulo-instructor .revision-propuestas-container .acciones-izquierda .btn-primario,
+    .modulo-instructor .revision-propuestas-container .acciones-izquierda .btn-rechazar {
         flex: 1;
     }
 
-    .revision-propuestas-container .acciones-derecha .btn-ghost {
+    .modulo-instructor .revision-propuestas-container .acciones-derecha .btn-ghost {
         flex: 1;
         justify-content: center;
     }

@@ -11,7 +11,7 @@ function DashboardAprendiz() {
 
         <div className="dashboard-header">
           <div className="dashboard-header-left">
-            <h1 className="dashboard-titulo">Bienvenido, María</h1>
+            <h1 className="dashboard-titulo">Bienvenido, Maria</h1>
             <p className="dashboard-subtitulo">Gestiona tus proyectos de formaci&oacute;n y evita similitudes con otras propuestas.</p>
           </div>
           <span className="dashboard-fecha">28 may. 2026</span>
@@ -19,7 +19,7 @@ function DashboardAprendiz() {
 
         <div className="tarjeta-bienvenida-moderna">
           <div className="bienvenida-contenido">
-            <span className="saludo-personal">Hola, María</span>
+            <span className="saludo-personal">Hola, Maria</span>
             <h1>Bienvenida al Sistema ProyecTwin!</h1>
             <p>Gestiona tus proyectos de formaci&oacute;n y evita similitudes con otras propuestas.</p>
           </div>

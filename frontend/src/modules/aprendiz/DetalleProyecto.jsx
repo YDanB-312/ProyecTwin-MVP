@@ -1,62 +1,98 @@
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
 import '../../assets/styles/pages/mis-proyectos.css'
 
-const miembros = [
-  { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
-  { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
-  { iniciales: 'LG', nombre: 'Laura Gomez', rol: 'Integrante', clase: 'avatar-secundario' },
-]
-
-const breadcrumb = [
-  { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
-  { to: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' },
-  { label: 'Detalle del Proyecto' },
+const proyectos = [
+  {
+    id: 0, nombre: 'Sistema de Gestión Académica',
+    programa: 'ADSO - Análisis y Desarrollo de Software',
+    fecha: '15/03/2026', estado: 'revision', estadoTexto: 'En revisión', badgeClase: 'badge-advertencia',
+    descripcion: 'Desarrollo de un sistema integral para la gestión académica que permita administrar notas, horarios, asistencia y reportes académicos en tiempo real.',
+    instructor: 'Carlos Ruiz',
+    miembros: [
+      { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
+      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'LG', nombre: 'Laura Gomez', rol: 'Integrante', clase: 'avatar-secundario' },
+    ]
+  },
+  {
+    id: 1, nombre: 'App Móvil para Inventarios',
+    programa: 'ADSO - Análisis y Desarrollo de Software',
+    fecha: '22/04/2026', estado: 'aprobado', estadoTexto: 'Aprobado', badgeClase: 'badge-exito',
+    descripcion: 'Aplicación móvil para la gestión de inventarios que permite registrar, consultar y actualizar el stock de productos en tiempo real desde dispositivos móviles.',
+    instructor: 'Ana Gomez',
+    miembros: [
+      { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
+      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
+    ]
+  },
+  {
+    id: 2, nombre: 'Plataforma E-Learning',
+    programa: 'ADSO - Análisis y Desarrollo de Software',
+    fecha: '10/05/2026', estado: 'borrador', estadoTexto: 'Borrador', badgeClase: 'badge-neutral',
+    descripcion: 'Plataforma de aprendizaje en línea con soporte para cursos virtuales, evaluaciones interactivas, foros de discusión y seguimiento del progreso del estudiante.',
+    instructor: 'Miguel Lopez',
+    miembros: [
+      { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
+      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'LG', nombre: 'Laura Gomez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'AM', nombre: 'Ana Martinez', rol: 'Integrante', clase: 'avatar-secundario' },
+    ]
+  },
 ]
 
 function DetalleProyecto() {
+  const { id } = useParams()
+  const proyecto = proyectos[id] || proyectos[0]
+
+  const breadcrumb = [
+    { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+    { to: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' },
+    { label: proyecto.nombre },
+  ]
+
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-proyectos">
         <PageHeader
-          title="Detalle del Proyecto"
+          title={proyecto.nombre}
           icon="folder-open"
           breadcrumb={breadcrumb}
           actions={<Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
         />
 
-        <DataPanel title="Informacion General" icon="info-circle">
+        <DataPanel title="Información General" icon="info-circle">
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Nombre del Proyecto</div>
-              <div className="detalle-valor">Sistema IoT para Agricultura de Precision</div>
+              <div className="detalle-valor">{proyecto.nombre}</div>
             </div>
             <div>
-              <div className="detalle-label">Programa de Formacion</div>
-              <div className="detalle-valor">ADSO - Analisis y Desarrollo de Sistemas</div>
+              <div className="detalle-label">Programa de Formación</div>
+              <div className="detalle-valor">{proyecto.programa}</div>
             </div>
             <div>
-              <div className="detalle-label">Fecha de Creacion</div>
-              <div className="detalle-valor">15/03/2026</div>
+              <div className="detalle-label">Fecha de Creación</div>
+              <div className="detalle-valor">{proyecto.fecha}</div>
             </div>
             <div>
               <div className="detalle-label">Estado</div>
-              <p><span className="badge badge-exito">Aprobado</span> <span className="badge badge-primario"><i className="fas fa-robot"></i> Analizado por IA</span></p>
+              <p><span className={`badge ${proyecto.badgeClase}`}>{proyecto.estadoTexto}</span></p>
             </div>
             <div className="detalle-grid-full">
-              <div className="detalle-label">Descripcion</div>
-              <div className="detalle-valor-texto">Desarrollo de un sistema basado en sensores IoT para monitorear variables ambientales en cultivos, permitiendo la toma de decisiones en tiempo real para optimizar el riego y la fertilizacion.</div>
+              <div className="detalle-label">Descripción</div>
+              <div className="detalle-valor-texto">{proyecto.descripcion}</div>
             </div>
           </div>
         </DataPanel>
 
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
-            {miembros.map((m, i) => (
-              <div key={i} className="flex-row flex-wrap" style={{ padding: '8px 0' }}>
+            {proyecto.miembros.map((m, i) => (
+              <div key={i} className="flex-row flex-wrap team-row">
                 <div className={`avatar-miembro avatar-sm ${m.clase}`}>{m.iniciales}</div>
                 <div>
                   <strong className="texto-md">{m.nombre}</strong>
@@ -75,7 +111,7 @@ function DetalleProyecto() {
                 <span className="observacion-fecha">10 may 2026</span>
               </div>
               <div className="observacion-contenido">
-                <p>El proyecto necesita mejorar la seccion de analisis de requisitos. Se recomienda ampliar la documentacion tecnica antes de continuar con el desarrollo.</p>
+                <p>El proyecto necesita mejorar la sección de análisis de requisitos. Se recomienda ampliar la documentación técnica antes de continuar con el desarrollo.</p>
               </div>
             </div>
           </div>

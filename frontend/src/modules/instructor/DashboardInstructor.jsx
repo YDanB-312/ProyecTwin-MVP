@@ -52,22 +52,22 @@ function DashboardInstructor() {
             <div className="propuesta-card">
               <div className="propuesta-info">
                 <h3>Sistema IoT para Agricultura</h3>
-                <span className="propuesta-meta"><i className="fas fa-user"></i> Ana Martinez &middot; <i className="fas fa-calendar-alt"></i> 15 Nov 2023</span>
+                <span className="propuesta-meta"><i className="fas fa-user"></i> Ana Martinez &middot; <i className="fas fa-calendar-alt"></i> 15 Nov 2026</span>
               </div>
               <div className="propuesta-estado">
                 <span className="badge-propuesta badge-pendiente"><i className="fas fa-clock"></i> Pendiente</span>
-                <Link to="/instructor/detalle-proyecto" className="btn-revisar"><i className="fas fa-eye"></i> Revisar</Link>
+                <Link to={{ pathname: '/instructor/detalle-proyecto/1', state: { desde: 'dashboard' } }} className="btn-revisar"><i className="fas fa-eye"></i> Revisar</Link>
               </div>
             </div>
 
             <div className="propuesta-card">
               <div className="propuesta-info">
                 <h3>App Movil para Turismo Local</h3>
-                <span className="propuesta-meta"><i className="fas fa-user"></i> Juan Perez &middot; <i className="fas fa-calendar-alt"></i> 14 Nov 2023</span>
+                <span className="propuesta-meta"><i className="fas fa-user"></i> Juan Perez &middot; <i className="fas fa-calendar-alt"></i> 14 Nov 2026</span>
               </div>
               <div className="propuesta-estado">
                 <span className="badge-propuesta badge-pendiente"><i className="fas fa-clock"></i> Pendiente</span>
-                <Link to="/instructor/detalle-proyecto" className="btn-revisar"><i className="fas fa-eye"></i> Revisar</Link>
+                <Link to={{ pathname: '/instructor/detalle-proyecto/2', state: { desde: 'dashboard' } }} className="btn-revisar"><i className="fas fa-eye"></i> Revisar</Link>
               </div>
             </div>
 
@@ -87,7 +87,7 @@ function DashboardInstructor() {
                 <h3>Alta Similitud Detectada</h3>
                 <span className="notificacion-meta">Proyecto "Sistema de Gestion Academica" tiene <strong>65% de similitud</strong> &middot; <i className="fas fa-clock"></i> Hace 2 horas</span>
               </div>
-              <Link to="/instructor/detalle-similitud" className="btn-revisar"><i className="fas fa-search"></i> Revisar</Link>
+              <Link to={{ pathname: '/instructor/detalle-similitud', state: { proyecto: 'Sistema de Gestion Academica', desde: 'dashboard' } }} className="btn-revisar"><i className="fas fa-search"></i> Revisar</Link>
             </div>
 
           </div>

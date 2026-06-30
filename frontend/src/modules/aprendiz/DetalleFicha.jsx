@@ -21,15 +21,11 @@ function DetalleFicha() {
           <div className="ficha-grid">
             <div className="ficha-dato">
               <span className="ficha-label">Programa</span>
-              <span className="ficha-valor">Analisis y Desarrollo 2568</span>
+              <span className="ficha-valor">Análisis y Desarrollo 2568</span>
             </div>
             <div className="ficha-dato">
               <span className="ficha-label">Codigo</span>
               <span className="ficha-valor"><span className="codigo-ficha">ADSO-2568</span></span>
-            </div>
-            <div className="ficha-dato">
-              <span className="ficha-label">Trimestre</span>
-              <span className="ficha-valor">Trimestre 3</span>
             </div>
             <div className="ficha-dato">
               <span className="ficha-label">Estado</span>
@@ -41,7 +37,7 @@ function DetalleFicha() {
                 <div className="instructor-avatar">CR</div>
                 <div>
                   <span className="ficha-valor">Carlos Ruiz</span>
-                  <span className="instructor-area">Tecnologias de la Informacion</span>
+                  <span className="instructor-area">Tecnologías de la Información</span>
                 </div>
               </div>
             </div>

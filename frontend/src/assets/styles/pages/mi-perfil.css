@@ -2,67 +2,67 @@
    PREMIUM - Mi Perfil
    ======================================== */
 
-.modulo-aprendiz .contenedor-perfil {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .contenedor-perfil {
     max-width: 1000px;
     margin: 0 auto;
 }
 
 /* ── Perfil Card ── */
-.modulo-aprendiz .perfil-card {
-    background: #ffffff;
-    border-radius: 16px;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-card {
+    background: var(--color-fondo-elevado);
+    border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     padding: 28px;
     margin-bottom: 32px;
 }
 
 /* ── Card Titulo ── */
-.modulo-aprendiz .card-titulo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-titulo {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin-bottom: 20px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #059669;
+    border-bottom: 2px solid var(--color-primario);
     display: inline-flex;
     align-items: center;
     gap: 10px;
 }
 
-.modulo-aprendiz .card-titulo i {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-titulo i {
     font-size: 1rem;
-    color: #059669;
+    color: var(--color-primario);
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(5, 153, 102, 0.08);
-    border-radius: 8px;
+    border-radius: var(--radio-borde);
     flex-shrink: 0;
 }
 
 /* ── Cabecera Card ── */
-.modulo-aprendiz .cabecera-card {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 24px;
+    gap: var(--space-lg);
 }
 
-.modulo-aprendiz .cabecera-izquierda {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-izquierda {
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-.modulo-aprendiz .perfil-avatar {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: #ecfdf5;
-    color: #059669;
+    background-color: var(--color-fondo);
+    color: var(--color-primario);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -71,94 +71,94 @@
     flex-shrink: 0;
 }
 
-.modulo-aprendiz .perfil-info {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-info {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.modulo-aprendiz .perfil-nombre {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-nombre {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
-.modulo-aprendiz .perfil-rol {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-rol {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
 }
 
-.modulo-aprendiz .cabecera-derecha {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-derecha {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
-.modulo-aprendiz .perfil-metricas {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-metricas {
     display: flex;
-    gap: 24px;
+    gap: var(--space-lg);
 }
 
-.modulo-aprendiz .metrica-item {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .metrica-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     font-size: 0.9rem;
-    color: #374151;
-    background: #f9fafb;
+    color: var(--color-texto-secundario);
+    background: var(--color-fondo);
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
 }
 
-.modulo-aprendiz .metrica-icono {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .metrica-icono {
     font-size: 1rem;
-    color: #059669;
+    color: var(--color-primario);
 }
 
-.modulo-aprendiz .metrica-valor {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .metrica-valor {
     font-weight: 700;
-    color: #111827;
+    color: var(--color-texto);
 }
 
-.modulo-aprendiz .metrica-label {
-    color: #6b7280;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .metrica-label {
+    color: var(--color-texto-claro);
     font-size: 0.85rem;
 }
 
 /* ── Botones ── */
 /* ── Campos obligatorios ── */
-.modulo-aprendiz .campos-obligatorios {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campos-obligatorios {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-bottom: 20px;
 }
 
-.modulo-aprendiz .obligatorio {
-    color: #ef4444;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .obligatorio {
+    color: var(--color-peligro);
     font-weight: 700;
 }
 
 /* ── Form Grid ── */
-.modulo-aprendiz .form-grid {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
-.modulo-aprendiz .campo-completo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-completo {
     grid-column: 1 / -1;
 }
 
 /* ── Campo grupo ── */
-.modulo-aprendiz .campo-grupo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-grupo {
     display: flex;
     flex-direction: column;
 }
 
 /* ── Campo label ── */
-.modulo-aprendiz .campo-label {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-label {
     font-weight: 600;
     font-size: 0.85rem;
     color: #1f2937;
@@ -166,39 +166,39 @@
 }
 
 /* ── Campo input ── */
-.modulo-aprendiz .campo-input {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-input {
     width: 100%;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 12px 16px;
     font-size: 0.95rem;
     font-family: inherit;
     color: #1f2937;
-    background-color: #ffffff;
+    background-color: var(--color-fondo-elevado);
     transition: all 150ms ease;
     box-sizing: border-box;
 }
 
-.modulo-aprendiz .campo-input:focus {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-input:focus {
     outline: none;
-    border-color: #059669;
+    border-color: var(--color-primario);
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
 }
 
-.modulo-aprendiz .campo-input::placeholder {
-    color: #9ca3af;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-input::placeholder {
+    color: var(--color-texto-muted);
 }
 
 /* ── Campo select ── */
-.modulo-aprendiz .campo-select {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-select {
     width: 100%;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 12px 16px;
     font-size: 0.95rem;
     font-family: inherit;
     color: #1f2937;
-    background-color: #ffffff;
+    background-color: var(--color-fondo-elevado);
     transition: all 150ms ease;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
@@ -208,27 +208,27 @@
     box-sizing: border-box;
 }
 
-.modulo-aprendiz .campo-select:focus {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-select:focus {
     outline: none;
-    border-color: #059669;
+    border-color: var(--color-primario);
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
 }
 
 /* ── Campo info / ayuda ── */
-.modulo-aprendiz .campo-info {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-info {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-top: 4px;
 }
 
-.modulo-aprendiz .campo-ayuda {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-ayuda {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-top: 4px;
 }
 
 /* ── Form botones ── */
-.modulo-aprendiz .form-botones {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-botones {
     margin-top: 24px;
     display: flex;
     justify-content: flex-end;
@@ -236,40 +236,40 @@
 }
 
 /* ── Banner Advertencia ── */
-.modulo-aprendiz .banner-advertencia {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-advertencia {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-md);
     background-color: #fffbeb;
-    border-left: 4px solid #d97706;
-    border-radius: 10px;
+    border-left: 4px solid var(--color-advertencia);
+    border-radius: var(--radio-borde);
     padding: 16px 20px;
     margin-bottom: 24px;
 }
 
-.modulo-aprendiz .banner-icono {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-icono {
     font-size: 1.3rem;
-    color: #d97706;
+    color: var(--color-advertencia);
     flex-shrink: 0;
 }
 
-.modulo-aprendiz .banner-texto strong {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-texto strong {
     font-size: 0.9rem;
     color: #92400e;
 }
 
-.modulo-aprendiz .banner-texto p {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-texto p {
     font-size: 0.8rem;
     color: #a16207;
     margin: 4px 0 0 0;
 }
 
-.modulo-aprendiz .btn-cambiar-ahora {
-    background-color: #ffffff;
-    border: 1px solid #d97706;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cambiar-ahora {
+    background-color: var(--color-fondo-elevado);
+    border: 1px solid var(--color-advertencia);
     color: #92400e;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radio-borde);
     font-weight: 600;
     font-size: 0.8rem;
     font-family: inherit;
@@ -279,68 +279,67 @@
     margin-left: auto;
 }
 
-.modulo-aprendiz .btn-cambiar-ahora:hover {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cambiar-ahora:hover {
     background-color: #fef3c7;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
 }
 
-.modulo-aprendiz .btn-cambiar-ahora:active {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cambiar-ahora:active {
     transform: translateY(0);
     box-shadow: none;
 }
 
 /* ── Cambio password ── */
-.modulo-aprendiz .cambio-password {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cambio-password {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
 /* ── Preferencias ── */
-.modulo-aprendiz .preferencias-lista {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-checkboxes {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
-.modulo-aprendiz .checkbox-item {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item {
     display: flex;
     align-items: flex-start;
     gap: 14px;
     cursor: pointer;
     padding: 14px 18px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    border-radius: var(--radio-borde);
+    border: 1px solid var(--color-borde);
     transition: all 150ms ease;
 }
 
-.modulo-aprendiz .checkbox-item:hover {
-    border-color: #a7f3d0;
-    background-color: #f9fafb;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item:hover {
+    border-color: var(--color-borde-hover);
+    background-color: var(--color-fondo);
 }
 
-.modulo-aprendiz .checkbox-item input[type="checkbox"] {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item input[type="checkbox"] {
     display: none;
 }
 
-.modulo-aprendiz .checkbox-custom {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item .checkmark {
     width: 22px;
     height: 22px;
-    border: 2px solid #d1d5db;
-    border-radius: 6px;
+    border: 2px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     flex-shrink: 0;
     position: relative;
     transition: all 150ms ease;
-    margin-top: 2px;
 }
 
-.modulo-aprendiz .checkbox-item input:checked + .checkbox-custom {
-    background-color: #059669;
-    border-color: #059669;
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item input:checked + .checkmark {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
 }
 
-.modulo-aprendiz .checkbox-item input:checked + .checkbox-custom::after {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item input:checked + .checkmark::after {
     content: '✓';
     position: absolute;
     top: 50%;
@@ -351,77 +350,99 @@
     font-weight: 700;
 }
 
-.modulo-aprendiz .checkbox-info {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-info {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.modulo-aprendiz .checkbox-titulo {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-titulo {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
 }
 
-.modulo-aprendiz .checkbox-desc {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-desc {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
+}
+
+/* ── Badge Activo (para perfil admin) ── */
+:is(.modulo-admin) .badge-activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    border-radius: var(--radio-borde);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background-color: var(--color-fondo);
+    color: var(--color-primario);
+}
+
+:is(.modulo-admin) .badge-activo i {
+    font-size: 0.55rem;
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-    .modulo-aprendiz .perfil-card {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-card {
         padding: 20px;
     }
 
-    .modulo-aprendiz .cabecera-card {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-card {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .modulo-aprendiz .cabecera-izquierda {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-izquierda {
         flex-direction: column;
         text-align: center;
     }
 
-    .modulo-aprendiz .perfil-info {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-info {
         align-items: center;
     }
 
-    .modulo-aprendiz .cabecera-derecha {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .cabecera-derecha {
         align-items: stretch;
     }
 
-    .modulo-aprendiz .perfil-metricas {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .perfil-metricas {
         justify-content: center;
     }
 
-    .modulo-aprendiz .form-grid {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-grid {
         grid-template-columns: 1fr;
     }
 
-    .modulo-aprendiz .form-botones {
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-grid.mt-24 {
+    margin-top: 24px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-botones {
         flex-direction: column-reverse;
     }
 
-    .modulo-aprendiz .form-botones .btn-primario,
-    .modulo-aprendiz .form-botones .btn-secundario {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-botones .btn-primario,
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .form-botones .btn-secundario {
         width: 100%;
         justify-content: center;
     }
 
-    .modulo-aprendiz .banner-advertencia {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-advertencia {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .modulo-aprendiz .btn-cambiar-ahora {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cambiar-ahora {
         margin-left: 0;
         width: 100%;
         justify-content: center;
     }
 
-    .modulo-aprendiz .checkbox-item {
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item {
         padding: 12px;
     }
 }

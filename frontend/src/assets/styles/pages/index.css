@@ -41,7 +41,7 @@
     margin-bottom: 60px;
     padding: 40px 20px;
     background: radial-gradient(ellipse at 50% 0%, rgba(5,153,102,0.06) 0%, transparent 60%);
-    border-radius: 16px;
+    border-radius: var(--radio-borde);
     overflow: hidden;
 }
 
@@ -103,7 +103,7 @@
 .modulo-invitado .tarjeta {
     background: white;
     padding: 30px;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     transition: all var(--transition-fast);
     border: 1px solid rgba(0,0,0,0.02);
@@ -117,7 +117,7 @@
 .modulo-invitado .tarjeta-icono {
     width: 60px;
     height: 60px;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -164,47 +164,13 @@
 }
 
 /* ========================================
-   SECCIÓN ESTADÍSTICAS
-   ======================================== */
-.modulo-invitado .estadisticas-section {
-    background: linear-gradient(135deg, var(--color-header), var(--color-secundario));
-    padding: 50px 40px;
-    border-radius: 16px;
-    color: white;
-    text-align: center;
-    margin-bottom: 60px;
-}
-
-.modulo-invitado .estadisticas-titulo {
-    font-size: 1.8rem;
-    margin-bottom: 30px;
-}
-
-.modulo-invitado .estadisticas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-}
-
-.modulo-invitado .estadistica-numero {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.modulo-invitado .estadistica-label {
-    opacity: 0.9;
-    font-size: 0.95rem;
-}
-
-/* ========================================
    LLAMADO A LA ACCIÓN
    ======================================== */
 .modulo-invitado .cta-section {
     text-align: center;
     background: var(--gradient-welcome), var(--color-fondo-elevado);
     padding: 40px;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     border: 1px solid var(--color-borde);
     box-shadow: var(--sombra-ring);
 }
@@ -258,7 +224,7 @@
 .modulo-invitado .tarjeta-usuario {
     background: white;
     padding: 30px;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     text-align: center;
     transition: all var(--transition-fast);
@@ -345,7 +311,7 @@
     font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
 .modulo-invitado .tarjeta-usuario ul li i {

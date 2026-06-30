@@ -1,73 +1,338 @@
-/* Dashboard Admin - Estilos especificos */
+/* ========================================
+   PREMIUM - Dashboard Admin
+   ======================================== */
 
-.modulo-admin .indicador {
-    text-align: center;
-    background: var(--color-fondo);
-    padding: 15px;
-    border-radius: var(--radio-borde);
-    flex: 1;
-    border: 1px solid var(--color-borde);
-    transition: all 0.3s;
+/* ── Dashboard Container ── */
+.modulo-admin .contenedor-dashboard {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
 }
 
-.modulo-admin .indicador:hover { transform: translateY(-5px); box-shadow: var(--sombra-suave); }
-
-.modulo-admin .seccion-estadisticas, .modulo-admin .seccion-acciones {
-    margin-bottom: var(--space-xl);
-}
-
+/* ── Stats Grid (6 cards → 3 × 2) ── */
 .modulo-admin .grid-estadisticas {
     grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
 }
 
-.modulo-admin .seccion-alertas {
-    background: white;
+.modulo-admin .tarjeta-estadistica {
+    width: 100%;
+    max-width: 320px;
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.modulo-admin .info-estadistica h3 {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.modulo-admin .icono-estadistica {
+    width: 56px;
+    height: 56px;
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+}
+
+.modulo-admin .valor-estadistica {
+    font-size: 2rem;
+}
+
+.modulo-admin .contenedor-gestion {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* ── Dashboard Header ── */
+.modulo-admin .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.modulo-admin .dashboard-titulo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-texto);
+    letter-spacing: -0.02em;
+    position: relative;
+    padding-bottom: 10px;
+    margin: 0 0 8px 0;
+}
+
+.modulo-admin .dashboard-titulo::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background-color: var(--color-primario);
+    border-radius: 2px;
+}
+
+.modulo-admin .dashboard-fecha {
+    font-size: 0.85rem;
+    color: var(--color-texto-claro);
+    background-color: var(--color-borde-suave);
+    padding: 6px 14px;
     border-radius: var(--radio-borde);
-    padding: 25px;
-    box-shadow: var(--sombra-ring);
-    margin-bottom: var(--space-xl);
-    border: 1px solid rgba(0,0,0,0.02);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.modulo-admin .tarjeta-alerta {
-    transition: all 0.3s;
+/* ── Section wrapper ── */
+.modulo-admin .dashboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.modulo-admin .tarjeta-alerta:hover {
-    transform: translateX(4px);
-    box-shadow: var(--sombra-media);
+/* ── Section header (title + ver-todas) ── */
+.modulo-admin .seccion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.modulo-admin .fecha-alerta { font-size: 0.85rem; color: var(--color-texto-claro); display: flex; align-items: center; gap: 5px; }
-.modulo-admin .fecha-alerta i { font-size: 0.75rem; }
-.modulo-admin .btn-alerta-accion { background: var(--color-primario); color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s; }
-.modulo-admin .btn-alerta-accion:hover { background: var(--color-secundario); transform: translateY(-1px); }
+.modulo-admin .seccion-titulo {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-texto);
+    position: relative;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--color-primario);
+    display: inline-block;
+    margin: 0;
+}
 
+.modulo-admin .ver-todas {
+    font-size: 0.85rem;
+    color: var(--color-primario);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 150ms ease;
+    font-weight: 500;
+}
+
+.modulo-admin .ver-todas:hover {
+    color: var(--color-secundario);
+    transform: translateX(2px);
+}
+
+/* ── Welcome Card ── */
+.modulo-admin .tarjeta-bienvenida-moderna {
+    animation: fadeInUp 0.6s ease-out;
+    background: var(--gradient-header);
+}
+
+.modulo-admin .bienvenida-ilustracion {
+    transition: all 300ms ease;
+}
+
+.modulo-admin .tarjeta-bienvenida-moderna:hover .bienvenida-ilustracion {
+    transform: scale(1.06);
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Actions Grid ── */
+.modulo-admin .acciones-grid-moderna {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    justify-content: center;
+}
+
+/* ── Action Cards ── */
+.modulo-admin a.tarjeta-accion-moderna {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: var(--color-fondo-elevado);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
+    padding: 32px 24px;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.modulo-admin a.tarjeta-accion-moderna:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sombra-card-hover);
+    border-color: var(--color-borde-hover);
+}
+
+.modulo-admin a.tarjeta-accion-moderna:active {
+    transform: scale(0.98);
+}
+
+.modulo-admin a.tarjeta-accion-moderna .accion-icono {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radio-borde);
+    background: var(--color-borde-suave);
+    color: var(--color-texto-claro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+    transition: all 200ms ease;
+}
+
+.modulo-admin a.tarjeta-accion-moderna:hover .accion-icono {
+    background: rgba(5, 153, 102, 0.1);
+    color: var(--color-primario);
+    transform: scale(1.05);
+}
+
+.modulo-admin a.tarjeta-accion-moderna h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-texto);
+    margin: 0 0 8px 0;
+}
+
+.modulo-admin a.tarjeta-accion-moderna p {
+    font-size: 0.85rem;
+    color: var(--color-texto-claro);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Enlace ver-todo ── */
+.modulo-admin .enlace-ver-todo {
+    font-size: 0.85rem;
+    color: var(--color-primario);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 150ms ease;
+    font-weight: 500;
+}
+
+.modulo-admin .enlace-ver-todo:hover {
+    color: var(--color-secundario);
+    transform: translateX(2px);
+}
+
+/* ── Alerta Card Meta (fecha + botón alineados) ── */
+.modulo-admin .alerta-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* ── Alerta Button ── */
+.modulo-admin .btn-alerta-accion {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--gradient-primario);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 200ms ease;
+    box-shadow: 0 2px 8px rgba(5, 153, 102, 0.2);
+}
+
+.modulo-admin .btn-alerta-accion:hover {
+    background: var(--gradient-header);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(5, 153, 102, 0.3);
+}
+
+.modulo-admin .btn-alerta-accion:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(5, 153, 102, 0.2);
+}
+
+/* ── Badge colores (consistentes) ── */
+.modulo-admin .badge-exito {
+    background-color: var(--color-fondo);
+    color: var(--color-primario);
+}
+
+.modulo-admin .badge-advertencia {
+    background-color: #fffbeb;
+    color: var(--color-advertencia);
+}
+
+/* ── Neutralizar estilos viejos globales para admin ── */
+.modulo-admin .seccion-estadisticas {
+    margin-bottom: 0;
+}
+
+.modulo-admin .seccion-acciones {
+    margin-bottom: 0;
+}
+
+/* ── Responsive ── */
 @media (max-width: 1024px) {
     .modulo-admin .acciones-grid-moderna {
+        grid-template-columns: 1fr;
+    }
+    .modulo-admin .grid-estadisticas {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 768px) {
+    .modulo-admin .contenedor-gestion {
+        gap: var(--space-xl);
+    }
+
+    .modulo-admin .contenedor-dashboard {
+        gap: var(--space-xl);
+    }
+
+    .modulo-admin .dashboard-header {
+        flex-direction: column;
+    }
+
+    .modulo-admin .dashboard-titulo {
+        font-size: 1.4rem;
+    }
+
     .modulo-admin .acciones-grid-moderna {
         grid-template-columns: 1fr;
     }
+    .modulo-admin .grid-estadisticas {
+        grid-template-columns: 1fr;
+    }
+    .modulo-admin .tarjeta-estadistica {
+        max-width: 100%;
+    }
+
     .modulo-admin .tarjeta-bienvenida-moderna {
         flex-direction: column;
         text-align: center;
         padding: var(--space-lg);
     }
+
     .modulo-admin .tarjeta-bienvenida-moderna .bienvenida-contenido {
         text-align: center;
-    }
-    .modulo-admin .grid-estadisticas {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 480px) {
-    .modulo-admin .grid-estadisticas {
-        grid-template-columns: 1fr;
     }
 }

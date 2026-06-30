@@ -27,10 +27,10 @@ export default function PaginaNoEncontrada() {
           </div>
           <h1 className="titulo-404">404</h1>
           <h2 className="subtitulo-404">Pagina no encontrada</h2>
-          <p className="texto-404">La pagina que buscas no existe o ha sido movida. Verifica la direccion o vuelve al inicio.</p>
+          <p className="texto-404">La página que buscas no existe o ha sido movida. Verifica la dirección o vuelve al inicio.</p>
           <div className="acciones-404">
             <Link to="/" className="btn-primario"><i className="fas fa-home"></i> Volver al inicio</Link>
-            <Link to="/login" className="btn-secundario"><i className="fas fa-sign-in-alt"></i> Iniciar sesion</Link>
+            <Link to="/login" className="btn-secundario"><i className="fas fa-sign-in-alt"></i> Iniciar sesión</Link>
           </div>
         </div>
       </main>
@@ -39,13 +39,13 @@ export default function PaginaNoEncontrada() {
         <div className="contenedor-pie">
           <div className="seccion-pie">
             <h3>ProyecTwin SENA</h3>
-            <p>Sistema de gestion y deteccion de Similitudes para proyectos de Formacion.</p>
+            <p>Sistema de gestión y detección de Similitudes para proyectos de Formación.</p>
           </div>
           <div className="seccion-pie">
-            <h3>Enlaces Rapidos</h3>
+            <h3>Enlaces Rápidos</h3>
             <ul className="enlaces-pie">
               <li><Link to="/"><i className="fas fa-home"></i> Inicio</Link></li>
-              <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Iniciar sesion</Link></li>
+              <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Iniciar sesión</Link></li>
             </ul>
           </div>
           <div className="seccion-pie">

@@ -1,19 +1,18 @@
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
 
 export default function Login() {
-  const [correo, setCorreo] = useState('')
-  const [password, setPassword] = useState('')
+  const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (correo === 'maria@correo.com' && password === '123456') navigate('/aprendiz/dashboard')
-    else if (correo === 'carlos@correo.com' && password === '123456') navigate('/instructor/dashboard')
+  const onSubmit = (data) => {
+    if (data.correo === 'maria@correo.com' && data.password === '123456') navigate('/aprendiz/dashboard')
+    else if (data.correo === 'carlos@correo.com' && data.password === '123456') navigate('/instructor/dashboard')
     else navigate('/admin/dashboard')
+    reset()
   }
 
   return (
@@ -29,21 +28,23 @@ export default function Login() {
               <p>Plataforma de Gestión de proyectos - SENA</p>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grupo-campo">
                 <label><i className="fas fa-envelope"></i> Correo Electrónico</label>
-                <input type="email" placeholder="tu@correo.com" required name="correo" value={correo} onChange={(e) => setCorreo(e.target.value)} />
+                <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
+                {errors.correo && <span className="campo-error">Correo inválido</span>}
               </div>
 
               <div className="grupo-campo">
                 <label><i className="fas fa-lock"></i> Contraseña</label>
                 <div className="contenedor-password">
-                  <input type="password" placeholder="????????????????????????" required name="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <input type="password" placeholder="Ingresa tu contraseña" {...register("password", { required: true })} />
                 </div>
+                {errors.password && <span className="campo-error">La contraseña es obligatoria</span>}
               </div>
 
               <div className="opciones-login">
-                <label><input type="checkbox" name="recordarme" /> Recordarme</label>
+                <label><input type="checkbox" {...register("recordarme")} /> Recordarme</label>
                 <Link to="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
               </div>
 

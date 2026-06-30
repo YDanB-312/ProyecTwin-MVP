@@ -17,9 +17,9 @@
     width: 100%;
     max-width: 860px;
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+    box-shadow: var(--sombra-media);
 }
 
 /* Lado formulario */
@@ -80,7 +80,7 @@
     width: 100%;
     padding: 12px 15px;
     border: 1px solid var(--color-borde);
-    border-radius: var(--radio-sm);
+    border-radius: var(--radio-borde);
     font-size: .95rem;
     color: var(--color-texto);
     background: white;
@@ -171,7 +171,7 @@
 .modulo-invitado .item-prueba {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     font-size: .78rem;
     margin-bottom: 5px;
 }
@@ -217,7 +217,7 @@
 .modulo-invitado .panel-info-login li {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     font-size: .83rem;
     margin-bottom: 6px;
     opacity: .9;
@@ -266,7 +266,7 @@
 }
 
 .modulo-invitado .pie-pagina-login .info-contacto span:hover {
-    color: #a7f3d0;
+    color: var(--color-borde-hover);
 }
 
 .modulo-invitado .pie-pagina-login .info-contacto i {
@@ -370,7 +370,7 @@
 
     .modulo-invitado .pie-pagina-login > .contenedor-pie {
         flex-direction: column;
-        gap: 8px;
+        gap: var(--space-sm);
     }
 
     .modulo-invitado .pie-pagina-login .info-contacto {

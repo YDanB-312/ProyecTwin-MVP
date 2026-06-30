@@ -7,7 +7,7 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 48px;
+    gap: var(--space-2xl);
 }
 
 /* ── Section wrapper ── */
@@ -23,7 +23,7 @@
     justify-content: space-between;
     align-items: flex-start;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
 .modulo-aprendiz .dashboard-header-left {
@@ -34,7 +34,7 @@
 .modulo-aprendiz .dashboard-titulo {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--color-texto);
     letter-spacing: -0.02em;
     position: relative;
     padding-bottom: 10px;
@@ -48,30 +48,31 @@
     left: 0;
     width: 40px;
     height: 3px;
-    background-color: #059669;
+    background-color: var(--color-primario);
     border-radius: 2px;
 }
 
 .modulo-aprendiz .dashboard-subtitulo {
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin: 0;
     line-height: 1.5;
 }
 
 .modulo-aprendiz .dashboard-fecha {
     font-size: 0.85rem;
-    color: #6b7280;
-    background-color: #f3f4f6;
+    color: var(--color-texto-claro);
+    background-color: var(--color-borde-suave);
     padding: 6px 14px;
-    border-radius: 20px;
+    border-radius: var(--radio-borde);
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 /* ── Welcome Card ── */
 .modulo-aprendiz .tarjeta-bienvenida-moderna {
-    background: linear-gradient(135deg, #0d9488 0%, #059669 50%, #047857 100%);
+    animation: fadeInUp 0.6s ease-out;
+    background: var(--gradient-header);
 }
 
 .modulo-aprendiz .saludo-personal {
@@ -97,7 +98,7 @@
 .modulo-aprendiz .titulo-seccion-dashboard {
     font-size: 18px;
     font-weight: 700;
-    color: #111827;
+    color: var(--color-texto);
     letter-spacing: -0.01em;
     margin: 0;
     position: relative;
@@ -111,7 +112,7 @@
     top: 3px;
     bottom: 3px;
     width: 3px;
-    background: #059669;
+    background: var(--color-primario);
     border-radius: 2px;
 }
 
@@ -127,10 +128,10 @@
 .modulo-aprendiz .seccion-titulo {
     font-size: 1.05rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     position: relative;
     padding-bottom: 6px;
-    border-bottom: 2px solid #059669;
+    border-bottom: 2px solid var(--color-primario);
     display: inline-block;
     margin: 0;
 }
@@ -139,7 +140,7 @@
 .modulo-aprendiz .acciones-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: var(--space-lg);
 }
 
 /* ── Action Cards ── */
@@ -150,9 +151,9 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
+    background: var(--color-fondo-elevado);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 32px 24px;
     cursor: pointer;
     transition: all 200ms ease;
@@ -160,8 +161,8 @@
 
 .modulo-aprendiz .tarjeta-accion-moderna:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5, 153, 102, 0.15);
-    border-color: #a7f3d0;
+    box-shadow: var(--sombra-card-hover);
+    border-color: var(--color-borde-hover);
 }
 
 .modulo-aprendiz .tarjeta-accion-moderna:active {
@@ -171,9 +172,9 @@
 .modulo-aprendiz .tarjeta-accion-moderna .accion-icono {
     width: 56px;
     height: 56px;
-    border-radius: 14px;
-    background: #f3f4f6;
-    color: #6b7280;
+    border-radius: var(--radio-borde);
+    background: var(--color-borde-suave);
+    color: var(--color-texto-claro);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -184,34 +185,34 @@
 
 .modulo-aprendiz .tarjeta-accion-moderna:hover .accion-icono {
     background: rgba(5, 153, 102, 0.1);
-    color: #059669;
+    color: var(--color-primario);
     transform: scale(1.05);
 }
 
 .modulo-aprendiz .tarjeta-accion-moderna h3 {
     font-size: 1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0 0 8px 0;
 }
 
 .modulo-aprendiz .tarjeta-accion-moderna p {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin: 0;
     line-height: 1.4;
 }
 
 /* ── Empty State ── */
 .modulo-aprendiz .empty-state-card {
-    background-color: #f9fafb;
-    border: 1px dashed #d1d5db;
-    border-radius: 14px;
+    background-color: var(--color-fondo);
+    border: 1px dashed var(--color-borde);
+    border-radius: var(--radio-borde);
     padding: 48px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-md);
     text-align: center;
 }
 
@@ -224,36 +225,36 @@
 .modulo-aprendiz .empty-state-card h3 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
 .modulo-aprendiz .empty-state-card p {
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin: 0;
     max-width: 400px;
 }
 
 /* ── Botón primario ── */
 .modulo-aprendiz .btn-primario {
-    background-color: #059669;
+    background-color: var(--color-primario);
     color: #ffffff;
     border: none;
     padding: 12px 28px;
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     font-family: inherit;
 }
 
 .modulo-aprendiz .btn-primario:hover {
-    background-color: #047857;
+    background-color: var(--color-secundario);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
 }

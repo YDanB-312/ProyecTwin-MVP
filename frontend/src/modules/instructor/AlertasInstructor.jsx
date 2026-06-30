@@ -1,187 +1,216 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import '../../assets/styles/pages/alertas.css'
 import '../../assets/styles/pages/alertas-instructor.css'
 
+const notificacionesIniciales = [
+  { leida: false },
+  { leida: false },
+  { leida: true },
+  { leida: true },
+  { leida: true },
+]
+
 function AlertasInstructor() {
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroProyecto, setFiltroProyecto] = useState('')
+  const [filtroFecha, setFiltroFecha] = useState('')
+  const [leidas, setLeidas] = useState(notificacionesIniciales.map(n => n.leida))
+  const [paginaActual, setPaginaActual] = useState(1)
+
+  const marcarLeida = (i) => {
+    setLeidas(prev => {
+      const next = [...prev]
+      next[i] = true
+      return next
+    })
+  }
+
+  const marcarTodasLeidas = () => {
+    setLeidas(prev => prev.map(() => true))
+  }
+
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="notificaciones-instructor-container">
-        <div className="contenedor-notificaciones">
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={5}>
+      <div className="contenedor-alertas">
 
-          <div className="vista-header">
-            <Link to="/instructor/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-            <div className="vista-titulo-row">
-              <h1 className="vista-titulo">Notificaciones</h1>
-              <span className="metrica-pill"><i className="fas fa-bell"></i> 5 notificaciones</span>
-              <button className="btn-marcar-todas" type="button"><i className="fas fa-check-double"></i> Marcar todas como leídas</button>
-            </div>
+        <PageHeader
+          title="Notificaciones"
+          icon="bell"
+          breadcrumb={[
+            { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
+            { label: 'Notificaciones' }
+          ]}
+          actions={<><Link to="/instructor/dashboard" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link><button className="btn-marcar-todas" type="button" onClick={marcarTodasLeidas}><i className="fas fa-check-double"></i> Marcar todas como leidas</button></>}
+        />
+
+        <div className="filtros-card">
+          <div className="grupo-filtro">
+            <label htmlFor="tipo-alerta">Tipo de Alerta</label>
+            <select id="tipo-alerta" className="filtro-select" name="tipo_alerta" value={filtroTipo} onChange={(e) => { setFiltroTipo(e.target.value); setPaginaActual(1) }}>
+              <option value="">Todos los tipos</option>
+              <option value="similitud">Similitud de proyectos</option>
+              <option value="revision">Comentarios y revisiones</option>
+              <option value="sistema">Notificaciones del sistema</option>
+            </select>
           </div>
-
-          <div className="filtros-card">
-            <div className="filtro-grupo">
-              <label className="filtro-label" htmlFor="tipo-alerta">Tipo de Alerta</label>
-              <select id="tipo-alerta" className="filtro-select" name="tipo_alerta">
-                <option value="">Todos los tipos</option>
-                <option value="similitud">Similitud de proyectos</option>
-                <option value="revision">Comentarios y revisiones</option>
-                <option value="sistema">Notificaciones del sistema</option>
-              </select>
-            </div>
-            <div className="filtro-grupo">
-              <label className="filtro-label" htmlFor="estado-alerta">Estado</label>
-              <select id="estado-alerta" className="filtro-select" name="estado_alerta">
+          <div className="grupo-filtro">
+            <label htmlFor="estado-alerta">Estado</label>
+              <select id="estado-alerta" className="filtro-select" name="estado_alerta" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
                 <option value="">Todos los estados</option>
-                <option value="no-leida">No leídas</option>
-                <option value="leida">Leídas</option>
+                <option value="false">No leídas</option>
+                <option value="true">Leídas</option>
               </select>
-            </div>
-            <div className="filtro-grupo">
-              <label className="filtro-label" htmlFor="proyecto-alerta">Proyecto</label>
-              <select id="proyecto-alerta" className="filtro-select" name="proyecto_alerta">
-                <option value="">Todos los proyectos</option>
-                <option value="sistema-gestion">Sistema de Gestión Académica</option>
-                <option value="app-inventarios">App Móvil para Inventarios</option>
-                <option value="iot-agricultura">Sistema IoT para Agricultura</option>
-                <option value="turismo-local">App Móvil para Turismo Local</option>
-              </select>
-            </div>
-            <div className="filtro-grupo">
-              <label className="filtro-label" htmlFor="fecha-alerta">Fecha</label>
-              <select id="fecha-alerta" className="filtro-select" name="fecha_alerta">
-                <option value="">Cualquier fecha</option>
-                <option value="hoy">Hoy</option>
-                <option value="semana">Última semana</option>
-                <option value="mes">Último mes</option>
-              </select>
+          </div>
+          <div className="grupo-filtro">
+            <label htmlFor="proyecto-alerta">Proyecto</label>
+            <select id="proyecto-alerta" className="filtro-select" name="proyecto_alerta" value={filtroProyecto} onChange={(e) => { setFiltroProyecto(e.target.value); setPaginaActual(1) }}>
+              <option value="">Todos los proyectos</option>
+              <option value="sistema-gestion">Sistema de Gestion Academica</option>
+              <option value="app-inventarios">App Movil para Inventarios</option>
+              <option value="iot-agricultura">Sistema IoT para Agricultura</option>
+              <option value="turismo-local">App Movil para Turismo Local</option>
+            </select>
+          </div>
+          <div className="grupo-filtro">
+            <label htmlFor="fecha-alerta">Fecha</label>
+            <select id="fecha-alerta" className="filtro-select" name="fecha_alerta" value={filtroFecha} onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1) }}>
+              <option value="">Cualquier fecha</option>
+              <option value="hoy">Hoy</option>
+              <option value="semana">Ultima semana</option>
+              <option value="mes">Ultimo mes</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="lista-notificaciones">
+
+          <div className="notificacion-card">
+            <div className="notificacion-icono peligro"><i className="fas fa-exclamation-triangle"></i></div>
+            <div className="notificacion-cuerpo">
+              <div className="notificacion-fila-superior">
+                <h3 className="notificacion-titulo">Similitud Urgente Detectada</h3>
+                <span className={leidas[0] ? 'badge-leida' : 'badge-no-leida'}>{leidas[0] ? 'Leída' : 'No leída'}</span>
+              </div>
+              <p className="notificacion-descripcion">El proyecto "Sistema de Gestion Academica" de Maria Gonzalez tiene un 65% de similitud con el proyecto "Plataforma Educativa SENA" registrado anteriormente. Se requiere revisión inmediata.</p>
+              <div className="notificacion-fila-inferior">
+                <div className="notificacion-metas">
+                  <span className="notificacion-tiempo">Hace 1 hora</span>
+                  <span className="notificacion-proyecto">Sistema de Gestion Academica</span>
+                  <span className="badge-estado badge-similitud">Similitud</span>
+                </div>
+                <div className="notificacion-acciones">
+                  <Link to={{ pathname: '/instructor/detalle-similitud', state: { proyecto: 'Sistema de Gestion Academica', desde: 'alertas' } }} className="btn-accion"><i className="fas fa-search"></i> Revisar Similitud</Link>
+                  <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(0)} disabled={leidas[0]}><i className="fas fa-check-double"></i> Marcar como leída</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="notificaciones-lista">
-
-            <div className="notificacion-card">
-              <div className="notif-cabecera">
-                <div className="notif-titulo-grupo">
-                  <span className="notif-icono-bg peligro"><i className="fas fa-exclamation-triangle"></i></span>
-                  <h3>Similitud Urgente Detectada</h3>
+          <div className="notificacion-card">
+            <div className="notificacion-icono peligro"><i className="fas fa-exclamation-triangle"></i></div>
+            <div className="notificacion-cuerpo">
+              <div className="notificacion-fila-superior">
+                <h3 className="notificacion-titulo">Alta Similitud en App Móvil</h3>
+                <span className={leidas[1] ? 'badge-leida' : 'badge-no-leida'}>{leidas[1] ? 'Leída' : 'No leída'}</span>
+              </div>
+              <p className="notificacion-descripcion">El proyecto "App Movil para Inventarios" de Maria Gonzalez presenta un 58% de similitud con "Control de Stock Digital". Verificar originalidad de la propuesta.</p>
+              <div className="notificacion-fila-inferior">
+                <div className="notificacion-metas">
+                  <span className="notificacion-tiempo">Hace 3 horas</span>
+                  <span className="notificacion-proyecto">App Movil para Inventarios</span>
+                  <span className="badge-estado badge-similitud">Similitud</span>
                 </div>
-                <span className="badge badge-peligro">Urgente</span>
-              </div>
-              <hr className="propuesta-divider" />
-              <p className="notif-descripcion">El proyecto "Sistema de Gestión Académica" de Juan Pérez tiene un 65% de similitud con el proyecto "Plataforma Administrativa Escolar" registrado en el trimestre anterior. Se requiere revisión inmediata.</p>
-              <hr className="propuesta-divider" />
-              <div className="notif-meta">
-                <span className="notif-tiempo"><i className="fas fa-clock"></i> Hace 1 hora</span>
-                <span className="meta-separador">·</span>
-                <span className="notif-proyecto"><i className="fas fa-folder"></i> Sistema de Gestión Académica</span>
-              </div>
-              <div className="notif-acciones">
-                <Link to="/instructor/detalle-similitud" className="btn-primario"><i className="fas fa-search"></i> Revisar Similitud</Link>
-                <button className="btn-ghost" type="button"><i className="fas fa-check-double"></i> Marcar como leída</button>
+                <div className="notificacion-acciones">
+                  <Link to={{ pathname: '/instructor/detalle-similitud', state: { proyecto: 'App Movil para Inventarios', desde: 'alertas' } }} className="btn-accion"><i className="fas fa-search"></i> Revisar Similitud</Link>
+                  <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(1)} disabled={leidas[1]}><i className="fas fa-check-double"></i> Marcar como leída</button>
+                </div>
               </div>
             </div>
-
-            <div className="notificacion-card">
-              <div className="notif-cabecera">
-                <div className="notif-titulo-grupo">
-                  <span className="notif-icono-bg peligro"><i className="fas fa-exclamation-triangle"></i></span>
-                  <h3>Alta Similitud en App Móvil</h3>
-                </div>
-                <span className="badge badge-peligro">Urgente</span>
-              </div>
-              <hr className="propuesta-divider" />
-              <p className="notif-descripcion">El proyecto "App Móvil para Inventarios" de Carlos Ruiz presenta un 58% de similitud con "Control de Stock Digital". Verificar originalidad de la propuesta.</p>
-              <hr className="propuesta-divider" />
-              <div className="notif-meta">
-                <span className="notif-tiempo"><i className="fas fa-clock"></i> Hace 3 horas</span>
-                <span className="meta-separador">·</span>
-                <span className="notif-proyecto"><i className="fas fa-folder"></i> App Móvil para Inventarios</span>
-              </div>
-              <div className="notif-acciones">
-                <Link to="/instructor/detalle-similitud" className="btn-primario"><i className="fas fa-search"></i> Revisar Similitud</Link>
-                <button className="btn-ghost" type="button"><i className="fas fa-check-double"></i> Marcar como leída</button>
-              </div>
-            </div>
-
-            <div className="notificacion-card">
-              <div className="notif-cabecera">
-                <div className="notif-titulo-grupo">
-                  <span className="notif-icono-bg advertencia"><i className="fas fa-exchange-alt"></i></span>
-                  <h3>Cambio de Estado del Proyecto</h3>
-                </div>
-                <span className="badge badge-advertencia">Advertencia</span>
-              </div>
-              <hr className="propuesta-divider" />
-              <p className="notif-descripcion">El proyecto "Sistema IoT para Agricultura" de Ana Martínez fue aprobado por el instructor y pasa a estado "En desarrollo". El aprendiz ha sido notificado.</p>
-              <hr className="propuesta-divider" />
-              <div className="notif-meta">
-                <span className="notif-tiempo"><i className="fas fa-clock"></i> Hace 5 horas</span>
-                <span className="meta-separador">·</span>
-                <span className="notif-proyecto"><i className="fas fa-folder"></i> Sistema IoT para Agricultura</span>
-              </div>
-              <div className="notif-acciones">
-                <Link to="/instructor/detalle-proyecto" className="btn-primario"><i className="fas fa-eye"></i> Ver proyecto</Link>
-                <button className="btn-ghost" type="button"><i className="fas fa-check-double"></i> Marcar como leída</button>
-              </div>
-            </div>
-
-            <div className="notificacion-card">
-              <div className="notif-cabecera">
-                <div className="notif-titulo-grupo">
-                  <span className="notif-icono-bg informativa"><i className="fas fa-bullhorn"></i></span>
-                  <h3>Recordatorio: Revisiones Pendientes</h3>
-                </div>
-                <span className="badge badge-primario">Informativa</span>
-              </div>
-              <hr className="propuesta-divider" />
-              <p className="notif-descripcion">Tienes 4 proyectos pendientes por revisar. Recuerda proporcionar retroalimentación detallada a los aprendices.</p>
-              <hr className="propuesta-divider" />
-              <div className="notif-meta">
-                <span className="notif-tiempo"><i className="fas fa-clock"></i> Hace 2 días</span>
-                <span className="meta-separador">·</span>
-                <span className="notif-proyecto"><i className="fas fa-folder"></i> Todos los proyectos</span>
-              </div>
-              <div className="notif-acciones">
-                <Link to="/instructor/revision-propuestas" className="btn-primario"><i className="fas fa-file-alt"></i> Ver Revisiones</Link>
-                <button className="btn-ghost" type="button"><i className="fas fa-check-double"></i> Marcar como leída</button>
-              </div>
-            </div>
-
-            <div className="notificacion-card">
-              <div className="notif-cabecera">
-                <div className="notif-titulo-grupo">
-                  <span className="notif-icono-bg informativa"><i className="fas fa-info-circle"></i></span>
-                  <h3>Nuevo Proyecto Registrado</h3>
-                </div>
-                <span className="badge badge-primario">Informativa</span>
-              </div>
-              <hr className="propuesta-divider" />
-              <p className="notif-descripcion">Juan Pérez ha registrado un nuevo proyecto titulado "Plataforma de Gestión de Prácticas". El proyecto está en estado "Pendiente" y requiere revisión para asignación.</p>
-              <hr className="propuesta-divider" />
-              <div className="notif-meta">
-                <span className="notif-tiempo"><i className="fas fa-clock"></i> Ayer</span>
-                <span className="meta-separador">·</span>
-                <span className="notif-proyecto"><i className="fas fa-folder"></i> Plataforma de Gestión de Prácticas</span>
-              </div>
-              <div className="notif-acciones">
-                <Link to="/instructor/revision-propuestas" className="btn-primario"><i className="fas fa-search"></i> Revisar Propuesta</Link>
-                <button className="btn-ghost" type="button"><i className="fas fa-check-double"></i> Marcar como leída</button>
-              </div>
-            </div>
-
           </div>
 
-          <div className="paginacion">
-            <button className="btn-paginacion" type="button"><i className="fas fa-chevron-left"></i></button>
-            <button className="btn-paginacion activo" type="button">1</button>
-            <button className="btn-paginacion" type="button">2</button>
-            <button className="btn-paginacion" type="button">3</button>
-            <button className="btn-paginacion" type="button"><i className="fas fa-chevron-right"></i></button>
+          <div className="notificacion-card">
+            <div className="notificacion-icono advertencia"><i className="fas fa-exchange-alt"></i></div>
+            <div className="notificacion-cuerpo">
+              <div className="notificacion-fila-superior">
+                <h3 className="notificacion-titulo">Cambio de Estado del Proyecto</h3>
+                <span className={leidas[2] ? 'badge-leida' : 'badge-no-leida'}>{leidas[2] ? 'Leída' : 'No leída'}</span>
+              </div>
+              <p className="notificacion-descripcion">El proyecto "Sistema IoT para Agricultura" de Ana Martinez fue aprobado por el instructor y pasa a estado "En desarrollo". El aprendiz ha sido notificado.</p>
+              <div className="notificacion-fila-inferior">
+                <div className="notificacion-metas">
+                  <span className="notificacion-tiempo">Hace 5 horas</span>
+                  <span className="notificacion-proyecto">Sistema IoT para Agricultura</span>
+                  <span className="badge-estado badge-revision">Revisión</span>
+                </div>
+                <div className="notificacion-acciones">
+                  <Link to={{ pathname: '/instructor/detalle-proyecto/1', state: { desde: 'alertas' } }} className="btn-accion"><i className="fas fa-eye"></i> Ver proyecto</Link>
+                  <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(2)} disabled={leidas[2]}><i className="fas fa-check-double"></i> Marcar como leída</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="notificacion-card">
+            <div className="notificacion-icono informativa"><i className="fas fa-bullhorn"></i></div>
+            <div className="notificacion-cuerpo">
+              <div className="notificacion-fila-superior">
+                <h3 className="notificacion-titulo">Recordatorio: Revisiones Pendientes</h3>
+                <span className={leidas[3] ? 'badge-leida' : 'badge-no-leida'}>{leidas[3] ? 'Leída' : 'No leída'}</span>
+              </div>
+              <p className="notificacion-descripcion">Tienes 4 proyectos pendientes por revisar. Recuerda proporcionar retroalimentación detallada a los aprendices.</p>
+              <div className="notificacion-fila-inferior">
+                <div className="notificacion-metas">
+                  <span className="notificacion-tiempo">Hace 2 días</span>
+                  <span className="notificacion-proyecto">Todos los proyectos</span>
+                  <span className="badge-estado badge-sistema">Sistema</span>
+                </div>
+                <div className="notificacion-acciones">
+                  <Link to="/instructor/revision-propuestas" className="btn-accion"><i className="fas fa-file-alt"></i> Ver Revisiones</Link>
+                  <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(3)} disabled={leidas[3]}><i className="fas fa-check-double"></i> Marcar como leída</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="notificacion-card">
+            <div className="notificacion-icono informativa"><i className="fas fa-info-circle"></i></div>
+            <div className="notificacion-cuerpo">
+              <div className="notificacion-fila-superior">
+                <h3 className="notificacion-titulo">Nuevo Proyecto Registrado</h3>
+                <span className={leidas[4] ? 'badge-leida' : 'badge-no-leida'}>{leidas[4] ? 'Leída' : 'No leída'}</span>
+              </div>
+              <p className="notificacion-descripcion">Juan Perez ha registrado un nuevo proyecto titulado "Plataforma de Gestion de Practicas". El proyecto esta en estado "Pendiente" y requiere revisión para asignación.</p>
+              <div className="notificacion-fila-inferior">
+                <div className="notificacion-metas">
+                  <span className="notificacion-tiempo">Ayer</span>
+                  <span className="notificacion-proyecto">Plataforma de Gestion de Practicas</span>
+                  <span className="badge-estado badge-sistema">Sistema</span>
+                </div>
+                <div className="notificacion-acciones">
+                  <Link to="/instructor/revision-propuestas" className="btn-accion"><i className="fas fa-search"></i> Revisar Propuesta</Link>
+                  <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(4)} disabled={leidas[4]}><i className="fas fa-check-double"></i> Marcar como leída</button>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
+
+        <div className="paginacion">
+          <button className="btn-paginacion" disabled={paginaActual === 1} type="button" onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}><i className="fas fa-chevron-left"></i></button>
+          <button className={`btn-paginacion${paginaActual === 1 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(1)}>1</button>
+          <button className={`btn-paginacion${paginaActual === 2 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(2)}>2</button>
+          <button className={`btn-paginacion${paginaActual === 3 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(3)}>3</button>
+          <button className="btn-paginacion" type="button" onClick={() => setPaginaActual(prev => Math.min(3, prev + 1))}><i className="fas fa-chevron-right"></i></button>
+        </div>
+
       </div>
     </DashboardLayout>
   );
 }
 
-export default AlertasInstructor;
+export default AlertasInstructor

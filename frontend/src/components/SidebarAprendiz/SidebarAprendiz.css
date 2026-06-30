@@ -90,10 +90,10 @@
     z-index: 998;
     transition: left var(--transition-normal);
   }
-  .sidebar:target {
+  .sidebar.abierto {
     left: 0;
   }
-  .sidebar:target .cerrar-sidebar {
+  .sidebar.abierto .cerrar-sidebar {
     display: flex;
   }
 .cerrar-sidebar {

@@ -5,10 +5,10 @@ import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/directorio.css'
 
 const aprendices = [
-  { iniciales: 'AM', nombre: 'Ana Martinez', info: 'Activo - Ultima conexion: Hoy 14:30', clase: '' },
-  { iniciales: 'JP', nombre: 'Juan Perez', info: 'Activo - Ultima conexion: Hoy 11:15', clase: 'avatar-secundario' },
-  { iniciales: 'LG', nombre: 'Laura Gomez', info: 'Activo - Ultima conexion: Ayer', clase: 'avatar-secundario' },
-  { iniciales: 'DS', nombre: 'Diana Sanchez', info: 'Inactivo - Ultima conexion: 05/05/2026', clase: 'avatar-secundario' },
+  { iniciales: 'AM', nombre: 'Ana Martínez', info: 'Activo - Última conexión: Hoy 14:30', clase: '' },
+  { iniciales: 'JP', nombre: 'Juan Pérez', info: 'Activo - Última conexión: Hoy 11:15', clase: 'avatar-secundario' },
+  { iniciales: 'LG', nombre: 'Laura Gómez', info: 'Activo - Última conexión: Ayer', clase: 'avatar-secundario' },
+  { iniciales: 'DS', nombre: 'Diana Sánchez', info: 'Inactivo - Última conexión: 05/05/2026', clase: 'avatar-secundario' },
 ]
 
 const breadcrumb = [
@@ -28,18 +28,18 @@ function DirectorioFichaInstructor() {
           actions={<Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
         />
 
-        <div className="info-ficha-actual mb-30" style={{ padding: 'var(--space-lg) var(--space-xl)', background: 'var(--color-superficie)', borderRadius: 'var(--radio-xl)', boxShadow: 'var(--sombra-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+        <div className="info-ficha-actual mb-30">
           <div className="ficha-detalle">
             <h3>ADSO-2568</h3>
-            <p>Analisis y Desarrollo de Sistemas - Trimestre 3</p>
+            <p>Análisis y Desarrollo de Sistemas</p>
           </div>
-          <span className="badge badge-primario"><i className="fas fa-users"></i> 18 aprendices</span>
+          <span className="badge badge-primario"><i className="fas fa-users"></i> {aprendices.length} aprendices</span>
         </div>
 
-        <DataPanel title="Aprendices (18)" icon="user-graduate">
-          <div className="directorio-usuarios" style={{ padding: 'var(--space-xl)' }}>
+        <DataPanel title={`Aprendices (${aprendices.length})`} icon="user-graduate">
+          <div className="directorio-usuarios">
             {aprendices.map((a, i) => (
-              <div key={i} className="tarjeta-usuario" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', padding: 'var(--space-md) 0', borderBottom: i < aprendices.length - 1 ? '1px solid var(--color-borde)' : 'none' }}>
+              <div key={i} className="tarjeta-usuario">
                 <div className={`avatar-usuario ${a.clase}`}>{a.iniciales}</div>
                 <div className="info-usuario">
                   <h4>{a.nombre}</h4>
