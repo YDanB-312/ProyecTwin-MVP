@@ -14,8 +14,11 @@ export default function FooterAdmin() {
           <ul className="enlaces-pie">
             <li><Link to="/admin/dashboard"><i className="fas fa-chevron-right"></i> Dashboard</Link></li>
             <li><Link to="/admin/gestion-usuarios"><i className="fas fa-chevron-right"></i> Gestión usuarios</Link></li>
-            <li><Link to="/admin/reportes"><i className="fas fa-chevron-right"></i> Reportes</Link></li>
+            <li><Link to="/admin/proyectos"><i className="fas fa-chevron-right"></i> Proyectos</Link></li>
+            <li><Link to="/admin/similitudes"><i className="fas fa-chevron-right"></i> Similitudes</Link></li>
             <li><Link to="/admin/reportes-fallas"><i className="fas fa-chevron-right"></i> Reportes de fallas</Link></li>
+            <li><Link to="/admin/notificaciones"><i className="fas fa-chevron-right"></i> Notificaciones</Link></li>
+            <li><Link to="/admin/perfil"><i className="fas fa-chevron-right"></i> Mi Perfil</Link></li>
           </ul>
         </div>
         <div className="seccion-pie">

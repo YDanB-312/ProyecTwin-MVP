@@ -1,7 +1,7 @@
 /*
 Componente: FooterSimple
-Funcion: Pie de pagina simple para paginas de acceso publico
-Proposito: Mostrar copyright y datos de contacto institucionales
+Función: Pie de página simple para páginas de acceso público
+Propósito: Mostrar copyright y datos de contacto institucionales
 */
 
 import '../../assets/styles/pages/login.css'

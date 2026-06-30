@@ -1,35 +1,51 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/revision-propuestas.css'
 
+const breadcrumb = [
+  { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
+  { label: 'Revisión de Propuestas' },
+]
+
 function RevisionPropuestas() {
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroFecha, setFiltroFecha] = useState('')
+  const [filtroPrograma, setFiltroPrograma] = useState('')
+  const [paginaActual, setPaginaActual] = useState(1)
+
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
       <div className="revision-propuestas-container">
         <div className="contenedor-revision">
 
-          <div className="vista-header">
-            <Link to="/instructor/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-            <div className="vista-titulo-row">
-              <h1 className="vista-titulo">Revisión de Propuestas</h1>
-              <span className="metrica-pill"><i className="fas fa-clock"></i> 3 propuestas pendientes</span>
-            </div>
-          </div>
+          <PageHeader
+            title="Revisión de Propuestas"
+            icon="tasks"
+            breadcrumb={breadcrumb}
+            actions={
+              <div className="metrica-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <i className="fas fa-clock"></i> 3 propuestas pendientes
+              </div>
+            }
+          />
 
           <div className="filtros-card">
             <div className="filtro-grupo">
               <label htmlFor="estado-Propuesta" className="filtro-label">Estado</label>
-              <select id="estado-Propuesta" className="filtro-select" name="estado_propuesta">
+              <select id="estado-Propuesta" className="filtro-select" name="estado_propuesta" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
                 <option value="">Todos los estados</option>
                 <option value="pendiente">Pendientes</option>
+                <option value="en_revision">En revisión</option>
                 <option value="aprobado">Aprobadas</option>
                 <option value="rechazado">Rechazadas</option>
-                <option value="observado">Con observaciones</option>
+                <option value="requiere_ajustes">Requiere ajustes</option>
               </select>
             </div>
             <div className="filtro-grupo">
               <label htmlFor="fecha-Propuesta" className="filtro-label">Fecha</label>
-              <select id="fecha-Propuesta" className="filtro-select" name="fecha_propuesta">
+              <select id="fecha-Propuesta" className="filtro-select" name="fecha_propuesta" value={filtroFecha} onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1) }}>
                 <option value="">Cualquier fecha</option>
                 <option value="hoy">Hoy</option>
                 <option value="semana">Última semana</option>
@@ -38,7 +54,7 @@ function RevisionPropuestas() {
             </div>
             <div className="filtro-grupo">
               <label htmlFor="programa" className="filtro-label">Programa</label>
-              <select id="programa" className="filtro-select" name="programa">
+              <select id="programa" className="filtro-select" name="programa" value={filtroPrograma} onChange={(e) => { setFiltroPrograma(e.target.value); setPaginaActual(1) }}>
                 <option value="">Todos los programas</option>
                 <option value="adso">ADSO</option>
                 <option value="sistemas">Sistemas</option>
@@ -64,7 +80,7 @@ function RevisionPropuestas() {
                   <span className="meta-separador">·</span>
                   <span><i className="fas fa-graduation-cap"></i> ADSO</span>
                   <span className="meta-separador">·</span>
-                  <span><i className="fas fa-calendar"></i> 15 nov 2023</span>
+                  <span><i className="fas fa-calendar"></i> 15 nov 2026</span>
                 </div>
                 <div className="propuesta-chips">
                   <span className="tech-chip">Arduino</span>
@@ -84,11 +100,11 @@ function RevisionPropuestas() {
 
               <div className="propuesta-acciones">
                 <div className="acciones-izquierda">
-                  <button className="btn-primario"><i className="fas fa-check"></i> Aprobar</button>
-                  <button className="btn-rechazar"><i className="fas fa-times"></i> Rechazar</button>
+                  <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-check"></i> Aprobar</button>
+                  <button className="btn-rechazar" type="button" onClick={() => {}}><i className="fas fa-times"></i> Rechazar</button>
                 </div>
                 <div className="acciones-derecha">
-                  <button className="btn-ghost"><i className="fas fa-comment"></i> Observaciones</button>
+                  <button className="btn-ghost" type="button" onClick={() => {}}><i className="fas fa-comment"></i> Observaciones</button>
                   <Link to="/instructor/detalle-proyecto/1" className="btn-ghost"><i className="fas fa-eye"></i> Detalles</Link>
                 </div>
               </div>
@@ -109,7 +125,7 @@ function RevisionPropuestas() {
                   <span className="meta-separador">·</span>
                   <span><i className="fas fa-graduation-cap"></i> Multimedia</span>
                   <span className="meta-separador">·</span>
-                  <span><i className="fas fa-calendar"></i> 14 nov 2023</span>
+                  <span><i className="fas fa-calendar"></i> 14 nov 2026</span>
                 </div>
                 <div className="propuesta-chips">
                   <span className="tech-chip">React Native</span>
@@ -124,11 +140,11 @@ function RevisionPropuestas() {
 
               <div className="propuesta-acciones">
                 <div className="acciones-izquierda">
-                  <button className="btn-primario"><i className="fas fa-check"></i> Aprobar</button>
-                  <button className="btn-rechazar"><i className="fas fa-times"></i> Rechazar</button>
+                  <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-check"></i> Aprobar</button>
+                  <button className="btn-rechazar" type="button" onClick={() => {}}><i className="fas fa-times"></i> Rechazar</button>
                 </div>
                 <div className="acciones-derecha">
-                  <button className="btn-ghost"><i className="fas fa-comment"></i> Observaciones</button>
+                  <button className="btn-ghost" type="button" onClick={() => {}}><i className="fas fa-comment"></i> Observaciones</button>
                   <Link to="/instructor/detalle-proyecto/2" className="btn-ghost"><i className="fas fa-eye"></i> Detalles</Link>
                 </div>
               </div>
@@ -140,7 +156,7 @@ function RevisionPropuestas() {
                   <span className="aprendiz-avatar">LG</span>
                   <h3 className="propuesta-titulo">Plataforma E-learning para Música</h3>
                 </div>
-                <span className="badge badge-revisado">Con Observaciones</span>
+                <span className="badge badge-requiere-ajustes">Requiere Ajustes</span>
               </div>
 
               <div className="propuesta-fila-tecnica">
@@ -149,7 +165,7 @@ function RevisionPropuestas() {
                   <span className="meta-separador">·</span>
                   <span><i className="fas fa-graduation-cap"></i> ADSO</span>
                   <span className="meta-separador">·</span>
-                  <span><i className="fas fa-calendar"></i> 12 nov 2023</span>
+                  <span><i className="fas fa-calendar"></i> 12 nov 2026</span>
                 </div>
                 <div className="propuesta-chips">
                   <span className="tech-chip">React</span>
@@ -164,11 +180,11 @@ function RevisionPropuestas() {
 
               <div className="propuesta-acciones">
                 <div className="acciones-izquierda">
-                  <button className="btn-primario"><i className="fas fa-check"></i> Aprobar</button>
-                  <button className="btn-rechazar"><i className="fas fa-times"></i> Rechazar</button>
+                  <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-check"></i> Aprobar</button>
+                  <button className="btn-rechazar" type="button" onClick={() => {}}><i className="fas fa-times"></i> Rechazar</button>
                 </div>
                 <div className="acciones-derecha">
-                  <button className="btn-ghost"><i className="fas fa-comment"></i> Observaciones</button>
+                  <button className="btn-ghost" type="button" onClick={() => {}}><i className="fas fa-comment"></i> Observaciones</button>
                   <Link to="/instructor/detalle-proyecto/3" className="btn-ghost"><i className="fas fa-eye"></i> Detalles</Link>
                 </div>
               </div>
@@ -177,11 +193,11 @@ function RevisionPropuestas() {
           </div>
 
           <div className="paginacion">
-            <button className="btn-paginacion" type="button"><i className="fas fa-chevron-left"></i></button>
-            <button className="btn-paginacion activo" type="button">1</button>
-            <button className="btn-paginacion" type="button">2</button>
-            <button className="btn-paginacion" type="button">3</button>
-            <button className="btn-paginacion" type="button"><i className="fas fa-chevron-right"></i></button>
+            <button className="btn-paginacion" disabled={paginaActual === 1} type="button" onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}><i className="fas fa-chevron-left"></i></button>
+            <button className={`btn-paginacion${paginaActual === 1 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(1)}>1</button>
+            <button className={`btn-paginacion${paginaActual === 2 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(2)}>2</button>
+            <button className={`btn-paginacion${paginaActual === 3 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(3)}>3</button>
+            <button className="btn-paginacion" type="button" onClick={() => setPaginaActual(prev => Math.min(3, prev + 1))}><i className="fas fa-chevron-right"></i></button>
           </div>
 
         </div>

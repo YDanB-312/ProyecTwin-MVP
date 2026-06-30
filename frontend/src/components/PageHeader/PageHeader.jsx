@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function PageHeader({ title, subtitle, icon, actions, breadcrumb }) {
   return (
     <div className="encabezado-pagina-moderno">
@@ -7,7 +9,7 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
             <span key={i} className="breadcrumb-item">
               {i > 0 && <span className="breadcrumb-sep"><i className="fas fa-chevron-right"></i></span>}
               {item.to ? (
-                <a href={item.to}>{item.icon && <i className={`fas fa-${item.icon}`}></i>} {item.label}</a>
+                <Link to={item.to}>{item.icon && <i className={`fas fa-${item.icon}`}></i>} {item.label}</Link>
               ) : (
                 <span className="breadcrumb-actual">{item.label}</span>
               )}

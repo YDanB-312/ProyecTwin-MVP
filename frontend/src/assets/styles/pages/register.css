@@ -16,7 +16,7 @@
     width: 100%;
     max-width: 650px;
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring-md);
     padding: 35px 30px;
     border: 1px solid rgba(0,0,0,0.02);
@@ -71,7 +71,7 @@
     margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
 .modulo-invitado .titulo-seccion-register i {
@@ -82,7 +82,7 @@
 .modulo-invitado .formulario-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
 .modulo-invitado .grupo-campo {
@@ -109,8 +109,9 @@
     width: 100%;
     padding: 12px 15px;
     border: 1px solid var(--color-borde);
-    border-radius: var(--radio-sm);
+    border-radius: var(--radio-borde);
     font-size: .95rem;
+    font-family: inherit;
     color: var(--color-texto);
     background: white;
     transition: all var(--transition-fast);
@@ -132,7 +133,7 @@
 
 .modulo-invitado .tarjeta-rol {
     border: 2px solid var(--color-borde);
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     padding: 20px 14px;
     text-align: center;
     cursor: pointer;
@@ -142,7 +143,7 @@
 .modulo-invitado .tarjeta-rol:hover {
     border-color: var(--color-primario);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+    box-shadow: var(--sombra-media);
 }
 
 .modulo-invitado .tarjeta-rol input[type="radio"] {
@@ -248,7 +249,7 @@
 
     .modulo-invitado .pie-pagina-register > .contenedor-pie {
         flex-direction: column;
-        gap: 8px;
+        gap: var(--space-sm);
     }
 
     .modulo-invitado .pie-pagina-register .info-contacto {

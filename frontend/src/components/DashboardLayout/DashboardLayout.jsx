@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import GovernmentBar from '../GovernmentBar/GovernmentBar'
 import Header from '../Header/Header'
 import SidebarAprendiz from '../SidebarAprendiz/SidebarAprendiz'
@@ -20,6 +21,7 @@ const footers = {
 }
 
 export default function DashboardLayout({ role, titulo, usuario, notificaciones, children, className }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const Sidebar = sidebars[role]
   const Footer = footers[role]
   const modClass = `modulo-${role}`
@@ -27,8 +29,8 @@ export default function DashboardLayout({ role, titulo, usuario, notificaciones,
   return (
     <div className={`${modClass}${className ? ` ${className}` : ''}`}>
       <GovernmentBar />
-      <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} />
-      <Sidebar />
+      <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="contenido-principal">
         {children}
       </main>

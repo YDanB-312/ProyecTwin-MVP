@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -8,15 +8,13 @@ import '../../assets/styles/pages/mis-proyectos.css'
 const propuestas = [
   {
     id: 1,
-    titulo: 'Sistema IoT para Agricultura de Precisión',
+    titulo: 'Sistema IoT para Agricultura',
     aprendiz: 'Ana Martínez',
-    programa: 'ADSO - Análisis y Desarrollo de Sistemas',
+    programa: 'ADSO',
     estado: 'pendiente',
-    fecha_creacion: '15/11/2023',
+    created_at: '15/11/2023',
     instructor: 'Carlos Ruiz',
     linea_tecnologica: 'Tecnologías de la Información',
-    duracion_estimada: 6,
-    fecha_inicio_estimada: 'Enero 2024',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Sistema de monitoreo inteligente para cultivos utilizando sensores IoT que miden humedad, temperatura y nutrientes del suelo, permitiendo la toma de decisiones en tiempo real para optimizar el riego y la fertilización.',
     palabras_clave: 'IoT, sensores, agricultura, monitoreo, automatización',
@@ -47,15 +45,13 @@ const propuestas = [
     aprendiz: 'Juan Pérez',
     programa: 'Multimedia',
     estado: 'pendiente',
-    fecha_creacion: '14/11/2023',
+    created_at: '14/11/2023',
     instructor: 'Carlos Ruiz',
     linea_tecnologica: 'Diseño Gráfico',
-    duracion_estimada: 4,
-    fecha_inicio_estimada: 'Febrero 2024',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Aplicación móvil que promueve el turismo local mostrando sitios de interés, rutas y eventos culturales, facilitando la exploración de destinos y la planificación de visitas.',
     palabras_clave: 'turismo, app móvil, cultura, rutas turísticas, geolocalización',
-    tecnologias: 'Flutter, Node.js, MongoDB',
+    tecnologias: 'React Native, Node.js, MongoDB',
     objetivos: [
       'Desarrollar una aplicación móvil multiplataforma para promoción turística local.',
       'Implementar sistema de geolocalización para rutas turísticas interactivas.',
@@ -78,13 +74,11 @@ const propuestas = [
     id: 3,
     titulo: 'Plataforma E-learning para Música',
     aprendiz: 'Laura Gómez',
-    programa: 'ADSO - Análisis y Desarrollo de Sistemas',
+    programa: 'ADSO',
     estado: 'requiere_ajustes',
-    fecha_creacion: '12/11/2023',
+    created_at: '12/11/2023',
     instructor: 'Carlos Ruiz',
     linea_tecnologica: 'Tecnologías de la Información',
-    duracion_estimada: 8,
-    fecha_inicio_estimada: 'Marzo 2024',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Plataforma web para aprendizaje de instrumentos musicales con lecciones interactivas, seguimiento de progreso y recursos multimedia para estudiantes de todos los niveles.',
     palabras_clave: 'e-learning, música, educación, instrumentos, plataforma',
@@ -118,6 +112,7 @@ const observacionesData = [
 
 function DetalleProyectoInstructor() {
   const { id } = useParams()
+  const location = useLocation()
   const propuesta = propuestas.find(p => p.id === Number(id)) || propuestas[0]
 
   const estadoBadge = {
@@ -129,11 +124,20 @@ function DetalleProyectoInstructor() {
 
   const badge = estadoBadge[propuesta.estado] || estadoBadge.pendiente
 
+  const desde = location.state?.desde
+  const volverMap = {
+    dashboard: { path: '/instructor/dashboard', label: 'Volver al Panel' },
+    alertas: { path: '/instructor/alertas', label: 'Volver a Notificaciones' },
+  }
+  const volver = volverMap[desde] || { path: '/instructor/revision-propuestas', label: 'Volver a propuestas' }
+
   const breadcrumb = [
     { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
-    { to: '/instructor/revision-propuestas', label: 'Revisión de Propuestas' },
-    { label: propuesta.titulo },
   ]
+  if (desde !== 'dashboard') {
+    breadcrumb.push({ to: '/instructor/revision-propuestas', label: 'Revisión de Propuestas' })
+  }
+  breadcrumb.push({ label: propuesta.titulo })
 
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
@@ -142,7 +146,7 @@ function DetalleProyectoInstructor() {
           title={propuesta.titulo}
           icon="folder-open"
           breadcrumb={breadcrumb}
-          actions={<Link to="/instructor/revision-propuestas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver a propuestas</Link>}
+          actions={<Link to={volver.path} className="btn-secundario"><i className="fas fa-arrow-left"></i> {volver.label}</Link>}
         />
 
         <DataPanel title="Información General" icon="info-circle">
@@ -155,7 +159,7 @@ function DetalleProyectoInstructor() {
               <div className="detalle-label">Estado</div>
               <span className={`badge ${badge.clase}`}>{badge.texto}</span>
               {propuesta.similitud > 0 && (
-                <span className="badge badge-peligro" style={{ marginLeft: 8 }}><i className="fas fa-robot"></i> {propuesta.similitud}% similitud detectada</span>
+                <span className="badge badge-peligro ml-8"><i className="fas fa-robot"></i> {propuesta.similitud}% similitud detectada</span>
               )}
             </div>
             <div>
@@ -168,7 +172,7 @@ function DetalleProyectoInstructor() {
             </div>
             <div>
               <div className="detalle-label">Fecha de Creación</div>
-              <div className="detalle-valor">{propuesta.fecha_creacion}</div>
+              <div className="detalle-valor">{propuesta.created_at}</div>
             </div>
             <div>
               <div className="detalle-label">Instructor Asignado</div>
@@ -177,14 +181,6 @@ function DetalleProyectoInstructor() {
             <div>
               <div className="detalle-label">Línea Tecnológica</div>
               <div className="detalle-valor">{propuesta.linea_tecnologica}</div>
-            </div>
-            <div>
-              <div className="detalle-label">Duración Estimada</div>
-              <div className="detalle-valor">{propuesta.duracion_estimada} meses</div>
-            </div>
-            <div>
-              <div className="detalle-label">Fecha de Inicio</div>
-              <div className="detalle-valor">{propuesta.fecha_inicio_estimada}</div>
             </div>
             <div>
               <div className="detalle-label">Tipo de Proyecto</div>
@@ -203,7 +199,7 @@ function DetalleProyectoInstructor() {
               <div className="detalle-label">Palabras Clave</div>
               <div className="detalle-valor">
                 {propuesta.palabras_clave.split(', ').map((palabra, i) => (
-                  <span key={i} style={{ display: 'inline-block', background: '#e5e7eb', color: '#374151', fontSize: '0.8rem', padding: '2px 10px', borderRadius: 12, fontWeight: 500, marginRight: 6, marginBottom: 4 }}>{palabra}</span>
+                  <span key={i} className="tag-pill tag-pill-gris">{palabra}</span>
                 ))}
               </div>
             </div>
@@ -214,23 +210,23 @@ function DetalleProyectoInstructor() {
           <div className="detalle-grid-moderno">
             <div className="detalle-grid-full">
               <div className="detalle-label">Tecnologías a Utilizar</div>
-              <div className="detalle-valor" style={{ marginBottom: 16 }}>
+              <div className="detalle-valor mb-16">
                 {propuesta.tecnologias.split(', ').map((tech, i) => (
-                  <span key={i} style={{ display: 'inline-block', background: '#dbeafe', color: '#1e40af', fontSize: '0.8rem', padding: '2px 10px', borderRadius: 12, fontWeight: 500, marginRight: 6 }}>{tech}</span>
+                  <span key={i} className="tag-pill tag-pill-azul">{tech}</span>
                 ))}
               </div>
             </div>
             <div className="detalle-grid-full">
               <div className="detalle-label">Objetivos Específicos</div>
-              <ul style={{ margin: 0, paddingLeft: 20, color: '#4b5563', lineHeight: 1.8 }}>
+              <ul className="detalle-ul-reset">
                 {propuesta.objetivos.map((obj, i) => (
                   <li key={i}>{obj}</li>
                 ))}
               </ul>
             </div>
-            <div className="detalle-grid-full" style={{ marginTop: 16 }}>
+            <div className="detalle-grid-full mt-16">
               <div className="detalle-label">Entregables Esperados</div>
-              <ul style={{ margin: 0, paddingLeft: 20, color: '#4b5563', lineHeight: 1.8 }}>
+              <ul className="detalle-ul-reset">
                 {propuesta.entregables.map((ent, i) => (
                   <li key={i}>{ent}</li>
                 ))}
@@ -242,7 +238,7 @@ function DetalleProyectoInstructor() {
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
             {propuesta.miembros.map((m, i) => (
-              <div key={i} className="flex-row flex-wrap" style={{ padding: '8px 0' }}>
+              <div key={i} className="flex-row flex-wrap team-row">
                 <div className={`avatar-miembro avatar-sm ${m.clase}`}>{m.iniciales}</div>
                 <div>
                   <strong className="texto-md">{m.nombre}</strong>
@@ -271,8 +267,8 @@ function DetalleProyectoInstructor() {
                   <span className="observacion-autor"><i className={`fas fa-${obs.icono}`}></i> {obs.autor}</span>
                   <span className="observacion-fecha">{obs.fecha}</span>
                   <div className="observacion-acciones">
-                    <button type="button" className="btn-icono editar" title="Editar observación"><i className="fas fa-edit"></i></button>
-                    <button type="button" className="btn-icono eliminar" title="Eliminar observación"><i className="fas fa-trash-alt"></i></button>
+                    <button type="button" className="btn-icono editar" title="Editar observación" onClick={() => {}}><i className="fas fa-edit"></i></button>
+                    <button type="button" className="btn-icono eliminar" title="Eliminar observación" onClick={() => {}}><i className="fas fa-trash-alt"></i></button>
                   </div>
                 </div>
                 <div className="observacion-contenido">
@@ -281,14 +277,14 @@ function DetalleProyectoInstructor() {
               </div>
             ))}
           </div>
-          <div style={{ padding: 'var(--space-xl)', borderTop: '1px solid var(--color-borde)' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><i className="fas fa-plus-circle"></i> Agregar Observación</h3>
-            <form action="#">
-              <div className="grupo-formulario" style={{ marginTop: '12px' }}>
+          <div className="observaciones-section">
+            <h3><i className="fas fa-plus-circle"></i> Agregar Observación</h3>
+            <form action="#" onSubmit={(e) => e.preventDefault()}>
+              <div className="grupo-formulario">
                 <label htmlFor="observacion" className="etiqueta">Comentario</label>
                 <textarea id="observacion" className="textarea" placeholder="Escribe tu observación sobre el proyecto..." name="contenido"></textarea>
               </div>
-              <div className="acciones-formulario" style={{ marginTop: '12px' }}>
+              <div className="acciones-formulario">
                 <button type="submit" className="btn-primario"><i className="fas fa-paper-plane"></i> Guardar Observación</button>
               </div>
             </form>
@@ -296,7 +292,7 @@ function DetalleProyectoInstructor() {
         </DataPanel>
 
         <div className="acciones-finales">
-          <Link to="/instructor/revision-propuestas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver a propuestas</Link>
+          <Link to={volver.path} className="btn-secundario"><i className="fas fa-arrow-left"></i> {volver.label}</Link>
         </div>
       </div>
     </DashboardLayout>

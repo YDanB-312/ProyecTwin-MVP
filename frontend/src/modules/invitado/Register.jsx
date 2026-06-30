@@ -1,9 +1,20 @@
-import { Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/register.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
 
 export default function Register() {
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    defaultValues: { rol: 'aprendiz' }
+  })
+  const navigate = useNavigate()
+
+  const onSubmit = () => {
+    navigate('/login')
+    reset()
+  }
+
   return (
     <div className="modulo-invitado">
       <GovernmentBar />
@@ -19,35 +30,31 @@ export default function Register() {
             <p>Crea tu cuenta para acceder a la plataforma</p>
           </div>
 
-          <form action="#">
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="seccion-register">
               <h2 className="titulo-seccion-register">
-                <i className="fas fa-user"></i> Informacion Personal
+                <i className="fas fa-user"></i> Información Personal
               </h2>
               <div className="formulario-grid">
                 <div className="grupo-campo">
                   <label>Nombre <span className="requerido">*</span></label>
-                  <input type="text" placeholder="Ej: Maria" required name="nombre" />
+                  <input type="text" placeholder="Ej: Maria" {...register("nombre", { required: true })} />
+                  {errors.nombre && <span className="campo-error">El nombre es obligatorio</span>}
                 </div>
                 <div className="grupo-campo">
                   <label>Apellido <span className="requerido">*</span></label>
-                  <input type="text" placeholder="Ej: Gonzalez" required name="apellido" />
+                  <input type="text" placeholder="Ej: Gonzalez" {...register("apellido", { required: true })} />
+                  {errors.apellido && <span className="campo-error">El apellido es obligatorio</span>}
                 </div>
                 <div className="grupo-campo">
-                  <label>Correo Electronico <span className="requerido">*</span></label>
-                  <input type="email" placeholder="tu@correo.com" required name="correo" />
-                </div>
-                <div className="grupo-campo">
-                  <label>Telefono</label>
-                  <input type="tel" placeholder="Ej: 3235421165" name="telefono" />
-                </div>
-                <div className="grupo-campo">
-                  <label>Fecha de Nacimiento</label>
-                  <input type="date" name="fecha_nacimiento" />
+                  <label>Correo Electrónico <span className="requerido">*</span></label>
+                  <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
+                  {errors.correo && <span className="campo-error">Correo inválido</span>}
                 </div>
                 <div className="grupo-campo">
                   <label>Contrasena <span className="requerido">*</span></label>
-                  <input type="password" placeholder="Minimo 6 caracteres" minLength="6" required name="password" />
+                  <input type="password" placeholder="Minimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
+                  {errors.password && <span className="campo-error">Mínimo 6 caracteres</span>}
                 </div>
               </div>
             </div>
@@ -58,16 +65,16 @@ export default function Register() {
               </h2>
               <div className="selector-rol">
                 <label className="tarjeta-rol">
-                  <input type="radio" name="rol" value="aprendiz" />
+                  <input type="radio" value="aprendiz" {...register("rol", { required: true })} />
                   <div className="icono-rol"><i className="fas fa-user-graduate"></i></div>
                   <h3>Aprendiz</h3>
                   <p>Registra y Gestiona tus proyectos</p>
                 </label>
                 <label className="tarjeta-rol">
-                  <input type="radio" name="rol" value="instructor" />
+                  <input type="radio" value="instructor" {...register("rol", { required: true })} />
                   <div className="icono-rol"><i className="fas fa-chalkboard-teacher"></i></div>
                   <h3>Instructor</h3>
-                  <p>Evalua proyectos y da retroalimentacion</p>
+                  <p>Evalúa proyectos y da retroalimentación</p>
                 </label>
               </div>
             </div>
@@ -78,7 +85,7 @@ export default function Register() {
           </form>
 
           <div className="login-link">
-            Ya tienes cuenta? <Link to="/login">Inicia sesion</Link>
+            ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
           </div>
         </div>
       </main>

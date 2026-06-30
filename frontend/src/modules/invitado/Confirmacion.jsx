@@ -1,7 +1,7 @@
 /*
-Pagina: Confirmacion
-Funcion: Pagina de confirmacion de operacion exitosa
-Proposito: Mostrar que una operacion se realizo correctamente
+Página: Confirmacion
+Función: Página de confirmación de operación exitosa
+Propósito: Mostrar que una operación se realizó correctamente
 */
 
 import { Link } from 'react-router-dom'
@@ -20,9 +20,9 @@ export default function Confirmacion() {
             <div className="icono-exito-confirmacion">
               <i className="fas fa-check-circle"></i>
             </div>
-            <h1 className="titulo-confirmacion">Operacion Exitosa</h1>
+            <h1 className="titulo-confirmacion">Operación Exitosa</h1>
             <p className="texto-confirmacion">
-              La operacion se ha realizado correctamente en el sistema ProyecTwin.
+              La operación se ha realizado correctamente en el sistema ProyecTwin.
             </p>
             <Link to="/login" className="btn-primario">
               <i className="fas fa-home"></i> Volver al inicio

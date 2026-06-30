@@ -15,7 +15,7 @@
 
 /* Modal */
 .modulo-admin .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 2000; justify-content: center; align-items: center; }
-.modulo-admin .modal-contenido { background: white; border-radius: var(--radio-borde); width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); animation: modalEntrada 0.3s ease; }
+.modulo-admin .modal-contenido { background: var(--color-fondo-elevado); border-radius: var(--radio-borde); width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: var(--sombra-modal); animation: modalEntrada 0.3s ease; }
 
 @keyframes modalEntrada { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -23,13 +23,55 @@
 .modulo-admin .modal-encabezado h2 { font-size: 1.3rem; color: var(--color-texto); display: flex; align-items: center; gap: 10px; }
 .modulo-admin .modal-cuerpo { padding: 24px; }
 .modulo-admin .formulario-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.modulo-admin .grupo-campo { display: flex; flex-direction: column; gap: 8px; }
+.modulo-admin .grupo-campo { display: flex; flex-direction: column; gap: var(--space-sm); }
 .modulo-admin .grupo-campo label { font-size: 0.9rem; font-weight: 500; color: var(--color-texto); }
 .modulo-admin .requerido { color: var(--color-peligro); }
-.modulo-admin .grupo-campo input, .modulo-admin .grupo-campo select { padding: 10px 12px; border: 1px solid var(--color-borde); border-radius: 6px; font-size: 0.9rem; color: var(--color-texto); transition: all 0.3s; }
+.modulo-admin .grupo-campo input, .modulo-admin .grupo-campo select { padding: 10px 12px; border: 1px solid var(--color-borde); border-radius: var(--radio-borde); font-size: 0.9rem; color: var(--color-texto); font-family: inherit; transition: all 150ms ease; }
 .modulo-admin .grupo-campo input:focus, .modulo-admin .grupo-campo select:focus { outline: none; border-color: var(--color-primario); box-shadow: var(--sombra-foco); }
 
 .modulo-admin .modal-pie { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--color-borde); background: var(--color-fondo); }
+/* ── Secciones condicionales (Instructor/Aprendiz/Admin) ── */
+.modulo-admin .seccion-formulario {
+    background: var(--color-fondo);
+    border-radius: var(--radio-borde);
+    border: 1px solid var(--color-borde-suave);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.modulo-admin .seccion-formulario-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--color-fondo-elevado);
+    border-bottom: 1px solid var(--color-borde-suave);
+}
+
+.modulo-admin .seccion-formulario-header i {
+    font-size: 1.1rem;
+    color: var(--color-primario);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 153, 102, 0.08);
+    border-radius: var(--radio-borde);
+    flex-shrink: 0;
+}
+
+.modulo-admin .seccion-formulario-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-texto);
+    margin: 0;
+}
+
+.modulo-admin .seccion-formulario-body {
+    padding: 20px;
+}
+
 /* Responsive especÃ­fico */
 @media (max-width: 768px) {
     .modulo-admin .encabezado-pagina { flex-direction: column; gap: 15px; align-items: flex-start; }

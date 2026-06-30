@@ -5,14 +5,14 @@ import '../../assets/styles/pages/reportar-falla.css'
 
 function ReportarFallaInstructor() {
   const [descTexto, setDescTexto] = useState('')
-  const [archivoNombre, setArchivoNombre] = useState('No se ha seleccionado ningun archivo')
+  const [archivoNombre, setArchivoNombre] = useState('No se ha seleccionado ningún archivo')
 
   function manejarArchivo(e) {
     const file = e.target.files[0]
     if (file) {
       setArchivoNombre(file.name)
     } else {
-      setArchivoNombre('No se ha seleccionado ningun archivo')
+      setArchivoNombre('No se ha seleccionado ningún archivo')
     }
   }
 
@@ -22,7 +22,7 @@ function ReportarFallaInstructor() {
 
         <Link to="/instructor/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
 
-        <div className="notificaciones-header" style={{ marginBottom: '32px' }}>
+        <div className="notificaciones-header mb-32">
           <h1 className="notificaciones-titulo">Reportar Falla</h1>
         </div>
 
@@ -33,18 +33,18 @@ function ReportarFallaInstructor() {
           </div>
 
           <div className="mensaje-feedback mensaje-exito oculto">
-            <i className="fas fa-check-circle"></i><span>Operacion realizada exitosamente.</span>
+            <i className="fas fa-check-circle"></i><span>Operación realizada exitosamente.</span>
           </div>
           <div className="mensaje-feedback mensaje-error oculto">
             <i className="fas fa-exclamation-circle"></i><span>Ha ocurrido un error. Intenta nuevamente.</span>
           </div>
 
-          <form id="formularioFalla" action="#">
+          <form id="formularioFalla" action="#" onSubmit={(e) => e.preventDefault()}>
             <div className="form-body">
               <div className="grupo-campo">
                 <label htmlFor="tipo-falla" className="campo-label">Tipo de Falla <span className="obligatorio">*</span></label>
-                <select id="tipo-falla" className="campo-select" required name="tipo">
-                  <option value="" disabled selected>-- Selecciona una opcion --</option>
+                <select id="tipo-falla" className="campo-select" required name="tipo" defaultValue="">
+                  <option value="" disabled>-- Selecciona una opción --</option>
                   <option value="sistema">Error del sistema</option>
                   <option value="proyecto">Problema con proyectos asignados</option>
                   <option value="datos">Error de datos</option>
@@ -52,7 +52,7 @@ function ReportarFallaInstructor() {
                 </select>
               </div>
               <div className="grupo-campo">
-                <label htmlFor="descripcion" className="campo-label">Descripcion Detallada <span className="obligatorio">*</span></label>
+                <label htmlFor="descripcion" className="campo-label">Descripción Detallada <span className="obligatorio">*</span></label>
                 <textarea id="descripcion" className="campo-textarea" placeholder="Describe con detalle el problema encontrado, los pasos que seguiste y el resultado esperado..." required name="descripcion" maxLength="500" value={descTexto} onChange={e => setDescTexto(e.target.value)}></textarea>
                 <div className="desc-contador">{descTexto.length}/500 caracteres</div>
               </div>
@@ -89,8 +89,8 @@ function ReportarFallaInstructor() {
               </div>
               <p className="reporte-descripcion">El sistema no permite calificar propuestas de los aprendices</p>
               <div className="reporte-card-footer">
-                <span className="badge-estado-reporte badge-resuelto"><i className="fas fa-check-circle"></i> Resuelto</span>
-                <span className="reporte-fecha">10 Oct 2023</span>
+                <span className="badge-estado-reporte badge-exito"><i className="fas fa-check-circle"></i> Resuelto</span>
+                <span className="reporte-fecha">10 Oct 2026</span>
               </div>
             </div>
 
@@ -99,10 +99,10 @@ function ReportarFallaInstructor() {
                 <span className="reporte-id">#002</span>
                 <span className="badge-tipo badge-tipo-datos">Error de datos</span>
               </div>
-              <p className="reporte-descripcion">Los proyectos asignados no muestran correctamente la informacion</p>
+              <p className="reporte-descripcion">Los proyectos asignados no muestran correctamente la información</p>
               <div className="reporte-card-footer">
-                <span className="badge-estado-reporte badge-en-proceso"><i className="fas fa-spinner"></i> En proceso</span>
-                <span className="reporte-fecha">25 Oct 2023</span>
+                <span className="badge-estado-reporte badge-advertencia"><i className="fas fa-spinner"></i> En Revisión</span>
+                <span className="reporte-fecha">25 Oct 2026</span>
               </div>
             </div>
 
@@ -113,8 +113,8 @@ function ReportarFallaInstructor() {
               </div>
               <p className="reporte-descripcion">No puedo asignar instructores a nuevos proyectos</p>
               <div className="reporte-card-footer">
-                <span className="badge-estado-reporte badge-pendiente"><i className="fas fa-clock"></i> Pendiente</span>
-                <span className="reporte-fecha">02 Nov 2023</span>
+                <span className="badge-estado-reporte badge-advertencia"><i className="fas fa-clock"></i> Pendiente</span>
+                <span className="reporte-fecha">02 Nov 2026</span>
               </div>
             </div>
 

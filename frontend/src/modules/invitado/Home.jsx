@@ -39,8 +39,8 @@ export default function Home() {
               Bienvenido a <span>ProyecTwin</span>
             </h1>
             <p className="hero-descripcion">
-              Plataforma inteligente de gestion y deteccion de Similitudes para proyectos de formacion del SENA.
-              Optimiza tus proyectos, evita duplicidades y fomenta la originalidad academica.
+              Plataforma inteligente de gestión y detección de Similitudes para proyectos de formación del SENA.
+              Optimiza tus proyectos, evita duplicidades y fomenta la originalidad académica.
             </p>
             <div className="hero-botones">
               <Link to="/login" className="btn-primario">
@@ -62,7 +62,7 @@ export default function Home() {
                   <i className="fas fa-user-graduate"></i>
                 </div>
                 <h3>Aprendiz</h3>
-                <p>Gestiona tus proyectos de formacion y recibe retroalimentacion de instructores.</p>
+                <p>Gestiona tus proyectos de formación y recibe retroalimentación de instructores.</p>
                 <ul>
                   <li><i className="fas fa-check"></i> Crear nuevos proyectos</li>
                   <li><i className="fas fa-check"></i> Recibir Notificaciones</li>
@@ -75,7 +75,7 @@ export default function Home() {
                   <i className="fas fa-chalkboard-teacher"></i>
                 </div>
                 <h3>Instructor</h3>
-                <p>Revisa Propuestas, evalua proyectos y gestiona el progreso de tus aprendices.</p>
+                <p>Revisa Propuestas, evalúa proyectos y gestiona el progreso de tus aprendices.</p>
                 <ul>
                   <li><i className="fas fa-check"></i> Revisar Propuestas</li>
                   <li><i className="fas fa-check"></i> Evaluar proyectos</li>
@@ -86,7 +86,7 @@ export default function Home() {
           </div>
 
           <div className="como-funciona">
-            <h3 className="como-funciona-titulo">Como Funciona ProyecTwin?</h3>
+            <h3 className="como-funciona-titulo">¿Cómo Funciona ProyecTwin?</h3>
 
             <div className="pasos-grid">
               <div className="paso">
@@ -97,17 +97,17 @@ export default function Home() {
               <div className="paso">
                 <div className="paso-numero">2</div>
                 <h4>Sube tu Proyecto</h4>
-                <p>Registra tu Propuesta y el sistema analizara automaticamente Similitudes.</p>
+                <p>Registra tu Propuesta y el sistema analizará automáticamente Similitudes.</p>
               </div>
               <div className="paso">
                 <div className="paso-numero">3</div>
-                <h4>Recibe Evaluacion</h4>
+                <h4>Recibe Evaluación</h4>
                 <p>Instructores revisan y aprueban Propuestas con herramientas inteligentes.</p>
               </div>
               <div className="paso">
                 <div className="paso-numero">4</div>
                 <h4>Mejora tu Proyecto</h4>
-                <p>Recibe retroalimentacion de instructores y mejora tu proyecto continuamente.</p>
+                <p>Recibe retroalimentación de instructores y mejora tu proyecto continuamente.</p>
               </div>
             </div>
           </div>
@@ -117,9 +117,9 @@ export default function Home() {
               <div className="tarjeta-icono tarjeta-icono-buscar">
                 <i className="fas fa-search"></i>
               </div>
-              <h3 className="tarjeta-titulo">Deteccion de Similitudes</h3>
+              <h3 className="tarjeta-titulo">Detección de Similitudes</h3>
               <p className="tarjeta-texto">
-                Analizamos automaticamente tus Propuestas para identificar Similitudes con otros proyectos.
+                Analizamos automáticamente tus Propuestas para identificar Similitudes con otros proyectos.
               </p>
             </div>
 
@@ -127,7 +127,7 @@ export default function Home() {
               <div className="tarjeta-icono tarjeta-icono-gestionar">
                 <i className="fas fa-tasks"></i>
               </div>
-              <h3 className="tarjeta-titulo">Gestion de Proyectos</h3>
+              <h3 className="tarjeta-titulo">Gestión de Proyectos</h3>
               <p className="tarjeta-texto">
                 Administra Propuestas y mantente organizado durante todo el ciclo.
               </p>
@@ -137,32 +137,10 @@ export default function Home() {
               <div className="tarjeta-icono tarjeta-icono-seguimiento">
                 <i className="fas fa-chart-line"></i>
               </div>
-              <h3 className="tarjeta-titulo">Retroalimentacion Continua</h3>
+              <h3 className="tarjeta-titulo">Retroalimentación Continua</h3>
               <p className="tarjeta-texto">
                 Recibe comentarios de instructores para mejorar tus proyectos.
               </p>
-            </div>
-          </div>
-
-          <div className="estadisticas-section">
-            <h3 className="estadisticas-titulo">ProyecTwin en Numeros</h3>
-            <div className="estadisticas-grid">
-              <div>
-                <div className="estadistica-numero">150+</div>
-                <div className="estadistica-label">Proyectos Gestionados</div>
-              </div>
-              <div>
-                <div className="estadistica-numero">95%</div>
-                <div className="estadistica-label">Deteccion Precisa</div>
-              </div>
-              <div>
-                <div className="estadistica-numero">300+</div>
-                <div className="estadistica-label">Usuarios Activos</div>
-              </div>
-              <div>
-                <div className="estadistica-numero">24/7</div>
-                <div className="estadistica-label">Disponibilidad</div>
-              </div>
             </div>
           </div>
 
@@ -172,7 +150,7 @@ export default function Home() {
               Listo para transformar tus proyectos?
             </h3>
             <p className="cta-texto">
-              Unete a la comunidad academica del SENA y lleva tus proyectos de formacion al siguiente nivel.
+              Únete a la comunidad académica del SENA y lleva tus proyectos de formación al siguiente nivel.
             </p>
             <Link to="/register" className="btn-primario">
               <i className="fas fa-user-plus"></i> Comenzar Ahora

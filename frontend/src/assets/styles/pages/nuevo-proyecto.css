@@ -7,12 +7,12 @@
 /* ── Campos obligatorios ── */
 .modulo-aprendiz .campos-obligatorios {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-bottom: 24px;
 }
 
 .modulo-aprendiz .obligatorio {
-    color: #ef4444;
+    color: var(--color-peligro);
     font-weight: 700;
 }
 
@@ -22,27 +22,27 @@
     align-items: center;
     gap: 10px;
     padding: 14px 20px;
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     font-size: 0.9rem;
     font-weight: 500;
 }
 
 .modulo-aprendiz .mensaje-exito {
     background: rgba(5, 153, 102, 0.08);
-    color: #059669;
+    color: var(--color-primario);
     border: 1px solid rgba(5, 153, 102, 0.15);
 }
 
 .modulo-aprendiz .mensaje-error {
     background: rgba(239, 68, 68, 0.08);
-    color: #dc2626;
+    color: var(--color-peligro);
     border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
 /* ── Formulario Card ── */
 .modulo-aprendiz .formulario-card {
     background: white;
-    border-radius: 16px;
+    border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     padding: 0;
     margin-bottom: 0;
@@ -50,7 +50,7 @@
 
 /* ── Sección del Formulario ── */
 .modulo-aprendiz .seccion-formulario {
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--color-borde-suave);
 }
 
 .modulo-aprendiz .seccion-formulario:last-of-type {
@@ -63,27 +63,27 @@
     align-items: center;
     gap: 12px;
     padding: 24px 32px 12px;
-    border-bottom: 3px solid #059669;
+    border-bottom: 3px solid var(--color-primario);
     margin: 0 32px;
 }
 
 .modulo-aprendiz .seccion-formulario-header i {
     font-size: 1.1rem;
-    color: #059669;
+    color: var(--color-primario);
     width: 36px;
     height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(5, 153, 102, 0.08);
-    border-radius: 8px;
+    border-radius: var(--radio-borde);
     flex-shrink: 0;
 }
 
 .modulo-aprendiz .seccion-formulario-header h3 {
     font-size: 1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-texto);
     margin: 0;
 }
 
@@ -113,13 +113,13 @@
     display: block;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--color-texto-secundario);
     margin-bottom: 8px;
 }
 
 .modulo-aprendiz .etiqueta.requerido::after {
     content: " *";
-    color: #ef4444;
+    color: var(--color-peligro);
 }
 
 /* ── Inputs Premium ── */
@@ -129,8 +129,9 @@
     width: 100%;
     padding: 12px 16px;
     border: 1px solid var(--color-borde);
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     font-size: 0.95rem;
+    font-family: inherit;
     color: var(--color-texto);
     background: var(--color-fondo-elevado);
     transition: all 150ms ease;
@@ -146,7 +147,7 @@
 
 .modulo-aprendiz .input-text::placeholder,
 .modulo-aprendiz .textarea::placeholder {
-    color: #9ca3af;
+    color: var(--color-texto-muted);
 }
 
 .modulo-aprendiz .textarea {
@@ -159,20 +160,20 @@
 .modulo-aprendiz .contador-caracteres {
     text-align: right;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-top: 2px;
 }
 
 /* ── Contador palabras clave ── */
 .modulo-aprendiz .contador-palabras {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     margin-top: 4px;
 }
 
 .modulo-aprendiz .campo-informacion {
     font-size: 0.78rem;
-    color: #9ca3af;
+    color: var(--color-texto-muted);
     margin-top: 6px;
     line-height: 1.4;
 }
@@ -182,7 +183,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    gap: 16px;
+    gap: var(--space-md);
     margin-bottom: 16px;
 }
 
@@ -193,7 +194,7 @@
 .modulo-aprendiz .integrantes-controles {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-md);
     flex-shrink: 0;
 }
 
@@ -201,17 +202,17 @@
 .modulo-aprendiz .seleccionar-todos {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     padding: 4px 0;
     user-select: none;
 }
 
 .modulo-aprendiz .seleccionar-todos:hover {
-    color: #111827;
+    color: var(--color-texto);
 }
 
 /* ── Contador seleccionados ── */
@@ -221,7 +222,7 @@
     color: var(--color-primario);
     background: rgba(5, 153, 102, 0.08);
     padding: 3px 12px;
-    border-radius: 20px;
+    border-radius: var(--radio-borde);
     white-space: nowrap;
 }
 
@@ -238,17 +239,17 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    background: var(--color-fondo);
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
     cursor: pointer;
     transition: all 150ms ease;
     user-select: none;
 }
 
 .modulo-aprendiz .miembro-card:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    background: var(--color-borde-suave);
+    border-color: var(--color-borde);
 }
 
 .modulo-aprendiz .miembro-card.seleccionado {
@@ -276,7 +277,7 @@
 .modulo-aprendiz .checkbox-personalizado {
     width: 20px;
     height: 20px;
-    border: 2px solid #d1d5db;
+    border: 2px solid var(--color-borde);
     border-radius: 5px;
     flex-shrink: 0;
     position: relative;
@@ -335,7 +336,7 @@
 .modulo-aprendiz .miembro-nombre {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--color-texto-secundario);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -360,7 +361,7 @@
     gap: 10px;
     cursor: pointer;
     font-size: 0.9rem;
-    color: #374151;
+    color: var(--color-texto-secundario);
     user-select: none;
 }
 
@@ -375,7 +376,7 @@
 .modulo-aprendiz .radio-personalizado {
     width: 20px;
     height: 20px;
-    border: 2px solid #d1d5db;
+    border: 2px solid var(--color-borde);
     border-radius: 50%;
     flex-shrink: 0;
     position: relative;
@@ -415,7 +416,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 24px 32px;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid var(--color-borde-suave);
     margin-top: 0;
 }
 
@@ -426,7 +427,7 @@
 
 .modulo-aprendiz .acciones-formulario .btn-primario {
     padding: 12px 28px;
-    border-radius: 8px;
+    border-radius: var(--radio-borde);
     font-family: inherit;
     box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
     transition: all 200ms ease;
@@ -445,7 +446,7 @@
 
 .modulo-aprendiz .btn-outline {
     padding: 12px 24px;
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     border: 1px solid var(--color-borde);
     background: var(--color-fondo-elevado);
     color: var(--color-texto-secundario);
@@ -455,7 +456,7 @@
     transition: all 150ms ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     text-decoration: none;
     font-family: inherit;
 }
@@ -475,23 +476,23 @@
 
 .modulo-aprendiz .btn-enlace {
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: var(--radio-borde);
     background: transparent;
-    color: #6b7280;
+    color: var(--color-texto-claro);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 150ms ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     text-decoration: none;
     font-family: inherit;
 }
 
 .modulo-aprendiz .btn-enlace:hover {
     background: #fef2f2;
-    color: #dc2626;
+    color: var(--color-peligro);
     transform: translateY(-1px);
 }
 
@@ -520,7 +521,7 @@
     .modulo-aprendiz .encabezado-con-boton {
         flex-direction: column;
         align-items: flex-start;
-        gap: 16px;
+        gap: var(--space-md);
     }
 
     .modulo-aprendiz .seccion-formulario-header {

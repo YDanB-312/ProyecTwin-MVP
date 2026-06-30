@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { Link, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -11,6 +12,14 @@ const breadcrumb = [
 ]
 
 function CrearFicha() {
+  const { register, handleSubmit, formState: { errors }, reset } = useForm()
+  const navigate = useNavigate()
+
+  const onSubmit = () => {
+    navigate('/instructor/gestionar-fichas')
+    reset()
+  }
+
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
       <div className="contenedor-pagina">
@@ -21,31 +30,39 @@ function CrearFicha() {
           actions={<Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
         />
 
-        <div className="mensaje-feedback mensaje-exito oculto" style={{ marginBottom: 'var(--space-md)' }}>
-          <i className="fas fa-check-circle"></i><span>Operacion realizada exitosamente.</span>
+        <div className="mensaje-feedback mensaje-exito oculto mb-md">
+          <i className="fas fa-check-circle"></i><span>Operación realizada exitosamente.</span>
         </div>
-        <div className="mensaje-feedback mensaje-error oculto" style={{ marginBottom: 'var(--space-md)' }}>
+        <div className="mensaje-feedback mensaje-error oculto mb-md">
           <i className="fas fa-exclamation-circle"></i><span>Ha ocurrido un error. Intenta nuevamente.</span>
         </div>
 
-        <DataPanel title="Informacion de la Ficha" icon="info-circle">
-          <form action="#" className="formulario-proyecto">
-            <div style={{ padding: 'var(--space-xl)' }}>
+        <DataPanel title="Información de la Ficha" icon="info-circle">
+          <form className="formulario-proyecto" onSubmit={handleSubmit(onSubmit)}>
+            <div className="form-content">
               <div className="grupo-formulario">
-                <label htmlFor="codigo" className="etiqueta requerido">Codigo de Ficha</label>
-                <input type="text" id="codigo" className="input-text" placeholder="Ej: ADSO-2568" required name="codigo" />
-                <div className="campo-informacion">Codigo unico que identificara al grupo (ej: PROGRAMA-NUMERO).</div>
+                <label htmlFor="codigo" className="etiqueta requerido">Código de Ficha</label>
+                <input type="text" id="codigo" className="input-text" placeholder="Ej: ADSO-2568" {...register("codigo", { required: true })} />
+                {errors.codigo && <span className="campo-error">El código es obligatorio</span>}
+                <div className="campo-informacion">Código único que identificará al grupo (ej: PROGRAMA-NÚMERO).</div>
               </div>
               <div className="grupo-formulario">
-                <label htmlFor="id_programa" className="etiqueta requerido">Programa de Formacion</label>
-                <select id="id_programa" className="select-filtro" required name="id_programa">
+                <label htmlFor="nombre" className="etiqueta requerido">Nombre de la Ficha</label>
+                <input type="text" id="nombre" className="input-text" placeholder="Ej: Análisis y Desarrollo 2568" {...register("nombre", { required: true })} />
+                {errors.nombre && <span className="campo-error">El nombre es obligatorio</span>}
+                <div className="campo-informacion">Nombre descriptivo para identificar la ficha.</div>
+              </div>
+              <div className="grupo-formulario">
+                <label htmlFor="id_programa" className="etiqueta requerido">Programa de Formación</label>
+                <select id="id_programa" className="select-filtro" {...register("programa", { required: true })}>
                   <option value="">Seleccione un programa</option>
-                  <option value="1">ADSO - Analisis y Desarrollo de Sistemas</option>
+                  <option value="1">ADSO - Análisis y Desarrollo de Sistemas</option>
                   <option value="2">Multimedia</option>
                   <option value="3">IoT</option>
                 </select>
+                {errors.programa && <span className="campo-error">Seleccione un programa</span>}
               </div>
-              <div className="acciones-finales" style={{ marginTop: 'var(--space-lg)' }}>
+              <div className="acciones-finales mt-lg">
                 <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Crear Ficha</button>
                 <Link to="/instructor/gestionar-fichas" className="btn-secundario"><i className="fas fa-times"></i> Cancelar</Link>
               </div>

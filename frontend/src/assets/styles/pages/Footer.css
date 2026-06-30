@@ -1,5 +1,5 @@
 .pie-pagina {
-  background: #0f172a;
+  background: var(--color-texto);
   color: rgba(255, 255, 255, 0.85);
   padding: 40px 20px 0;
   margin-top: 50px;
@@ -23,7 +23,7 @@
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .seccion-pie p {
@@ -50,7 +50,7 @@
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .enlaces-pie a:hover {
@@ -98,7 +98,7 @@
 @media (max-width: 768px) {
   .contenedor-pie {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: var(--space-xl);
     text-align: center;
   }
 

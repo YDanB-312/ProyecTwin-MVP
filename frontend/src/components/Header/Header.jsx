@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import './Header.css'
 
-export default function Header({ titulo, usuario, notificaciones }) {
+export default function Header({ titulo, usuario, notificaciones, onToggleSidebar }) {
   return (
     <header className="header-principal">
       <div className="contenedor-header">
         <div className="grupo-izquierdo">
-          <a href="#sidebar" className="btn-hamburguesa"><i className="fas fa-bars"></i></a>
+          <button className="btn-hamburguesa" onClick={onToggleSidebar}><i className="fas fa-bars"></i></button>
           <img src="/images/Logo-ProyecTwin.png" alt="Logo" className="logo-header-img" />
           <span className="titulo-header">{titulo}</span>
         </div>

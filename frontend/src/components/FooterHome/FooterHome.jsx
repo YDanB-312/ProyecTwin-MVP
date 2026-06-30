@@ -1,7 +1,7 @@
 /*
 Componente: FooterHome
-Funcion: Pie de pagina para la pagina de inicio (Home)
-Proposito: Mostrar informacion institucional, enlaces rapidos y contacto
+Función: Pie de página para la página de inicio (Home)
+Propósito: Mostrar información institucional, enlaces rápidos y contacto
 */
 
 import { Link } from 'react-router-dom'

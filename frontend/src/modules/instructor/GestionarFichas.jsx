@@ -1,15 +1,26 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import '../../assets/styles/pages/gestion-fichas.css'
 
 const fichas = [
-  { codigo: 'ADSO-2568', nombre: 'Análisis y Desarrollo 2568', programa: 'ADSO', aprendices: 28, proyectos: 12, estado: 'Activa', badge: 'exito' },
-  { codigo: 'MULT-3012', nombre: 'Multimedia 3012', programa: 'Multimedia', aprendices: 22, proyectos: 8, estado: 'Activa', badge: 'exito' },
-  { codigo: 'IOT-4105', nombre: 'IoT 4105', programa: 'IoT', aprendices: 18, proyectos: 6, estado: 'Activa', badge: 'exito' },
-  { codigo: 'ADSO-1980', nombre: 'Análisis y Desarrollo 1980', programa: 'ADSO', aprendices: 0, proyectos: 0, estado: 'Inactiva', badge: 'neutral' },
+  { codigo: 'ADSO-2568', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', aprendices: 28, proyectos: 5, estado: true },
+  { codigo: 'ADSO-2634', nombre: 'Analisis y Desarrollo 2634', programa: 'ADSO', aprendices: 25, proyectos: 3, estado: true },
+  { codigo: 'MM-3102', nombre: 'Produccion Multimedia 3102', programa: 'Produccion Multimedia', aprendices: 22, proyectos: 4, estado: true },
+  { codigo: 'IR-2801', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', aprendices: 20, proyectos: 0, estado: false },
 ]
 
 function GestionarFichas() {
+  const [filtroPrograma, setFiltroPrograma] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+
+  const limpiarFiltros = () => {
+    setFiltroPrograma('')
+    setFiltroEstado('')
+    setBusqueda('')
+  }
+
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
       <div className="gestion-fichas-container">
@@ -19,7 +30,7 @@ function GestionarFichas() {
             <Link to="/instructor/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
             <div className="vista-titulo-row">
               <h1 className="vista-titulo">Gestionar Fichas</h1>
-              <span className="metrica-pill"><i className="fas fa-layer-group"></i> 4 fichas registradas</span>
+              <span className="metrica-pill"><i className="fas fa-layer-group"></i> {fichas.length} fichas registradas</span>
               <Link to="/instructor/crear-ficha" className="btn-primario"><i className="fas fa-plus"></i> Nueva Ficha</Link>
             </div>
           </div>
@@ -27,7 +38,7 @@ function GestionarFichas() {
           <div className="filtros-card">
             <div className="filtro-grupo">
               <label htmlFor="programa-ficha" className="filtro-label">Programa</label>
-              <select id="programa-ficha" className="filtro-select" name="programa_ficha">
+              <select id="programa-ficha" className="filtro-select" name="programa_ficha" value={filtroPrograma} onChange={(e) => setFiltroPrograma(e.target.value)}>
                 <option value="">Todos los programas</option>
                 <option value="adso">ADSO</option>
                 <option value="multimedia">Multimedia</option>
@@ -36,7 +47,7 @@ function GestionarFichas() {
             </div>
             <div className="filtro-grupo">
               <label htmlFor="estado-ficha" className="filtro-label">Estado</label>
-              <select id="estado-ficha" className="filtro-select" name="estado_ficha">
+              <select id="estado-ficha" className="filtro-select" name="estado_ficha" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="activa">Activas</option>
                 <option value="inactiva">Inactivas</option>
@@ -46,10 +57,10 @@ function GestionarFichas() {
               <label htmlFor="buscar-ficha" className="filtro-label">Buscar</label>
               <div className="input-con-icono">
                 <i className="fas fa-search"></i>
-                <input type="text" id="buscar-ficha" className="filtro-input" placeholder="Buscar ficha..." name="buscar" />
+                <input type="text" id="buscar-ficha" className="filtro-input" placeholder="Buscar ficha..." name="buscar" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
               </div>
             </div>
-            <button className="btn-limpiar"><i className="fas fa-times"></i> Limpiar</button>
+            <button className="btn-limpiar" type="button" onClick={limpiarFiltros}><i className="fas fa-times"></i> Limpiar</button>
           </div>
 
           <div className="tabla-container">
@@ -73,12 +84,12 @@ function GestionarFichas() {
                     <td>{f.programa}</td>
                     <td>{f.aprendices}</td>
                     <td>{f.proyectos}</td>
-                    <td><span className={`badge ${f.estado === 'Activa' ? 'badge-activo' : 'badge-inactivo'}`}>{f.estado}</span></td>
+                    <td><span className={`badge ${f.estado ? 'badge-exito' : 'badge-neutral'}`}>{f.estado ? 'Activa' : 'Inactiva'}</span></td>
                     <td>
                       <div className="acciones-celda">
                         <Link to="/instructor/detalle-ficha" className="btn-ghost-tabla"><i className="fas fa-eye"></i></Link>
-                        <button className="btn-ghost-tabla"><i className="fas fa-users"></i></button>
-                        <button className="btn-ghost-tabla"><i className="fas fa-edit"></i></button>
+                        <Link to="/instructor/directorio-ficha" className="btn-ghost-tabla"><i className="fas fa-users"></i></Link>
+                        <button className="btn-ghost-tabla" type="button" onClick={() => {}}><i className="fas fa-edit"></i></button>
                       </div>
                     </td>
                   </tr>
