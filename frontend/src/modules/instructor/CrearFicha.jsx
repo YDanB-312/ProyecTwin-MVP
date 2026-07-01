@@ -54,13 +54,13 @@ function CrearFicha() {
               </div>
               <div className="grupo-formulario">
                 <label htmlFor="id_programa" className="etiqueta requerido">Programa de Formación</label>
-                <select id="id_programa" className="select-filtro" {...register("programa", { required: true })}>
+                <select id="id_programa" className="select-filtro" {...register("id_programa", { required: true })}>
                   <option value="">Seleccione un programa</option>
                   <option value="1">ADSO - Análisis y Desarrollo de Sistemas</option>
                   <option value="2">Multimedia</option>
                   <option value="3">IoT</option>
                 </select>
-                {errors.programa && <span className="campo-error">Seleccione un programa</span>}
+                {errors.id_programa && <span className="campo-error">Seleccione un programa</span>}
               </div>
               <div className="acciones-finales mt-lg">
                 <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Crear Ficha</button>

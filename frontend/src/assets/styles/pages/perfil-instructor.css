@@ -1,9 +1,9 @@
 /* ========================================
-   Perfil Instructor — estilos únicos
-   (cards, forms, tipografía vienen de mi-perfil.css)
+   Perfil Instructor â€” estilos Ãºnicos
+   (cards, forms, tipografÃ­a vienen de mi-perfil.css)
    ======================================== */
 
-/* ── Avatar: posición para overlay cámara ── */
+/* â”€â”€ Avatar: posiciÃ³n para overlay cÃ¡mara â”€â”€ */
 .modulo-instructor .perfil-avatar {
     position: relative;
 }
@@ -25,13 +25,13 @@
     border: 2px solid var(--color-fondo-elevado);
 }
 
-/* ── Textarea: altura mínima para biografía / plantilla ── */
+/* â”€â”€ Textarea: altura mÃ­nima para biografÃ­a / plantilla â”€â”€ */
 .modulo-instructor textarea.campo-input {
     min-height: 120px;
     resize: vertical;
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 768px) {
     .modulo-instructor .checkbox-item {
         padding: 12px;

@@ -10,14 +10,14 @@
     gap: var(--space-2xl);
 }
 
-/* ── Section wrapper ── */
+/* â”€â”€ Section wrapper â”€â”€ */
 .modulo-instructor .dashboard-section {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* ── Dashboard Header ── */
+/* â”€â”€ Dashboard Header â”€â”€ */
 .modulo-instructor .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -93,7 +93,7 @@
     background: rgba(255,255,255,0.18);
 }
 
-/* ── Section Titles (barra izquierda verde) ── */
+/* â”€â”€ Section Titles (barra izquierda verde) â”€â”€ */
 .modulo-instructor .titulo-seccion-dashboard {
     font-size: 18px;
     font-weight: 700;
@@ -115,7 +115,7 @@
     border-radius: 2px;
 }
 
-/* ── Seccion header (title + ver-todas) ── */
+/* â”€â”€ Seccion header (title + ver-todas) â”€â”€ */
 .modulo-instructor .seccion-header {
     display: flex;
     justify-content: space-between;
@@ -151,14 +151,14 @@
     transform: translateX(2px);
 }
 
-/* ── Actions Grid ── */
+/* â”€â”€ Actions Grid â”€â”€ */
 .modulo-instructor .acciones-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-lg);
 }
 
-/* ── Action Cards ── */
+/* â”€â”€ Action Cards â”€â”€ */
 .modulo-instructor a.tarjeta-accion-moderna {
     text-decoration: none;
     color: inherit;
@@ -218,14 +218,14 @@
     line-height: 1.4;
 }
 
-/* ── Propuestas Grid ── */
+/* â”€â”€ Propuestas Grid â”€â”€ */
 .modulo-instructor .propuestas-grid {
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
 }
 
-/* ── Propuesta Card ── */
+/* â”€â”€ Propuesta Card â”€â”€ */
 .modulo-instructor .propuesta-card {
     background: var(--color-fondo-elevado);
     border: 1px solid var(--color-borde);
@@ -276,7 +276,7 @@
     flex-shrink: 0;
 }
 
-/* ── Badge Propuesta ── */
+/* â”€â”€ Badge Propuesta â”€â”€ */
 .modulo-instructor .badge-propuesta {
     display: inline-flex;
     align-items: center;
@@ -293,11 +293,11 @@
 }
 
 .modulo-instructor .badge-rechazado {
-    background-color: #fef2f2;
+    background-color: rgba(239,68,68,0.1);
     color: var(--color-peligro);
 }
 
-/* ── Btn Revisar ── */
+/* â”€â”€ Btn Revisar â”€â”€ */
 .modulo-instructor .btn-revisar {
     display: inline-flex;
     align-items: center;
@@ -328,7 +328,7 @@
     box-shadow: none;
 }
 
-/* ── Notificacion Card ── */
+/* â”€â”€ Notificacion Card â”€â”€ */
 .modulo-instructor .notificacion-card {
     background: var(--color-fondo-elevado);
     border: 1px solid var(--color-borde);
@@ -342,14 +342,14 @@
 
 .modulo-instructor .notificacion-card:hover {
     box-shadow: var(--sombra-media);
-    border-color: #fecaca;
+    border-color: rgba(239,68,68,0.15);
 }
 
 .modulo-instructor .notificacion-icono {
     width: 44px;
     height: 44px;
     border-radius: var(--radio-borde);
-    background: #fef2f2;
+    background: rgba(239,68,68,0.1);
     color: var(--color-peligro);
     display: flex;
     align-items: center;
@@ -360,7 +360,7 @@
 }
 
 .modulo-instructor .notificacion-card:hover .notificacion-icono {
-    background: #fee2e2;
+    background: rgba(239,68,68,0.1);
     transform: scale(1.05);
 }
 
@@ -386,7 +386,7 @@
     color: var(--color-peligro);
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
     .modulo-instructor .acciones-grid {
         grid-template-columns: repeat(2, 1fr);

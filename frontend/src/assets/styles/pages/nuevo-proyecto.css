@@ -1,10 +1,10 @@
-/* ── Contenedor principal ── */
+/* â”€â”€ Contenedor principal â”€â”€ */
 .modulo-aprendiz .contenedor-formulario {
     max-width: 900px;
     margin: 0 auto;
 }
 
-/* ── Campos obligatorios ── */
+/* â”€â”€ Campos obligatorios â”€â”€ */
 .modulo-aprendiz .campos-obligatorios {
     font-size: 0.8rem;
     color: var(--color-texto-claro);
@@ -16,7 +16,7 @@
     font-weight: 700;
 }
 
-/* ── Feedback ── */
+/* â”€â”€ Feedback â”€â”€ */
 .modulo-aprendiz .mensaje-feedback {
     display: flex;
     align-items: center;
@@ -39,16 +39,16 @@
     border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
-/* ── Formulario Card ── */
+/* â”€â”€ Formulario Card â”€â”€ */
 .modulo-aprendiz .formulario-card {
-    background: white;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     padding: 0;
     margin-bottom: 0;
 }
 
-/* ── Sección del Formulario ── */
+/* â”€â”€ SecciÃ³n del Formulario â”€â”€ */
 .modulo-aprendiz .seccion-formulario {
     border-bottom: 1px solid var(--color-borde-suave);
 }
@@ -57,7 +57,7 @@
     border-bottom: none;
 }
 
-/* ── Section Header ── */
+/* â”€â”€ Section Header â”€â”€ */
 .modulo-aprendiz .seccion-formulario-header {
     display: flex;
     align-items: center;
@@ -87,19 +87,19 @@
     margin: 0;
 }
 
-/* ── Section Body ── */
+/* â”€â”€ Section Body â”€â”€ */
 .modulo-aprendiz .seccion-formulario-body {
     padding: 20px 32px 28px;
 }
 
-/* ── Grupo de campos en grid ── */
+/* â”€â”€ Grupo de campos en grid â”€â”€ */
 .modulo-aprendiz .grupo-campos {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
-/* ── Grupo formulario ── */
+/* â”€â”€ Grupo formulario â”€â”€ */
 .modulo-aprendiz .grupo-formulario {
     margin-bottom: 20px;
 }
@@ -108,7 +108,7 @@
     margin-bottom: 0;
 }
 
-/* ── Etiqueta ── */
+/* â”€â”€ Etiqueta â”€â”€ */
 .modulo-aprendiz .etiqueta {
     display: block;
     font-size: 0.9rem;
@@ -122,7 +122,7 @@
     color: var(--color-peligro);
 }
 
-/* ── Inputs Premium ── */
+/* â”€â”€ Inputs Premium â”€â”€ */
 .modulo-aprendiz .input-text,
 .modulo-aprendiz .textarea,
 .modulo-aprendiz .select {
@@ -156,7 +156,7 @@
     line-height: 1.5;
 }
 
-/* ── Contador caracteres ── */
+/* â”€â”€ Contador caracteres â”€â”€ */
 .modulo-aprendiz .contador-caracteres {
     text-align: right;
     font-size: 0.75rem;
@@ -164,7 +164,7 @@
     margin-top: 2px;
 }
 
-/* ── Contador palabras clave ── */
+/* â”€â”€ Contador palabras clave â”€â”€ */
 .modulo-aprendiz .contador-palabras {
     font-size: 0.75rem;
     color: var(--color-texto-claro);
@@ -178,7 +178,7 @@
     line-height: 1.4;
 }
 
-/* ── Integrantes Header ── */
+/* â”€â”€ Integrantes Header â”€â”€ */
 .modulo-aprendiz .integrantes-encabezado {
     display: flex;
     justify-content: space-between;
@@ -198,7 +198,7 @@
     flex-shrink: 0;
 }
 
-/* ── Seleccionar todos ── */
+/* â”€â”€ Seleccionar todos â”€â”€ */
 .modulo-aprendiz .seleccionar-todos {
     display: flex;
     align-items: center;
@@ -215,7 +215,7 @@
     color: var(--color-texto);
 }
 
-/* ── Contador seleccionados ── */
+/* â”€â”€ Contador seleccionados â”€â”€ */
 .modulo-aprendiz .contador-seleccionados {
     font-size: 0.78rem;
     font-weight: 500;
@@ -226,14 +226,14 @@
     white-space: nowrap;
 }
 
-/* ── Grid de Miembros ── */
+/* â”€â”€ Grid de Miembros â”€â”€ */
 .modulo-aprendiz .grid-miembros {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
 }
 
-/* ── Miembro Card ── */
+/* â”€â”€ Miembro Card â”€â”€ */
 .modulo-aprendiz .miembro-card {
     display: flex;
     align-items: center;
@@ -265,7 +265,7 @@
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.25);
 }
 
-/* ── Custom Checkbox ── */
+/* â”€â”€ Custom Checkbox â”€â”€ */
 .modulo-aprendiz .checkbox-personalizado-input {
     position: absolute;
     opacity: 0;
@@ -311,7 +311,7 @@
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.15);
 }
 
-/* ── Miembro Avatar ── */
+/* â”€â”€ Miembro Avatar â”€â”€ */
 .modulo-aprendiz .miembro-avatar {
     width: 36px;
     height: 36px;
@@ -348,7 +348,7 @@
     font-weight: 500;
 }
 
-/* ── Radio Group ── */
+/* â”€â”€ Radio Group â”€â”€ */
 .modulo-aprendiz .radio-grupo {
     display: flex;
     flex-direction: column;
@@ -392,7 +392,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: white;
+    background: var(--color-fondo-elevado);
     transform: scale(0);
     transition: transform 120ms ease;
 }
@@ -410,7 +410,7 @@
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.15);
 }
 
-/* ── Acciones Formulario ── */
+/* â”€â”€ Acciones Formulario â”€â”€ */
 .modulo-aprendiz .acciones-formulario {
     display: flex;
     justify-content: space-between;
@@ -491,7 +491,7 @@
 }
 
 .modulo-aprendiz .btn-enlace:hover {
-    background: #fef2f2;
+    background: rgba(239,68,68,0.1);
     color: var(--color-peligro);
     transform: translateY(-1px);
 }
@@ -500,7 +500,7 @@
     transform: translateY(0);
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
     .modulo-aprendiz .grupo-campos {
         grid-template-columns: 1fr;

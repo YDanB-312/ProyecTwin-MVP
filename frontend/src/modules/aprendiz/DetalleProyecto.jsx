@@ -14,8 +14,8 @@ const proyectos = [
     instructor: 'Carlos Ruiz',
     miembros: [
       { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
-      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
-      { iniciales: 'LG', nombre: 'Laura Gomez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'JP', nombre: 'Juan Pérez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'LG', nombre: 'Laura Gómez', rol: 'Integrante', clase: 'avatar-secundario' },
     ]
   },
   {
@@ -23,10 +23,10 @@ const proyectos = [
     programa: 'ADSO - Análisis y Desarrollo de Software',
     fecha: '22/04/2026', estado: 'aprobado', estadoTexto: 'Aprobado', badgeClase: 'badge-exito',
     descripcion: 'Aplicación móvil para la gestión de inventarios que permite registrar, consultar y actualizar el stock de productos en tiempo real desde dispositivos móviles.',
-    instructor: 'Ana Gomez',
+    instructor: 'Ana Gómez',
     miembros: [
       { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
-      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'JP', nombre: 'Juan Pérez', rol: 'Integrante', clase: 'avatar-secundario' },
     ]
   },
   {
@@ -37,9 +37,9 @@ const proyectos = [
     instructor: 'Miguel Lopez',
     miembros: [
       { iniciales: 'MG', nombre: 'Maria Gonzalez', rol: 'Creador / Lider', clase: '' },
-      { iniciales: 'JP', nombre: 'Juan Perez', rol: 'Integrante', clase: 'avatar-secundario' },
-      { iniciales: 'LG', nombre: 'Laura Gomez', rol: 'Integrante', clase: 'avatar-secundario' },
-      { iniciales: 'AM', nombre: 'Ana Martinez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'JP', nombre: 'Juan Pérez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'LG', nombre: 'Laura Gómez', rol: 'Integrante', clase: 'avatar-secundario' },
+      { iniciales: 'AM', nombre: 'Ana Martínez', rol: 'Integrante', clase: 'avatar-secundario' },
     ]
   },
 ]

@@ -5,11 +5,11 @@ import '../../assets/styles/pages/mi-perfil.css'
 
 function MiPerfil() {
   const { register: regInfo, handleSubmit: submitInfo, formState: { errors: errInfo }, reset: resetInfo } = useForm({
-    defaultValues: { nombre: 'Maria', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', programa: '1', centro: 'centro-bogota' }
+    defaultValues: { nombre: 'Maria', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', id_programa: '1' }
   })
   const { register: regSeg, handleSubmit: submitSeg, formState: { errors: errSeg }, reset: resetSeg, watch: watchSeg } = useForm()
   const { register: regPref, handleSubmit: submitPref, formState: { errors: errPref }, reset: resetPref } = useForm({
-    defaultValues: { notifSimilitud: true, notifComentarios: true }
+    defaultValues: { notif_similitud: true, notif_comentarios_instructor: true }
   })
 
   return (
@@ -82,23 +82,15 @@ function MiPerfil() {
               </div>
               <div className="campo-grupo campo-completo">
                 <label htmlFor="id_programa" className="campo-label">Programa de Formación <span className="obligatorio">*</span></label>
-                <select id="id_programa" className="campo-select" {...regInfo("programa", { required: true })}>
+                <select id="id_programa" className="campo-select" {...regInfo("id_programa", { required: true })}>
                   <option value="1">Análisis y desarrollo de Software</option>
                   <option value="2">Tecnología en Sistemas</option>
                   <option value="3">diseño y desarrollo Multimedia</option>
                   <option value="4">Tecnología en Redes</option>
                 </select>
-                {errInfo.programa && <span className="campo-error">Seleccione un programa</span>}
+                {errInfo.id_programa && <span className="campo-error">Seleccione un programa</span>}
               </div>
-              <div className="campo-grupo campo-completo">
-                <label htmlFor="centro" className="campo-label">Centro de Formación <span className="obligatorio">*</span></label>
-                <select id="centro" className="campo-select" {...regInfo("centro", { required: true })}>
-                  <option value="centro-bogota">Centro de Tecnologías para la Academia - Bogotá</option>
-                  <option value="centro-medellin">Centro de Diseño y Metrología - Medellín</option>
-                  <option value="centro-cali">Centro de Electricidad y Automatizacion - Cali</option>
-                </select>
-                {errInfo.centro && <span className="campo-error">Seleccione un centro</span>}
-              </div>
+
             </div>
             <div className="form-botones">
               <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Guardar Cambios</button>
@@ -148,7 +140,7 @@ function MiPerfil() {
           <form onSubmit={submitPref((data) => { console.log(data); resetPref() })}>
             <div className="lista-checkboxes">
               <label className="checkbox-item">
-                <input type="checkbox" {...regPref("notifSimilitud")} />
+                <input type="checkbox" {...regPref("notif_similitud")} />
                 <span className="checkmark"></span>
                 <div className="checkbox-info">
                   <span className="checkbox-titulo">Notificaciones de similitud</span>
@@ -156,7 +148,7 @@ function MiPerfil() {
                 </div>
               </label>
               <label className="checkbox-item">
-                <input type="checkbox" {...regPref("notifComentarios")} />
+                <input type="checkbox" {...regPref("notif_comentarios_instructor")} />
                 <span className="checkmark"></span>
                 <div className="checkbox-info">
                   <span className="checkbox-titulo">Observaciones de instructores</span>

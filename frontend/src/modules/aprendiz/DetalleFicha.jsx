@@ -63,7 +63,7 @@ function DetalleFicha() {
           <div className="companero-card">
             <div className="companero-avatar">JP</div>
             <div className="companero-info">
-              <span className="companero-nombre">Juan Perez</span>
+              <span className="companero-nombre">Juan Pérez</span>
               <span className="companero-correo">juan.perez@soy.sena.edu.co</span>
             </div>
             <span className="badge-activo">Activo</span>
@@ -72,7 +72,7 @@ function DetalleFicha() {
           <div className="companero-card">
             <div className="companero-avatar">LG</div>
             <div className="companero-info">
-              <span className="companero-nombre">Laura Gomez</span>
+              <span className="companero-nombre">Laura Gómez</span>
               <span className="companero-correo">laura.gomez@soy.sena.edu.co</span>
             </div>
             <span className="badge-activo">Activo</span>
@@ -81,7 +81,7 @@ function DetalleFicha() {
           <div className="companero-card">
             <div className="companero-avatar">AM</div>
             <div className="companero-info">
-              <span className="companero-nombre">Ana Martinez</span>
+              <span className="companero-nombre">Ana Martínez</span>
               <span className="companero-correo">ana.martinez@soy.sena.edu.co</span>
             </div>
             <span className="badge-activo">Activo</span>
@@ -90,7 +90,7 @@ function DetalleFicha() {
           <div className="companero-card">
             <div className="companero-avatar">DS</div>
             <div className="companero-info">
-              <span className="companero-nombre">Diana Sanchez</span>
+              <span className="companero-nombre">Diana Sánchez</span>
               <span className="companero-correo">diana.sanchez@soy.sena.edu.co</span>
             </div>
             <span className="badge-inactivo">Inactivo</span>

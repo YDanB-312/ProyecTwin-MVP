@@ -119,7 +119,7 @@ export default function SimilitudesAdmin() {
             <table className="tabla-reportes">
               <thead>
                 <tr>
-                  <th style={{ width: '32px' }}></th>
+                  <th></th>
                   <th>Proyecto</th>
                   <th>Similitudes</th>
                   <th>Mayor %</th>
@@ -131,7 +131,7 @@ export default function SimilitudesAdmin() {
               <tbody>
                 {proyectos.map((proy, i) => (
                   <>
-                    <tr key={i} className="fila-proyecto" onClick={() => toggleExpandir(proy.nombre)} style={{ cursor: 'pointer' }}>
+                    <tr key={i} className="fila-proyecto" onClick={() => toggleExpandir(proy.nombre)}>
                       <td>
                         <i className={`fas fa-chevron-${expandidos[proy.nombre] ? 'down' : 'right'}`}></i>
                       </td>
@@ -147,10 +147,10 @@ export default function SimilitudesAdmin() {
                       </td>
                     </tr>
                     {expandidos[proy.nombre] && proy.similitudes.map((sim, j) => (
-                      <tr key={`${i}-${j}`} className="fila-similitud" style={{ backgroundColor: '#f9fafb' }}>
+                      <tr key={`${i}-${j}`} className="fila-similitud">
                         <td></td>
-                        <td style={{ paddingLeft: '32px' }}>
-                          <i className="fas fa-arrow-right" style={{ color: '#94a3b8', marginRight: '8px', fontSize: '12px' }}></i>
+                        <td className="celda-similitud">
+                          <i className="fas fa-arrow-right icono-similitud"></i>
                           {sim.proyecto}
                         </td>
                         <td></td>

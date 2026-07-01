@@ -11,7 +11,7 @@ import FooterSimple from '../../components/FooterSimple/FooterSimple'
 
 export default function Confirmacion() {
   return (
-    <div className="modulo-invitado">
+    <div className="modulo-invitado modulo-pagina-completa">
       <GovernmentBar />
 
       <main className="contenedor-login">

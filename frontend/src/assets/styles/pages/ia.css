@@ -26,7 +26,7 @@
 }
 
 :is(.modulo-aprendiz, .modulo-instructor) .card-analisis {
-    background: white;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring-md);
     padding: 48px 44px;
@@ -238,7 +238,7 @@
 }
 
 :is(.modulo-aprendiz, .modulo-instructor) .tarjeta-resultado {
-    background: white;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     padding: 22px 20px;

@@ -1,5 +1,5 @@
-﻿:root {
-  /* ── Paleta SENA Premium ── */
+:root {
+  /* -- Paleta SENA Premium -- */
   --color-primario:     #059669;
   --color-secundario:   #047857;
   --color-accento:      #0d9488;
@@ -16,14 +16,14 @@
   --color-exito:        #10b981;
   --color-advertencia:  #f59e0b;
   --color-peligro:      #ef4444;
-  --color-borde-hover:  #a7f3d0;
+  --color-borde-hover:  var(--color-borde-hover);
 
-  /* ── Gradientes ── */
+  /* -- Gradientes -- */
   --gradient-primario:  linear-gradient(135deg, #059669, #10b981);
   --gradient-header:    linear-gradient(135deg, #065f46, #047857);
   --gradient-welcome:   linear-gradient(135deg, rgba(5,153,102,0.04), rgba(16,185,129,0.02));
 
-  /* ── Sombras Premium ── */
+  /* -- Sombras Premium -- */
   --sombra-xs:    0 1px 2px rgba(0,0,0,0.04);
   --sombra-suave:  0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
   --sombra-media:  0 4px 12px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03);
@@ -33,18 +33,18 @@
   --sombra-ring-md: 0 4px 12px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
   --sombra-card-hover: 0 8px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(5,153,102,0.15);
 
-  /* ── Bordes ── */
+  /* -- Bordes -- */
   --radio-borde: 8px;
   --radio-pill:  9999px;
 
-  /* ── Foco ── */
+  /* -- Foco -- */
   --sombra-foco: 0 0 0 3px rgba(5, 153, 102, 0.15);
 
-  /* ── Transiciones ── */
+  /* -- Transiciones -- */
   --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* ── Escala de espaciado ── */
+  /* -- Escala de espaciado -- */
   --space-xs:  4px;
   --space-sm:  8px;
   --space-md:  16px;
@@ -52,7 +52,7 @@
   --space-xl:  32px;
   --space-2xl: 48px;
 
-  /* ── Escala tipográfica ── */
+  /* -- Escala tipográfica -- */
   --text-xs:   0.75rem;
   --text-sm:   0.875rem;
   --text-base: 1rem;
@@ -60,6 +60,39 @@
   --text-xl:   1.25rem;
   --text-2xl:  1.5rem;
   --text-3xl:  1.875rem;
+}
+
+/* -- Modo Oscuro -- */
+[data-theme="dark"] {
+  --color-primario:     #10b981;
+  --color-secundario:   #059669;
+  --color-accento:      #14b8a6;
+  --color-fondo:        #0f172a;
+  --color-fondo-elevado:#1e293b;
+  --color-texto:        #e2e8f0;
+  --color-texto-secundario: #cbd5e1;
+  --color-texto-claro:  #94a3b8;
+  --color-texto-muted:  #64748b;
+  --color-borde:        #334155;
+  --color-borde-suave:  #1e293b;
+  --color-sidebar:      #1e293b;
+  --color-header:       #022c22;
+  --color-exito:        #34d399;
+  --color-advertencia:  #fbbf24;
+  --color-peligro:      #f87171;
+  --color-borde-hover:  #065f46;
+  --gradient-primario:  linear-gradient(135deg, #059669, #10b981);
+  --gradient-header:    linear-gradient(135deg, #022c22, #065f46);
+  --gradient-welcome:   linear-gradient(135deg, rgba(16,185,129,0.08), rgba(52,211,153,0.04));
+  --sombra-xs:    0 1px 2px rgba(0,0,0,0.2);
+  --sombra-suave:  0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --sombra-media:  0 4px 12px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+  --sombra-fuerte: 0 8px 24px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3);
+  --sombra-modal:  0 20px 60px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+  --sombra-ring:   0 1px 2px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.3);
+  --sombra-ring-md: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.3);
+  --sombra-card-hover: 0 8px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.2);
+  --sombra-foco: 0 0 0 3px rgba(16, 185, 129, 0.3);
 }
 
 * {
@@ -76,6 +109,19 @@ body {
   flex-direction: column;
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Wrapper de página completa: footer pegado al fondo */
+.modulo-pagina-completa {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.modulo-pagina-completa > .pie-pagina,
+.modulo-pagina-completa > .pie-pagina-login {
+  margin-top: auto;
 }
 
 /* Contenido principal */
@@ -165,7 +211,7 @@ body {
   background: radial-gradient(ellipse at center, rgba(5,153,102,0.02) 0%, transparent 70%), white;
   box-shadow: var(--sombra-ring);
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .estado-vacio .icono-vacio {
@@ -322,12 +368,12 @@ body {
 }
 
 .badge-pendiente {
-  background-color: #fffbeb;
+  background-color: rgba(245,158,11,0.15);
   color: var(--color-advertencia);
 }
 
 .badge-revisado {
-  background-color: #eff6ff;
+  background-color: rgba(37,99,235,0.1);
   color: #2563eb;
 }
 
@@ -555,14 +601,14 @@ body {
 }
 
 .tarjeta-accion {
-  background: white;
+  background: var(--color-fondo-elevado);
   padding: var(--space-xl);
   box-shadow: var(--sombra-ring);
   text-align: center;
   transition: all var(--transition-fast);
   border-radius: var(--radio-borde);
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .tarjeta-accion:hover {
@@ -605,7 +651,7 @@ body {
   align-items: center;
   gap: 30px;
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 /* Tarjetas de estadistica */
@@ -616,7 +662,7 @@ body {
 }
 
 .tarjeta-estadistica {
-  background: white;
+  background: var(--color-fondo-elevado);
   padding: var(--space-lg);
   box-shadow: var(--sombra-ring);
   display: flex;
@@ -625,7 +671,7 @@ body {
   transition: all var(--transition-fast);
   border-left: 4px solid transparent;
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .tarjeta-estadistica:hover {
@@ -694,12 +740,12 @@ body {
 
 /* Filtros */
 .seccion-filtros {
-  background: white;
+  background: var(--color-fondo-elevado);
   padding: var(--space-lg);
   box-shadow: var(--sombra-ring);
   margin-bottom: var(--space-xl);
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .filtros-titulo {
@@ -737,7 +783,7 @@ body {
   padding: 10px 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background: white;
+  background: var(--color-fondo-elevado);
   font-size: 0.9rem;
   color: var(--color-texto);
 }
@@ -768,7 +814,7 @@ body {
   height: 38px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background: white;
+  background: var(--color-fondo-elevado);
   color: var(--color-texto-secundario);
   display: flex;
   align-items: center;
@@ -800,7 +846,7 @@ body {
 }
 
 .tarjeta-alerta {
-  background: white;
+  background: var(--color-fondo-elevado);
   box-shadow: var(--sombra-ring);
   padding: var(--space-lg);
   border-left: 4px solid var(--color-primario);
@@ -929,7 +975,7 @@ body {
   border-radius: var(--radio-borde);
   font-size: 0.95rem;
   color: var(--color-texto);
-  background: white;
+  background: var(--color-fondo-elevado);
   transition: all var(--transition-fast);
 }
 
@@ -1015,12 +1061,12 @@ body {
 
 /* Tablas globales */
 .seccion-tabla {
-  background: white;
+  background: var(--color-fondo-elevado);
   box-shadow: var(--sombra-ring);
   overflow: hidden;
   margin-bottom: var(--space-xl);
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .encabezado-tabla {
@@ -1070,7 +1116,7 @@ body {
 }
 
 .tabla-usuarios tbody tr:nth-child(even) {
-  background: rgba(0,0,0,0.01);
+  background: rgba(255,255,255,0.03);
 }
 
 .tabla-usuarios tbody tr:hover {
@@ -1119,13 +1165,13 @@ body {
 }
 
 .tarjeta {
-  background: white;
+  background: var(--color-fondo-elevado);
   box-shadow: var(--sombra-ring);
   padding: var(--space-lg);
   margin-bottom: var(--space-lg);
   transition: all var(--transition-fast);
   border-radius: var(--radio-borde);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
 }
 
 .tarjeta:hover {
@@ -1472,11 +1518,11 @@ body {
    COMPONENTES PREMIUM - MetricCard
    ======================================== */
 .metric-card {
-  background: white;
+  background: var(--color-fondo-elevado);
   border-radius: var(--radio-borde);
   padding: var(--space-lg);
   box-shadow: var(--sombra-ring);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -1552,10 +1598,10 @@ body {
    COMPONENTES PREMIUM - DataPanel
    ======================================== */
 .data-panel {
-  background: white;
+  background: var(--color-fondo-elevado);
   border-radius: var(--radio-borde);
   box-shadow: var(--sombra-ring);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
   overflow: hidden;
   margin-bottom: var(--space-xl);
 }
@@ -1631,10 +1677,10 @@ body {
    COMPONENTES PREMIUM - FilterBar
    ======================================== */
 .filter-bar {
-  background: white;
+  background: var(--color-fondo-elevado);
   border-radius: var(--radio-borde);
   box-shadow: var(--sombra-ring);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
   overflow: hidden;
   margin-bottom: var(--space-xl);
 }
@@ -1744,11 +1790,11 @@ body {
    COMPONENTES PREMIUM - Action Card
    ======================================== */
 .tarjeta-accion-moderna {
-  background: white;
+  background: var(--color-fondo-elevado);
   border-radius: var(--radio-borde);
   padding: var(--space-xl);
   box-shadow: var(--sombra-ring);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
   text-align: center;
   transition: all var(--transition-fast);
 }
@@ -1918,10 +1964,10 @@ body {
    COMPONENTES PREMIUM - Lista Alertas
    ======================================== */
 .lista-alertas-moderna {
-  background: white;
+  background: var(--color-fondo-elevado);
   border-radius: var(--radio-borde);
   box-shadow: var(--sombra-ring);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--color-borde-suave);
   overflow: hidden;
 }
 

@@ -1,9 +1,9 @@
-/* Reportes y Estadísticas - Estilos específicos */
+/* Reportes y EstadÃ­sticas - Estilos especÃ­ficos */
 
 .modulo-admin .grid-estadisticas { margin-bottom: 30px; }
 
 /* Tabla de similitudes (Estilo con header oscuro) */
-.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-ring); overflow: hidden; border: 1px solid rgba(0,0,0,0.02); }
+.modulo-admin .contenedor-tabla { background: var(--color-fondo-elevado); border-radius: var(--radio-borde); box-shadow: var(--sombra-ring); overflow: hidden; border: 1px solid var(--color-borde-suave); }
 .modulo-admin .encabezado-tabla { background: var(--color-fondo); }
 .modulo-admin .titulo-tabla { font-size: 1.1rem; }
 .modulo-admin .total-registros { font-size: 0.85rem; color: var(--color-texto-claro); }
@@ -12,13 +12,13 @@
 :is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes thead { background: var(--color-header); color: white; }
 :is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes th { padding: 14px 20px; text-align: left; font-weight: 600; font-size: 0.9rem; }
 :is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes td { padding: 14px 20px; border-bottom: 1px solid var(--color-borde); font-size: 0.9rem; }
-:is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes tbody tr:nth-child(even) { background: rgba(0,0,0,0.01); }
+:is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes tbody tr:nth-child(even) { background: rgba(255,255,255,0.03); }
 :is(.modulo-admin, .modulo-aprendiz, .modulo-instructor) .tabla-similitudes tbody tr:hover { background: rgba(5, 153, 102, 0.04); }
 
 /* Metricas admin */
 .modulo-admin .metricas-grid-admin { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
 
-.modulo-admin .metrica-card-admin { background: white; border-radius: var(--radio-borde); padding: 24px; box-shadow: var(--sombra-ring); display: flex; align-items: center; gap: 18px; transition: all var(--transition-fast); border: 1px solid rgba(0,0,0,0.02); }
+.modulo-admin .metrica-card-admin { background: var(--color-fondo-elevado); border-radius: var(--radio-borde); padding: 24px; box-shadow: var(--sombra-ring); display: flex; align-items: center; gap: 18px; transition: all var(--transition-fast); border: 1px solid var(--color-borde-suave); }
 .modulo-admin .metrica-card-admin:hover { transform: translateY(-3px); box-shadow: var(--sombra-media); }
 
 .modulo-admin .metrica-icono { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: white; flex-shrink: 0; }

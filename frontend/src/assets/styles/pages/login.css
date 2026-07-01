@@ -16,7 +16,7 @@
     display: flex;
     width: 100%;
     max-width: 860px;
-    background: #fff;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     overflow: hidden;
     box-shadow: var(--sombra-media);
@@ -47,7 +47,7 @@
 }
 
 .modulo-invitado .encabezado-login h1 span {
-    color: var(--color-header);
+    color: #059669;
 }
 
 .modulo-invitado .encabezado-login p {
@@ -83,7 +83,7 @@
     border-radius: var(--radio-borde);
     font-size: .95rem;
     color: var(--color-texto);
-    background: white;
+    background: var(--color-fondo-elevado);
     transition: all var(--transition-fast);
 }
 
@@ -280,7 +280,7 @@
     justify-content: center;
 }
 
-/* === Recuperar contraseña === */
+/* === Recuperar contraseÃ±a === */
 .modulo-invitado .texto-instruccion {
     text-align: center;
     color: var(--color-texto-claro);
@@ -297,7 +297,7 @@
     font-weight: 500;
 }
 
-/* === Confirmación === */
+/* === ConfirmaciÃ³n === */
 .modulo-invitado .tarjeta-confirmacion {
     max-width: 500px;
 }

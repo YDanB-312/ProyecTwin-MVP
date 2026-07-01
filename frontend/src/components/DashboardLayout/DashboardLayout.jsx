@@ -27,7 +27,7 @@ export default function DashboardLayout({ role, titulo, usuario, notificaciones,
   const modClass = `modulo-${role}`
 
   return (
-    <div className={`${modClass}${className ? ` ${className}` : ''}`}>
+    <div className={`${modClass} modulo-pagina-completa${className ? ` ${className}` : ''}`}>
       <GovernmentBar />
       <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />

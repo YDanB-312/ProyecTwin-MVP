@@ -92,7 +92,7 @@ export default function ReportesFallas() {
                   <td>{r.fecha}</td>
                   <td>
                     <div className="acciones-tabla">
-                      <Link to="/admin/detalle-reporte" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                      <Link to="/admin/detalle-reporte" state={{ reporte: r }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
                       <button className="btn-accion-tabla btn-ver" title="Cambiar estado" type="button" onClick={() => {}}><i className="fas fa-exchange-alt"></i></button>
                     </div>
                   </td>

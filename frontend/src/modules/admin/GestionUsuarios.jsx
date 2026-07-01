@@ -10,9 +10,9 @@ const usuarios = [
   { nombre: 'Maria Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: true },
   { nombre: 'Carlos Ruiz', correo: 'carlos.ruiz@sena.edu.co', rol: 'Instructor', rolBadge: 'advertencia', rolIcon: 'chalkboard-teacher', estado: true },
   { nombre: 'Admin Sistema', correo: 'admin@proyectwin.sena.edu.co', rol: 'Admin', rolBadge: 'peligro', rolIcon: 'user-shield', estado: true },
-  { nombre: 'Juan Perez', correo: 'juan.perez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: false },
-  { nombre: 'Ana Martinez', correo: 'ana.martinez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: true },
-  { nombre: 'Laura Gomez', correo: 'laura.gomez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: true },
+  { nombre: 'Juan Pérez', correo: 'juan.perez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: false },
+  { nombre: 'Ana Martínez', correo: 'ana.martinez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: true },
+  { nombre: 'Laura Gómez', correo: 'laura.gomez@soy.sena.edu.co', rol: 'Aprendiz', rolBadge: 'exito', rolIcon: 'user-graduate', estado: true },
 ]
 
 export default function GestionUsuarios() {
@@ -51,7 +51,7 @@ export default function GestionUsuarios() {
           </div>
           <div className="grupo-filtro">
             <label htmlFor="filtro-busqueda">Buscar por nombre</label>
-            <input type="text" id="filtro-busqueda" className="input-filtro" placeholder="Ej: Juan Perez" value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1) }} />
+            <input type="text" id="filtro-busqueda" className="input-filtro" placeholder="Ej: Juan Pérez" value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1) }} />
           </div>
           <div className="filter-bar-acciones" slot="actions">
             <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-search"></i> Buscar</button>
@@ -89,9 +89,9 @@ export default function GestionUsuarios() {
                     <td><span className={`badge badge-${u.estado ? 'exito' : 'neutral'}`}><i className="fas fa-circle"></i> {u.estado ? 'Activo' : 'Inactivo'}</span></td>
                     <td>
                       <div className="acciones-tabla">
-                        <Link to="/admin/detalle-usuario" className="btn-accion-tabla btn-ver" title="Editar"><i className="fas fa-edit"></i></Link>
+                        <Link to="/admin/detalle-usuario" state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Editar"><i className="fas fa-edit"></i></Link>
                         <button className="btn-accion-tabla btn-ver" title={u.estado ? 'Desactivar' : 'Activar'} type="button" onClick={() => {}}><i className={`fas fa-${u.estado ? 'ban' : 'check-circle'}`}></i></button>
-                        <Link to="/admin/detalle-usuario" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                        <Link to="/admin/detalle-usuario" state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
                       </div>
                     </td>
                   </tr>

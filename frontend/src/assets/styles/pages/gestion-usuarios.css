@@ -1,4 +1,4 @@
-/* GestiÃ³n de Usuarios - Estilos especÃ­ficos */
+/* GestiÃƒÂ³n de Usuarios - Estilos especÃƒÂ­ficos */
 
 .modulo-admin .contenedor-gestion {
     max-width: 1200px;
@@ -7,7 +7,7 @@
 
 .modulo-admin .subtitulo-pagina { font-size: 1rem; color: var(--color-texto-claro); margin: 0; }
 
-/* Filtros especÃ­ficos */
+/* Filtros especÃƒÂ­ficos */
 .modulo-admin .grupo-filtro-botones { flex-direction: row; align-items: flex-end; gap: 10px; }
 
 /* Estados de usuario */
@@ -30,7 +30,7 @@
 .modulo-admin .grupo-campo input:focus, .modulo-admin .grupo-campo select:focus { outline: none; border-color: var(--color-primario); box-shadow: var(--sombra-foco); }
 
 .modulo-admin .modal-pie { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--color-borde); background: var(--color-fondo); }
-/* ── Secciones condicionales (Instructor/Aprendiz/Admin) ── */
+/* â”€â”€ Secciones condicionales (Instructor/Aprendiz/Admin) â”€â”€ */
 .modulo-admin .seccion-formulario {
     background: var(--color-fondo);
     border-radius: var(--radio-borde);
@@ -72,7 +72,7 @@
     padding: 20px;
 }
 
-/* Responsive especÃ­fico */
+/* Responsive especÃƒÂ­fico */
 @media (max-width: 768px) {
     .modulo-admin .encabezado-pagina { flex-direction: column; gap: 15px; align-items: flex-start; }
     .modulo-admin .contenedor-filtros { flex-direction: column; }

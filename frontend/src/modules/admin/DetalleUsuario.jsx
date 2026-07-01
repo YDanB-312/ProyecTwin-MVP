@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -12,13 +12,9 @@ const breadcrumb = [
 ]
 
 export default function DetalleUsuario() {
-  const userData = {
-    nombre: 'Maria Gonzalez',
-    apellido: 'Gonzalez',
-    correo: 'maria.gonzalez@soy.sena.edu.co',
-    rol: 'Aprendiz',
-    estado: true
-  };
+  const location = useLocation()
+  const defaultUser = { nombre: 'Maria Gonzalez', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', rol: 'Aprendiz', estado: true }
+  const userData = location.state?.usuario || defaultUser
 
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
@@ -34,11 +30,11 @@ export default function DetalleUsuario() {
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Nombre Completo</div>
-              <div className="detalle-valor">Maria Gonzalez</div>
+              <div className="detalle-valor">{userData.nombre}</div>
             </div>
             <div>
               <div className="detalle-label">Rol</div>
-              <p><span className="badge badge-exito"><i className="fas fa-user-graduate"></i> Aprendiz</span></p>
+              <p><span className={`badge badge-${userData.rol === 'Admin' ? 'peligro' : userData.rol === 'Instructor' ? 'advertencia' : 'exito'}`}><i className={`fas fa-${userData.rol === 'Admin' ? 'user-shield' : userData.rol === 'Instructor' ? 'chalkboard-teacher' : 'user-graduate'}`}></i> {userData.rol}</span></p>
             </div>
             <div>
               <div className="detalle-label">Programa de Formación</div>
@@ -54,7 +50,7 @@ export default function DetalleUsuario() {
             </div>
             <div>
               <div className="detalle-label">Correo Electrónico</div>
-              <div className="detalle-valor">maria.gonzalez@soy.sena.edu.co</div>
+              <div className="detalle-valor">{userData.correo}</div>
             </div>
           </div>
         </DataPanel>

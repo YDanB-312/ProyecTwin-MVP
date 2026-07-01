@@ -57,7 +57,7 @@ function DashboardAprendiz() {
             <i className="fas fa-folder-open empty-icono"></i>
             <h3>A&uacute;n no tienes proyectos</h3>
             <p>Crea tu primer proyecto y empieza a colaborar</p>
-            <button className="btn-primario" onClick={() => navigate('/aprendiz/nuevo-proyecto')}>+ Crear mi primer proyecto</button>
+            <button type="button" className="btn-primario" onClick={() => navigate('/aprendiz/nuevo-proyecto')}>+ Crear mi primer proyecto</button>
           </div>
         </section>
 

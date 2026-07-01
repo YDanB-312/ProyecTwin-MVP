@@ -2,7 +2,7 @@
    PREMIUM - Gestionar Fichas
    ======================================== */
 
-/* ── Neutralización de estilos globales ── */
+/* â”€â”€ NeutralizaciÃ³n de estilos globales â”€â”€ */
 .modulo-instructor .gestion-fichas-container table,
 .modulo-instructor .gestion-fichas-container th,
 .modulo-instructor .gestion-fichas-container td {
@@ -87,7 +87,7 @@
     box-shadow: 0 4px 12px rgba(5, 153, 102, 0.12);
 }
 
-/* ── Tabla Container ── */
+/* â”€â”€ Tabla Container â”€â”€ */
 .modulo-instructor .gestion-fichas-container .tabla-container {
     background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
@@ -95,7 +95,7 @@
     overflow-x: auto;
 }
 
-/* ── Tabla Premium ── */
+/* â”€â”€ Tabla Premium â”€â”€ */
 .modulo-instructor .gestion-fichas-container .tabla-premium {
     width: 100%;
     border-collapse: collapse;
@@ -141,7 +141,7 @@
     color: var(--color-texto);
 }
 
-/* ── Acciones celda ── */
+/* â”€â”€ Acciones celda â”€â”€ */
 .modulo-instructor .gestion-fichas-container .acciones-celda {
     display: flex;
     gap: 4px;
@@ -175,7 +175,7 @@
 }
 
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 768px) {
     .modulo-instructor .gestion-fichas-container .vista-titulo-row {
         flex-direction: column;

@@ -139,7 +139,7 @@ function AlertasInstructor() {
                 <h3 className="notificacion-titulo">Cambio de Estado del Proyecto</h3>
                 <span className={leidas[2] ? 'badge-leida' : 'badge-no-leida'}>{leidas[2] ? 'Leída' : 'No leída'}</span>
               </div>
-              <p className="notificacion-descripcion">El proyecto "Sistema IoT para Agricultura" de Ana Martinez fue aprobado por el instructor y pasa a estado "En desarrollo". El aprendiz ha sido notificado.</p>
+              <p className="notificacion-descripcion">El proyecto "Sistema IoT para Agricultura" de Ana Martínez fue aprobado por el instructor y pasa a estado "En desarrollo". El aprendiz ha sido notificado.</p>
               <div className="notificacion-fila-inferior">
                 <div className="notificacion-metas">
                   <span className="notificacion-tiempo">Hace 5 horas</span>
@@ -183,7 +183,7 @@ function AlertasInstructor() {
                 <h3 className="notificacion-titulo">Nuevo Proyecto Registrado</h3>
                 <span className={leidas[4] ? 'badge-leida' : 'badge-no-leida'}>{leidas[4] ? 'Leída' : 'No leída'}</span>
               </div>
-              <p className="notificacion-descripcion">Juan Perez ha registrado un nuevo proyecto titulado "Plataforma de Gestion de Practicas". El proyecto esta en estado "Pendiente" y requiere revisión para asignación.</p>
+              <p className="notificacion-descripcion">Juan Pérez ha registrado un nuevo proyecto titulado "Plataforma de Gestion de Practicas". El proyecto esta en estado "Pendiente" y requiere revisión para asignación.</p>
               <div className="notificacion-fila-inferior">
                 <div className="notificacion-metas">
                   <span className="notificacion-tiempo">Ayer</span>

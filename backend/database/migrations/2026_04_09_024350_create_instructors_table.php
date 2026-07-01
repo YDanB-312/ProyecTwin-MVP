@@ -10,13 +10,7 @@ return new class extends Migration
     {
         Schema::create('instructors', function (Blueprint $table) {
             $table->id();
-            $table->string('especialidad');
-            $table->string('centro_formacion');
-            $table->text('biografia_profesional')->nullable();
-            $table->string('codigo_instructor')->unique();
             $table->date('fecha_ingreso');
-            $table->integer('limite_proyectos')->default(5);
-            $table->integer('tiempo_maximo_revision')->default(3);
             $table->text('plantilla_comentarios')->nullable();
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');

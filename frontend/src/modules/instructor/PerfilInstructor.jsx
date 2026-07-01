@@ -11,11 +11,11 @@ const breadcrumb = [
 
 function PerfilInstructor() {
   const { register: regInfo, handleSubmit: submitInfo, formState: { errors: errInfo }, reset: resetInfo } = useForm({
-    defaultValues: { nombre: 'Carlos', apellido: 'Ruiz', correo: 'carlos.ruiz@sena.edu.co', especialidad: 'adso', centro: 'centro-bogota', biografia: 'Instructor especializado en desarrollo de software con más de 10 años de experiencia en la industria. Especialista en bases de datos, arquitectura de software y metodologías ágiles.' }
+    defaultValues: { nombre: 'Carlos', apellido: 'Ruiz', correo: 'carlos.ruiz@sena.edu.co' }
   })
   const { register: regSeg, handleSubmit: submitSeg, formState: { errors: errSeg }, reset: resetSeg, watch: watchSeg } = useForm()
   const { register: regPref, handleSubmit: submitPref, formState: { errors: errPref }, reset: resetPref } = useForm({
-    defaultValues: { limite: '20', tiempoRevision: '3', notifNuevos: true, notifRevisiones: true, notifSimilitud: false, notifSistema: true, plantilla: 'Estimado aprendiz,\n\nHe revisado tu proyecto y tengo los siguientes comentarios:\n\nAspectos positivos:\n-\n\nAspectos a mejorar:\n-\n\nRecomendaciones:\n-\n\nQuedo atento a cualquier inquietud.\n\nSaludos cordiales,\nCarlos Ruiz\nInstructor SENA' }
+    defaultValues: { notif_nuevos_proyectos: true, notif_revisiones_pendientes: true, notif_similitud: false, notif_noticias_sistema: true, plantilla_comentarios: 'Estimado aprendiz,\n\nHe revisado tu proyecto y tengo los siguientes comentarios:\n\nAspectos positivos:\n-\n\nAspectos a mejorar:\n-\n\nRecomendaciones:\n-\n\nQuedo atento a cualquier inquietud.\n\nSaludos cordiales,\nCarlos Ruiz\nInstructor SENA' }
   })
 
   return (
@@ -91,27 +91,7 @@ function PerfilInstructor() {
                 {errInfo.correo && <span className="campo-error">Correo inválido</span>}
                 <span className="campo-info">Usa tu correo institucional del SENA</span>
               </div>
-              <div className="campo-grupo campo-completo">
-                <label htmlFor="especialidad" className="campo-label">Especialidad <span className="obligatorio">*</span></label>
-                <select id="especialidad" className="campo-select" {...regInfo("especialidad", { required: true })}>
-                  <option value="adso">Análisis y desarrollo de Software</option>
-                  <option value="sistemas">Tecnología en Sistemas</option>
-                  <option value="multimedia">Diseño y desarrollo Multimedia</option>
-                  <option value="redes">Tecnología en Redes</option>
-                </select>
-                {errInfo.especialidad && <span className="campo-error">Seleccione una especialidad</span>}
-              </div>
-              <div className="campo-grupo campo-completo">
-                <label htmlFor="centro" className="campo-label">Centro de Formación <span className="obligatorio">*</span></label>
-                <select id="centro" className="campo-select" {...regInfo("centro", { required: true })}>
-                  <option value="centro-bogota">Centro de comercio y servicios - Popayan</option>
-                </select>
-                {errInfo.centro && <span className="campo-error">Seleccione un centro</span>}
-              </div>
-              <div className="campo-grupo campo-completo">
-                <label htmlFor="biografia" className="campo-label">Biografía Profesional</label>
-                <textarea id="biografia" className="campo-input" placeholder="Describe tu experiencia profesional y especialidades..." rows="4" {...regInfo("biografia")}></textarea>
-              </div>
+
             </div>
             <div className="form-botones">
               <button type="submit" className="btn-primario"><i className="fas fa-save"></i> Guardar Cambios</button>
@@ -160,35 +140,14 @@ function PerfilInstructor() {
 
           <form onSubmit={submitPref((data) => { console.log(data); resetPref() })}>
             <div className="form-grid">
-              <div className="campo-grupo">
-                <label htmlFor="max-proyectos" className="campo-label">Limite de proyectos Asignados</label>
-                <select id="max-proyectos" className="campo-select" {...regPref("limite")}>
-                  <option value="10">10 proyectos</option>
-                  <option value="15">15 proyectos</option>
-                  <option value="20">20 proyectos</option>
-                  <option value="25">25 proyectos</option>
-                  <option value="30">30 proyectos</option>
-                </select>
-                <span className="campo-info">Número máximo de proyectos que puedes tener asignados simultáneamente</span>
-              </div>
-              <div className="campo-grupo">
-                <label htmlFor="tiempo-revision" className="campo-label">Tiempo Máximo de Revisión</label>
-                <select id="tiempo-revision" className="campo-select" {...regPref("tiempoRevision")}>
-                  <option value="1">1 dia</option>
-                  <option value="2">2 dias</option>
-                  <option value="3">3 dias</option>
-                  <option value="5">5 dias</option>
-                  <option value="7">7 dias</option>
-                </select>
-                <span className="campo-info">Tiempo máximo para revisar proyectos antes de notificar al aprendiz</span>
-              </div>
+
             </div>
 
             <div className="campo-grupo">
               <label className="campo-label">Notificaciones</label>
               <div className="lista-checkboxes">
                 <label className="checkbox-item">
-                  <input type="checkbox" {...regPref("notifNuevos")} />
+                  <input type="checkbox" {...regPref("notif_nuevos_proyectos")} />
                   <span className="checkmark"></span>
                   <div className="checkbox-info">
                     <span className="checkbox-titulo">Nuevos proyectos para revisar</span>
@@ -196,7 +155,7 @@ function PerfilInstructor() {
                   </div>
                 </label>
                 <label className="checkbox-item">
-                  <input type="checkbox" {...regPref("notifRevisiones")} />
+                  <input type="checkbox" {...regPref("notif_revisiones_pendientes")} />
                   <span className="checkmark"></span>
                   <div className="checkbox-info">
                     <span className="checkbox-titulo">Recordatorios de revisiones pendientes</span>
@@ -204,7 +163,7 @@ function PerfilInstructor() {
                   </div>
                 </label>
                 <label className="checkbox-item">
-                  <input type="checkbox" {...regPref("notifSimilitud")} />
+                  <input type="checkbox" {...regPref("notif_similitud")} />
                   <span className="checkmark"></span>
                   <div className="checkbox-info">
                     <span className="checkbox-titulo">Notificaciones de similitud de proyectos</span>
@@ -212,7 +171,7 @@ function PerfilInstructor() {
                   </div>
                 </label>
                 <label className="checkbox-item">
-                  <input type="checkbox" {...regPref("notifSistema")} />
+                  <input type="checkbox" {...regPref("notif_noticias_sistema")} />
                   <span className="checkmark"></span>
                   <div className="checkbox-info">
                     <span className="checkbox-titulo">Noticias y actualizaciones del sistema</span>
@@ -224,7 +183,7 @@ function PerfilInstructor() {
 
             <div className="campo-grupo">
               <label htmlFor="plantilla-comentarios" className="campo-label">Plantilla de Comentarios</label>
-              <textarea id="plantilla-comentarios" className="campo-input" placeholder="Plantilla personalizada para comentarios en revisiones..." rows="3" {...regPref("plantilla")}></textarea>
+              <textarea id="plantilla-comentarios" className="campo-input" placeholder="Plantilla personalizada para comentarios en revisiones..." rows="3" {...regPref("plantilla_comentarios")}></textarea>
               <span className="campo-info">Plantilla personalizada que se usará en tus comentarios de revisión</span>
             </div>
 

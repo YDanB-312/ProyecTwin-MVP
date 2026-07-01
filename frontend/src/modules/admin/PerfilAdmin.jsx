@@ -9,7 +9,7 @@ function PerfilAdmin() {
   })
   const { register: regSeg, handleSubmit: submitSeg, formState: { errors: errSeg }, reset: resetSeg, watch: watchSeg } = useForm()
   const { register: regPref, handleSubmit: submitPref, formState: { errors: errPref }, reset: resetPref } = useForm({
-    defaultValues: { notifCorreo: true, alertasUsuarios: true }
+    defaultValues: { notif_correo: true, alertas_usuarios: true }
   })
 
   return (
@@ -135,7 +135,7 @@ function PerfilAdmin() {
           <form onSubmit={submitPref((data) => { console.log(data); resetPref() })}>
             <div className="lista-checkboxes">
               <label className="checkbox-item">
-                <input type="checkbox" {...regPref("notifCorreo")} />
+                <input type="checkbox" {...regPref("notif_correo")} />
                 <span className="checkmark"></span>
                 <div className="checkbox-info">
                   <span className="checkbox-titulo">Notificaciones por correo</span>
@@ -143,7 +143,7 @@ function PerfilAdmin() {
                 </div>
               </label>
               <label className="checkbox-item">
-                <input type="checkbox" {...regPref("alertasUsuarios")} />
+                <input type="checkbox" {...regPref("alertas_usuarios")} />
                 <span className="checkmark"></span>
                 <div className="checkbox-info">
                   <span className="checkbox-titulo">Alertas de nuevos usuarios</span>

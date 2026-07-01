@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
@@ -12,9 +13,9 @@ const propuestas = [
     aprendiz: 'Ana Martínez',
     programa: 'ADSO',
     estado: 'pendiente',
-    created_at: '15/11/2023',
+    created_at: '15/11/2026',
     instructor: 'Carlos Ruiz',
-    linea_tecnologica: 'Tecnologías de la Información',
+    area_aplicacion: 'Tecnología e Informática',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Sistema de monitoreo inteligente para cultivos utilizando sensores IoT que miden humedad, temperatura y nutrientes del suelo, permitiendo la toma de decisiones en tiempo real para optimizar el riego y la fertilización.',
     palabras_clave: 'IoT, sensores, agricultura, monitoreo, automatización',
@@ -45,9 +46,9 @@ const propuestas = [
     aprendiz: 'Juan Pérez',
     programa: 'Multimedia',
     estado: 'pendiente',
-    created_at: '14/11/2023',
+    created_at: '14/11/2026',
     instructor: 'Carlos Ruiz',
-    linea_tecnologica: 'Diseño Gráfico',
+    area_aplicacion: 'Cultura y Entretenimiento',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Aplicación móvil que promueve el turismo local mostrando sitios de interés, rutas y eventos culturales, facilitando la exploración de destinos y la planificación de visitas.',
     palabras_clave: 'turismo, app móvil, cultura, rutas turísticas, geolocalización',
@@ -76,9 +77,9 @@ const propuestas = [
     aprendiz: 'Laura Gómez',
     programa: 'ADSO',
     estado: 'requiere_ajustes',
-    created_at: '12/11/2023',
+    created_at: '12/11/2026',
     instructor: 'Carlos Ruiz',
-    linea_tecnologica: 'Tecnologías de la Información',
+    area_aplicacion: 'Tecnología e Informática',
     tipo_proyecto: 'Aplicación/Software',
     resumen: 'Plataforma web para aprendizaje de instrumentos musicales con lecciones interactivas, seguimiento de progreso y recursos multimedia para estudiantes de todos los niveles.',
     palabras_clave: 'e-learning, música, educación, instrumentos, plataforma',
@@ -113,6 +114,7 @@ const observacionesData = [
 function DetalleProyectoInstructor() {
   const { id } = useParams()
   const location = useLocation()
+  const [observacion, setObservacion] = useState('')
   const propuesta = propuestas.find(p => p.id === Number(id)) || propuestas[0]
 
   const estadoBadge = {
@@ -179,8 +181,8 @@ function DetalleProyectoInstructor() {
               <div className="detalle-valor">{propuesta.instructor}</div>
             </div>
             <div>
-              <div className="detalle-label">Línea Tecnológica</div>
-              <div className="detalle-valor">{propuesta.linea_tecnologica}</div>
+              <div className="detalle-label">Área de Aplicación</div>
+              <div className="detalle-valor">{propuesta.area_aplicacion}</div>
             </div>
             <div>
               <div className="detalle-label">Tipo de Proyecto</div>
@@ -279,10 +281,10 @@ function DetalleProyectoInstructor() {
           </div>
           <div className="observaciones-section">
             <h3><i className="fas fa-plus-circle"></i> Agregar Observación</h3>
-            <form action="#" onSubmit={(e) => e.preventDefault()}>
+              <form onSubmit={(e) => e.preventDefault()}>
               <div className="grupo-formulario">
                 <label htmlFor="observacion" className="etiqueta">Comentario</label>
-                <textarea id="observacion" className="textarea" placeholder="Escribe tu observación sobre el proyecto..." name="contenido"></textarea>
+                <textarea id="observacion" className="textarea" placeholder="Escribe tu observación sobre el proyecto..." value={observacion} onChange={e => setObservacion(e.target.value)}></textarea>
               </div>
               <div className="acciones-formulario">
                 <button type="submit" className="btn-primario"><i className="fas fa-paper-plane"></i> Guardar Observación</button>

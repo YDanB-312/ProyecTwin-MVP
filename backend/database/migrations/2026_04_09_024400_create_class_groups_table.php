@@ -11,6 +11,8 @@ return new class extends Migration
         Schema::create('class_groups', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
+            $table->string('nombre');
+            $table->boolean('estado')->default(true);
             $table->foreignId('id_programa')->constrained('training_programs');
             $table->foreignId('id_instructor')->nullable()->constrained('instructors');
             $table->timestamps();

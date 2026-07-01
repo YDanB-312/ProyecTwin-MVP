@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -6,8 +6,8 @@ import '../../assets/styles/pages/detalle-compartido.css'
 
 const miembros = [
   { nombre: 'Maria Gonzalez', rol: 'Creador' },
-  { nombre: 'Juan Perez', rol: 'Integrante' },
-  { nombre: 'Laura Gomez', rol: 'Integrante' },
+  { nombre: 'Juan Pérez', rol: 'Integrante' },
+  { nombre: 'Laura Gómez', rol: 'Integrante' },
 ]
 
 const breadcrumb = [
@@ -17,6 +17,8 @@ const breadcrumb = [
 ]
 
 export default function DetalleProyectoAdmin() {
+  const location = useLocation()
+  const proyecto = location.state?.proyecto || null
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
       <div className="contenedor-gestion">
@@ -31,7 +33,7 @@ export default function DetalleProyectoAdmin() {
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Nombre del Proyecto</div>
-              <div className="detalle-valor">Sistema IoT para Agricultura de Precision</div>
+              <div className="detalle-valor">{proyecto ? proyecto.titulo : 'Sistema IoT para Agricultura de Precisión'}</div>
             </div>
             <div>
               <div className="detalle-label">Programa de Formación</div>
@@ -39,7 +41,7 @@ export default function DetalleProyectoAdmin() {
             </div>
             <div>
               <div className="detalle-label">Fecha de Creación</div>
-              <div className="detalle-valor">15/03/2026</div>
+              <div className="detalle-valor">{proyecto ? proyecto.fecha : '15/03/2026'}</div>
             </div>
             <div>
               <div className="detalle-label">Estado</div>
@@ -47,7 +49,7 @@ export default function DetalleProyectoAdmin() {
             </div>
             <div>
               <div className="detalle-label">Instructor</div>
-              <div className="detalle-valor">Carlos Ruiz</div>
+              <div className="detalle-valor">{proyecto ? proyecto.instructor : 'Carlos Ruiz'}</div>
             </div>
             <div>
               <div className="detalle-label">Ficha</div>

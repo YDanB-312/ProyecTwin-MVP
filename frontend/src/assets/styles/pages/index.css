@@ -1,10 +1,10 @@
 /* ========================================
-   INDEX - Página de Inicio (Landing Page)
+   INDEX - PÃ¡gina de Inicio (Landing Page)
    ======================================== */
 
 /* Header estilo landing */
 .modulo-invitado .header-principal {
-    background: white;
+    background: var(--color-fondo-elevado);
     box-shadow: var(--sombra-ring-md);
     border-bottom: 1px solid var(--color-borde-suave);
 }
@@ -91,7 +91,7 @@
 }
 
 /* ========================================
-   TARJETAS DE CARACTERÍSTICAS
+   TARJETAS DE CARACTERÃSTICAS
    ======================================== */
 .modulo-invitado .tarjetas-container {
     display: grid;
@@ -101,12 +101,12 @@
 }
 
 .modulo-invitado .tarjeta {
-    background: white;
+    background: var(--color-fondo-elevado);
     padding: 30px;
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     transition: all var(--transition-fast);
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid var(--color-borde-suave);
 }
 
 .modulo-invitado .tarjeta:hover {
@@ -164,7 +164,7 @@
 }
 
 /* ========================================
-   LLAMADO A LA ACCIÓN
+   LLAMADO A LA ACCIÃ“N
    ======================================== */
 .modulo-invitado .cta-section {
     text-align: center;
@@ -195,7 +195,7 @@
 }
 
 /* ========================================
-   SECCIÓN: TIPOS DE USUARIO
+   SECCIÃ“N: TIPOS DE USUARIO
    ======================================== */
 .modulo-invitado .usuarios-section {
     margin-bottom: 60px;
@@ -222,14 +222,14 @@
 }
 
 .modulo-invitado .tarjeta-usuario {
-    background: white;
+    background: var(--color-fondo-elevado);
     padding: 30px;
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     text-align: center;
     transition: all var(--transition-fast);
     border-top: 4px solid transparent;
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid var(--color-borde-suave);
     border-top-width: 4px;
 }
 
@@ -320,7 +320,7 @@
 }
 
 /* ========================================
-   SECCIÓN: CÓMO FUNCIONA
+   SECCIÃ“N: CÃ“MO FUNCIONA
    ======================================== */
 .modulo-invitado .como-funciona {
     margin-bottom: 60px;
@@ -342,11 +342,11 @@
 .modulo-invitado .paso {
     text-align: center;
     padding: var(--space-xl) var(--space-lg);
-    background: white;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring);
     transition: all var(--transition-fast);
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid var(--color-borde-suave);
 }
 
 .modulo-invitado .paso:hover {

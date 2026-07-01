@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('bug_reports', function (Blueprint $table) {
             $table->id();
+            $table->string('titulo')->nullable();
             $table->text('descripcion');
-            $table->string('tipo')->nullable();
+            $table->string('tipo');
+            $table->text('pasos_reproduccion')->nullable();
             $table->string('url_evidencia')->nullable();
             $table->string('estado');
             $table->date('fecha');

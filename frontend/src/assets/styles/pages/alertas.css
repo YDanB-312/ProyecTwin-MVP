@@ -35,7 +35,7 @@
     box-shadow: none;
 }
 
-/* ── Filtros Card ── */
+/* â”€â”€ Filtros Card â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .filtros-card {
     box-shadow: var(--sombra-ring);
 }
@@ -60,14 +60,14 @@
     min-width: 140px;
 }
 
-/* ── Lista de Notificaciones ── */
+/* â”€â”€ Lista de Notificaciones â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .lista-notificaciones {
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
 }
 
-/* ── Notificacion Card ── */
+/* â”€â”€ Notificacion Card â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card {
     background: var(--color-fondo-elevado);
     border: 1px solid var(--color-borde);
@@ -86,7 +86,7 @@
     border-color: var(--color-borde-hover);
 }
 
-/* ── Icono de tipo ── */
+/* â”€â”€ Icono de tipo â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono {
     width: 44px;
     height: 44px;
@@ -111,8 +111,8 @@
     color: var(--color-peligro);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono.peligro {
-    background-color: #fef2f2;
-    color: #b91c1c;
+    background-color: rgba(239,68,68,0.1);
+    color: var(--color-peligro);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono.advertencia {
@@ -120,8 +120,8 @@
     color: var(--color-advertencia);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-card:hover .notificacion-icono.advertencia {
-    background-color: #fffbeb;
-    color: #b45309;
+    background-color: rgba(245,158,11,0.15);
+    color: var(--color-advertencia);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-icono.informativa {
@@ -133,7 +133,7 @@
     color: var(--color-secundario);
 }
 
-/* ── Cuerpo ── */
+/* â”€â”€ Cuerpo â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-cuerpo {
     flex: 1;
     min-width: 0;
@@ -154,7 +154,7 @@
     margin: 0;
 }
 
-/* ── Badges de leída ── */
+/* â”€â”€ Badges de leÃ­da â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-no-leida {
     background-color: var(--color-fondo);
     color: var(--color-primario);
@@ -177,10 +177,10 @@
     white-space: nowrap;
 }
 
-/* ── Descripción ── */
+/* â”€â”€ DescripciÃ³n â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-descripcion {
     font-size: 0.85rem;
-    color: #4b5563;
+    color: var(--color-texto-secundario);
     margin-bottom: 10px;
     line-height: 1.4;
     display: -webkit-box;
@@ -189,7 +189,7 @@
     overflow: hidden;
 }
 
-/* ── Fila inferior ── */
+/* â”€â”€ Fila inferior â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-fila-inferior {
     display: flex;
     justify-content: space-between;
@@ -217,7 +217,7 @@
     font-weight: 500;
 }
 
-/* ── Badges de estado ── */
+/* â”€â”€ Badges de estado â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-estado {
     border-radius: var(--radio-borde);
     padding: 2px 10px;
@@ -227,18 +227,18 @@
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-similitud {
-    background-color: #fef2f2;
+    background-color: rgba(239,68,68,0.1);
     color: var(--color-peligro);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-revision {
-    background-color: #fffbeb;
+    background-color: rgba(245,158,11,0.15);
     color: var(--color-advertencia);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-mensaje {
-    background-color: #eff6ff;
-    color: #2563eb;
+    background-color: rgba(37,99,235,0.1);
+    color: var(--color-primario);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .badge-sistema {
@@ -246,7 +246,7 @@
     color: var(--color-primario);
 }
 
-/* ── Acciones ── */
+/* â”€â”€ Acciones â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificacion-acciones {
     display: flex;
     gap: var(--space-sm);
@@ -257,6 +257,7 @@
     border: none;
     border-radius: 8px;
     padding: 7px 16px;
+    min-width: 155px;
     font-size: 0.8rem;
     font-family: inherit;
     font-weight: 600;
@@ -266,6 +267,7 @@
     transition: all 200ms ease;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 7px;
     text-decoration: none;
     box-shadow: 0 2px 8px rgba(5, 153, 102, 0.2);
@@ -309,7 +311,7 @@
     transform: translateY(0);
 }
 
-/* ── Empty State ── */
+/* â”€â”€ Empty State â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .empty-state-notificaciones {
     background-color: var(--color-fondo);
     border: 1px dashed var(--color-borde);
@@ -342,7 +344,7 @@
     margin: 0;
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 768px) {
     :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .notificaciones-header {
         flex-direction: column;

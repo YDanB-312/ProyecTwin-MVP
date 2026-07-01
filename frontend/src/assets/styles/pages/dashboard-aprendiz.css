@@ -10,14 +10,14 @@
     gap: var(--space-2xl);
 }
 
-/* ── Section wrapper ── */
+/* â”€â”€ Section wrapper â”€â”€ */
 .modulo-aprendiz .dashboard-section {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* ── Dashboard Header ── */
+/* â”€â”€ Dashboard Header â”€â”€ */
 .modulo-aprendiz .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -69,7 +69,7 @@
     white-space: nowrap;
 }
 
-/* ── Welcome Card ── */
+/* â”€â”€ Welcome Card â”€â”€ */
 .modulo-aprendiz .tarjeta-bienvenida-moderna {
     animation: fadeInUp 0.6s ease-out;
     background: var(--gradient-header);
@@ -94,7 +94,7 @@
     background: rgba(255,255,255,0.18);
 }
 
-/* ── Section Titles (barra izquierda verde) ── */
+/* â”€â”€ Section Titles (barra izquierda verde) â”€â”€ */
 .modulo-aprendiz .titulo-seccion-dashboard {
     font-size: 18px;
     font-weight: 700;
@@ -116,7 +116,7 @@
     border-radius: 2px;
 }
 
-/* ── Seccion header (title + ver-todas) ── */
+/* â”€â”€ Seccion header (title + ver-todas) â”€â”€ */
 .modulo-aprendiz .seccion-header {
     display: flex;
     justify-content: space-between;
@@ -136,14 +136,14 @@
     margin: 0;
 }
 
-/* ── Actions Grid ── */
+/* â”€â”€ Actions Grid â”€â”€ */
 .modulo-aprendiz .acciones-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-lg);
 }
 
-/* ── Action Cards ── */
+/* â”€â”€ Action Cards â”€â”€ */
 .modulo-aprendiz .tarjeta-accion-moderna {
     text-decoration: none;
     color: inherit;
@@ -203,7 +203,7 @@
     line-height: 1.4;
 }
 
-/* ── Empty State ── */
+/* â”€â”€ Empty State â”€â”€ */
 .modulo-aprendiz .empty-state-card {
     background-color: var(--color-fondo);
     border: 1px dashed var(--color-borde);
@@ -236,7 +236,7 @@
     max-width: 400px;
 }
 
-/* ── Botón primario ── */
+/* â”€â”€ BotÃ³n primario â”€â”€ */
 .modulo-aprendiz .btn-primario {
     background-color: var(--color-primario);
     color: #ffffff;
@@ -264,7 +264,7 @@
     box-shadow: none;
 }
 
-/* ── Neutralizar estilos globales ── */
+/* â”€â”€ Neutralizar estilos globales â”€â”€ */
 .modulo-aprendiz .contenedor-dashboard ul,
 .modulo-aprendiz .contenedor-dashboard li {
     list-style: none;
@@ -272,7 +272,7 @@
     padding: 0;
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
     .modulo-aprendiz .acciones-grid {
         grid-template-columns: repeat(2, 1fr);
