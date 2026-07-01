@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
 function UnirseFicha() {
-  const [codigo, setCodigo] = useState('')
+  const { register, handleSubmit } = useForm()
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-pagina">
@@ -31,10 +31,10 @@ function UnirseFicha() {
             <span>Ha ocurrido un error. Intenta nuevamente.</span>
           </div>
 
-          <form action="#" onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={handleSubmit(() => {})}>
             <div className="unirse-campo-grupo">
               <label htmlFor="codigo-ficha" className="campo-label">Código de ficha <span className="obligatorio">*</span></label>
-              <input type="text" id="codigo-ficha" className="campo-input" placeholder="ADSO-2568" required name="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+              <input type="text" id="codigo-ficha" className="campo-input" placeholder="ADSO-2568" {...register("codigo", { required: true })} />
               <p className="campo-ayuda">Solicita a tu instructor el código de la ficha a la que perteneces e ingrésalo aquí.</p>
             </div>
 

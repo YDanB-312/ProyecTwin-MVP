@@ -19,7 +19,7 @@ const breadcrumb = [
 ]
 
 const similitudesProyecto = [
-  { proyecto: 'Plataforma Educativa SENA', porcentaje: 65, aprendiz: 'Ana Martinez', programa: 'ADSO', fecha: '02/02/2026' },
+  { proyecto: 'Plataforma Educativa SENA', porcentaje: 65, aprendiz: 'Ana Martínez', programa: 'ADSO', fecha: '02/02/2026' },
   { proyecto: 'Plataforma de Cursos Online', porcentaje: 55, aprendiz: 'Pedro Lopez', programa: 'ADSO', fecha: '10/01/2026' },
 ]
 
@@ -70,7 +70,7 @@ export default function DetalleSimilitudAdmin() {
             <div className="card-proyecto-compacto">
               <h4 className="card-titulo-verde"><i className="fas fa-file-alt"></i> {proyectoActual}</h4>
               <p className="info-linea">{proyectoActual}</p>
-              <p className="detalle-linea"><strong>Aprendiz:</strong> Juan Perez</p>
+              <p className="detalle-linea"><strong>Aprendiz:</strong> Juan Pérez</p>
               <p className="detalle-linea"><strong>Programa:</strong> ADSO</p>
               <p className="detalle-linea"><strong>Fecha:</strong> 15/03/2026</p>
             </div>

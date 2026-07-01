@@ -11,7 +11,7 @@
     margin-bottom: 32px;
 }
 
-/* ── Seccion Card ── */
+/* â”€â”€ Seccion Card â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .seccion-card {
     background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
@@ -69,7 +69,7 @@
     flex-shrink: 0;
 }
 
-/* ── Form Body ── */
+/* â”€â”€ Form Body â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .form-body {
     padding: 24px 28px;
     display: flex;
@@ -94,7 +94,7 @@
     font-weight: 700;
 }
 
-/* ── Select Premium ── */
+/* â”€â”€ Select Premium â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .campo-select {
     width: 100%;
     border: 1px solid var(--color-borde);
@@ -118,7 +118,7 @@
     box-shadow: var(--sombra-foco);
 }
 
-/* ── Textarea Premium ── */
+/* â”€â”€ Textarea Premium â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .campo-textarea {
     width: 100%;
     border: 1px solid var(--color-borde);
@@ -151,7 +151,7 @@
     margin-top: 2px;
 }
 
-/* ── File Input Premium ── */
+/* â”€â”€ File Input Premium â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .file-input-wrapper {
     display: flex;
     align-items: center;
@@ -204,7 +204,7 @@
     margin-top: 2px;
 }
 
-/* ── Form Footer ── */
+/* â”€â”€ Form Footer â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .form-footer {
     display: flex;
     justify-content: flex-end;
@@ -270,7 +270,7 @@
     box-shadow: none;
 }
 
-/* ── Reportes Grid ── */
+/* â”€â”€ Reportes Grid â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .reportes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -278,7 +278,7 @@
     padding: 24px 28px;
 }
 
-/* ── Reporte Card ── */
+/* â”€â”€ Reporte Card â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .reporte-card {
     background: var(--color-fondo-elevado);
     border: 1px solid var(--color-borde);
@@ -330,7 +330,7 @@
     color: var(--color-texto-muted);
 }
 
-/* ── Badge Tipo ── */
+/* â”€â”€ Badge Tipo â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .badge-tipo {
     display: inline-block;
     border-radius: var(--radio-borde);
@@ -347,7 +347,7 @@
 
 :is(.modulo-aprendiz, .modulo-instructor) .badge-tipo-datos {
     background-color: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
+    color: var(--color-primario);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor) .badge-tipo-proyecto {
@@ -360,7 +360,7 @@
     color: var(--color-texto);
 }
 
-/* ── Badge Estado Reporte ── */
+/* â”€â”€ Badge Estado Reporte â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .badge-estado-reporte {
     display: inline-flex;
     align-items: center;
@@ -387,7 +387,7 @@
     color: var(--color-advertencia);
 }
 
-/* ── Feedback ── */
+/* â”€â”€ Feedback â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .mensaje-feedback {
     display: flex;
     align-items: center;
@@ -409,7 +409,7 @@
     border-bottom: 1px solid rgba(239, 68, 68, 0.1);
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 768px) {
     :is(.modulo-aprendiz, .modulo-instructor) .seccion-card-header {
         padding: 16px 20px;

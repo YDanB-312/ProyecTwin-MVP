@@ -14,7 +14,7 @@ export default function RecuperarContrasena() {
   }
 
   return (
-    <div className="modulo-invitado">
+    <div className="modulo-invitado modulo-pagina-completa">
       <GovernmentBar />
 
       <main className="contenedor-login">

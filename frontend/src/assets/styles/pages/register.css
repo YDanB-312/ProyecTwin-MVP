@@ -15,11 +15,11 @@
 .modulo-invitado .tarjeta-register {
     width: 100%;
     max-width: 650px;
-    background: #fff;
+    background: var(--color-fondo-elevado);
     border-radius: var(--radio-borde);
     box-shadow: var(--sombra-ring-md);
     padding: 35px 30px;
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid var(--color-borde-suave);
 }
 
 /* Encabezado */
@@ -113,7 +113,7 @@
     font-size: .95rem;
     font-family: inherit;
     color: var(--color-texto);
-    background: white;
+    background: var(--color-fondo-elevado);
     transition: all var(--transition-fast);
 }
 
@@ -187,14 +187,14 @@
 }
 
 /* Link a login */
-/* Botón volver al login en encabezado */
+/* BotÃ³n volver al login en encabezado */
 .modulo-invitado .encabezado-register .btn-secundario {
     position: absolute;
     left: 0;
     top: 2px;
 }
 
-/* Botón registrarse ancho completo */
+/* BotÃ³n registrarse ancho completo */
 .modulo-invitado .tarjeta-register form > .btn-primario {
     width: 100%;
     justify-content: center;

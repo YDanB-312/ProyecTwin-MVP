@@ -1,21 +1,14 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/reportar-falla.css'
 
 function ReportarFallaAprendiz() {
-  const [descTexto, setDescTexto] = useState('')
-  const [archivoNombre, setArchivoNombre] = useState('No se ha seleccionado ningún archivo')
-
-  function manejarArchivo(e) {
-    const file = e.target.files[0]
-    if (file) {
-      setArchivoNombre(file.name)
-    } else {
-      setArchivoNombre('No se ha seleccionado ningún archivo')
-    }
-  }
+  const { register, handleSubmit, watch } = useForm()
+  const descTexto = watch("descripcion", "")
+  const archivo = watch("url_evidencia")
+  const archivoNombre = archivo?.length > 0 ? archivo[0].name : 'No se ha seleccionado ningún archivo'
 
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
@@ -43,11 +36,11 @@ function ReportarFallaAprendiz() {
             <i className="fas fa-exclamation-circle"></i><span>Ha ocurrido un error. Intenta nuevamente.</span>
           </div>
 
-          <form id="formularioFalla" action="#" onSubmit={(e) => e.preventDefault()}>
+          <form id="formularioFalla" onSubmit={handleSubmit(() => {})}>
             <div className="form-body">
               <div className="grupo-campo">
                 <label htmlFor="tipo-falla" className="campo-label">Tipo de Falla <span className="obligatorio">*</span></label>
-                <select id="tipo-falla" className="campo-select" required name="tipo" defaultValue="">
+                <select id="tipo-falla" className="campo-select" {...register("tipo", { required: true })}>
                   <option value="" disabled>-- Selecciona una opción --</option>
                   <option value="sistema">Error del sistema</option>
                   <option value="proyecto">Problema con mi proyecto</option>
@@ -57,7 +50,7 @@ function ReportarFallaAprendiz() {
               </div>
               <div className="grupo-campo">
                 <label htmlFor="descripcion" className="campo-label">Descripción Detallada <span className="obligatorio">*</span></label>
-                <textarea id="descripcion" className="campo-textarea" placeholder="Describe con detalle el problema encontrado, los pasos que seguiste y el resultado esperado..." required name="descripcion" maxLength="500" value={descTexto} onChange={e => setDescTexto(e.target.value)}></textarea>
+                <textarea id="descripcion" className="campo-textarea" placeholder="Describe con detalle el problema encontrado, los pasos que seguiste y el resultado esperado..." {...register("descripcion", { required: true, maxLength: 500 })}></textarea>
                 <div className="desc-contador">{descTexto.length}/500 caracteres</div>
               </div>
               <div className="grupo-campo">
@@ -65,7 +58,7 @@ function ReportarFallaAprendiz() {
                 <div className="file-input-wrapper">
                   <button type="button" className="btn-file" onClick={() => document.getElementById('evidencia').click()}><i className="fas fa-paperclip"></i> Elegir archivo</button>
                   <span className="file-name">{archivoNombre}</span>
-                  <input type="file" id="evidencia" className="file-input-real" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" name="url_evidencia" onChange={manejarArchivo} />
+                  <input type="file" id="evidencia" className="file-input-real" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" {...register("url_evidencia")} />
                 </div>
                 <span className="campo-info">Formatos aceptados: JPG, PNG, PDF, Word (Max. 10MB por archivo)</span>
               </div>

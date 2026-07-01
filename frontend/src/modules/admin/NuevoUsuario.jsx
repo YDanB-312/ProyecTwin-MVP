@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
@@ -9,7 +9,8 @@ export default function NuevoUsuario() {
   const location = useLocation()
   const editUser = location.state?.editUser
   const isEditing = !!editUser
-  const [rol, setRol] = useState(editUser?.rol || '')
+  const { register, handleSubmit, watch } = useForm({ defaultValues: { estado: 'true', ...editUser } })
+  const rol = watch('rol', '')
 
   const breadcrumb = [
     { to: '/admin/dashboard', icon: 'home', label: 'Inicio' },
@@ -28,27 +29,27 @@ export default function NuevoUsuario() {
         />
 
         <DataPanel title={isEditing ? 'Editar Datos del Usuario' : 'Datos del Usuario'} icon="id-card">
-            <form className="formulario-proyecto tarjeta-padded" action="#" onSubmit={(e) => e.preventDefault()}>
+            <form className="formulario-proyecto tarjeta-padded" onSubmit={handleSubmit(() => {})}>
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="nombre" className="etiqueta requerido">Nombre</label>
-                  <input type="text" id="nombre" className="input-text" placeholder="Nombres" required name="nombre" defaultValue={editUser?.nombre || ''} />
+                  <input type="text" id="nombre" className="input-text" placeholder="Nombres" {...register("nombre", { required: true })} />
                 </div>
                 <div className="grupo-formulario">
                   <label htmlFor="apellido" className="etiqueta requerido">Apellido</label>
-                  <input type="text" id="apellido" className="input-text" placeholder="Apellidos" required name="apellido" defaultValue={editUser?.apellido || ''} />
+                  <input type="text" id="apellido" className="input-text" placeholder="Apellidos" {...register("apellido", { required: true })} />
                 </div>
               </div>
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="correo" className="etiqueta requerido">Correo Electrónico</label>
-                  <input type="email" id="correo" className="input-text" placeholder="correo@correo.com" required name="correo" defaultValue={editUser?.correo || ''} />
+                  <input type="email" id="correo" className="input-text" placeholder="correo@correo.com" {...register("correo", { required: true })} />
                 </div>
                 <div className="grupo-formulario">
                   {!isEditing && (
                     <>
                       <label htmlFor="password" className="etiqueta requerido">Contraseña</label>
-                      <input type="password" id="password" className="input-text" placeholder="Mínimo 6 caracteres" minLength="6" required name="password" />
+                      <input type="password" id="password" className="input-text" placeholder="Mínimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
                     </>
                   )}
                 </div>
@@ -56,7 +57,7 @@ export default function NuevoUsuario() {
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="rol" className="etiqueta requerido">Rol</label>
-                  <select id="rol" className="select" required name="rol" value={rol} onChange={e => setRol(e.target.value)}>
+                  <select id="rol" className="select" required {...register("rol", { required: true })}>
                     <option value="">Selecciona un rol</option>
                     <option value="aprendiz">Aprendiz</option>
                     <option value="instructor">Instructor</option>
@@ -67,7 +68,7 @@ export default function NuevoUsuario() {
               <div className="grupo-campos">
                 <div className="grupo-formulario">
                   <label htmlFor="estado" className="etiqueta">Estado</label>
-                  <select id="estado" className="select" name="estado" defaultValue={editUser?.estado === undefined ? 'true' : String(editUser.estado)}>
+                  <select id="estado" className="select" {...register("estado")}>
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                   </select>
@@ -83,27 +84,9 @@ export default function NuevoUsuario() {
                   <div className="seccion-formulario-body">
                     <div className="grupo-campos">
                       <div className="grupo-formulario">
-                        <label htmlFor="codigo_instructor" className="etiqueta requerido">Código de Instructor</label>
-                        <input type="text" id="codigo_instructor" className="input-text" placeholder="Ej: INS-001" required name="codigo_instructor" defaultValue={editUser?.codigo_instructor || ''} />
-                      </div>
-                      <div className="grupo-formulario">
-                        <label htmlFor="especialidad" className="etiqueta requerido">Especialidad</label>
-                        <input type="text" id="especialidad" className="input-text" placeholder="Ej: Desarrollo de Software" required name="especialidad" defaultValue={editUser?.especialidad || ''} />
-                      </div>
-                    </div>
-                    <div className="grupo-campos">
-                      <div className="grupo-formulario">
-                        <label htmlFor="centro_formacion_instructor" className="etiqueta requerido">Centro de Formación</label>
-                        <input type="text" id="centro_formacion_instructor" className="input-text" placeholder="Centro de formación al que pertenece" required name="centro_formacion" defaultValue={editUser?.centro_formacion || ''} />
-                      </div>
-                      <div className="grupo-formulario">
                         <label htmlFor="fecha_ingreso" className="etiqueta requerido">Fecha de Ingreso</label>
-                        <input type="date" id="fecha_ingreso" className="input-text" required name="fecha_ingreso" defaultValue={editUser?.fecha_ingreso || ''} />
+                        <input type="date" id="fecha_ingreso" className="input-text" {...register("fecha_ingreso", { required: true })} />
                       </div>
-                    </div>
-                    <div className="grupo-formulario">
-                      <label htmlFor="biografia_profesional" className="etiqueta">Biografía Profesional</label>
-                      <textarea id="biografia_profesional" className="textarea" placeholder=" formación académica y experiencia profesional..." name="biografia_profesional" defaultValue={editUser?.biografia_profesional || ''}></textarea>
                     </div>
                   </div>
                 </div>
@@ -119,21 +102,17 @@ export default function NuevoUsuario() {
                     <div className="grupo-campos">
                       <div className="grupo-formulario">
                         <label htmlFor="ficha_aprendiz" className="etiqueta requerido">Ficha</label>
-                        <input type="text" id="ficha_aprendiz" className="input-text" placeholder="Ej: ADSO-2568" required name="ficha" defaultValue={editUser?.ficha || ''} />
+                        <input type="text" id="ficha_aprendiz" className="input-text" placeholder="Ej: ADSO-2568" {...register("ficha", { required: true })} />
                       </div>
                       <div className="grupo-formulario">
                         <label htmlFor="id_programa" className="etiqueta requerido">Programa de Formación</label>
-                        <select id="id_programa" className="select" required name="id_programa" defaultValue={editUser?.id_programa || ''}>
+                        <select id="id_programa" className="select" {...register("id_programa", { required: true })}>
                           <option value="">Selecciona un programa</option>
                           <option value="1">ADSO</option>
                           <option value="2">Producción Multimedia</option>
                           <option value="3">Infraestructura de Redes</option>
                         </select>
                       </div>
-                    </div>
-                    <div className="grupo-formulario">
-                      <label htmlFor="centro_formacion_aprendiz" className="etiqueta">Centro de Formación</label>
-                      <input type="text" id="centro_formacion_aprendiz" className="input-text" placeholder="Centro de formación" name="centro_formacion" defaultValue={editUser?.centro_formacion || ''} />
                     </div>
                   </div>
                 </div>
@@ -149,7 +128,7 @@ export default function NuevoUsuario() {
                     <div className="grupo-campos">
                       <div className="grupo-formulario">
                         <label htmlFor="area_encargada" className="etiqueta requerido">Área Encargada</label>
-                        <input type="text" id="area_encargada" className="input-text" placeholder="Ej: Gestión Académica" required name="area_encargada" defaultValue={editUser?.area_encargada || ''} />
+                        <input type="text" id="area_encargada" className="input-text" placeholder="Ej: Gestión Académica" {...register("area_encargada", { required: true })} />
                       </div>
                     </div>
                   </div>

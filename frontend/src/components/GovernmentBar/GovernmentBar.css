@@ -1,6 +1,6 @@
 /* Barra de gobierno */
 .barra-gobierno {
-    background: var(--color-texto);
+    background: #0f172a;
     color: white;
     padding: 8px 0;
     font-size: 0.85rem;

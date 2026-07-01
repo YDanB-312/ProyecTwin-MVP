@@ -1,4 +1,4 @@
-﻿/* Detalle Compartido - Estilos para pÃ¡ginas de detalle */
+/* Detalle Compartido - Estilos para pÃ¡ginas de detalle */
 
 /* === Grid de informaciÃ³n === */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-grid {
@@ -91,7 +91,7 @@
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-proyecto-compacto:hover {
     transform: translateY(-1px);
     box-shadow: var(--sombra-card-hover);
-    border-color: #a7f3d0;
+    border-color: var(--color-borde-hover);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .card-titulo-verde {
     color: var(--color-primario);
@@ -194,7 +194,7 @@
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .select-nav-similitud option {
     color: var(--color-texto);
-    background: #fff;
+    background: var(--color-fondo-elevado);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-similitud .proyecto-nombre {
     font-size: 16px;
@@ -222,13 +222,13 @@
     box-shadow: var(--sombra-ring);
     padding: 25px;
     margin-bottom: 25px;
-    border: 1px solid rgba(0,0,0,0.02);
+    border: 1px solid var(--color-borde-suave);
     transition: all 150ms ease;
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tarjeta-revision:hover {
     transform: translateY(-1px);
     box-shadow: var(--sombra-card-hover);
-    border-color: #a7f3d0;
+    border-color: var(--color-borde-hover);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-revision {
     display: flex;
@@ -434,19 +434,19 @@
     margin-bottom: 4px;
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tag-pill-gris {
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--color-borde-suave);
+    color: var(--color-texto-secundario);
 }
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .tag-pill-azul {
-    background: #dbeafe;
-    color: #1e40af;
+    background: rgba(37,99,235,0.1);
+    color: var(--color-primario);
 }
 
 /* === Lista reset (objetivos / entregables) === */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .detalle-ul-reset {
     margin: 0;
     padding-left: 20px;
-    color: #4b5563;
+    color: var(--color-texto-secundario);
     line-height: 1.8;
 }
 

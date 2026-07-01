@@ -104,7 +104,7 @@ export default function DashboardAdmin() {
               <div className="alerta-card-icono"><i className="fas fa-file-signature"></i></div>
               <div className="alerta-card-contenido">
                 <div className="alerta-card-titulo">Nuevo Proyecto Registrado</div>
-                <div className="alerta-card-descripcion"><p>Ana Martinez ha registrado un nuevo proyecto titulado "Sistema IoT para Agricultura". Pendiente de revisión de similitud.</p></div>
+                <div className="alerta-card-descripcion"><p>Ana Martínez ha registrado un nuevo proyecto titulado "Sistema IoT para Agricultura". Pendiente de revisión de similitud.</p></div>
                 <div className="alerta-card-meta">
                   <span className="alerta-card-fecha"><i className="fas fa-clock"></i> Hace 1 hora</span>
                   <Link to="/admin/proyectos" className="btn-alerta-accion"><i className="fas fa-eye"></i> Ver</Link>

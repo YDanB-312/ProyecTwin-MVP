@@ -1,4 +1,4 @@
-/* Reportes de Fallas - Estilos especÃ­ficos */
+/* Reportes de Fallas - Estilos especÃƒÂ­ficos */
 
 /* Filtros */
 .modulo-admin .formulario-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; align-items: end; }
@@ -11,24 +11,24 @@
 .modulo-admin .botones-filtros { display: flex; gap: 10px; }
 
 /* Tabla de reportes */
-.modulo-admin .contenedor-tabla { background: white; border-radius: var(--radio-borde); box-shadow: var(--sombra-ring); overflow: hidden; border: 1px solid rgba(0,0,0,0.02); }
+.modulo-admin .contenedor-tabla { background: var(--color-fondo-elevado); border-radius: var(--radio-borde); box-shadow: var(--sombra-ring); overflow: hidden; border: 1px solid var(--color-borde-suave); }
 .modulo-admin .encabezado-tabla { background: var(--color-fondo); }
 
 .modulo-admin .tabla-reportes { width: 100%; border-collapse: collapse; }
 .modulo-admin .tabla-reportes thead { background: var(--color-header); color: white; }
 .modulo-admin .tabla-reportes th { padding: 14px 20px; text-align: left; font-weight: 600; font-size: 0.9rem; }
 .modulo-admin .tabla-reportes td { padding: 14px 20px; border-bottom: 1px solid var(--color-borde); font-size: 0.9rem; }
-.modulo-admin .tabla-reportes tbody tr:nth-child(even) { background: rgba(0,0,0,0.01); }
+.modulo-admin .tabla-reportes tbody tr:nth-child(even) { background: rgba(255,255,255,0.03); }
 .modulo-admin .tabla-reportes tbody tr:hover { background: rgba(5, 153, 102, 0.04); }
 
 .modulo-admin .descripcion-corta { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Grid de estadÃ­sticas: 2 columnas fijas */
+/* Grid de estadÃƒÂ­sticas: 2 columnas fijas */
 .modulo-admin .seccion-reporte .grid-estadisticas {
     grid-template-columns: repeat(2, 1fr);
 }
 
-/* Paginacion especÃ­fica */
+/* Paginacion especÃƒÂ­fica */
 .modulo-admin .contenedor-paginacion { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; background: var(--color-fondo); border-top: 1px solid var(--color-borde); }
 .modulo-admin .info-paginacion { font-size: 0.9rem; color: var(--color-texto-claro); }
 
@@ -41,7 +41,11 @@
 .modulo-admin .fila-similitud td { padding: 10px 20px; }
 .modulo-admin .fila-similitud:hover { background: rgba(0,0,0,0.02); }
 
-/* Responsive especÃ­fico */
+.modulo-admin .fila-similitud { background-color: #f9fafb; }
+.modulo-admin .celda-similitud { padding-left: 32px; }
+.modulo-admin .icono-similitud { color: #94a3b8; margin-right: 8px; font-size: 12px; }
+
+/* Responsive especÃƒÂ­fico */
 @media (max-width: 768px) {
     .modulo-admin .encabezado-pagina { flex-direction: column; align-items: flex-start; gap: 15px; }
     .modulo-admin .formulario-filtros { grid-template-columns: 1fr; }

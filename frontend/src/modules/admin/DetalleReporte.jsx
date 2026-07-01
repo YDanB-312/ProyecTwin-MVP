@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -24,9 +24,11 @@ const etiquetaReporte = {
   rechazado: 'Rechazado',
 }
 
-const reporte = { estado: 'en_revision' }
+const defaultReporte = { estado: 'en_revision', usuario: 'Maria Gonzalez (Aprendiz)', fecha: '08/04/2026', descripcion: '', titulo: 'Error al cargar el módulo de similitudes', pasos: '' }
 
 export default function DetalleReporte() {
+  const location = useLocation()
+  const reporteData = location.state?.reporte || defaultReporte
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
       <div className="contenedor-gestion">
@@ -45,15 +47,15 @@ export default function DetalleReporte() {
             </div>
             <div>
               <div className="detalle-label">Estado</div>
-              <p><span className={`badge badge-${badgeReporte[reporte.estado].clase}`}><i className={`fas fa-${badgeReporte[reporte.estado].icono}`}></i> {etiquetaReporte[reporte.estado]}</span></p>
+              <p><span className={`badge badge-${badgeReporte[reporteData.estado]?.clase || 'primario'}`}><i className={`fas fa-${badgeReporte[reporteData.estado]?.icono || 'cog'}`}></i> {etiquetaReporte[reporteData.estado] || reporteData.estado}</span></p>
             </div>
             <div>
               <div className="detalle-label">Reportado por</div>
-              <div className="detalle-valor">Maria Gonzalez (Aprendiz)</div>
+              <div className="detalle-valor">{reporteData.usuario}</div>
             </div>
             <div>
               <div className="detalle-label">Fecha de reporte</div>
-              <div className="detalle-valor">08/04/2026</div>
+              <div className="detalle-valor">{reporteData.fecha}</div>
             </div>
             <div className="detalle-grid-full">
               <div className="detalle-label">Descripción</div>

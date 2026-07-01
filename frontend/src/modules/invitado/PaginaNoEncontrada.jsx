@@ -5,7 +5,7 @@ import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 
 export default function PaginaNoEncontrada() {
   return (
-    <div className="modulo-invitado">
+    <div className="modulo-invitado modulo-pagina-completa">
       <GovernmentBar />
 
       <header className="header-principal">

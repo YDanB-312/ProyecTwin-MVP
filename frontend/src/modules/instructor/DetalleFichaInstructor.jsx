@@ -7,10 +7,10 @@ import '../../assets/styles/pages/fichas.css'
 
 const miembros = [
   { iniciales: 'MG', nombre: 'Maria Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', estado: true },
-  { iniciales: 'JP', nombre: 'Juan Perez', correo: 'juan.perez@soy.sena.edu.co', estado: true },
-  { iniciales: 'LG', nombre: 'Laura Gomez', correo: 'laura.gomez@soy.sena.edu.co', estado: true },
-  { iniciales: 'AM', nombre: 'Ana Martinez', correo: 'ana.martinez@soy.sena.edu.co', estado: true },
-  { iniciales: 'DS', nombre: 'Diana Sanchez', correo: 'diana.sanchez@soy.sena.edu.co', estado: false },
+  { iniciales: 'JP', nombre: 'Juan Pérez', correo: 'juan.perez@soy.sena.edu.co', estado: true },
+  { iniciales: 'LG', nombre: 'Laura Gómez', correo: 'laura.gomez@soy.sena.edu.co', estado: true },
+  { iniciales: 'AM', nombre: 'Ana Martínez', correo: 'ana.martinez@soy.sena.edu.co', estado: true },
+  { iniciales: 'DS', nombre: 'Diana Sánchez', correo: 'diana.sanchez@soy.sena.edu.co', estado: false },
 ]
 
 const breadcrumb = [

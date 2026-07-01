@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
@@ -7,16 +8,16 @@ import FooterSimple from '../../components/FooterSimple/FooterSimple'
 export default function Login() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const navigate = useNavigate()
+  const [errorMsg, setErrorMsg] = useState('')
 
   const onSubmit = (data) => {
-    if (data.correo === 'maria@correo.com' && data.password === '123456') navigate('/aprendiz/dashboard')
-    else if (data.correo === 'carlos@correo.com' && data.password === '123456') navigate('/instructor/dashboard')
-    else navigate('/admin/dashboard')
-    reset()
+    if (data.correo === 'maria.gonzalez@soy.sena.edu.co' && data.password === '123456') { navigate('/aprendiz/dashboard'); reset() }
+    else if (data.correo === 'carlos.ruiz@sena.edu.co' && data.password === '123456') { navigate('/instructor/dashboard'); reset() }
+    else setErrorMsg('Credenciales inválidas. Verifica tu correo y contraseña.')
   }
 
   return (
-    <div className="modulo-invitado">
+    <div className="modulo-invitado modulo-pagina-completa">
       <GovernmentBar />
 
       <main className="contenedor-login">
@@ -33,6 +34,7 @@ export default function Login() {
                 <label><i className="fas fa-envelope"></i> Correo Electrónico</label>
                 <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
                 {errors.correo && <span className="campo-error">Correo inválido</span>}
+                {errorMsg && <span className="campo-error">{errorMsg}</span>}
               </div>
 
               <div className="grupo-campo">
@@ -63,11 +65,11 @@ export default function Login() {
               <h4><i className="fas fa-info-circle"></i> Usuarios de prueba</h4>
               <div className="item-prueba">
                 <span className="badge badge-exito">Aprendiz</span>
-                <span className="texto-prueba">maria@correo.com / 123456</span>
+                <span className="texto-prueba">maria.gonzalez@soy.sena.edu.co / 123456</span>
               </div>
               <div className="item-prueba">
                 <span className="badge badge-advertencia">Instructor</span>
-                <span className="texto-prueba">carlos@correo.com / 123456</span>
+                <span className="texto-prueba">carlos.ruiz@sena.edu.co / 123456</span>
               </div>
             </div>
           </div>

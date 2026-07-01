@@ -18,7 +18,7 @@ const breadcrumb = [
 ]
 
 const similitudesProyecto = [
-  { proyecto: 'Plataforma Educativa SENA', porcentaje: 65, aprendiz: 'Ana Martinez', programa: 'ADSO', fecha: '02/02/2026' },
+  { proyecto: 'Plataforma Educativa SENA', porcentaje: 65, aprendiz: 'Ana Martínez', programa: 'ADSO', fecha: '02/02/2026' },
   { proyecto: 'Plataforma de Cursos Online', porcentaje: 55, aprendiz: 'Pedro Lopez', programa: 'ADSO', fecha: '10/01/2026' },
 ]
 

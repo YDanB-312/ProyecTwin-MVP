@@ -71,14 +71,14 @@ function ResultadoAnalisis() {
               <tbody>
                 <tr>
                   <td>Plataforma Educativa SENA</td>
-                  <td>Ana Martinez</td>
+                  <td>Ana Martínez</td>
                     <td><span className="badge badge-advertencia">65%</span></td>
                   <td>Resumen</td>
                   <td><Link to={{ pathname: '/aprendiz/detalle-similitud', state: { proyecto: 'Plataforma Educativa SENA', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>
                 </tr>
                 <tr>
                   <td>Sistema de Notas Web</td>
-                  <td>Juan Perez</td>
+                  <td>Juan Pérez</td>
                   <td><span className="badge badge-exito">8%</span></td>
                   <td>Tecnologias</td>
                   <td><Link to={{ pathname: '/aprendiz/detalle-similitud', state: { proyecto: 'Sistema de Notas Web', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>

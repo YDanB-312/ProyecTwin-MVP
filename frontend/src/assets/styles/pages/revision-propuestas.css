@@ -1,4 +1,4 @@
-/* ── Contenedor de página ── */
+/* â”€â”€ Contenedor de pÃ¡gina â”€â”€ */
 .modulo-instructor .revision-propuestas-container .contenedor-revision {
     width: 100%;
 }
@@ -10,7 +10,7 @@
     align-items: start;
 }
 
-/* ── Neutralizar estilos globales que interfieren ── */
+/* â”€â”€ Neutralizar estilos globales que interfieren â”€â”€ */
 .modulo-instructor .revision-propuestas-container ul,
 .modulo-instructor .revision-propuestas-container li,
 .modulo-instructor .revision-propuestas-container .propuesta-card ul,
@@ -20,9 +20,9 @@
     padding: 0;
 }
 
-/* ───────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Card
-   ─────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .modulo-instructor .revision-propuestas-container .propuesta-card {
     background: var(--color-fondo-elevado);
     border: 1px solid var(--color-borde);
@@ -42,7 +42,7 @@
     border-color: var(--color-borde-hover);
 }
 
-/* ── Zona 1 – Cabecera ── */
+/* â”€â”€ Zona 1 â€“ Cabecera â”€â”€ */
 .modulo-instructor .revision-propuestas-container .propuesta-cabecera {
     display: flex;
     justify-content: space-between;
@@ -76,7 +76,7 @@
     margin: 0;
 }
 
-/* ── Zona 2 – Fila técnica ── */
+/* â”€â”€ Zona 2 â€“ Fila tÃ©cnica â”€â”€ */
 .modulo-instructor .revision-propuestas-container .propuesta-fila-tecnica {
     display: flex;
     justify-content: space-between;
@@ -120,10 +120,10 @@
     font-weight: 500;
 }
 
-/* ── Zona 3 – Descripción ── */
+/* â”€â”€ Zona 3 â€“ DescripciÃ³n â”€â”€ */
 .modulo-instructor .revision-propuestas-container .propuesta-descripcion {
     font-size: 0.9rem;
-    color: #4b5563;
+    color: var(--color-texto-secundario);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -132,12 +132,12 @@
     margin: 0;
 }
 
-/* ── Zona 4 – Alerta de similitud ── */
+/* â”€â”€ Zona 4 â€“ Alerta de similitud â”€â”€ */
 .modulo-instructor .revision-propuestas-container .alerta-similitud {
     display: flex;
     align-items: center;
     gap: 10px;
-    background-color: #fef2f2;
+    background-color: rgba(239,68,68,0.1);
     border-left: 3px solid var(--color-peligro);
     padding: 10px 16px;
     border-radius: var(--radio-borde);
@@ -154,7 +154,7 @@
     font-weight: 500;
 }
 
-/* ── Zona 5 – Acciones ── */
+/* â”€â”€ Zona 5 â€“ Acciones â”€â”€ */
 .modulo-instructor .revision-propuestas-container .propuesta-acciones {
     display: flex;
     justify-content: space-between;
@@ -170,9 +170,9 @@
     gap: 10px;
 }
 
-/* ───────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Responsive
-   ─────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 768px) {
     .modulo-instructor .revision-propuestas-container .propuestas-lista {
         grid-template-columns: 1fr;

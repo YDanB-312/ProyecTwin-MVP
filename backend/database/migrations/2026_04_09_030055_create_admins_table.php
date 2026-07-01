@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
-            $table->string('nivel_acceso');
             $table->string('area_encargada');
+            $table->boolean('notif_correo')->default(true);
+            $table->boolean('alertas_usuarios')->default(true);
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
             

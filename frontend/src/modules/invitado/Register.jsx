@@ -11,12 +11,12 @@ export default function Register() {
   const navigate = useNavigate()
 
   const onSubmit = () => {
-    navigate('/login')
+    navigate('/confirmacion')
     reset()
   }
 
   return (
-    <div className="modulo-invitado">
+    <div className="modulo-invitado modulo-pagina-completa">
       <GovernmentBar />
 
       <main className="contenedor-register">

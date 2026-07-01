@@ -105,7 +105,7 @@ export default function ProyectosAdmin() {
                     <td>{p.fecha}</td>
                     <td>
                       <div className="acciones-tabla">
-                        <Link to="/admin/detalle-proyecto" className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                        <Link to="/admin/detalle-proyecto" state={{ proyecto: p }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
                       </div>
                     </td>
                   </tr>

@@ -25,7 +25,7 @@ function RevisionPropuestas() {
             icon="tasks"
             breadcrumb={breadcrumb}
             actions={
-              <div className="metrica-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <div className="metrica-pill">
                 <i className="fas fa-clock"></i> 3 propuestas pendientes
               </div>
             }

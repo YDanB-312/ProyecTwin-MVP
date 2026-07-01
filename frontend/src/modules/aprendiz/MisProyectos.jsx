@@ -50,7 +50,7 @@ function MisProyectos() {
             <select id="instructor" className="select-filtro" value={filtroInstructor} onChange={(e) => { setFiltroInstructor(e.target.value); setPaginaActual(1) }}>
               <option value="">Todos los instructores</option>
               <option value="ruiz">Carlos Ruiz</option>
-              <option value="gomez">Ana Gomez</option>
+              <option value="gomez">Ana Gómez</option>
               <option value="lopez">Miguel Lopez</option>
             </select>
           </div>
@@ -100,7 +100,7 @@ function MisProyectos() {
                 <h3 className="proyecto-card-nombre">App Movil para Inventarios</h3>
                 <div className="proyecto-card-instructor">
                   <div className="instructor-avatar">AG</div>
-                  <span>Ana Gomez</span>
+                  <span>Ana Gómez</span>
                 </div>
               </div>
             </div>

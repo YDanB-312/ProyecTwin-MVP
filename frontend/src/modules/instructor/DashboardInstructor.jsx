@@ -52,7 +52,7 @@ function DashboardInstructor() {
             <div className="propuesta-card">
               <div className="propuesta-info">
                 <h3>Sistema IoT para Agricultura</h3>
-                <span className="propuesta-meta"><i className="fas fa-user"></i> Ana Martinez &middot; <i className="fas fa-calendar-alt"></i> 15 Nov 2026</span>
+                <span className="propuesta-meta"><i className="fas fa-user"></i> Ana Martínez &middot; <i className="fas fa-calendar-alt"></i> 15 Nov 2026</span>
               </div>
               <div className="propuesta-estado">
                 <span className="badge-propuesta badge-pendiente"><i className="fas fa-clock"></i> Pendiente</span>
@@ -63,7 +63,7 @@ function DashboardInstructor() {
             <div className="propuesta-card">
               <div className="propuesta-info">
                 <h3>App Movil para Turismo Local</h3>
-                <span className="propuesta-meta"><i className="fas fa-user"></i> Juan Perez &middot; <i className="fas fa-calendar-alt"></i> 14 Nov 2026</span>
+                <span className="propuesta-meta"><i className="fas fa-user"></i> Juan Pérez &middot; <i className="fas fa-calendar-alt"></i> 14 Nov 2026</span>
               </div>
               <div className="propuesta-estado">
                 <span className="badge-propuesta badge-pendiente"><i className="fas fa-clock"></i> Pendiente</span>
