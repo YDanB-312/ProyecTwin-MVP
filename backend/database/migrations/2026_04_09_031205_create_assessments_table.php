@@ -13,8 +13,8 @@ return new class extends Migration
             $table->string('decision');
             $table->decimal('puntaje', 3, 1)->nullable();
             $table->string('tipo_revision')->nullable();
-            $table->text('observacion')->nullable();
-            $table->date('fecha_revision');
+            $table->text('texto')->nullable();
+            $table->date('fecha');
             $table->integer('tiempo_respuesta_dias');
 
             $table->foreignId('id_proyecto')->constrained('projects')->onDelete('cascade');

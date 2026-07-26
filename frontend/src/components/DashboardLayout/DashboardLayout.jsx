@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import GovernmentBar from '../GovernmentBar/GovernmentBar'
 import Header from '../Header/Header'
-import SidebarAprendiz from '../SidebarAprendiz/SidebarAprendiz'
-import SidebarInstructor from '../SidebarInstructor/SidebarInstructor'
-import SidebarAdmin from '../SidebarAdmin/SidebarAdmin'
-import FooterAprendiz from '../FooterAprendiz/FooterAprendiz'
-import FooterInstructor from '../FooterInstructor/FooterInstructor'
-import FooterAdmin from '../FooterAdmin/FooterAdmin'
+
+const SidebarAprendiz = lazy(() => import('../SidebarAprendiz/SidebarAprendiz'))
+const SidebarInstructor = lazy(() => import('../SidebarInstructor/SidebarInstructor'))
+const SidebarAdmin = lazy(() => import('../SidebarAdmin/SidebarAdmin'))
+const FooterAprendiz = lazy(() => import('../FooterAprendiz/FooterAprendiz'))
+const FooterInstructor = lazy(() => import('../FooterInstructor/FooterInstructor'))
+const FooterAdmin = lazy(() => import('../FooterAdmin/FooterAdmin'))
 
 const sidebars = {
   aprendiz: SidebarAprendiz,
@@ -30,11 +31,15 @@ export default function DashboardLayout({ role, titulo, usuario, notificaciones,
     <div className={`${modClass} modulo-pagina-completa${className ? ` ${className}` : ''}`}>
       <GovernmentBar />
       <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Suspense fallback={null}>
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </Suspense>
       <main className="contenido-principal">
         {children}
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </div>
   )
 }

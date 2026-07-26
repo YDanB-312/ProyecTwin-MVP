@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/register.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
+import FormField from '../../components/FormField/FormField'
 
 export default function Register() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
@@ -10,13 +11,13 @@ export default function Register() {
   })
   const navigate = useNavigate()
 
-  const onSubmit = () => {
+  const onSubmit = (data) => {
     navigate('/confirmacion')
     reset()
   }
 
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <main className="contenedor-register">
@@ -36,26 +37,18 @@ export default function Register() {
                 <i className="fas fa-user"></i> Información Personal
               </h2>
               <div className="formulario-grid">
-                <div className="grupo-campo">
-                  <label>Nombre <span className="requerido">*</span></label>
-                  <input type="text" placeholder="Ej: Maria" {...register("nombre", { required: true })} />
-                  {errors.nombre && <span className="campo-error">El nombre es obligatorio</span>}
-                </div>
-                <div className="grupo-campo">
-                  <label>Apellido <span className="requerido">*</span></label>
-                  <input type="text" placeholder="Ej: Gonzalez" {...register("apellido", { required: true })} />
-                  {errors.apellido && <span className="campo-error">El apellido es obligatorio</span>}
-                </div>
-                <div className="grupo-campo">
-                  <label>Correo Electrónico <span className="requerido">*</span></label>
-                  <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
-                  {errors.correo && <span className="campo-error">Correo inválido</span>}
-                </div>
-                <div className="grupo-campo">
-                  <label>Contrasena <span className="requerido">*</span></label>
-                  <input type="password" placeholder="Minimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
-                  {errors.password && <span className="campo-error">Mínimo 6 caracteres</span>}
-                </div>
+                <FormField label="Nombre" htmlFor="nombre" required error={errors.nombre && 'El nombre es obligatorio'}>
+                  <input type="text" id="nombre" className="campo-input" placeholder="Ej: Maria" {...register("nombre", { required: true })} />
+                </FormField>
+                <FormField label="Apellido" htmlFor="apellido" required error={errors.apellido && 'El apellido es obligatorio'}>
+                  <input type="text" id="apellido" className="campo-input" placeholder="Ej: Gonzalez" {...register("apellido", { required: true })} />
+                </FormField>
+                <FormField label="Correo Electrónico" htmlFor="correo" required error={errors.correo && 'Correo inválido'}>
+                  <input type="email" id="correo" className="campo-input" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
+                </FormField>
+                <FormField label="Contrasena" htmlFor="password" required error={errors.password && 'Mínimo 6 caracteres'}>
+                  <input type="password" id="password" className="campo-input" placeholder="Minimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
+                </FormField>
               </div>
             </div>
 

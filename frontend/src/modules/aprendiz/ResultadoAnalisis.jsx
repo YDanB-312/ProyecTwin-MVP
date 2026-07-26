@@ -2,14 +2,14 @@ import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import '../../assets/styles/pages/ia.css';
 
-function ResultadoAnalisis() {
+export default function ResultadoAnalisis() {
   const location = useLocation()
   const projectData = location.state || {}
   const proyectoNombre = projectData.titulo || 'Sistema de Gestion Academica'
 
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-ia">
+      <div className="contenedor-ia fade-in">
         <div className="encabezado-pagina">
           <h1 className="titulo-pagina"><i className="fas fa-robot"></i> Resultado del Análisis</h1>
           <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver a Mis proyectos</Link>
@@ -98,11 +98,10 @@ function ResultadoAnalisis() {
         </div>
         <div className="acciones-finales">
           <Link to="/aprendiz/mis-proyectos" className="btn-primario"><i className="fas fa-check"></i> Guardar y continuar</Link>
-          <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver a Mis proyectos</Link>
         </div>
       </div>
     </DashboardLayout>
   );
 }
 
-export default ResultadoAnalisis;
+

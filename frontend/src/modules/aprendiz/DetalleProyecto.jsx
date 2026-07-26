@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
@@ -7,7 +8,7 @@ import '../../assets/styles/pages/mis-proyectos.css'
 
 const proyectos = [
   {
-    id: 0, nombre: 'Sistema de Gestión Académica',
+    id: 0, titulo: 'Sistema de Gestión Académica',
     programa: 'ADSO - Análisis y Desarrollo de Software',
     fecha: '15/03/2026', estado: 'revision', estadoTexto: 'En revisión', badgeClase: 'badge-advertencia',
     descripcion: 'Desarrollo de un sistema integral para la gestión académica que permita administrar notas, horarios, asistencia y reportes académicos en tiempo real.',
@@ -19,7 +20,7 @@ const proyectos = [
     ]
   },
   {
-    id: 1, nombre: 'App Móvil para Inventarios',
+    id: 1, titulo: 'App Móvil para Inventarios',
     programa: 'ADSO - Análisis y Desarrollo de Software',
     fecha: '22/04/2026', estado: 'aprobado', estadoTexto: 'Aprobado', badgeClase: 'badge-exito',
     descripcion: 'Aplicación móvil para la gestión de inventarios que permite registrar, consultar y actualizar el stock de productos en tiempo real desde dispositivos móviles.',
@@ -30,7 +31,7 @@ const proyectos = [
     ]
   },
   {
-    id: 2, nombre: 'Plataforma E-Learning',
+    id: 2, titulo: 'Plataforma E-Learning',
     programa: 'ADSO - Análisis y Desarrollo de Software',
     fecha: '10/05/2026', estado: 'borrador', estadoTexto: 'Borrador', badgeClase: 'badge-neutral',
     descripcion: 'Plataforma de aprendizaje en línea con soporte para cursos virtuales, evaluaciones interactivas, foros de discusión y seguimiento del progreso del estudiante.',
@@ -44,21 +45,30 @@ const proyectos = [
   },
 ]
 
-function DetalleProyecto() {
+export default function DetalleProyecto() {
   const { id } = useParams()
   const proyecto = proyectos[id] || proyectos[0]
+  const navigate = useNavigate()
+  const [eliminado, setEliminado] = useState(false)
+
+  const eliminarProyecto = () => {
+    if (window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.')) {
+      setEliminado(true)
+      setTimeout(() => navigate('/aprendiz/mis-proyectos'), 1500)
+    }
+  }
 
   const breadcrumb = [
     { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
     { to: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' },
-    { label: proyecto.nombre },
+    { label: proyecto.titulo },
   ]
 
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-proyectos">
+      <div className="contenedor-proyectos fade-in">
         <PageHeader
-          title={proyecto.nombre}
+          title={proyecto.titulo}
           icon="folder-open"
           breadcrumb={breadcrumb}
           actions={<Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>}
@@ -68,7 +78,7 @@ function DetalleProyecto() {
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Nombre del Proyecto</div>
-              <div className="detalle-valor">{proyecto.nombre}</div>
+              <div className="detalle-valor">{proyecto.titulo}</div>
             </div>
             <div>
               <div className="detalle-label">Programa de Formación</div>
@@ -117,12 +127,17 @@ function DetalleProyecto() {
           </div>
         </DataPanel>
 
-        <div className="margen-superior">
-          <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
+        <div className={`mensaje-feedback mensaje-exito ${eliminado ? '' : 'oculto'} mb-md`}>
+          <i className="fas fa-check-circle"></i><span>Proyecto eliminado exitosamente.</span>
+        </div>
+
+        <div className="acciones-finales">
+          <Link to={{ pathname: '/aprendiz/nuevo-proyecto', state: { editProyecto: { id: Number(id), titulo: proyecto.titulo } } }} className="btn-primario"><i className="fas fa-edit"></i> Editar</Link>
+          <button type="button" className="btn-rechazar" onClick={eliminarProyecto}><i className="fas fa-trash-alt"></i> Eliminar</button>
         </div>
       </div>
     </DashboardLayout>
   );
 }
 
-export default DetalleProyecto;
+

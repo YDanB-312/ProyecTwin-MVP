@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import '../../assets/styles/pages/404.css'
-import '../../assets/styles/pages/Footer.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
+import FooterHome from '../../components/FooterHome/FooterHome'
 
 export default function PaginaNoEncontrada() {
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <header className="header-principal">
@@ -35,31 +35,7 @@ export default function PaginaNoEncontrada() {
         </div>
       </main>
 
-      <footer className="pie-pagina">
-        <div className="contenedor-pie">
-          <div className="seccion-pie">
-            <h3>ProyecTwin SENA</h3>
-            <p>Sistema de gestión y detección de Similitudes para proyectos de Formación.</p>
-          </div>
-          <div className="seccion-pie">
-            <h3>Enlaces Rápidos</h3>
-            <ul className="enlaces-pie">
-              <li><Link to="/"><i className="fas fa-home"></i> Inicio</Link></li>
-              <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Iniciar sesión</Link></li>
-            </ul>
-          </div>
-          <div className="seccion-pie">
-            <h3>Contacto</h3>
-            <div className="info-contacto">
-              <p><i className="fas fa-phone"></i> 3235421165</p>
-              <p><i className="fas fa-envelope"></i> sena@correo.edu.co</p>
-            </div>
-          </div>
-        </div>
-        <div className="derechos-autor">
-          <p>&copy; 2026 ProyecTwin SENA. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      <FooterHome />
     </div>
   )
 }

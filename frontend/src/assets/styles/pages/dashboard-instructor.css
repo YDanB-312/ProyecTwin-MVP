@@ -95,7 +95,7 @@
 
 /* â”€â”€ Section Titles (barra izquierda verde) â”€â”€ */
 .modulo-instructor .titulo-seccion-dashboard {
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--color-texto);
     letter-spacing: -0.01em;

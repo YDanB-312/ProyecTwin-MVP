@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('apprentices', function (Blueprint $table) {
             $table->id();
-            $table->string('ficha');
+            $table->string('codigo');
             $table->foreignId('id_class_group')->nullable()->constrained('class_groups')->onDelete('cascade');
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
             $table->foreignId('id_programa')->constrained('training_programs')->onDelete('cascade');
-            
+
             $table->timestamps();
         });
     }

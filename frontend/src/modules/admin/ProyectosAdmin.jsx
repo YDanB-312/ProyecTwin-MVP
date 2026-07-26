@@ -4,7 +4,8 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import FilterBar from '../../components/FilterBar/FilterBar'
-import '../../assets/styles/pages/reportes-fallas.css'
+import '../../assets/styles/pages/admin-tablas.css'
+import Pagination from '../../components/Pagination/Pagination'
 
 const etiquetaEstado = {
   borrador: 'Borrador',
@@ -33,21 +34,37 @@ const proyectos = [
   { titulo: 'Portal de Empleo Digital', programa: 'ADSO', instructor: 'Maria Torres', estado: 'borrador', estudiantes: 2, fecha: '05/05/2026' },
 ]
 
+const ITEMS_PER_PAGE = 4
+
 export default function ProyectosAdmin() {
   const [filtroPrograma, setFiltroPrograma] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
 
+  const proyectosFiltrados = proyectos.filter(p => {
+    if (filtroPrograma && !p.programa.toLowerCase().includes(filtroPrograma)) return false
+    if (filtroEstado && p.estado !== filtroEstado) return false
+    if (busqueda && !p.titulo.toLowerCase().includes(busqueda.toLowerCase())) return false
+    return true
+  })
+
+
+
+  const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
+
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-gestion">
+      <div className="contenedor-gestion fade-in">
         <PageHeader title="Proyectos" icon="folder-open" subtitle="Consulta el listado completo de proyectos registrados en la plataforma" />
 
-        <FilterBar title="Filtrar Proyectos">
+        <FilterBar title="Filtrar Proyectos" actions={<>
+            <button className="btn-primario" type="button" onClick={() => setPaginaActual(1)}><i className="fas fa-search"></i> Buscar</button>
+            <button className="btn-secundario" type="button" onClick={() => { setFiltroPrograma(''); setFiltroEstado(''); setBusqueda(''); setPaginaActual(1) }}><i className="fas fa-eraser"></i> Limpiar</button>
+          </>}>
           <div className="grupo-filtro">
             <label htmlFor="filtro-programa">Programa</label>
-            <select id="filtro-programa" className="select-filtro" value={filtroPrograma} onChange={(e) => { setFiltroPrograma(e.target.value); setPaginaActual(1) }}>
+            <select id="filtro-programa" className="campo-select" value={filtroPrograma} onChange={(e) => { setFiltroPrograma(e.target.value); setPaginaActual(1) }}>
               <option value="">Todos los programas</option>
               <option value="adso">ADSO</option>
               <option value="multimedia">Producción Multimedia</option>
@@ -56,7 +73,7 @@ export default function ProyectosAdmin() {
           </div>
           <div className="grupo-filtro">
             <label htmlFor="filtro-estado-p">Estado</label>
-            <select id="filtro-estado-p" className="select-filtro" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
+            <select id="filtro-estado-p" className="campo-select" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
               <option value="">Todos los estados</option>
               <option value="borrador">Borrador</option>
               <option value="pendiente">Pendiente</option>
@@ -70,16 +87,12 @@ export default function ProyectosAdmin() {
             <label htmlFor="filtro-busqueda-p">Buscar proyecto</label>
             <input type="text" id="filtro-busqueda-p" className="input-filtro" placeholder="Nombre del proyecto" value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1) }} />
           </div>
-          <div className="filter-bar-acciones" slot="actions">
-            <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-search"></i> Buscar</button>
-            <button className="btn-secundario" type="button" onClick={() => { setFiltroPrograma(''); setFiltroEstado(''); setBusqueda(''); setPaginaActual(1) }}><i className="fas fa-eraser"></i> Limpiar</button>
-          </div>
         </FilterBar>
 
         <DataPanel
           title="Listado de Proyectos"
           icon="list"
-          action={<span className="total-registros">Mostrando {proyectos.length} de {proyectos.length} proyectos</span>}
+          action={<span className="total-registros">Mostrando {proyectosFiltrados.length} de {proyectos.length} proyectos</span>}
         >
           <div className="contenedor-tabla">
             <table className="tabla-reportes">
@@ -95,8 +108,8 @@ export default function ProyectosAdmin() {
                 </tr>
               </thead>
               <tbody>
-                {proyectos.map((p, i) => (
-                  <tr key={i}>
+                {proyectosPagina.map((p) => (
+                  <tr key={p.titulo}>
                     <td><strong>{p.titulo}</strong></td>
                     <td>{p.programa}</td>
                     <td>{p.instructor}</td>
@@ -105,7 +118,7 @@ export default function ProyectosAdmin() {
                     <td>{p.fecha}</td>
                     <td>
                       <div className="acciones-tabla">
-                        <Link to="/admin/detalle-proyecto" state={{ proyecto: p }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                        <Link to="/admin/detalle-proyecto" state={{ proyecto: p }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle de proyecto"><i className="fas fa-eye"></i></Link>
                       </div>
                     </td>
                   </tr>
@@ -113,20 +126,7 @@ export default function ProyectosAdmin() {
               </tbody>
             </table>
           </div>
-          <div className="contenedor-paginacion">
-            <span className="info-paginacion">Mostrando 1 - 6 de {proyectos.length} proyectos</span>
-            <div className="paginacion">
-              <button className="btn-paginacion" disabled={paginaActual === 1} type="button" onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}><i className="fas fa-chevron-left"></i></button>
-              <button className={`btn-paginacion${paginaActual === 1 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(1)}>1</button>
-              <button className={`btn-paginacion${paginaActual === 2 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(2)}>2</button>
-              <button className={`btn-paginacion${paginaActual === 3 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(3)}>3</button>
-              <button className={`btn-paginacion${paginaActual === 4 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(4)}>4</button>
-              <button className={`btn-paginacion${paginaActual === 5 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(5)}>5</button>
-              <button className="btn-paginacion" type="button" onClick={() => setPaginaActual(6)}>...</button>
-              <button className={`btn-paginacion${paginaActual === 8 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(8)}>8</button>
-              <button className="btn-paginacion" type="button" onClick={() => setPaginaActual(prev => Math.min(8, prev + 1))}><i className="fas fa-chevron-right"></i></button>
-            </div>
-          </div>
+          <Pagination totalItems={proyectosFiltrados.length} itemsPerPage={ITEMS_PER_PAGE} paginaActual={paginaActual} setPaginaActual={setPaginaActual} itemName="proyectos" showInfo={true} filteredCount={proyectosFiltrados.length} />
         </DataPanel>
       </div>
     </DashboardLayout>

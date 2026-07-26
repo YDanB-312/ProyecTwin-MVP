@@ -1,14 +1,25 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
+import FormField from '../../components/FormField/FormField'
 
-function UnirseFicha() {
-  const { register, handleSubmit } = useForm()
+export default function UnirseFicha() {
+  const navigate = useNavigate()
+  const [enviado, setEnviado] = useState(false)
+  const [error, setError] = useState(null)
+  const { register, handleSubmit, formState: { errors } } = useForm()
+
+  const onSubmit = (data) => {
+    setEnviado(true)
+    setError(null)
+    setTimeout(() => navigate('/aprendiz/dashboard'), 2000)
+  }
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-pagina">
+      <div className="contenedor-pagina fade-in">
 
         <PageHeader
           title="Unirse a una Ficha"
@@ -22,21 +33,19 @@ function UnirseFicha() {
 
         <div className="unirse-card">
 
-          <div className="mensaje-feedback mensaje-exito oculto">
+          <div className={`mensaje-feedback mensaje-exito ${enviado ? '' : 'oculto'}`}>
             <i className="fas fa-check-circle"></i>
-            <span>Operación realizada exitosamente.</span>
+            <span>Te has unido a la ficha correctamente.</span>
           </div>
-          <div className="mensaje-feedback mensaje-error oculto">
+          <div className={`mensaje-feedback mensaje-error ${error ? '' : 'oculto'}`}>
             <i className="fas fa-exclamation-circle"></i>
-            <span>Ha ocurrido un error. Intenta nuevamente.</span>
+            <span>No se pudo unir a la ficha. Verifica el código e intenta de nuevo.</span>
           </div>
 
-          <form onSubmit={handleSubmit(() => {})}>
-            <div className="unirse-campo-grupo">
-              <label htmlFor="codigo-ficha" className="campo-label">Código de ficha <span className="obligatorio">*</span></label>
-              <input type="text" id="codigo-ficha" className="campo-input" placeholder="ADSO-2568" {...register("codigo", { required: true })} />
-              <p className="campo-ayuda">Solicita a tu instructor el código de la ficha a la que perteneces e ingrésalo aquí.</p>
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <FormField label="Código de ficha" htmlFor="codigo-ficha" required error={errors.codigo?.message} helpText="Solicita a tu instructor el código de la ficha a la que perteneces e ingrésalo aquí.">
+              <input type="text" id="codigo-ficha" className="campo-input" placeholder="ADSO-2568" {...register("codigo", { required: "El código de ficha es requerido" })} />
+            </FormField>
 
             <Link to="/aprendiz/detalle-ficha" className="ayuda-link"><i className="fas fa-question-circle"></i> ¿Que es una ficha?</Link>
 
@@ -64,4 +73,4 @@ function UnirseFicha() {
   );
 }
 
-export default UnirseFicha
+

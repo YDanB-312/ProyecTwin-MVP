@@ -4,7 +4,8 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import FilterBar from '../../components/FilterBar/FilterBar'
-import '../../assets/styles/pages/reportes-fallas.css'
+import '../../assets/styles/pages/admin-tablas.css'
+import Pagination from '../../components/Pagination/Pagination'
 
 const etiquetaReporte = {
   pendiente: 'Pendiente',
@@ -29,21 +30,47 @@ const reportes = [
   { id: 6, usuario: 'Patricia Morales Vega', descripcion: 'Las imágenes de los logos de proyectos no se muestran en la vista de lista', estado: 'rechazado', fecha: '05/04/2026' },
 ]
 
+const ITEMS_PER_PAGE = 4
+const cicloEstado = { pendiente: 'en_revision', en_revision: 'resuelto', resuelto: 'resuelto', rechazado: 'rechazado' }
+
 export default function ReportesFallas() {
+  const [reportesLocal, setReportesLocal] = useState(reportes)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroFecha, setFiltroFecha] = useState('')
   const [filtroUsuario, setFiltroUsuario] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
 
+  const cambiarEstado = (id) => {
+    setReportesLocal(prev => prev.map(r => r.id === id ? { ...r, estado: cicloEstado[r.estado] || r.estado } : r))
+  }
+
+  const reportesFiltrados = reportesLocal.filter(r => {
+    if (filtroEstado && r.estado !== filtroEstado) return false
+    if (filtroUsuario && !r.usuario.toLowerCase().includes(filtroUsuario.toLowerCase())) return false
+    if (filtroFecha) {
+      const [d, m, y] = r.fecha.split('/')
+      const reporteFecha = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+      if (reporteFecha !== filtroFecha) return false
+    }
+    return true
+  })
+
+
+
+  const reportesPagina = reportesFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
+
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-gestion">
+      <div className="contenedor-gestion fade-in">
         <PageHeader title="Reportes de Fallas" icon="bug" />
 
-        <FilterBar title="Filtros de Búsqueda">
+        <FilterBar title="Filtros de Búsqueda" actions={<>
+            <button className="btn-primario" type="button" onClick={() => setPaginaActual(1)}><i className="fas fa-search"></i> Buscar</button>
+            <button className="btn-secundario" type="button" onClick={() => { setFiltroEstado(''); setFiltroFecha(''); setFiltroUsuario(''); setPaginaActual(1) }}><i className="fas fa-eraser"></i> Limpiar</button>
+          </>}>
           <div className="grupo-filtro">
             <label htmlFor="filtroEstado">Estado</label>
-            <select id="filtroEstado" className="select-filtro" name="filtro_estado" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
+            <select id="filtroEstado" className="campo-select" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
               <option value="">Todos los estados</option>
               <option value="pendiente">Pendiente</option>
               <option value="en_revision">En Revisión</option>
@@ -53,22 +80,18 @@ export default function ReportesFallas() {
           </div>
           <div className="grupo-filtro">
             <label htmlFor="filtroFecha">Fecha</label>
-            <input type="date" id="filtroFecha" className="input-filtro" name="filtro_fecha" value={filtroFecha} onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1) }} />
+            <input type="date" id="filtroFecha" className="input-filtro" value={filtroFecha} onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1) }} />
           </div>
           <div className="grupo-filtro">
             <label htmlFor="filtroUsuario">Buscar por usuario</label>
-            <input type="text" id="filtroUsuario" className="input-filtro" placeholder="Nombre o correo del usuario" name="filtro_usuario" value={filtroUsuario} onChange={(e) => { setFiltroUsuario(e.target.value); setPaginaActual(1) }} />
-          </div>
-          <div className="filter-bar-acciones" slot="actions">
-            <button className="btn-primario" type="button" onClick={() => {}}><i className="fas fa-search"></i> Buscar</button>
-            <button className="btn-secundario" type="button" onClick={() => { setFiltroEstado(''); setFiltroFecha(''); setFiltroUsuario(''); setPaginaActual(1) }}><i className="fas fa-eraser"></i> Limpiar</button>
+            <input type="text" id="filtroUsuario" className="input-filtro" placeholder="Nombre o correo del usuario" value={filtroUsuario} onChange={(e) => { setFiltroUsuario(e.target.value); setPaginaActual(1) }} />
           </div>
         </FilterBar>
 
         <DataPanel
           title="Listado de reportes"
           icon="list-alt"
-          action={<span className="total-registros">Mostrando {reportes.length} de {reportes.length} reportes</span>}
+          action={<span className="total-registros">Mostrando {reportesFiltrados.length} de {reportes.length} reportes</span>}
         >
           <div className="contenedor-tabla">
             <table className="tabla-reportes">
@@ -83,7 +106,7 @@ export default function ReportesFallas() {
               </tr>
             </thead>
             <tbody>
-              {reportes.map((r, i) => (
+              {reportesPagina.map((r, i) => (
                 <tr key={i}>
                   <td>{r.id}</td>
                   <td>{r.usuario}</td>
@@ -93,27 +116,14 @@ export default function ReportesFallas() {
                   <td>
                     <div className="acciones-tabla">
                       <Link to="/admin/detalle-reporte" state={{ reporte: r }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
-                      <button className="btn-accion-tabla btn-ver" title="Cambiar estado" type="button" onClick={() => {}}><i className="fas fa-exchange-alt"></i></button>
+                      <button className="btn-accion-tabla btn-ver" title="Cambiar estado" aria-label="Cambiar estado del reporte" type="button" onClick={() => cambiarEstado(r.id)}><i className="fas fa-exchange-alt"></i></button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="contenedor-paginacion">
-            <span className="info-paginacion">Mostrando 1 - 6 de {reportes.length} reportes</span>
-            <div className="paginacion">
-              <button className="btn-paginacion" disabled={paginaActual === 1} title="Anterior" type="button" onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}><i className="fas fa-chevron-left"></i></button>
-              <button className={`btn-paginacion${paginaActual === 1 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(1)}>1</button>
-              <button className={`btn-paginacion${paginaActual === 2 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(2)}>2</button>
-              <button className={`btn-paginacion${paginaActual === 3 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(3)}>3</button>
-              <button className={`btn-paginacion${paginaActual === 4 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(4)}>4</button>
-              <button className={`btn-paginacion${paginaActual === 5 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(5)}>5</button>
-              <button className={`btn-paginacion${paginaActual === 6 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(6)}>6</button>
-              <button className={`btn-paginacion${paginaActual === 7 ? ' activo' : ''}`} type="button" onClick={() => setPaginaActual(7)}>7</button>
-              <button className="btn-paginacion" title="Siguiente" type="button" onClick={() => setPaginaActual(prev => Math.min(7, prev + 1))}><i className="fas fa-chevron-right"></i></button>
-            </div>
-          </div>
+          <Pagination totalItems={reportesFiltrados.length} itemsPerPage={ITEMS_PER_PAGE} paginaActual={paginaActual} setPaginaActual={setPaginaActual} itemName="reportes" showInfo={true} filteredCount={reportesPagina.length} />
           </div>
         </DataPanel>
       </div>

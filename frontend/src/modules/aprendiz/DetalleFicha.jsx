@@ -1,12 +1,11 @@
-import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
-function DetalleFicha() {
+export default function DetalleFicha() {
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-pagina">
+      <div className="contenedor-pagina fade-in">
 
         <PageHeader
           title="Mi Ficha"
@@ -102,4 +101,4 @@ function DetalleFicha() {
   )
 }
 
-export default DetalleFicha
+

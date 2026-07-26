@@ -7,7 +7,7 @@ export default function DashboardAdmin() {
 
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-dashboard">
+      <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">
           <div>

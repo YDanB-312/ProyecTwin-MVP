@@ -17,10 +17,10 @@ const breadcrumb = [
   { label: 'Directorio de Ficha' },
 ]
 
-function DirectorioFichaInstructor() {
+export default function DirectorioFichaInstructor() {
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="contenedor-pagina">
+      <div className="contenedor-pagina fade-in">
         <PageHeader
           title="Directorio de Ficha"
           icon="address-book"
@@ -54,4 +54,4 @@ function DirectorioFichaInstructor() {
   );
 }
 
-export default DirectorioFichaInstructor;
+

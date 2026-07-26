@@ -13,6 +13,8 @@ export default function SidebarAdmin({ isOpen, onClose }) {
         <li><NavLink to="/admin/reportes-fallas" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bug"></i></div> Reportes de Fallas</NavLink></li>
         <li><NavLink to="/admin/notificaciones" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bell"></i></div> Notificaciones</NavLink></li>
         <li><NavLink to="/admin/perfil" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-user"></i></div> Mi Perfil</NavLink></li>
+        <li className="menu-divisor"></li>
+        <li><NavLink to="/" className="enlace-nav enlace-cerrar-sesion" onClick={onClose}><div className="icono-nav"><i className="fas fa-sign-out-alt"></i></div> Cerrar sesión</NavLink></li>
       </ul>
     </nav>
   )

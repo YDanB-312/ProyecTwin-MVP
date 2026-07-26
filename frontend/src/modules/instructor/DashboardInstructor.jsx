@@ -2,17 +2,18 @@ import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import '../../assets/styles/pages/dashboard-instructor.css'
 
-function DashboardInstructor() {
+export default function DashboardInstructor() {
+  const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="contenedor-dashboard">
+      <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">
           <div className="dashboard-header-left">
             <h1 className="dashboard-titulo">Bienvenido, Carlos</h1>
             <p className="dashboard-subtitulo">Gestiona las propuestas de proyectos y mantén el control de calidad de tus aprendices.</p>
           </div>
-          <span className="dashboard-fecha">28 may. 2026</span>
+          <span className="dashboard-fecha">{hoy}</span>
         </div>
 
         <div className="tarjeta-bienvenida-moderna">
@@ -98,4 +99,4 @@ function DashboardInstructor() {
   )
 }
 
-export default DashboardInstructor
+

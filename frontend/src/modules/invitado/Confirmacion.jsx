@@ -11,7 +11,7 @@ import FooterSimple from '../../components/FooterSimple/FooterSimple'
 
 export default function Confirmacion() {
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <main className="contenedor-login">
@@ -25,7 +25,7 @@ export default function Confirmacion() {
               La operación se ha realizado correctamente en el sistema ProyecTwin.
             </p>
             <Link to="/login" className="btn-primario">
-              <i className="fas fa-home"></i> Volver al inicio
+              <i className="fas fa-sign-in-alt"></i> Ir a Iniciar Sesión
             </Link>
           </div>
         </div>

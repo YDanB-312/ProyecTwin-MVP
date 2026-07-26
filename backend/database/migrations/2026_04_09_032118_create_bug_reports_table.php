@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('titulo')->nullable();
             $table->text('descripcion');
             $table->string('tipo');
-            $table->text('pasos_reproduccion')->nullable();
+            $table->text('pasos')->nullable();
             $table->string('url_evidencia')->nullable();
             $table->string('estado');
             $table->date('fecha');

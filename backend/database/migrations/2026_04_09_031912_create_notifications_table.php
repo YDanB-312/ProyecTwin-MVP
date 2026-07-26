@@ -10,12 +10,10 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->text('mensaje');
+            $table->string('titulo');
+            $table->text('descripcion')->nullable();
             $table->enum('tipo', ['similitud', 'revision', 'mensaje', 'sistema']);
-            $table->enum('prioridad', ['urgente', 'alta', 'media', 'baja', 'informativa'])->default('media');
-            $table->string('url_enlace')->nullable();
-            $table->unsignedBigInteger('id_origen')->nullable();
-            $table->string('tipo_origen')->nullable();
+            $table->string('enlace')->nullable();
             $table->boolean('leida')->default(false);
             $table->date('fecha');
 

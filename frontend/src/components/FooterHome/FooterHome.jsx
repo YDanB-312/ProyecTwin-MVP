@@ -5,7 +5,7 @@ Propósito: Mostrar información institucional, enlaces rápidos y contacto
 */
 
 import { Link } from 'react-router-dom'
-import '../../assets/styles/pages/Footer.css'
+import '../../assets/styles/pages/footer.css'
 
 export default function FooterHome() {
   return (

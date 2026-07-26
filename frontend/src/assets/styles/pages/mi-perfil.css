@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    PREMIUM - Mi Perfil
    ======================================== */
 
@@ -151,12 +151,6 @@
     grid-column: 1 / -1;
 }
 
-/* â”€â”€ Campo grupo â”€â”€ */
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-grupo {
-    display: flex;
-    flex-direction: column;
-}
-
 /* â”€â”€ Campo label â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-label {
     font-weight: 600;
@@ -185,10 +179,6 @@
     box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.1);
 }
 
-:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-input::placeholder {
-    color: var(--color-texto-muted);
-}
-
 /* â”€â”€ Campo select â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .campo-select {
     width: 100%;
@@ -201,7 +191,7 @@
     background-color: var(--color-fondo-elevado);
     transition: all 150ms ease;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 16px center;
     cursor: pointer;
@@ -245,6 +235,31 @@
     border-radius: var(--radio-borde);
     padding: 16px 20px;
     margin-bottom: 24px;
+    position: relative;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-advertencia.banner-dismissible {
+    padding-right: 40px;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cerrar-banner {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--color-texto-claro);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    transition: all 150ms ease;
+    line-height: 1;
+}
+
+:is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .btn-cerrar-banner:hover {
+    color: var(--color-texto);
+    background-color: rgba(0,0,0,0.08);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .banner-icono {
@@ -340,7 +355,7 @@
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item input:checked + .checkmark::after {
-    content: 'âœ“';
+    content: '✓';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -445,4 +460,31 @@
     :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .checkbox-item {
         padding: 12px;
     }
+}
+
+/* Perfil Instructor — estilos únicos (merged from perfil-instructor.css) */
+.modulo-instructor .perfil-avatar {
+    position: relative;
+}
+
+.modulo-instructor .cambiar-avatar {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--color-primario);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: 2px solid var(--color-fondo-elevado);
+}
+
+.modulo-instructor textarea.campo-input {
+    min-height: 120px;
+    resize: vertical;
 }

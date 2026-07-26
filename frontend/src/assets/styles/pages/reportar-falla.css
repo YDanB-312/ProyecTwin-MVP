@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    PREMIUM - Reportar Falla
    ======================================== */
 
@@ -77,22 +77,19 @@
     gap: 20px;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .grupo-campo {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-label {
-    font-weight: 600;
-    font-size: 0.9rem;
+/* -- Text Input Premium -- */
+:is(.modulo-aprendiz, .modulo-instructor) .campo-input {
+    width: 100%;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: inherit;
     color: var(--color-texto);
+    background-color: var(--color-fondo-elevado);
+    transition: all 150ms ease;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .campo-label .obligatorio {
-    color: var(--color-peligro);
-    font-weight: 700;
-}
 
 /* â”€â”€ Select Premium â”€â”€ */
 :is(.modulo-aprendiz, .modulo-instructor) .campo-select {
@@ -106,16 +103,10 @@
     background-color: var(--color-fondo-elevado);
     transition: all 150ms ease;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 16px center;
     cursor: pointer;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-select:focus {
-    outline: none;
-    border-color: var(--color-primario);
-    box-shadow: var(--sombra-foco);
 }
 
 /* â”€â”€ Textarea Premium â”€â”€ */
@@ -132,16 +123,6 @@
     min-height: 120px;
     resize: vertical;
     line-height: 1.5;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-textarea:focus {
-    outline: none;
-    border-color: var(--color-primario);
-    box-shadow: var(--sombra-foco);
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-textarea::placeholder {
-    color: var(--color-texto-muted);
 }
 
 :is(.modulo-aprendiz, .modulo-instructor) .desc-contador {

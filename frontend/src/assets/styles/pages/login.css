@@ -47,7 +47,7 @@
 }
 
 .modulo-invitado .encabezado-login h1 span {
-    color: #059669;
+    color: var(--color-primario);
 }
 
 .modulo-invitado .encabezado-login p {
@@ -57,11 +57,11 @@
 }
 
 /* Campos del formulario */
-.modulo-invitado .grupo-campo {
+.modulo-invitado .campo-grupo {
     margin-bottom: 16px;
 }
 
-.modulo-invitado .grupo-campo label {
+.modulo-invitado .campo-grupo label {
     display: block;
     font-size: .88rem;
     font-weight: 500;
@@ -69,14 +69,14 @@
     margin-bottom: 5px;
 }
 
-.modulo-invitado .grupo-campo label i {
+.modulo-invitado .campo-grupo label i {
     color: var(--color-header);
     margin-right: 5px;
     width: 16px;
     text-align: center;
 }
 
-.modulo-invitado .grupo-campo input {
+.modulo-invitado .campo-grupo input {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid var(--color-borde);
@@ -87,7 +87,7 @@
     transition: all var(--transition-fast);
 }
 
-.modulo-invitado .grupo-campo input:focus {
+.modulo-invitado .campo-grupo input:focus {
     outline: none;
     border-color: var(--color-primario);
     box-shadow: var(--sombra-foco);

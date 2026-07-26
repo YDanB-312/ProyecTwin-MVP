@@ -13,12 +13,12 @@ const breadcrumb = [
 
 export default function DetalleUsuario() {
   const location = useLocation()
-  const defaultUser = { nombre: 'Maria Gonzalez', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', rol: 'Aprendiz', estado: true }
+  const defaultUser = { nombre: 'Maria Gonzalez', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', rol: 'Aprendiz', estado: true, programa: 'ADSO - Análisis y Desarrollo de Software', fechaRegistro: '10/01/2026' }
   const userData = location.state?.usuario || defaultUser
 
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-gestion">
+      <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle de Usuario"
           icon="user"
@@ -38,15 +38,15 @@ export default function DetalleUsuario() {
             </div>
             <div>
               <div className="detalle-label">Programa de Formación</div>
-              <div className="detalle-valor">ADSO - Análisis y Desarrollo de Software</div>
+              <div className="detalle-valor">{userData.programa || 'ADSO - Análisis y Desarrollo de Software'}</div>
             </div>
             <div>
               <div className="detalle-label">Fecha de Registro</div>
-              <div className="detalle-valor">10/01/2026</div>
+              <div className="detalle-valor">{userData.fechaRegistro || '10/01/2026'}</div>
             </div>
             <div>
               <div className="detalle-label">Estado</div>
-              <p><span className="badge badge-exito"><i className="fas fa-circle"></i> {userData.estado ? 'Activo' : 'Inactivo'}</span></p>
+              <p><span className={`badge ${userData.estado ? 'badge-exito' : 'badge-neutral'}`}><i className="fas fa-circle"></i> {userData.estado ? 'Activo' : 'Inactivo'}</span></p>
             </div>
             <div>
               <div className="detalle-label">Correo Electrónico</div>
@@ -66,7 +66,6 @@ export default function DetalleUsuario() {
 
         <div className="acciones-finales">
           <Link to="/admin/nuevo-usuario" state={{ editUser: userData }} className="btn-primario"><i className="fas fa-edit"></i> Editar Usuario</Link>
-          <Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
         </div>
       </div>
     </DashboardLayout>

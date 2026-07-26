@@ -4,7 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
-import '../../assets/styles/pages/mis-proyectos.css'
+import '../../assets/styles/pages/detalle-proyecto-instructor.css'
 
 const propuestas = [
   {
@@ -111,10 +111,12 @@ const observacionesData = [
   { autor: 'Carlos Ruiz | Instructor', icono: 'user-tie', fecha: '6 may 2026', texto: 'La propuesta inicial tiene buen enfoque, pero falta definir mejor los entregables del primer sprint. Recomiendo revisar la guía de proyectos para alinear expectativas.' },
 ]
 
-function DetalleProyectoInstructor() {
+export default function DetalleProyectoInstructor() {
   const { id } = useParams()
   const location = useLocation()
   const [observacion, setObservacion] = useState('')
+  const [listaObservaciones, setListaObservaciones] = useState(observacionesData)
+  const [mensaje, setMensaje] = useState(null)
   const propuesta = propuestas.find(p => p.id === Number(id)) || propuestas[0]
 
   const estadoBadge = {
@@ -125,6 +127,23 @@ function DetalleProyectoInstructor() {
   }
 
   const badge = estadoBadge[propuesta.estado] || estadoBadge.pendiente
+
+  const agregarObservacion = (e) => {
+    e.preventDefault()
+    if (!observacion.trim()) return
+    const nueva = { autor: 'Carlos Ruiz | Instructor', icono: 'user-tie', fecha: new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }), texto: observacion.trim() }
+    setListaObservaciones(prev => [nueva, ...prev])
+    setObservacion('')
+    setMensaje({ tipo: 'exito', texto: 'Observación guardada exitosamente' })
+    setTimeout(() => setMensaje(null), 3000)
+  }
+
+  const eliminarObservacion = (index) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta observación?')) return
+    setListaObservaciones(prev => prev.filter((_, i) => i !== index))
+    setMensaje({ tipo: 'exito', texto: 'Observación eliminada' })
+    setTimeout(() => setMensaje(null), 3000)
+  }
 
   const desde = location.state?.desde
   const volverMap = {
@@ -143,7 +162,7 @@ function DetalleProyectoInstructor() {
 
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="contenedor-revision">
+      <div className="contenedor-revision fade-in">
         <PageHeader
           title={propuesta.titulo}
           icon="folder-open"
@@ -262,15 +281,15 @@ function DetalleProyectoInstructor() {
         )}
 
         <DataPanel title="Historial de Observaciones" icon="comments">
+          {mensaje && <div className={`mensaje-feedback mensaje-${mensaje.tipo} mb-md`}><i className={`fas fa-${mensaje.tipo === 'exito' ? 'check-circle' : 'exclamation-triangle'}`}></i> {mensaje.texto}</div>}
           <div className="lista-observaciones">
-            {observacionesData.map((obs, i) => (
+            {listaObservaciones.map((obs, i) => (
               <div key={i} className="observacion-item">
                 <div className="observacion-header">
                   <span className="observacion-autor"><i className={`fas fa-${obs.icono}`}></i> {obs.autor}</span>
                   <span className="observacion-fecha">{obs.fecha}</span>
                   <div className="observacion-acciones">
-                    <button type="button" className="btn-icono editar" title="Editar observación" onClick={() => {}}><i className="fas fa-edit"></i></button>
-                    <button type="button" className="btn-icono eliminar" title="Eliminar observación" onClick={() => {}}><i className="fas fa-trash-alt"></i></button>
+                    <button type="button" className="btn-icono eliminar" title="Eliminar observación" aria-label="Eliminar observación" onClick={() => eliminarObservacion(i)}><i className="fas fa-trash-alt"></i></button>
                   </div>
                 </div>
                 <div className="observacion-contenido">
@@ -281,13 +300,13 @@ function DetalleProyectoInstructor() {
           </div>
           <div className="observaciones-section">
             <h3><i className="fas fa-plus-circle"></i> Agregar Observación</h3>
-              <form onSubmit={(e) => e.preventDefault()}>
+              <form onSubmit={agregarObservacion}>
               <div className="grupo-formulario">
                 <label htmlFor="observacion" className="etiqueta">Comentario</label>
                 <textarea id="observacion" className="textarea" placeholder="Escribe tu observación sobre el proyecto..." value={observacion} onChange={e => setObservacion(e.target.value)}></textarea>
               </div>
               <div className="acciones-formulario">
-                <button type="submit" className="btn-primario"><i className="fas fa-paper-plane"></i> Guardar Observación</button>
+                <button type="submit" className="btn-primario" disabled={!observacion.trim()}><i className="fas fa-paper-plane"></i> Guardar Observación</button>
               </div>
             </form>
           </div>
@@ -301,4 +320,4 @@ function DetalleProyectoInstructor() {
   );
 }
 
-export default DetalleProyectoInstructor
+

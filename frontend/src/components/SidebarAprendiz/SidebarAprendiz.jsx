@@ -14,6 +14,8 @@ export default function SidebarAprendiz({ isOpen, onClose }) {
         <li><NavLink to="/aprendiz/alertas" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bell"></i></div> Notificaciones</NavLink></li>
         <li><NavLink to="/aprendiz/reportar-falla" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bug"></i></div> Reportar Falla</NavLink></li>
         <li><NavLink to="/aprendiz/perfil" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-user-cog"></i></div> Mi Perfil</NavLink></li>
+        <li className="menu-divisor"></li>
+        <li><NavLink to="/" className="enlace-nav enlace-cerrar-sesion" onClick={onClose}><div className="icono-nav"><i className="fas fa-sign-out-alt"></i></div> Cerrar sesión</NavLink></li>
       </ul>
     </nav>
   )

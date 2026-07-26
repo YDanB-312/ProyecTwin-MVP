@@ -5,7 +5,7 @@ import FooterHome from '../../components/FooterHome/FooterHome'
 
 export default function Home() {
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <header className="header-principal">
