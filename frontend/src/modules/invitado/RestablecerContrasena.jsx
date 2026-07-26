@@ -1,20 +1,24 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
+import FormField from '../../components/FormField/FormField'
 
 export default function RestablecerContrasena() {
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm()
   const navigate = useNavigate()
+  const [enviado, setEnviado] = useState(false)
 
   const onSubmit = () => {
-    navigate('/login')
+    setEnviado(true)
     reset()
+    setTimeout(() => navigate('/login'), 2000)
   }
 
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <main className="contenedor-login">
@@ -29,16 +33,15 @@ export default function RestablecerContrasena() {
             <p className="texto-instruccion">Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.</p>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="grupo-campo">
-                <label><i className="fas fa-lock"></i> Nueva Contraseña</label>
-                <input type="password" placeholder="Minimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
-                {errors.password && <span className="campo-error">Mínimo 6 caracteres</span>}
+              <div className={`mensaje-feedback mensaje-exito ${enviado ? '' : 'oculto'}`}>
+                <i className="fas fa-check-circle"></i><span>Contraseña actualizada correctamente.</span>
               </div>
-              <div className="grupo-campo">
-                <label><i className="fas fa-check-circle"></i> Confirmar Contraseña</label>
-                <input type="password" placeholder="Repite la contraseña" {...register("confirmar", { required: true, validate: value => value === watch("password") || "Las contraseñas no coinciden" })} />
-                {errors.confirmar && <span className="campo-error">{errors.confirmar.message || "Campo obligatorio"}</span>}
-              </div>
+              <FormField label={<><i className="fas fa-lock"></i> Nueva Contraseña</>} error={errors.password && 'Mínimo 6 caracteres'}>
+                <input type="password" className="campo-input" placeholder="Mínimo 6 caracteres" {...register("password", { required: true, minLength: 6 })} />
+              </FormField>
+              <FormField label={<><i className="fas fa-check-circle"></i> Confirmar Contraseña</>} error={errors.confirmar && (errors.confirmar.message || "Campo obligatorio")}>
+                <input type="password" className="campo-input" placeholder="Repite la contraseña" {...register("confirmar", { required: true, validate: value => value === watch("password") || "Las contraseñas no coinciden" })} />
+              </FormField>
 
               <button type="submit" className="btn-primario">
                 <i className="fas fa-save"></i> Restablecer contraseña

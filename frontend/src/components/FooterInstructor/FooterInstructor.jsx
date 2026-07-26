@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '../../assets/styles/pages/Footer.css'
+import '../../assets/styles/pages/footer.css'
 
 export default function FooterInstructor() {
   return (
@@ -14,7 +14,11 @@ export default function FooterInstructor() {
           <ul className="enlaces-pie">
             <li><Link to="/instructor/dashboard"><i className="fas fa-chevron-right"></i> Dashboard</Link></li>
             <li><Link to="/instructor/revision-propuestas"><i className="fas fa-chevron-right"></i> Revisión de propuestas</Link></li>
+            <li><Link to="/instructor/gestionar-fichas"><i className="fas fa-chevron-right"></i> Gestionar Fichas</Link></li>
             <li><Link to="/instructor/alertas"><i className="fas fa-chevron-right"></i> Notificaciones</Link></li>
+            <li><Link to="/instructor/reportar-falla"><i className="fas fa-chevron-right"></i> Reportar Falla</Link></li>
+            <li><Link to="/instructor/perfil"><i className="fas fa-chevron-right"></i> Mi Perfil</Link></li>
+            <li><Link to="/"><i className="fas fa-chevron-right"></i> Cerrar sesión</Link></li>
           </ul>
         </div>
         <div className="seccion-pie">

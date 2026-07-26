@@ -16,8 +16,8 @@ return new class extends Migration
             $table->text('palabras_clave');
             $table->string('area_aplicacion');
             $table->text('tecnologias');
-            $table->text('objetivos');
-            $table->text('entregables');
+            $table->json('objetivos');
+            $table->json('entregables');
             $table->string('url_logo')->nullable();
             $table->enum('estado', ['borrador', 'pendiente', 'en_revision', 'aprobado', 'rechazado', 'requiere_ajustes'])->default('borrador');
             $table->text('observaciones')->nullable();

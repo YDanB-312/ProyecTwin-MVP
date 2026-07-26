@@ -19,7 +19,7 @@ const breadcrumb = [
   { label: 'Detalle de Ficha' },
 ]
 
-function DetalleFichaInstructor() {
+export default function DetalleFichaInstructor() {
   const [copiado, setCopiado] = useState(false)
 
   useEffect(() => {
@@ -29,13 +29,12 @@ function DetalleFichaInstructor() {
   }, [copiado])
 
   const handleCopiar = () => {
-    navigator.clipboard?.writeText('ADSO-2568')
-    setCopiado(true)
+    navigator.clipboard?.writeText('ADSO-2568').then(() => setCopiado(true)).catch(() => setCopiado(false))
   }
 
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="contenedor-pagina">
+      <div className="contenedor-pagina fade-in">
         <PageHeader
           title="Detalle de Ficha"
           icon="users"
@@ -83,4 +82,4 @@ function DetalleFichaInstructor() {
   );
 }
 
-export default DetalleFichaInstructor;
+

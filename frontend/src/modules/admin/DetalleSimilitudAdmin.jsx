@@ -27,11 +27,17 @@ export default function DetalleSimilitudAdmin() {
   const location = useLocation()
   const proyectoActual = location.state?.proyecto || 'Sistema de Gestión Académica'
   const [actual, setActual] = useState(0)
-  const sim = similitudesProyecto[actual]
+  const sim = similitudesProyecto[actual] || similitudesProyecto[0]
+  const [mensaje, setMensaje] = useState(null)
+
+  const marcarRevisada = () => {
+    setMensaje({ tipo: 'exito', texto: 'Similitud marcada como revisada' })
+    setTimeout(() => setMensaje(null), 3000)
+  }
 
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-gestion">
+      <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle de Similitud"
           icon="exclamation-triangle"
@@ -94,7 +100,13 @@ export default function DetalleSimilitudAdmin() {
           </div>
         </DataPanel>
 
+        <div className={`mensaje-feedback mensaje-exito ${mensaje ? '' : 'oculto'} mb-md`}>
+          <i className="fas fa-check-circle"></i><span>{mensaje?.texto || ''}</span>
+        </div>
 
+        <div className="acciones-finales">
+          <button type="button" className="btn-primario" onClick={marcarRevisada}><i className="fas fa-check"></i> Marcar como Revisada</button>
+        </div>
       </div>
     </DashboardLayout>
   )

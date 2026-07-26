@@ -1,24 +1,24 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import '../../assets/styles/pages/ia.css'
 
-function AnalizandoProyecto() {
+export default function AnalizandoProyecto() {
   const navigate = useNavigate()
   const location = useLocation()
-  const projectData = location.state
+  const projectData = useRef(location.state)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate('/aprendiz/resultado-analisis', { state: projectData })
+      navigate('/aprendiz/resultado-analisis', { state: projectData.current })
     }, 4000)
 
     return () => clearTimeout(timer)
-  }, [navigate, projectData])
+  }, [navigate])
 
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-ia">
+      <div className="contenedor-ia fade-in">
         <div className="card-analisis">
           <div className="ia-spinner">
             <i className="fas fa-robot"></i>
@@ -36,7 +36,7 @@ function AnalizandoProyecto() {
           </ul>
           <p className="nota-ia">
             <i className="fas fa-info-circle"></i>
-            Este proceso puede tomar hasta 30 segundos. Por favor no cierres esta página.
+            Este proceso puede tomar unos segundos. Por favor no cierres esta página.
           </p>
           <div className="acciones-centro">
             <Link to="/aprendiz/mis-proyectos" className="btn-secundario"><i className="fas fa-times"></i> Cancelar</Link>
@@ -47,4 +47,4 @@ function AnalizandoProyecto() {
   );
 }
 
-export default AnalizandoProyecto;
+

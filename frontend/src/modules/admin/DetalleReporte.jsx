@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
@@ -29,9 +30,19 @@ const defaultReporte = { estado: 'en_revision', usuario: 'Maria Gonzalez (Aprend
 export default function DetalleReporte() {
   const location = useLocation()
   const reporteData = location.state?.reporte || defaultReporte
+  const [estado, setEstado] = useState(reporteData.estado)
+  const [mensaje, setMensaje] = useState(null)
+
+  const cambiarEstado = (nuevoEstado) => {
+    setEstado(nuevoEstado)
+    const textos = { en_revision: 'Marcado en revisión', resuelto: 'Marcado como resuelto', rechazado: 'Rechazado' }
+    setMensaje({ tipo: 'exito', texto: textos[nuevoEstado] || 'Estado actualizado' })
+    setTimeout(() => setMensaje(null), 3000)
+  }
+
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
-      <div className="contenedor-gestion">
+      <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle del Reporte de Falla"
           icon="bug"
@@ -43,11 +54,11 @@ export default function DetalleReporte() {
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Titulo</div>
-              <div className="detalle-valor">Error al cargar el módulo de similitudes</div>
+              <div className="detalle-valor">{reporteData.titulo || 'Sin título'}</div>
             </div>
             <div>
               <div className="detalle-label">Estado</div>
-              <p><span className={`badge badge-${badgeReporte[reporteData.estado]?.clase || 'primario'}`}><i className={`fas fa-${badgeReporte[reporteData.estado]?.icono || 'cog'}`}></i> {etiquetaReporte[reporteData.estado] || reporteData.estado}</span></p>
+              <p><span className={`badge badge-${badgeReporte[estado]?.clase || 'primario'}`}><i className={`fas fa-${badgeReporte[estado]?.icono || 'cog'}`}></i> {etiquetaReporte[estado] || estado}</span></p>
             </div>
             <div>
               <div className="detalle-label">Reportado por</div>
@@ -59,11 +70,11 @@ export default function DetalleReporte() {
             </div>
             <div className="detalle-grid-full">
               <div className="detalle-label">Descripción</div>
-              <div className="detalle-valor-texto">Al intentar acceder al módulo de detección de similitudes desde el panel del aprendiz, el sistema muestra un error interno y no permite completar la búsqueda. El error aparece después de seleccionar el proyecto y hacer clic en "Buscar similitudes".</div>
+              <div className="detalle-valor-texto">{reporteData.descripcion || 'Sin descripción'}</div>
             </div>
             <div className="detalle-grid-full">
               <div className="detalle-label">Pasos para reproducir</div>
-              <div className="detalle-valor-texto">1. Iniciar sesión como aprendiz. 2. Ir a "Mis proyectos". 3. Seleccionar un proyecto existente. 4. Hacer clic en "Buscar similitudes". 5. El sistema muestra un error 500.</div>
+              <div className="detalle-valor-texto">{reporteData.pasos || 'No especificados'}</div>
             </div>
           </div>
         </DataPanel>
@@ -87,8 +98,14 @@ export default function DetalleReporte() {
           </div>
         </DataPanel>
 
+        <div className={`mensaje-feedback mensaje-exito ${mensaje ? '' : 'oculto'} mb-md`}>
+          <i className="fas fa-check-circle"></i><span>{mensaje?.texto || ''}</span>
+        </div>
+
         <div className="acciones-finales">
-          <Link to="/admin/reportes-fallas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>
+          <button type="button" className="btn-primario" onClick={() => cambiarEstado('en_revision')}><i className="fas fa-cog"></i> Marcar en Revisión</button>
+          <button type="button" className="btn-primario" onClick={() => cambiarEstado('resuelto')}><i className="fas fa-check"></i> Marcar como Resuelto</button>
+          <button type="button" className="btn-rechazar" onClick={() => cambiarEstado('rechazado')}><i className="fas fa-times"></i> Rechazar</button>
         </div>
       </div>
     </DashboardLayout>

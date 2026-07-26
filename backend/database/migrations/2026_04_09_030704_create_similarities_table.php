@@ -10,11 +10,10 @@ return new class extends Migration
     {
         Schema::create('similarities', function (Blueprint $table) {
             $table->id();
-            $table->float('porcentaje_detectado');
+            $table->float('porcentaje');
             $table->enum('estado', ['pendiente', 'revisada', 'resuelta'])->default('pendiente');
             $table->json('detalles')->nullable();
-            $table->date('fecha_deteccion')->nullable();
-            $table->enum('urgencia', ['baja', 'media', 'alta', 'urgente'])->default('media');
+            $table->date('fecha')->nullable();
 
             $table->foreignId('id_proyecto_1')->constrained('projects')->onDelete('cascade');
             $table->foreignId('id_proyecto_2')->constrained('projects')->onDelete('cascade');

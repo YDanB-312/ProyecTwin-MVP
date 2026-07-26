@@ -8,14 +8,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Comment
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,49 +23,42 @@ import androidx.compose.ui.unit.sp
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 
+enum class AlertType(val label: String) {
+    URGENT("Urgente"),
+    WARNING("Advertencia"),
+    INFO("Informativa"),
+    SUCCESS("Éxito")
+}
+
+data class AlertItem(
+    val title: String,
+    val description: String,
+    val time: String,
+    val type: AlertType,
+    val category: String,
+    val isNew: Boolean,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlertsScreen(onNavigate: (String) -> Unit) {
+fun AlertsScreen(
+    onNavigate: (String) -> Unit,
+    onBack: () -> Unit = {},
+    profileRoute: String = "aprendiz_profile",
+    similarityRoute: String = "aprendiz_similarity",
+    detailRoute: String = "aprendiz_detail/{id}",
+) {
     var selectedFilter by remember { mutableStateOf("Todos") }
     val filters = listOf("Todos", "Similitud", "Instructor", "Sistema")
 
-    val allAlerts = listOf(
-        AlertItem(
-            title = "Alta Similitud Detectada",
-            description = "Tu proyecto \"Sistema de gestion Academica\" tiene un 65% de similitud con otro proyecto.",
-            time = "Hace 2 horas",
-            type = AlertType.URGENT,
-            project = "Sistema de gestion Academica",
-            category = "Similitud",
-            isNew = true
-        ),
-        AlertItem(
-            title = "Revision Pendiente",
-            description = "Tu instructor Carlos Ruiz tiene pendiente la Revision de tu proyecto \"App Movil para Inventarios\".",
-            time = "Ayer",
-            type = AlertType.WARNING,
-            project = "App Movil para Inventarios",
-            category = "Instructor",
-            isNew = false
-        ),
-        AlertItem(
-            title = "Comentario del Instructor",
-            description = "Carlos Ruiz ha agregado comentarios a tu proyecto \"Sistema de gestion Academica\".",
-            time = "Hace 3 dias",
-            type = AlertType.INFO,
-            project = "Sistema de gestion Academica",
-            category = "Instructor",
-            isNew = false
-        ),
-        AlertItem(
-            title = "proyecto Aprobado",
-            description = "¡Felicidades! Tu proyecto \"App Movil para Inventarios\" ha sido aprobado por el instructor.",
-            time = "Hace 1 semana",
-            type = AlertType.SUCCESS,
-            project = "App Movil para Inventarios",
-            category = "Sistema",
-            isNew = false
+    val allAlerts = remember {
+        listOf(
+            AlertItem("Alta Similitud Detectada", "Tu proyecto \"Sistema de Gestión Académica\" tiene un 65% de similitud detectada por la IA.", "Hace 2 horas", AlertType.URGENT, "Similitud", isNew = true),
+            AlertItem("Revisión Pendiente", "Tu instructor tiene pendiente la revisión de tu propuesta de proyecto.", "Ayer", AlertType.WARNING, "Instructor", isNew = false),
+            AlertItem("Comentario del Instructor", "Se ha agregado una nueva observación a tu proyecto.", "Hace 3 días", AlertType.INFO, "Instructor", isNew = false),
+            AlertItem("Proyecto Aprobado", "¡Felicidades! Tu proyecto ha sido aprobado exitosamente.", "Hace 1 semana", AlertType.SUCCESS, "Sistema", isNew = false),
         )
-    )
+    }
 
     val filteredAlerts = if (selectedFilter == "Todos") {
         allAlerts
@@ -77,60 +70,65 @@ fun AlertsScreen(onNavigate: (String) -> Unit) {
         topBar = {
             SenaTopBar(
                 title = "Notificaciones",
+                onBack = onBack,
                 showNotifications = false,
-                onNavigateToProfile = { onNavigate("main/profile") }
+                onNavigateToProfile = { onNavigate(profileRoute) },
             )
         },
         containerColor = SenaBackground
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filters) { filter ->
-                    SenaChip(
-                        text = filter,
-                        color = SenaGreen,
-                        isSelected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter }
-                    )
+            item {
+                SenaPageHeader(
+                    title = "Centro de Alertas",
+                    subtitle = "Mantente al día con el estado de tus proyectos y observaciones.",
+                    icon = Icons.Default.Notifications
+                )
+            }
+
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(filters) { filter ->
+                        SenaChip(
+                            text = filter,
+                            color = SenaGreen,
+                            isSelected = selectedFilter == filter,
+                            onClick = { selectedFilter = filter }
+                        )
+                    }
                 }
             }
 
             if (filteredAlerts.isEmpty()) {
-                EmptyStateCard(
-                    message = "No hay notificaciones en esta categoría",
-                    icon = Icons.Default.NotificationsNone
-                )
+                item {
+                    SenaEmptyState(
+                        message = "No tienes notificaciones en esta categoría.",
+                        icon = Icons.Default.NotificationsNone
+                    )
+                }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(filteredAlerts) { alert ->
-                        AlertCardV3(alert, onClick = {
-                            if (alert.category == "Similitud") onNavigate("project/similarity/1")
-                            else onNavigate("project/detail/1")
-                        })
-                    }
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                items(filteredAlerts) { alert ->
+                    NotificationCard(alert, onClick = {
+                        if (alert.category == "Similitud") onNavigate(similarityRoute)
+                        else onNavigate(detailRoute.replace("{id}", "1"))
+                    })
                 }
             }
+            
+            item { Spacer(Modifier.height(40.dp)) }
         }
     }
 }
 
 @Composable
-fun AlertCardV3(alert: AlertItem, onClick: () -> Unit) {
+fun NotificationCard(alert: AlertItem, onClick: () -> Unit) {
     val (icon, color) = when (alert.type) {
         AlertType.URGENT -> Icons.Default.Warning to SenaDanger
         AlertType.WARNING -> Icons.Default.History to SenaWarning
@@ -140,10 +138,24 @@ fun AlertCardV3(alert: AlertItem, onClick: () -> Unit) {
 
     SenaCard(
         elevation = if (alert.isNew) 2.dp else 0.5.dp,
-        containerColor = if (alert.isNew) Color.White else Color.White.copy(alpha = 0.8f),
-        onClick = onClick
+        onClick = onClick,
+        containerColor = Color.White
     ) {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Left Accent Border (Fidelity to .tarjeta-alerta in CSS)
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color)
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
@@ -165,13 +177,14 @@ fun AlertCardV3(alert: AlertItem, onClick: () -> Unit) {
                     Text(
                         alert.category.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = color
+                        fontWeight = FontWeight.Black,
+                        color = color,
+                        letterSpacing = 0.5.sp
                     )
                     Text(
                         alert.time,
                         style = MaterialTheme.typography.labelSmall,
-                        color = SenaTextMuted
+                        color = SenaTextLight
                     )
                 }
                 
@@ -179,7 +192,8 @@ fun AlertCardV3(alert: AlertItem, onClick: () -> Unit) {
                 
                 Text(
                     alert.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
                     color = SenaText
                 )
                 
@@ -188,50 +202,30 @@ fun AlertCardV3(alert: AlertItem, onClick: () -> Unit) {
                 Text(
                     alert.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = SenaTextSecondary
+                    color = SenaTextSecondary,
+                    lineHeight = 18.sp
                 )
                 
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Folder,
-                        contentDescription = null,
-                        tint = SenaTextMuted,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        alert.project,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SenaTextMuted,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (alert.isNew) {
-                        Surface(modifier = Modifier.size(8.dp), shape = CircleShape, color = SenaGreen) {}
+                if (alert.isNew) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = SenaGreen.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "NUEVO",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = SenaGreen,
+                            fontSize = 9.sp
+                        )
                     }
                 }
             }
         }
     }
 }
-
-enum class AlertType(val label: String) {
-    URGENT("Urgente"),
-    WARNING("Pendiente"),
-    INFO("Comentario"),
-    SUCCESS("Éxito")
-}
-
-data class AlertItem(
-    val title: String,
-    val description: String,
-    val time: String,
-    val type: AlertType,
-    val project: String,
-    val category: String,
-    val isNew: Boolean
-)
 
 @Preview(showBackground = true)
 @Composable

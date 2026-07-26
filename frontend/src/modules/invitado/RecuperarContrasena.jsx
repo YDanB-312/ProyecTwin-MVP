@@ -1,20 +1,24 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
+import FormField from '../../components/FormField/FormField'
 
 export default function RecuperarContrasena() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const navigate = useNavigate()
+  const [enviado, setEnviado] = useState(false)
 
-  const onSubmit = () => {
-    navigate('/login')
+  const onSubmit = (data) => {
+    setEnviado(true)
     reset()
+    setTimeout(() => navigate('/restablecer-contrasena'), 2000)
   }
 
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <main className="contenedor-login">
@@ -31,11 +35,12 @@ export default function RecuperarContrasena() {
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="grupo-campo">
-                <label>                <i className="fas fa-envelope"></i> Correo Electrónico</label>
-                <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
-                {errors.correo && <span className="campo-error">Correo inválido</span>}
+              <div className={`mensaje-feedback mensaje-exito ${enviado ? '' : 'oculto'}`}>
+                <i className="fas fa-check-circle"></i><span>Enlace enviado a tu correo correctamente.</span>
               </div>
+              <FormField label={<><i className="fas fa-envelope"></i> Correo Electrónico</>} error={errors.correo && 'Correo inválido'}>
+                <input type="email" className="campo-input" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
+              </FormField>
 
               <button type="submit" className="btn-primario">
                 <i className="fas fa-paper-plane"></i> Enviar enlace

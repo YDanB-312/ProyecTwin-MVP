@@ -1,4 +1,4 @@
-/* Fichas - GestiÃ³n de grupos de formaciÃ³n */
+﻿/* Fichas - GestiÃ³n de grupos de formaciÃ³n */
 
 /* === TÃ­tulos de ficha === */
 :is(.modulo-aprendiz, .modulo-instructor) .ficha-titulo {
@@ -62,10 +62,10 @@
     border-bottom: 1px solid var(--color-borde);
 }
 :is(.modulo-aprendiz, .modulo-instructor) .tabla-fichas tbody tr:nth-child(even) {
-    background: rgba(255,255,255,0.03);
+    background: var(--color-fila-zebra);
 }
 :is(.modulo-aprendiz, .modulo-instructor) .tabla-fichas tbody tr:hover {
-    background: rgba(5, 153, 102, 0.04);
+    background: var(--color-primario-04);
 }
 
 /* === Grid de miembros === */
@@ -529,12 +529,7 @@
     margin-bottom: 8px;
 }
 
-:is(.modulo-aprendiz, .modulo-instructor) .campo-label .obligatorio {
-    color: var(--color-peligro);
-    font-weight: 700;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .unirse-campo-grupo {
+:is(.modulo-aprendiz, .modulo-instructor) .campo-grupo {
     margin-bottom: 12px;
 }
 
@@ -550,16 +545,6 @@
     background-color: var(--color-fondo-elevado);
     transition: all 150ms ease;
     box-sizing: border-box;
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-input:focus {
-    outline: none;
-    border-color: var(--color-primario);
-    box-shadow: var(--sombra-foco);
-}
-
-:is(.modulo-aprendiz, .modulo-instructor) .campo-input::placeholder {
-    color: var(--color-texto-muted);
 }
 
 /* â”€â”€ Campo ayuda â”€â”€ */

@@ -40,7 +40,7 @@
     text-align: center;
     margin-bottom: 60px;
     padding: 40px 20px;
-    background: radial-gradient(ellipse at 50% 0%, rgba(5,153,102,0.06) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 50% 0%, var(--color-primario-06) 0%, transparent 60%);
     border-radius: var(--radio-borde);
     overflow: hidden;
 }
@@ -129,7 +129,7 @@
 }
 
 .modulo-invitado .tarjeta-icono-buscar {
-    background: rgba(5, 153, 102, 0.1);
+    background: var(--color-primario-10);
 }
 
 .modulo-invitado .tarjeta-icono-buscar i {
@@ -137,7 +137,7 @@
 }
 
 .modulo-invitado .tarjeta-icono-gestionar {
-    background: rgba(6, 95, 70, 0.1);
+    background: var(--color-header-10);
 }
 
 .modulo-invitado .tarjeta-icono-gestionar i {
@@ -145,7 +145,7 @@
 }
 
 .modulo-invitado .tarjeta-icono-seguimiento {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--color-exito-10);
 }
 
 .modulo-invitado .tarjeta-icono-seguimiento i {
@@ -261,15 +261,15 @@
 }
 
 .modulo-invitado .tarjeta-usuario.aprendiz .tarjeta-usuario-icono {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--color-exito-10);
 }
 
 .modulo-invitado .tarjeta-usuario.instructor .tarjeta-usuario-icono {
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--color-advertencia-10);
 }
 
 .modulo-invitado .tarjeta-usuario.admin .tarjeta-usuario-icono {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--color-peligro-10);
 }
 
 .modulo-invitado .tarjeta-usuario-icono i {
@@ -358,7 +358,7 @@
     width: 50px;
     height: 50px;
     background: var(--color-primario);
-    color: white;
+    color: var(--color-fondo-elevado);
     border-radius: 50%;
     display: flex;
     align-items: center;

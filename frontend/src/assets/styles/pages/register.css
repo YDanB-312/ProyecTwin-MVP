@@ -85,17 +85,17 @@
     gap: var(--space-md);
 }
 
-.modulo-invitado .grupo-campo {
+.modulo-invitado .campo-grupo {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.modulo-invitado .grupo-campo.campo-completo {
+.modulo-invitado .campo-grupo.campo-completo {
     grid-column: 1 / -1;
 }
 
-.modulo-invitado .grupo-campo label {
+.modulo-invitado .campo-grupo label {
     font-size: .88rem;
     font-weight: 500;
     color: var(--color-texto);
@@ -105,7 +105,7 @@
     color: var(--color-peligro);
 }
 
-.modulo-invitado .grupo-campo input, .modulo-invitado .grupo-campo select {
+.modulo-invitado .campo-grupo input, .modulo-invitado .campo-grupo select {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid var(--color-borde);
@@ -117,7 +117,7 @@
     transition: all var(--transition-fast);
 }
 
-.modulo-invitado .grupo-campo input:focus, .modulo-invitado .grupo-campo select:focus {
+.modulo-invitado .campo-grupo input:focus, .modulo-invitado .campo-grupo select:focus {
     outline: none;
     border-color: var(--color-primario);
     box-shadow: var(--sombra-foco);

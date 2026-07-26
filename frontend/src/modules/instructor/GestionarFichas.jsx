@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/gestion-fichas.css'
 
 const fichas = [
@@ -10,7 +11,7 @@ const fichas = [
   { codigo: 'IR-2801', nombre: 'Infraestructura Redes 2801', programa: 'Infraestructura Redes', aprendices: 20, proyectos: 0, estado: false },
 ]
 
-function GestionarFichas() {
+export default function GestionarFichas() {
   const [filtroPrograma, setFiltroPrograma] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -21,33 +22,34 @@ function GestionarFichas() {
     setBusqueda('')
   }
 
+  const fichasFiltradas = fichas.filter(f => {
+    if (filtroPrograma && f.programa.toLowerCase() !== filtroPrograma) return false
+    if (filtroEstado === 'activa' && !f.estado) return false
+    if (filtroEstado === 'inactiva' && f.estado) return false
+    if (busqueda && !f.nombre.toLowerCase().includes(busqueda.toLowerCase()) && !f.codigo.toLowerCase().includes(busqueda.toLowerCase())) return false
+    return true
+  })
+
   return (
     <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
-      <div className="gestion-fichas-container">
+      <div className="gestion-fichas-container fade-in">
         <div className="contenedor-revision">
 
-          <div className="vista-header">
-            <Link to="/instructor/dashboard" className="volver-link"><i className="fas fa-arrow-left"></i> Volver al Dashboard</Link>
-            <div className="vista-titulo-row">
-              <h1 className="vista-titulo">Gestionar Fichas</h1>
-              <span className="metrica-pill"><i className="fas fa-layer-group"></i> {fichas.length} fichas registradas</span>
-              <Link to="/instructor/crear-ficha" className="btn-primario"><i className="fas fa-plus"></i> Nueva Ficha</Link>
-            </div>
-          </div>
+          <PageHeader title="Gestión de Fichas" icon="users" breadcrumb={[ { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Gestión de Fichas' } ]} actions={<Link to="/instructor/crear-ficha" className="btn-primario"><i className="fas fa-plus"></i> Nueva Ficha</Link>} />
 
           <div className="filtros-card">
             <div className="filtro-grupo">
               <label htmlFor="programa-ficha" className="filtro-label">Programa</label>
-              <select id="programa-ficha" className="filtro-select" name="programa_ficha" value={filtroPrograma} onChange={(e) => setFiltroPrograma(e.target.value)}>
+              <select id="programa-ficha" className="campo-select" name="programa_ficha" value={filtroPrograma} onChange={(e) => setFiltroPrograma(e.target.value)}>
                 <option value="">Todos los programas</option>
                 <option value="adso">ADSO</option>
-                <option value="multimedia">Multimedia</option>
-                <option value="iot">IoT</option>
+                <option value="produccion multimedia">Producción Multimedia</option>
+                <option value="infraestructura redes">Infraestructura Redes</option>
               </select>
             </div>
             <div className="filtro-grupo">
               <label htmlFor="estado-ficha" className="filtro-label">Estado</label>
-              <select id="estado-ficha" className="filtro-select" name="estado_ficha" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <select id="estado-ficha" className="campo-select" name="estado_ficha" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="activa">Activas</option>
                 <option value="inactiva">Inactivas</option>
@@ -77,7 +79,9 @@ function GestionarFichas() {
                 </tr>
               </thead>
               <tbody>
-                {fichas.map((f, i) => (
+                {fichasFiltradas.length === 0 ? (
+                  <tr><td colSpan="7" className="texto-centro texto-claro">No hay fichas que coincidan con los filtros.</td></tr>
+                ) : fichasFiltradas.map((f, i) => (
                   <tr key={i}>
                     <td><span className="codigo-cell">{f.codigo}</span></td>
                     <td className="nombre-cell">{f.nombre}</td>
@@ -87,9 +91,9 @@ function GestionarFichas() {
                     <td><span className={`badge ${f.estado ? 'badge-exito' : 'badge-neutral'}`}>{f.estado ? 'Activa' : 'Inactiva'}</span></td>
                     <td>
                       <div className="acciones-celda">
-                        <Link to="/instructor/detalle-ficha" className="btn-ghost-tabla"><i className="fas fa-eye"></i></Link>
-                        <Link to="/instructor/directorio-ficha" className="btn-ghost-tabla"><i className="fas fa-users"></i></Link>
-                        <button className="btn-ghost-tabla" type="button" onClick={() => {}}><i className="fas fa-edit"></i></button>
+                        <Link to="/instructor/detalle-ficha" state={{ ficha: f }} className="btn-ghost-tabla" aria-label="Ver ficha"><i className="fas fa-eye"></i></Link>
+                        <Link to="/instructor/directorio-ficha" state={{ ficha: f }} className="btn-ghost-tabla" aria-label="Ver directorio"><i className="fas fa-users"></i></Link>
+                        <Link to="/instructor/crear-ficha" state={{ editFicha: f }} className="btn-ghost-tabla" aria-label="Editar ficha"><i className="fas fa-edit"></i></Link>
                       </div>
                     </td>
                   </tr>
@@ -104,4 +108,4 @@ function GestionarFichas() {
   )
 }
 
-export default GestionarFichas
+

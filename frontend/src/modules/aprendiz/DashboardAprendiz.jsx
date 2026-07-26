@@ -1,20 +1,21 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import '../../assets/styles/pages/dashboard-aprendiz.css'
 
-function DashboardAprendiz() {
+export default function DashboardAprendiz() {
+  const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
   const navigate = useNavigate()
 
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
-      <div className="contenedor-dashboard">
+      <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">
           <div className="dashboard-header-left">
             <h1 className="dashboard-titulo">Bienvenido, Maria</h1>
             <p className="dashboard-subtitulo">Gestiona tus proyectos de formaci&oacute;n y evita similitudes con otras propuestas.</p>
           </div>
-          <span className="dashboard-fecha">28 may. 2026</span>
+          <span className="dashboard-fecha">{hoy}</span>
         </div>
 
         <div className="tarjeta-bienvenida-moderna">
@@ -31,21 +32,21 @@ function DashboardAprendiz() {
         <section className="dashboard-section">
           <h2 className="titulo-seccion-dashboard">Acciones r&aacute;pidas</h2>
           <div className="acciones-grid">
-            <div className="tarjeta-accion-moderna" onClick={() => navigate('/aprendiz/nuevo-proyecto')}>
+            <Link to="/aprendiz/nuevo-proyecto" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-plus"></i></div>
               <h3>Nuevo proyecto</h3>
               <p>Inicia una idea desde cero</p>
-            </div>
-            <div className="tarjeta-accion-moderna" onClick={() => navigate('/aprendiz/mis-proyectos')}>
+            </Link>
+            <Link to="/aprendiz/mis-proyectos" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-folder"></i></div>
               <h3>Mis proyectos</h3>
               <p>Contin&uacute;a donde lo dejaste</p>
-            </div>
-            <div className="tarjeta-accion-moderna" onClick={() => navigate('/aprendiz/alertas')}>
+            </Link>
+            <Link to="/aprendiz/alertas" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-bell"></i></div>
               <h3>Notificaciones</h3>
               <p>Mantente al d&iacute;a</p>
-            </div>
+            </Link>
           </div>
         </section>
 
@@ -77,4 +78,4 @@ function DashboardAprendiz() {
   )
 }
 
-export default DashboardAprendiz
+

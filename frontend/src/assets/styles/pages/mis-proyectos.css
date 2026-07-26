@@ -24,7 +24,7 @@
 }
 
 :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .titulo-seccion-dashboard {
-    font-size: 20px;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--color-texto);
     letter-spacing: -0.01em;

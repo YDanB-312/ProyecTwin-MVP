@@ -1,371 +1,124 @@
-/* â”€â”€ Contenedor principal â”€â”€ */
+/* ========================================
+   Nuevo Proyecto - Estilos del formulario
+   ======================================== */
+
 .modulo-aprendiz .contenedor-formulario {
     max-width: 900px;
-    margin: 0 auto;
 }
 
-/* â”€â”€ Campos obligatorios â”€â”€ */
-.modulo-aprendiz .campos-obligatorios {
-    font-size: 0.8rem;
-    color: var(--color-texto-claro);
-    margin-bottom: 24px;
-}
-
-.modulo-aprendiz .obligatorio {
-    color: var(--color-peligro);
-    font-weight: 700;
-}
-
-/* â”€â”€ Feedback â”€â”€ */
-.modulo-aprendiz .mensaje-feedback {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    border-radius: var(--radio-borde);
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.modulo-aprendiz .mensaje-exito {
-    background: rgba(5, 153, 102, 0.08);
-    color: var(--color-primario);
-    border: 1px solid rgba(5, 153, 102, 0.15);
-}
-
-.modulo-aprendiz .mensaje-error {
-    background: rgba(239, 68, 68, 0.08);
-    color: var(--color-peligro);
-    border: 1px solid rgba(239, 68, 68, 0.15);
-}
-
-/* â”€â”€ Formulario Card â”€â”€ */
-.modulo-aprendiz .formulario-card {
-    background: var(--color-fondo-elevado);
-    border-radius: var(--radio-borde);
-    box-shadow: var(--sombra-ring);
-    padding: 0;
+.modulo-aprendiz .formulario-card .seccion-formulario:last-of-type {
     margin-bottom: 0;
 }
 
-/* â”€â”€ SecciÃ³n del Formulario â”€â”€ */
-.modulo-aprendiz .seccion-formulario {
-    border-bottom: 1px solid var(--color-borde-suave);
+.modulo-aprendiz .formulario-card .acciones-formulario {
+    padding: 20px;
 }
 
-.modulo-aprendiz .seccion-formulario:last-of-type {
-    border-bottom: none;
-}
-
-/* â”€â”€ Section Header â”€â”€ */
-.modulo-aprendiz .seccion-formulario-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 24px 32px 12px;
-    border-bottom: 3px solid var(--color-primario);
-    margin: 0 32px;
-}
-
-.modulo-aprendiz .seccion-formulario-header i {
-    font-size: 1.1rem;
-    color: var(--color-primario);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(5, 153, 102, 0.08);
-    border-radius: var(--radio-borde);
-    flex-shrink: 0;
-}
-
-.modulo-aprendiz .seccion-formulario-header h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-texto);
-    margin: 0;
-}
-
-/* â”€â”€ Section Body â”€â”€ */
-.modulo-aprendiz .seccion-formulario-body {
-    padding: 20px 32px 28px;
-}
-
-/* â”€â”€ Grupo de campos en grid â”€â”€ */
-.modulo-aprendiz .grupo-campos {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-/* â”€â”€ Grupo formulario â”€â”€ */
-.modulo-aprendiz .grupo-formulario {
-    margin-bottom: 20px;
-}
-
-.modulo-aprendiz .grupo-formulario:last-child {
-    margin-bottom: 0;
-}
-
-/* â”€â”€ Etiqueta â”€â”€ */
-.modulo-aprendiz .etiqueta {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--color-texto-secundario);
-    margin-bottom: 8px;
-}
-
-.modulo-aprendiz .etiqueta.requerido::after {
-    content: " *";
-    color: var(--color-peligro);
-}
-
-/* â”€â”€ Inputs Premium â”€â”€ */
-.modulo-aprendiz .input-text,
-.modulo-aprendiz .textarea,
-.modulo-aprendiz .select {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--color-borde);
-    border-radius: var(--radio-borde);
-    font-size: 0.95rem;
-    font-family: inherit;
-    color: var(--color-texto);
-    background: var(--color-fondo-elevado);
-    transition: all 150ms ease;
-}
-
-.modulo-aprendiz .input-text:focus,
-.modulo-aprendiz .textarea:focus,
-.modulo-aprendiz .select:focus {
-    outline: none;
-    border-color: var(--color-primario);
-    box-shadow: var(--sombra-foco);
-}
-
-.modulo-aprendiz .input-text::placeholder,
-.modulo-aprendiz .textarea::placeholder {
-    color: var(--color-texto-muted);
-}
-
-.modulo-aprendiz .textarea {
-    min-height: 120px;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-/* â”€â”€ Contador caracteres â”€â”€ */
-.modulo-aprendiz .contador-caracteres {
-    text-align: right;
-    font-size: 0.75rem;
-    color: var(--color-texto-claro);
-    margin-top: 2px;
-}
-
-/* â”€â”€ Contador palabras clave â”€â”€ */
-.modulo-aprendiz .contador-palabras {
-    font-size: 0.75rem;
-    color: var(--color-texto-claro);
-    margin-top: 4px;
-}
-
-.modulo-aprendiz .campo-informacion {
+/* === Contadores === */
+.contador-caracteres,
+.contador-palabras {
     font-size: 0.78rem;
     color: var(--color-texto-muted);
-    margin-top: 6px;
-    line-height: 1.4;
+    margin-top: 4px;
+    text-align: right;
 }
 
-/* â”€â”€ Integrantes Header â”€â”€ */
-.modulo-aprendiz .integrantes-encabezado {
+/* === Integrantes - Encabezado === */
+.integrantes-encabezado {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-end;
-    gap: var(--space-md);
+    align-items: center;
+    gap: 12px;
     margin-bottom: 16px;
 }
 
-.modulo-aprendiz .integrantes-encabezado .etiqueta {
-    margin-bottom: 0;
-}
-
-.modulo-aprendiz .integrantes-controles {
+.integrantes-controles {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    flex-shrink: 0;
+    gap: 16px;
 }
 
-/* â”€â”€ Seleccionar todos â”€â”€ */
-.modulo-aprendiz .seleccionar-todos {
-    display: flex;
+.seleccionar-todos {
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-sm);
-    cursor: pointer;
+    gap: 8px;
     font-size: 0.85rem;
-    font-weight: 500;
     color: var(--color-texto-claro);
-    padding: 4px 0;
+    cursor: pointer;
     user-select: none;
 }
 
-.modulo-aprendiz .seleccionar-todos:hover {
-    color: var(--color-texto);
-}
-
-/* â”€â”€ Contador seleccionados â”€â”€ */
-.modulo-aprendiz .contador-seleccionados {
-    font-size: 0.78rem;
-    font-weight: 500;
+.contador-seleccionados {
+    font-size: 0.8rem;
     color: var(--color-primario);
-    background: rgba(5, 153, 102, 0.08);
-    padding: 3px 12px;
-    border-radius: var(--radio-borde);
-    white-space: nowrap;
+    font-weight: 600;
 }
 
-/* â”€â”€ Grid de Miembros â”€â”€ */
-.modulo-aprendiz .grid-miembros {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-/* â”€â”€ Miembro Card â”€â”€ */
-.modulo-aprendiz .miembro-card {
+/* === Miembro Card (checkbox selectable) === */
+.miembro-card {
     display: flex;
     align-items: center;
     gap: 12px;
+    background: var(--color-fondo-elevado);
     padding: 14px 16px;
-    background: var(--color-fondo);
-    border: 1px solid var(--color-borde);
     border-radius: var(--radio-borde);
+    border: 1px solid var(--color-borde-suave);
     cursor: pointer;
     transition: all 150ms ease;
-    user-select: none;
-}
-
-.modulo-aprendiz .miembro-card:hover {
-    background: var(--color-borde-suave);
-    border-color: var(--color-borde);
-}
-
-.modulo-aprendiz .miembro-card.seleccionado {
-    background: rgba(5, 153, 102, 0.04);
-    border-color: rgba(5, 153, 102, 0.25);
-}
-
-.modulo-aprendiz .miembro-card.seleccionado:hover {
-    border-color: rgba(5, 153, 102, 0.4);
-}
-
-.modulo-aprendiz .miembro-card:focus-within {
-    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.25);
-}
-
-/* â”€â”€ Custom Checkbox â”€â”€ */
-.modulo-aprendiz .checkbox-personalizado-input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    pointer-events: none;
-}
-
-.modulo-aprendiz .checkbox-personalizado {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--color-borde);
-    border-radius: 5px;
-    flex-shrink: 0;
     position: relative;
-    transition: all 150ms ease;
-    display: inline-block;
 }
 
-.modulo-aprendiz .checkbox-personalizado::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 5px;
-    width: 6px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg) scale(0);
-    transition: transform 120ms ease;
+.miembro-card:hover {
+    border-color: var(--color-borde-hover);
+    box-shadow: var(--sombra-card-hover);
 }
 
-.modulo-aprendiz .checkbox-personalizado-input:checked + .checkbox-personalizado {
-    background: var(--color-primario);
+.miembro-card.seleccionado {
     border-color: var(--color-primario);
+    background: rgba(5, 153, 102, 0.04);
 }
 
-.modulo-aprendiz .checkbox-personalizado-input:checked + .checkbox-personalizado::after {
-    transform: rotate(45deg) scale(1);
+.miembro-card .checkbox-personalizado {
+    position: absolute;
+    top: 12px;
+    right: 12px;
 }
 
-.modulo-aprendiz .checkbox-personalizado-input:focus-visible + .checkbox-personalizado {
-    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.15);
-}
-
-/* â”€â”€ Miembro Avatar â”€â”€ */
-.modulo-aprendiz .miembro-avatar {
-    width: 36px;
-    height: 36px;
+.miembro-avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: rgba(5, 153, 102, 0.1);
-    color: var(--color-primario);
+    background: var(--color-primario);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 0.85rem;
     flex-shrink: 0;
 }
 
-.modulo-aprendiz .miembro-info {
+.miembro-info {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 6px;
     min-width: 0;
 }
 
-.modulo-aprendiz .miembro-nombre {
+.miembro-nombre {
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--color-texto-secundario);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--color-texto);
 }
 
-.modulo-aprendiz .miembro-rol {
+.miembro-rol {
     font-size: 0.78rem;
-    color: var(--color-primario);
-    font-weight: 500;
+    color: var(--color-texto-muted);
 }
 
-/* â”€â”€ Radio Group â”€â”€ */
-.modulo-aprendiz .radio-grupo {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.modulo-aprendiz .radio-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--color-texto-secundario);
-    user-select: none;
-}
-
-.modulo-aprendiz .radio-personalizado-input {
+/* === Checkbox personalizado === */
+.checkbox-personalizado-input {
     position: absolute;
     opacity: 0;
     width: 0;
@@ -373,191 +126,138 @@
     pointer-events: none;
 }
 
-.modulo-aprendiz .radio-personalizado {
+.checkbox-personalizado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 20px;
     height: 20px;
     border: 2px solid var(--color-borde);
-    border-radius: 50%;
+    border-radius: 4px;
+    background: var(--color-fondo-elevado);
+    transition: all 150ms ease;
     flex-shrink: 0;
     position: relative;
-    transition: all 150ms ease;
-    display: inline-block;
 }
 
-.modulo-aprendiz .radio-personalizado::after {
+.checkbox-personalizado::after {
     content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
+    display: block;
     width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--color-fondo-elevado);
-    transform: scale(0);
-    transition: transform 120ms ease;
+    height: 6px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) scale(0);
+    transition: transform 150ms ease;
+    margin-top: -2px;
 }
 
-.modulo-aprendiz .radio-personalizado-input:checked + .radio-personalizado {
+.checkbox-personalizado-input:checked + .checkbox-personalizado {
+    background: var(--color-primario);
     border-color: var(--color-primario);
 }
 
-.modulo-aprendiz .radio-personalizado-input:checked + .radio-personalizado::after {
-    background: var(--color-primario);
-    transform: scale(1);
+.checkbox-personalizado-input:checked + .checkbox-personalizado::after {
+    transform: rotate(-45deg) scale(1);
 }
 
-.modulo-aprendiz .radio-personalizado-input:focus-visible + .radio-personalizado {
-    box-shadow: 0 0 0 3px rgba(5, 153, 102, 0.15);
+.checkbox-personalizado-input:focus-visible + .checkbox-personalizado {
+    box-shadow: var(--sombra-foco);
 }
 
-/* â”€â”€ Acciones Formulario â”€â”€ */
-.modulo-aprendiz .acciones-formulario {
+/* === Radio personalizado === */
+.radio-grupo {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 32px;
-    border-top: 1px solid var(--color-borde-suave);
-    margin-top: 0;
-}
-
-.modulo-aprendiz .acciones-izquierda {
-    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 
-.modulo-aprendiz .acciones-formulario .btn-primario {
-    padding: 12px 28px;
-    border-radius: var(--radio-borde);
-    font-family: inherit;
-    box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
-    transition: all 200ms ease;
-}
-
-.modulo-aprendiz .acciones-formulario .btn-primario:hover {
-    background: var(--color-secundario);
-    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.3);
-    transform: translateY(-1px);
-}
-
-.modulo-aprendiz .acciones-formulario .btn-primario:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(5, 153, 102, 0.2);
-}
-
-.modulo-aprendiz .btn-outline {
-    padding: 12px 24px;
-    border-radius: var(--radio-borde);
-    border: 1px solid var(--color-borde);
-    background: var(--color-fondo-elevado);
-    color: var(--color-texto-secundario);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 150ms ease;
+.radio-item {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-sm);
-    text-decoration: none;
-    font-family: inherit;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
+    background: var(--color-fondo-elevado);
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-size: 0.9rem;
+    color: var(--color-texto);
 }
 
-.modulo-aprendiz .btn-outline:hover {
+.radio-item:hover {
+    border-color: var(--color-borde-hover);
+}
+
+.radio-personalizado-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.radio-personalizado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-borde);
+    border-radius: 50%;
+    background: var(--color-fondo-elevado);
+    transition: all 150ms ease;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.radio-personalizado::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+    transform: scale(0);
+    transition: transform 150ms ease;
+}
+
+.radio-personalizado-input:checked + .radio-personalizado {
+    background: var(--color-primario);
+    border-color: var(--color-primario);
+}
+
+.radio-personalizado-input:checked + .radio-personalizado::after {
+    transform: scale(1);
+}
+
+.radio-personalizado-input:focus-visible + .radio-personalizado {
+    box-shadow: var(--sombra-foco);
+}
+
+.radio-item:has(.radio-personalizado-input:checked) {
     border-color: var(--color-primario);
     background: rgba(5, 153, 102, 0.04);
-    color: var(--color-primario);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 153, 102, 0.15);
 }
 
-.modulo-aprendiz .btn-outline:active {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-.modulo-aprendiz .btn-enlace {
-    padding: 8px 16px;
-    border-radius: var(--radio-borde);
-    background: transparent;
-    color: var(--color-texto-claro);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 150ms ease;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    text-decoration: none;
-    font-family: inherit;
-}
-
-.modulo-aprendiz .btn-enlace:hover {
-    background: rgba(239,68,68,0.1);
-    color: var(--color-peligro);
-    transform: translateY(-1px);
-}
-
-.modulo-aprendiz .btn-enlace:active {
-    transform: translateY(0);
-}
-
-/* â”€â”€ Responsive â”€â”€ */
-@media (max-width: 1024px) {
-    .modulo-aprendiz .grupo-campos {
-        grid-template-columns: 1fr;
-    }
-
-    .modulo-aprendiz .grid-miembros {
-        grid-template-columns: 1fr;
-    }
-}
-
+/* === Responsive === */
 @media (max-width: 768px) {
-    .modulo-aprendiz .volver-link {
-        width: 100%;
-        justify-content: center;
-        padding: 10px 0;
-    }
-
-    .modulo-aprendiz .encabezado-con-boton {
+    .integrantes-encabezado {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--space-md);
     }
 
-    .modulo-aprendiz .seccion-formulario-header {
-        padding: 20px 20px 12px;
-        margin: 0 20px;
-    }
-
-    .modulo-aprendiz .seccion-formulario-body {
-        padding: 16px 20px 24px;
-    }
-
-    .modulo-aprendiz .integrantes-encabezado {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .modulo-aprendiz .acciones-formulario {
-        flex-direction: column;
-        gap: 12px;
-        padding: 20px;
-    }
-
-    .modulo-aprendiz .acciones-izquierda {
+    .integrantes-controles {
         width: 100%;
+        justify-content: space-between;
+    }
+
+    .radio-grupo {
         flex-direction: column;
     }
 
-    .modulo-aprendiz .acciones-izquierda .btn-primario,
-    .modulo-aprendiz .acciones-izquierda .btn-outline {
+    .radio-item {
         width: 100%;
-        justify-content: center;
-    }
-
-    .modulo-aprendiz .btn-enlace {
-        width: 100%;
-        justify-content: center;
     }
 }

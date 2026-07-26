@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
+import FormField from '../../components/FormField/FormField'
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
@@ -13,11 +14,12 @@ export default function Login() {
   const onSubmit = (data) => {
     if (data.correo === 'maria.gonzalez@soy.sena.edu.co' && data.password === '123456') { navigate('/aprendiz/dashboard'); reset() }
     else if (data.correo === 'carlos.ruiz@sena.edu.co' && data.password === '123456') { navigate('/instructor/dashboard'); reset() }
+    else if (data.correo === 'admin@sena.edu.co' && data.password === 'admin123') { navigate('/admin/dashboard'); reset() }
     else setErrorMsg('Credenciales inválidas. Verifica tu correo y contraseña.')
   }
 
   return (
-    <div className="modulo-invitado modulo-pagina-completa">
+    <div className="modulo-invitado modulo-pagina-completa fade-in">
       <GovernmentBar />
 
       <main className="contenedor-login">
@@ -30,20 +32,15 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="grupo-campo">
-                <label><i className="fas fa-envelope"></i> Correo Electrónico</label>
-                <input type="email" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
-                {errors.correo && <span className="campo-error">Correo inválido</span>}
-                {errorMsg && <span className="campo-error">{errorMsg}</span>}
-              </div>
+              <FormField label={<><i className="fas fa-envelope"></i> Correo Electrónico</>} error={errors.correo ? 'Correo inválido' : (errorMsg || undefined)}>
+                <input type="email" className="campo-input" placeholder="tu@correo.com" {...register("correo", { required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ })} />
+              </FormField>
 
-              <div className="grupo-campo">
-                <label><i className="fas fa-lock"></i> Contraseña</label>
+              <FormField label={<><i className="fas fa-lock"></i> Contraseña</>} error={errors.password && 'La contraseña es obligatoria'}>
                 <div className="contenedor-password">
-                  <input type="password" placeholder="Ingresa tu contraseña" {...register("password", { required: true })} />
+                  <input type="password" className="campo-input" placeholder="Ingresa tu contraseña" {...register("password", { required: true })} />
                 </div>
-                {errors.password && <span className="campo-error">La contraseña es obligatoria</span>}
-              </div>
+              </FormField>
 
               <div className="opciones-login">
                 <label><input type="checkbox" {...register("recordarme")} /> Recordarme</label>
@@ -71,7 +68,12 @@ export default function Login() {
                 <span className="badge badge-advertencia">Instructor</span>
                 <span className="texto-prueba">carlos.ruiz@sena.edu.co / 123456</span>
               </div>
+              <div className="item-prueba">
+                <span className="badge badge-peligro">Admin</span>
+                <span className="texto-prueba">admin@sena.edu.co / admin123</span>
+              </div>
             </div>
+
           </div>
 
           <div className="panel-info-login">
