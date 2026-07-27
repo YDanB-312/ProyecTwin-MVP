@@ -18,9 +18,14 @@ export default function NuevoUsuario() {
   const rol = watch('rol', '')
 
   const onSubmit = (data) => {
-    setEnviado(true)
-    setError(null)
-    setTimeout(() => navigate('/admin/gestion-usuarios'), 2000)
+    try {
+      setEnviado(true)
+      setError(null)
+      // TODO: Send data to API endpoint
+      setTimeout(() => navigate('/admin/gestion-usuarios'), 2000)
+    } catch (err) {
+      setError('Error al guardar el usuario.')
+    }
   }
 
   const breadcrumb = [

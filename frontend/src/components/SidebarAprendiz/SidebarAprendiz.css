@@ -89,6 +89,12 @@
 
 .enlace-cerrar-sesion {
   color: var(--color-peligro, #dc2626) !important;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
 }
 
 .enlace-cerrar-sesion:hover {

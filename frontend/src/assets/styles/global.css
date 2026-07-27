@@ -1522,10 +1522,6 @@ body {
     text-align: center;
   }
 
-  .indicadores-rapidos {
-    justify-content: center;
-  }
-
   .grid-estadisticas,
   .grid-acciones {
     grid-template-columns: 1fr;
@@ -1552,11 +1548,6 @@ body {
 
   .contenedor-filtros {
     flex-direction: column;
-  }
-
-  .tarjeta-proyecto {
-    flex-direction: column;
-    align-items: flex-start;
   }
 
 }
@@ -2429,4 +2420,100 @@ input, select, textarea {
 
 .tabla-similitudes tbody tr:hover {
   background-color: var(--color-fondo-hover);
+}
+
+/* === Avatar clickable + Lightbox === */
+.avatar-clickable {
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.avatar-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: var(--radio-borde);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+}
+
+.lightbox-cerrar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms ease;
+}
+
+.lightbox-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   MODAL - Overlay & Contenido
+   ======================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.modal-contenido {
+  background: var(--color-fondo-elevado);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-modal);
+  padding: var(--space-xl);
+  max-width: 500px;
+  width: 100%;
+}
+
+.modal-contenido h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-texto);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.modal-contenido h3 i {
+  color: var(--color-primario);
+}
+
+.modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }

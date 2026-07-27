@@ -41,6 +41,7 @@ export default function ReportesFallas() {
   const [paginaActual, setPaginaActual] = useState(1)
 
   const cambiarEstado = (id) => {
+    if (!window.confirm('¿Estás seguro de cambiar el estado?')) return
     setReportesLocal(prev => prev.map(r => r.id === id ? { ...r, estado: cicloEstado[r.estado] || r.estado } : r))
   }
 
@@ -62,7 +63,7 @@ export default function ReportesFallas() {
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
       <div className="contenedor-gestion fade-in">
-        <PageHeader title="Reportes de Fallas" icon="bug" />
+        <PageHeader title="Reportes de Fallas" icon="bug" breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Reportes de Fallas' }]} />
 
         <FilterBar title="Filtros de Búsqueda" actions={<>
             <button className="btn-primario" type="button" onClick={() => setPaginaActual(1)}><i className="fas fa-search"></i> Buscar</button>
@@ -107,7 +108,7 @@ export default function ReportesFallas() {
             </thead>
             <tbody>
               {reportesPagina.map((r, i) => (
-                <tr key={i}>
+                <tr key={r.id}>
                   <td>{r.id}</td>
                   <td>{r.usuario}</td>
                   <td className="descripcion-corta" title={r.descripcion}>{r.descripcion}</td>

@@ -47,9 +47,26 @@ const proyectos = [
 
 export default function DetalleProyecto() {
   const { id } = useParams()
-  const proyecto = proyectos[id] || proyectos[0]
   const navigate = useNavigate()
   const [eliminado, setEliminado] = useState(false)
+
+  const proyecto = proyectos[id]
+
+  if (!proyecto) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+        <div className="contenedor-proyectos fade-in">
+          <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={[{ to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' }, { to: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' }, { label: 'No encontrado' }]} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-folder-open"></i></div>
+            <h3 className="estado-vacio-titulo">Proyecto no encontrado</h3>
+            <p className="estado-vacio-descripcion">El proyecto que buscas no existe o fue eliminado.</p>
+            <Link to="/aprendiz/mis-proyectos" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Mis Proyectos</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   const eliminarProyecto = () => {
     if (window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.')) {

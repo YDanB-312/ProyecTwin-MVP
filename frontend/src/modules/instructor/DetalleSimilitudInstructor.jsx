@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import DetalleSimilitudBase from '../../components/DetalleSimilitudBase/DetalleSimilitudBase'
+import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import PageHeader from '../../components/PageHeader/PageHeader'
 
 function buildBreadcrumb(desde) {
   const items = [
@@ -17,8 +19,25 @@ export default function DetalleSimilitudInstructor() {
   const [revisada, setRevisada] = useState(false)
   const [contactado, setContactado] = useState(false)
   const location = useLocation()
-  const proyectoActual = location.state?.proyecto || 'Sistema de Gestión Académica'
+  const proyectoActual = location.state?.proyecto
   const desde = location.state?.desde
+
+  if (!proyectoActual) {
+    return (
+      <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+        <div className="contenedor-revision fade-in">
+          <PageHeader title="Similitud no encontrada" icon="exclamation-circle" breadcrumb={[{ to: '/instructor/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Detalle Similitud' }]} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-search"></i></div>
+            <h3 className="estado-vacio-titulo">Similitud no encontrada</h3>
+            <p className="estado-vacio-descripcion">No se encontró información de la similitud.</p>
+            <Link to="/instructor/alertas" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Notificaciones</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   const volver = desde === 'dashboard' ? '/instructor/dashboard' : '/instructor/alertas'
   const volverLabel = desde === 'dashboard' ? 'Volver al Panel' : 'Volver a Notificaciones'
 

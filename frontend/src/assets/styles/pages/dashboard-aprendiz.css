@@ -1,55 +1,12 @@
+@import './dashboard-base.css';
+
 /* ========================================
    PREMIUM - Dashboard Aprendiz
    ======================================== */
 
-.modulo-aprendiz .contenedor-dashboard {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xl);
-}
-
-/* â”€â”€ Section wrapper â”€â”€ */
-.modulo-aprendiz .dashboard-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* â”€â”€ Dashboard Header â”€â”€ */
-.modulo-aprendiz .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: var(--space-md);
-}
-
 .modulo-aprendiz .dashboard-header-left {
     flex: 1;
     min-width: 280px;
-}
-
-.modulo-aprendiz .dashboard-titulo {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--color-texto);
-    letter-spacing: -0.02em;
-    position: relative;
-    padding-bottom: 10px;
-    margin: 0 0 8px 0;
-}
-
-.modulo-aprendiz .dashboard-titulo::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 40px;
-    height: 3px;
-    background-color: var(--color-primario);
-    border-radius: 2px;
 }
 
 .modulo-aprendiz .dashboard-subtitulo {
@@ -57,22 +14,6 @@
     color: var(--color-texto-claro);
     margin: 0;
     line-height: 1.5;
-}
-
-.modulo-aprendiz .dashboard-fecha {
-    font-size: 0.85rem;
-    color: var(--color-texto-claro);
-    background-color: var(--color-borde-suave);
-    padding: 6px 14px;
-    border-radius: var(--radio-borde);
-    flex-shrink: 0;
-    white-space: nowrap;
-}
-
-/* â”€â”€ Welcome Card â”€â”€ */
-.modulo-aprendiz .tarjeta-bienvenida-moderna {
-    animation: fadeInUp 0.6s ease-out;
-    background: var(--gradient-header);
 }
 
 .modulo-aprendiz .saludo-personal {
@@ -85,16 +26,7 @@
     color: white;
 }
 
-.modulo-aprendiz .bienvenida-ilustracion {
-    transition: all 300ms ease;
-}
-
-.modulo-aprendiz .tarjeta-bienvenida-moderna:hover .bienvenida-ilustracion {
-    transform: scale(1.06);
-    background: rgba(255,255,255,0.18);
-}
-
-/* â”€â”€ Section Titles (barra izquierda verde) â”€â”€ */
+/* — Section Titles (barra izquierda verde) — */
 .modulo-aprendiz .titulo-seccion-dashboard {
     font-size: 1.125rem;
     font-weight: 700;
@@ -116,49 +48,14 @@
     border-radius: 2px;
 }
 
-/* â”€â”€ Seccion header (title + ver-todas) â”€â”€ */
-.modulo-aprendiz .seccion-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.modulo-aprendiz .seccion-titulo {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--color-texto);
-    position: relative;
-    padding-bottom: 6px;
-    border-bottom: 2px solid var(--color-primario);
-    display: inline-block;
-    margin: 0;
-}
-
-/* â”€â”€ Actions Grid â”€â”€ */
+/* — Actions Grid — */
 .modulo-aprendiz .acciones-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-lg);
 }
 
-/* â”€â”€ Action Cards â”€â”€ */
-.modulo-aprendiz .tarjeta-accion-moderna {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    background: var(--color-fondo-elevado);
-    border: 1px solid var(--color-borde);
-    border-radius: var(--radio-borde);
-    padding: 32px 24px;
-    cursor: pointer;
-    transition: all 200ms ease;
-}
-
+/* — Action Cards — */
 .modulo-aprendiz .tarjeta-accion-moderna:hover {
     transform: translateY(-3px);
     box-shadow: var(--sombra-card-hover);
@@ -203,7 +100,7 @@
     line-height: 1.4;
 }
 
-/* â”€â”€ Empty State â”€â”€ */
+/* — Empty State — */
 .modulo-aprendiz .empty-state-card {
     background-color: var(--color-fondo);
     border: 1px dashed var(--color-borde);
@@ -236,7 +133,7 @@
     max-width: 400px;
 }
 
-/* â”€â”€ BotÃ³n primario â”€â”€ */
+/* — Botón primario — */
 .modulo-aprendiz .btn-primario {
     background-color: var(--color-primario);
     color: #ffffff;
@@ -264,31 +161,10 @@
     box-shadow: none;
 }
 
-/* â”€â”€ Neutralizar estilos globales â”€â”€ */
+/* — Neutralizar estilos globales — */
 .modulo-aprendiz .contenedor-dashboard ul,
 .modulo-aprendiz .contenedor-dashboard li {
     list-style: none;
     margin: 0;
     padding: 0;
-}
-
-/* â”€â”€ Responsive â”€â”€ */
-@media (max-width: 1024px) {
-    .modulo-aprendiz .acciones-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .modulo-aprendiz .contenedor-dashboard {
-        gap: 36px;
-    }
-
-    .modulo-aprendiz .acciones-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .modulo-aprendiz .dashboard-fecha {
-        align-self: flex-start;
-    }
 }

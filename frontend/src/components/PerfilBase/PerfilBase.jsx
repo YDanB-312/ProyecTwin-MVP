@@ -41,7 +41,16 @@ export default function PerfilBase({
 
           <p className="campos-obligatorios">Los campos marcados con <span className="obligatorio">*</span> son obligatorios.</p>
 
-          <form onSubmit={submitInfo(() => { setEnviado(true); setError(null); resetInfo() })}>
+          <form onSubmit={submitInfo(() => {
+            try {
+              setError(null)
+              setEnviado(true)
+              // TODO: Send data to API endpoint
+              resetInfo()
+            } catch (err) {
+              setError('Error al actualizar el perfil.')
+            }
+          })}>
             <div className="form-grid">
               <FormField label="Nombre" htmlFor="nombre" required error={errInfo.nombre && 'El nombre es obligatorio'}>
                 <input type="text" id="nombre" className="campo-input" {...regInfo("nombre", { required: true })} />

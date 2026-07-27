@@ -4,112 +4,8 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
-import '../../assets/styles/pages/detalle-proyecto-instructor.css'
-
-const propuestas = [
-  {
-    id: 1,
-    titulo: 'Sistema IoT para Agricultura',
-    aprendiz: 'Ana Martínez',
-    programa: 'ADSO',
-    estado: 'pendiente',
-    created_at: '15/11/2026',
-    instructor: 'Carlos Ruiz',
-    area_aplicacion: 'Tecnología e Informática',
-    tipo_proyecto: 'Aplicación/Software',
-    resumen: 'Sistema de monitoreo inteligente para cultivos utilizando sensores IoT que miden humedad, temperatura y nutrientes del suelo, permitiendo la toma de decisiones en tiempo real para optimizar el riego y la fertilización.',
-    palabras_clave: 'IoT, sensores, agricultura, monitoreo, automatización',
-    tecnologias: 'Arduino, Python, Firebase',
-    objetivos: [
-      'Diseñar e implementar una red de sensores IoT para monitoreo de variables ambientales en cultivos.',
-      'Desarrollar una plataforma web para visualización de datos en tiempo real.',
-      'Implementar algoritmos de alerta temprana para condiciones críticas en los cultivos.',
-      'Generar reportes automáticos de rendimiento y predicciones basadas en datos históricos.',
-    ],
-    entregables: [
-      'Prototipo funcional del sistema de sensores IoT.',
-      'Plataforma web con dashboard de monitoreo en tiempo real.',
-      'Documentación técnica completa del sistema.',
-      'Manual de usuario para la plataforma.',
-    ],
-    miembros: [
-      { iniciales: 'AM', nombre: 'Ana Martínez', rol: 'Creador / Líder', clase: '' },
-      { iniciales: 'JP', nombre: 'Juan Pérez', rol: 'Integrante', clase: 'avatar-secundario' },
-      { iniciales: 'LG', nombre: 'Laura Gómez', rol: 'Integrante', clase: 'avatar-secundario' },
-    ],
-    similitud: 45,
-    observaciones_adicionales: '',
-  },
-  {
-    id: 2,
-    titulo: 'App Móvil para Turismo Local',
-    aprendiz: 'Juan Pérez',
-    programa: 'Multimedia',
-    estado: 'pendiente',
-    created_at: '14/11/2026',
-    instructor: 'Carlos Ruiz',
-    area_aplicacion: 'Cultura y Entretenimiento',
-    tipo_proyecto: 'Aplicación/Software',
-    resumen: 'Aplicación móvil que promueve el turismo local mostrando sitios de interés, rutas y eventos culturales, facilitando la exploración de destinos y la planificación de visitas.',
-    palabras_clave: 'turismo, app móvil, cultura, rutas turísticas, geolocalización',
-    tecnologias: 'React Native, Node.js, MongoDB',
-    objetivos: [
-      'Desarrollar una aplicación móvil multiplataforma para promoción turística local.',
-      'Implementar sistema de geolocalización para rutas turísticas interactivas.',
-      'Crear un catálogo interactivo de sitios de interés cultural y natural.',
-      'Integrar calendario de eventos culturales y notificaciones personalizadas.',
-    ],
-    entregables: [
-      'App móvil funcional para Android e iOS.',
-      'Panel de administración web.',
-      'Base de datos de sitios turísticos y eventos.',
-      'Manual de usuario y guía de administración.',
-    ],
-    miembros: [
-      { iniciales: 'JP', nombre: 'Juan Pérez', rol: 'Creador / Líder', clase: '' },
-    ],
-    similitud: 0,
-    observaciones_adicionales: '',
-  },
-  {
-    id: 3,
-    titulo: 'Plataforma E-learning para Música',
-    aprendiz: 'Laura Gómez',
-    programa: 'ADSO',
-    estado: 'requiere_ajustes',
-    created_at: '12/11/2026',
-    instructor: 'Carlos Ruiz',
-    area_aplicacion: 'Tecnología e Informática',
-    tipo_proyecto: 'Aplicación/Software',
-    resumen: 'Plataforma web para aprendizaje de instrumentos musicales con lecciones interactivas, seguimiento de progreso y recursos multimedia para estudiantes de todos los niveles.',
-    palabras_clave: 'e-learning, música, educación, instrumentos, plataforma',
-    tecnologias: 'React, Django, PostgreSQL',
-    objetivos: [
-      'Crear una plataforma de aprendizaje musical con lecciones interactivas y multimedia.',
-      'Implementar sistema de seguimiento de progreso del estudiante.',
-      'Desarrollar reproductor de audio con control de velocidad y repetición.',
-      'Diseñar un sistema de evaluación y retroalimentación automática.',
-    ],
-    entregables: [
-      'Plataforma web completa con todos los módulos funcionales.',
-      'Módulo de lecciones interactivas con reproductor integrado.',
-      'Sistema de evaluación y seguimiento de progreso.',
-      'Biblioteca de recursos musicales y ejercicios prácticos.',
-    ],
-    miembros: [
-      { iniciales: 'LG', nombre: 'Laura Gómez', rol: 'Creador / Líder', clase: '' },
-      { iniciales: 'AM', nombre: 'Ana Martínez', rol: 'Integrante', clase: 'avatar-secundario' },
-    ],
-    similitud: 0,
-    observaciones_adicionales: 'Se requiere definir mejor el alcance del proyecto y especificar las tecnologías para la reproducción de audio/video.',
-  },
-]
-
-const observacionesData = [
-  { autor: 'Carlos Ruiz | Instructor', icono: 'user-tie', fecha: '10 may 2026', texto: 'El proyecto necesita mejorar la sección de análisis de requisitos. Se recomienda ampliar la documentación técnica antes de continuar con el desarrollo.' },
-  { autor: 'Maria Gonzalez | Aprendiz', icono: 'user-graduate', fecha: '8 may 2026', texto: 'He realizado los ajustes sugeridos en la documentación. La nueva versión incluye diagramas de flujo y casos de uso detallados. Quedo atento a más retroalimentación.' },
-  { autor: 'Carlos Ruiz | Instructor', icono: 'user-tie', fecha: '6 may 2026', texto: 'La propuesta inicial tiene buen enfoque, pero falta definir mejor los entregables del primer sprint. Recomiendo revisar la guía de proyectos para alinear expectativas.' },
-]
+import '../../assets/styles/pages/mis-proyectos.css'
+import { propuestas, observacionesData } from '../../data/propuestasMock'
 
 export default function DetalleProyectoInstructor() {
   const { id } = useParams()
@@ -117,7 +13,23 @@ export default function DetalleProyectoInstructor() {
   const [observacion, setObservacion] = useState('')
   const [listaObservaciones, setListaObservaciones] = useState(observacionesData)
   const [mensaje, setMensaje] = useState(null)
-  const propuesta = propuestas.find(p => p.id === Number(id)) || propuestas[0]
+  const propuesta = propuestas.find(p => p.id === Number(id))
+
+  if (!propuesta) {
+    return (
+      <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+        <div className="contenedor-revision fade-in">
+          <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={[{ to: '/instructor/dashboard', icon: 'home', label: 'Inicio' }, { label: 'No encontrado' }]} actions={<Link to="/instructor/revision-propuestas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-folder-open"></i></div>
+            <h3 className="estado-vacio-titulo">Proyecto no encontrado</h3>
+            <p className="estado-vacio-descripcion">El proyecto que buscás no existe o fue eliminado.</p>
+            <Link to="/instructor/revision-propuestas" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Revisión</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   const estadoBadge = {
     pendiente: { clase: 'badge-pendiente', texto: 'Pendiente' },

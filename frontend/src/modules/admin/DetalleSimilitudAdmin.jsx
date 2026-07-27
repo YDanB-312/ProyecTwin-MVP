@@ -25,7 +25,24 @@ const similitudesProyecto = [
 
 export default function DetalleSimilitudAdmin() {
   const location = useLocation()
-  const proyectoActual = location.state?.proyecto || 'Sistema de Gestión Académica'
+  const proyectoActual = location.state?.proyecto
+
+  if (!proyectoActual) {
+    return (
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+        <div className="contenedor-gestion fade-in">
+          <PageHeader title="Similitud no encontrada" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/similitudes" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-search"></i></div>
+            <h3 className="estado-vacio-titulo">Similitud no encontrada</h3>
+            <p className="estado-vacio-descripcion">No se encontró información de la similitud.</p>
+            <Link to="/admin/similitudes" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Similitudes</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   const [actual, setActual] = useState(0)
   const sim = similitudesProyecto[actual] || similitudesProyecto[0]
   const [mensaje, setMensaje] = useState(null)

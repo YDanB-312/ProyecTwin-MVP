@@ -385,6 +385,16 @@
     transition: all 200ms ease;
 }
 
+.companero-info-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
 :is(.modulo-aprendiz, .modulo-instructor) .companero-card:hover {
     box-shadow: var(--sombra-media);
     border-color: var(--color-borde-hover);
@@ -407,6 +417,7 @@
     font-size: 0.85rem;
     font-weight: 700;
     flex-shrink: 0;
+    object-fit: cover;
 }
 
 :is(.modulo-aprendiz, .modulo-instructor) .companero-info {
