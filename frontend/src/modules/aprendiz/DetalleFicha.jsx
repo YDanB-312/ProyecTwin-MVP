@@ -1,8 +1,31 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
 export default function DetalleFicha() {
+  const [verFoto, setVerFoto] = useState(null)
+
+  useEffect(() => {
+    if (!verFoto) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setVerFoto(null)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [verFoto])
+  const companeros = [
+    { nombre: 'Maria Gonzalez', iniciales: 'MG', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=1' },
+    { nombre: 'Juan Pérez', iniciales: 'JP', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=3' },
+    { nombre: 'Laura Gómez', iniciales: 'LG', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=5' },
+    { nombre: 'Ana Martínez', iniciales: 'AM', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=9' },
+    { nombre: 'Diana Sánchez', iniciales: 'DS', estado: 'Inactivo', foto: 'https://i.pravatar.cc/400?img=16' },
+  ]
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
       <div className="contenedor-pagina fade-in">
@@ -49,53 +72,30 @@ export default function DetalleFicha() {
         </div>
 
         <div className="companeros-grid">
-
-          <div className="companero-card">
-            <div className="companero-avatar">MG</div>
-            <div className="companero-info">
-              <span className="companero-nombre">Maria Gonzalez</span>
-              <span className="companero-correo">maria.gonzalez@soy.sena.edu.co</span>
+          {companeros.map((c) => (
+            <div key={c.iniciales} className="companero-card">
+              {c.foto
+                ? <img src={c.foto} alt={c.nombre} className="companero-avatar avatar-clickable" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVerFoto(c) }} />
+                : <div className="companero-avatar">{c.iniciales}</div>
+              }
+              <Link to="/aprendiz/perfil-companero" state={c} className="companero-info-link">
+                <div className="companero-info">
+                  <span className="companero-nombre">{c.nombre}</span>
+                </div>
+                <span className={c.estado === 'Activo' ? 'badge-activo' : 'badge-inactivo'}>{c.estado}</span>
+              </Link>
             </div>
-            <span className="badge-activo">Activo</span>
-          </div>
-
-          <div className="companero-card">
-            <div className="companero-avatar">JP</div>
-            <div className="companero-info">
-              <span className="companero-nombre">Juan Pérez</span>
-              <span className="companero-correo">juan.perez@soy.sena.edu.co</span>
-            </div>
-            <span className="badge-activo">Activo</span>
-          </div>
-
-          <div className="companero-card">
-            <div className="companero-avatar">LG</div>
-            <div className="companero-info">
-              <span className="companero-nombre">Laura Gómez</span>
-              <span className="companero-correo">laura.gomez@soy.sena.edu.co</span>
-            </div>
-            <span className="badge-activo">Activo</span>
-          </div>
-
-          <div className="companero-card">
-            <div className="companero-avatar">AM</div>
-            <div className="companero-info">
-              <span className="companero-nombre">Ana Martínez</span>
-              <span className="companero-correo">ana.martinez@soy.sena.edu.co</span>
-            </div>
-            <span className="badge-activo">Activo</span>
-          </div>
-
-          <div className="companero-card">
-            <div className="companero-avatar">DS</div>
-            <div className="companero-info">
-              <span className="companero-nombre">Diana Sánchez</span>
-              <span className="companero-correo">diana.sanchez@soy.sena.edu.co</span>
-            </div>
-            <span className="badge-inactivo">Inactivo</span>
-          </div>
-
+          ))}
         </div>
+
+        {verFoto && verFoto.foto && (
+          <div className="lightbox-overlay" onClick={() => setVerFoto(null)} role="dialog" aria-modal="true" aria-label="Imagen ampliada">
+            <button className="lightbox-cerrar" onClick={() => setVerFoto(null)} aria-label="Cerrar" autoFocus>
+              <i className="fas fa-times"></i>
+            </button>
+            <img src={verFoto.foto} alt={verFoto.nombre} className="lightbox-img" onClick={(e) => e.stopPropagation()} />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

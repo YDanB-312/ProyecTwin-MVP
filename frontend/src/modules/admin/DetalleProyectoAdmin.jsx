@@ -19,11 +19,29 @@ const breadcrumb = [
 
 export default function DetalleProyectoAdmin() {
   const location = useLocation()
-  const proyecto = location.state?.proyecto || null
-  const [estado, setEstado] = useState(proyecto?.estado || 'aprobado')
+  const proyecto = location.state?.proyecto
+
+  if (!proyecto) {
+    return (
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+        <div className="contenedor-gestion fade-in">
+          <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-folder-open"></i></div>
+            <h3 className="estado-vacio-titulo">Proyecto no encontrado</h3>
+            <p className="estado-vacio-descripcion">No se encontró información del proyecto. Volvé a la lista de proyectos.</p>
+            <Link to="/admin/proyectos" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Proyectos</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const [estado, setEstado] = useState(proyecto.estado || 'aprobado')
   const [mensaje, setMensaje] = useState(null)
 
   const cambiarEstado = (nuevoEstado) => {
+    if (!window.confirm('¿Estás seguro de cambiar el estado del proyecto?')) return
     setEstado(nuevoEstado)
     const textos = { aprobado: 'Proyecto aprobado', rechazado: 'Proyecto rechazado', requiere_ajustes: 'Requiere ajustes' }
     setMensaje({ tipo: 'exito', texto: textos[nuevoEstado] || 'Estado actualizado' })
@@ -50,15 +68,15 @@ export default function DetalleProyectoAdmin() {
           <div className="detalle-grid-moderno">
             <div>
               <div className="detalle-label">Nombre del Proyecto</div>
-              <div className="detalle-valor">{proyecto ? proyecto.titulo : 'Sistema IoT para Agricultura de Precisión'}</div>
+              <div className="detalle-valor">{proyecto.titulo}</div>
             </div>
             <div>
               <div className="detalle-label">Programa de Formación</div>
-              <div className="detalle-valor">{proyecto?.programa || 'ADSO - Análisis y Desarrollo de Sistemas'}</div>
+              <div className="detalle-valor">{proyecto.programa}</div>
             </div>
             <div>
               <div className="detalle-label">Fecha de Creación</div>
-              <div className="detalle-valor">{proyecto ? proyecto.fecha : '15/03/2026'}</div>
+              <div className="detalle-valor">{proyecto.fecha}</div>
             </div>
             <div>
               <div className="detalle-label">Estado</div>
@@ -66,15 +84,15 @@ export default function DetalleProyectoAdmin() {
             </div>
             <div>
               <div className="detalle-label">Instructor</div>
-              <div className="detalle-valor">{proyecto ? proyecto.instructor : 'Carlos Ruiz'}</div>
+              <div className="detalle-valor">{proyecto.instructor}</div>
             </div>
             <div>
               <div className="detalle-label">Ficha</div>
-              <div className="detalle-valor">{proyecto?.ficha || 'Sin ficha asignada'}</div>
+              <div className="detalle-valor">{proyecto.ficha || 'Sin ficha asignada'}</div>
             </div>
             <div className="detalle-grid-full">
               <div className="detalle-label">Descripción</div>
-              <div className="detalle-valor-texto">{proyecto?.descripcion || 'Sin descripción disponible'}</div>
+              <div className="detalle-valor-texto">{proyecto.descripcion}</div>
             </div>
           </div>
         </DataPanel>

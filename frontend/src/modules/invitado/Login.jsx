@@ -5,17 +5,22 @@ import '../../assets/styles/pages/login.css'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import FooterSimple from '../../components/FooterSimple/FooterSimple'
 import FormField from '../../components/FormField/FormField'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [errorMsg, setErrorMsg] = useState('')
 
   const onSubmit = (data) => {
-    if (data.correo === 'maria.gonzalez@soy.sena.edu.co' && data.password === '123456') { navigate('/aprendiz/dashboard'); reset() }
-    else if (data.correo === 'carlos.ruiz@sena.edu.co' && data.password === '123456') { navigate('/instructor/dashboard'); reset() }
-    else if (data.correo === 'admin@sena.edu.co' && data.password === 'admin123') { navigate('/admin/dashboard'); reset() }
-    else setErrorMsg('Credenciales inválidas. Verifica tu correo y contraseña.')
+    const resultado = login(data.correo, data.password)
+    if (resultado.exito) {
+      navigate(resultado.ruta)
+      reset()
+    } else {
+      setErrorMsg(resultado.mensaje)
+    }
   }
 
   return (

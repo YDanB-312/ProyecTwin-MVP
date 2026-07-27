@@ -48,6 +48,7 @@ export default function GestionUsuarios() {
           title="Gestión de Usuarios"
           subtitle="Administra los usuarios registrados en la plataforma"
           icon="users-cog"
+          breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Gestión de Usuarios' }]}
           actions={<Link to="/admin/nuevo-usuario" className="btn-primario"><i className="fas fa-user-plus"></i> Nuevo Usuario</Link>}
         />
 

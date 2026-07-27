@@ -25,15 +25,31 @@ const etiquetaReporte = {
   rechazado: 'Rechazado',
 }
 
-const defaultReporte = { estado: 'en_revision', usuario: 'Maria Gonzalez (Aprendiz)', fecha: '08/04/2026', descripcion: '', titulo: 'Error al cargar el módulo de similitudes', pasos: '' }
-
 export default function DetalleReporte() {
   const location = useLocation()
-  const reporteData = location.state?.reporte || defaultReporte
+  const reporteData = location.state?.reporte
+
+  if (!reporteData) {
+    return (
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+        <div className="contenedor-gestion fade-in">
+          <PageHeader title="Reporte no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/reportes-fallas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-bug"></i></div>
+            <h3 className="estado-vacio-titulo">Reporte no encontrado</h3>
+            <p className="estado-vacio-descripcion">No se encontró información del reporte de falla.</p>
+            <Link to="/admin/reportes-fallas" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Reportes</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   const [estado, setEstado] = useState(reporteData.estado)
   const [mensaje, setMensaje] = useState(null)
 
   const cambiarEstado = (nuevoEstado) => {
+    if (!window.confirm('¿Estás seguro de cambiar el estado del reporte?')) return
     setEstado(nuevoEstado)
     const textos = { en_revision: 'Marcado en revisión', resuelto: 'Marcado como resuelto', rechazado: 'Rechazado' }
     setMensaje({ tipo: 'exito', texto: textos[nuevoEstado] || 'Estado actualizado' })

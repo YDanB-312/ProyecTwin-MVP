@@ -13,8 +13,23 @@ const breadcrumb = [
 
 export default function DetalleUsuario() {
   const location = useLocation()
-  const defaultUser = { nombre: 'Maria Gonzalez', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', rol: 'Aprendiz', estado: true, programa: 'ADSO - Análisis y Desarrollo de Software', fechaRegistro: '10/01/2026' }
-  const userData = location.state?.usuario || defaultUser
+  const userData = location.state?.usuario
+
+  if (!userData) {
+    return (
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+        <div className="contenedor-gestion fade-in">
+          <PageHeader title="Usuario no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
+          <div className="estado-vacio-moderno">
+            <div className="estado-vacio-icono"><i className="fas fa-user"></i></div>
+            <h3 className="estado-vacio-titulo">Usuario no encontrado</h3>
+            <p className="estado-vacio-descripcion">No se encontró información del usuario.</p>
+            <Link to="/admin/gestion-usuarios" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Gestión de Usuarios</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>

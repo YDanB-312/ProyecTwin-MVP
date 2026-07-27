@@ -9,6 +9,7 @@ import FormField from '../../components/FormField/FormField'
 
 export default function NuevoProyecto() {
   const [enviado, setEnviado] = useState(false)
+  const [borradorGuardado, setBorradorGuardado] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
@@ -41,38 +42,37 @@ export default function NuevoProyecto() {
   const observacionesTexto = watch('observaciones', '')
 
   const onGuardar = (data) => {
-    setEnviado(true)
-    setError(null)
-    const objetivosArray = data.objetivos ? data.objetivos.split('\n').filter(l => l.trim()) : []
-    const entregablesArray = data.entregables ? data.entregables.split('\n').filter(l => l.trim()) : []
-    navigate('/aprendiz/analizando-proyecto', {
-      state: {
-        titulo: data.titulo || 'Sistema de Gestión Académica',
-        resumen: data.resumen,
-        palabrasClave: data.palabras_clave,
-        objetivos: objetivosArray,
-        entregables: entregablesArray,
-        observaciones: data.observaciones || '',
-      }
-    })
+    try {
+      setEnviado(true)
+      setError(null)
+      // TODO: Send data to API endpoint
+      const objetivosArray = data.objetivos ? data.objetivos.split('\n').filter(l => l.trim()) : []
+      const entregablesArray = data.entregables ? data.entregables.split('\n').filter(l => l.trim()) : []
+      navigate('/aprendiz/analizando-proyecto', {
+        state: {
+          titulo: data.titulo || 'Sistema de Gestión Académica',
+          resumen: data.resumen,
+          palabrasClave: data.palabras_clave,
+          objetivos: objetivosArray,
+          entregables: entregablesArray,
+          observaciones: data.observaciones || '',
+        }
+      })
+    } catch (err) {
+      setError('Error al guardar el proyecto.')
+    }
   }
 
   const onBorrador = async () => {
-    const valido = await trigger(['titulo', 'resumen', 'palabras_clave'])
-    if (!valido) return
-    setEnviado(true)
-    setError(null)
-    const objetivosArray = objetivosTexto ? objetivosTexto.split('\n').filter(l => l.trim()) : []
-    const entregablesArray = entregablesTexto ? entregablesTexto.split('\n').filter(l => l.trim()) : []
-    navigate('/aprendiz/analizando-proyecto', {
-      state: {
-        titulo: titulo || 'Sistema de Gestión Académica',
-        resumen: resumenTexto,
-        palabrasClave: palabrasClave,
-        objetivos: objetivosArray,
-        entregables: entregablesArray,
-      }
-    })
+    try {
+      setBorradorGuardado(true)
+      setError(null)
+      // TODO: Send draft data to API endpoint
+      const objetivosArray = objetivosTexto ? objetivosTexto.split('\n').filter(l => l.trim()) : []
+      const entregablesArray = entregablesTexto ? entregablesTexto.split('\n').filter(l => l.trim()) : []
+    } catch (err) {
+      setError('Error al guardar el proyecto.')
+    }
   }
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
@@ -90,6 +90,9 @@ export default function NuevoProyecto() {
 
         <div className={`mensaje-feedback mensaje-exito ${enviado ? '' : 'oculto'}`}>
           <i className="fas fa-check-circle"></i><span>Proyecto enviado a revisión correctamente.</span>
+        </div>
+        <div className={`mensaje-feedback mensaje-exito ${borradorGuardado ? '' : 'oculto'}`}>
+          <i className="fas fa-check-circle"></i><span>Borrador guardado</span>
         </div>
         <div className={`mensaje-feedback mensaje-error ${error ? '' : 'oculto'}`}>
           <i className="fas fa-exclamation-circle"></i><span>No se pudo enviar el proyecto. Intenta de nuevo.</span>

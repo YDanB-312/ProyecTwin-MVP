@@ -12,10 +12,15 @@ export default function UnirseFicha() {
   const [error, setError] = useState(null)
   const { register, handleSubmit, formState: { errors } } = useForm()
 
-  const onSubmit = (data) => {
-    setEnviado(true)
-    setError(null)
-    setTimeout(() => navigate('/aprendiz/dashboard'), 2000)
+  const onSubmit = () => {
+    try {
+      setEnviado(true)
+      setError(null)
+      // TODO: Send data to API endpoint
+      setTimeout(() => navigate('/aprendiz/dashboard'), 2000)
+    } catch (err) {
+      setError('Error al unirse a la ficha.')
+    }
   }
   return (
     <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>

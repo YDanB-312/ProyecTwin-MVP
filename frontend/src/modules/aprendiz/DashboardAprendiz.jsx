@@ -13,7 +13,7 @@ export default function DashboardAprendiz() {
         <div className="dashboard-header">
           <div className="dashboard-header-left">
             <h1 className="dashboard-titulo">Bienvenido, Maria</h1>
-            <p className="dashboard-subtitulo">Gestiona tus proyectos de formaci&oacute;n y evita similitudes con otras propuestas.</p>
+            <p className="dashboard-subtitulo">Gestiona tus proyectos de formación y evita similitudes con otras propuestas.</p>
           </div>
           <span className="dashboard-fecha">{hoy}</span>
         </div>
@@ -22,7 +22,7 @@ export default function DashboardAprendiz() {
           <div className="bienvenida-contenido">
             <span className="saludo-personal">Hola, Maria</span>
             <h1>Bienvenida al Sistema ProyecTwin!</h1>
-            <p>Gestiona tus proyectos de formaci&oacute;n y evita similitudes con otras propuestas.</p>
+            <p>Gestiona tus proyectos de formación y evita similitudes con otras propuestas.</p>
           </div>
           <div className="bienvenida-ilustracion">
             <i className="fas fa-rocket"></i>
@@ -30,7 +30,7 @@ export default function DashboardAprendiz() {
         </div>
 
         <section className="dashboard-section">
-          <h2 className="titulo-seccion-dashboard">Acciones r&aacute;pidas</h2>
+          <h2 className="titulo-seccion-dashboard">Acciones rápidas</h2>
           <div className="acciones-grid">
             <Link to="/aprendiz/nuevo-proyecto" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-plus"></i></div>
@@ -40,12 +40,12 @@ export default function DashboardAprendiz() {
             <Link to="/aprendiz/mis-proyectos" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-folder"></i></div>
               <h3>Mis proyectos</h3>
-              <p>Contin&uacute;a donde lo dejaste</p>
+              <p>Continúa donde lo dejaste</p>
             </Link>
             <Link to="/aprendiz/alertas" className="tarjeta-accion-moderna">
               <div className="accion-icono"><i className="fas fa-bell"></i></div>
               <h3>Notificaciones</h3>
-              <p>Mantente al d&iacute;a</p>
+              <p>Mantente al día</p>
             </Link>
           </div>
         </section>
@@ -56,7 +56,7 @@ export default function DashboardAprendiz() {
           </div>
           <div className="empty-state-card">
             <i className="fas fa-folder-open empty-icono"></i>
-            <h3>A&uacute;n no tienes proyectos</h3>
+            <h3>Aún no tienes proyectos</h3>
             <p>Crea tu primer proyecto y empieza a colaborar</p>
             <button type="button" className="btn-primario" onClick={() => navigate('/aprendiz/nuevo-proyecto')}>+ Crear mi primer proyecto</button>
           </div>
@@ -69,7 +69,7 @@ export default function DashboardAprendiz() {
           <div className="empty-state-card">
             <i className="fas fa-bell-slash empty-icono"></i>
             <h3>No hay notificaciones nuevas</h3>
-            <p>Cuando recibas alertas sobre tus proyectos, aparecer&aacute;n aqu&iacute;.</p>
+            <p>Cuando recibas alertas sobre tus proyectos, aparecerán aquí.</p>
           </div>
         </section>
 

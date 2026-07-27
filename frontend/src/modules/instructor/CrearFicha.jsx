@@ -26,10 +26,15 @@ export default function CrearFicha() {
   }, [editFicha, reset])
 
   const onSubmit = (data) => {
-    setEnviado(true)
-    setError(null)
-    navigate('/instructor/gestionar-fichas')
-    reset()
+    try {
+      setEnviado(true)
+      setError(null)
+      // TODO: Send data to API endpoint
+      navigate('/instructor/gestionar-fichas')
+      reset()
+    } catch (err) {
+      setError('Error al guardar la ficha.')
+    }
   }
 
   return (

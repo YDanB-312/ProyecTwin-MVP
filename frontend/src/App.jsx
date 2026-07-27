@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 
 import Login from './modules/invitado/Login'
 import Home from './modules/invitado/Home'
@@ -18,6 +19,7 @@ import DetalleSimilitud from './modules/aprendiz/DetalleSimilitud'
 import ReportarFallaAprendiz from './modules/aprendiz/ReportarFallaAprendiz'
 import UnirseFicha from './modules/aprendiz/UnirseFicha'
 import DetalleFicha from './modules/aprendiz/DetalleFicha'
+import DetalleCompanero from './modules/aprendiz/DetalleCompanero'
 import AnalizandoProyecto from './modules/aprendiz/AnalizandoProyecto'
 import ResultadoAnalisis from './modules/aprendiz/ResultadoAnalisis'
 import DashboardInstructor from './modules/instructor/DashboardInstructor'
@@ -55,42 +57,43 @@ export default function App() {
         <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
         <Route path="/confirmacion" element={<Confirmacion />} />
 
-        <Route path="/aprendiz/dashboard" element={<DashboardAprendiz />} />
-        <Route path="/aprendiz/mis-proyectos" element={<MisProyectos />} />
-        <Route path="/aprendiz/nuevo-proyecto" element={<NuevoProyecto />} />
-        <Route path="/aprendiz/unirse-ficha" element={<UnirseFicha />} />
-        <Route path="/aprendiz/alertas" element={<AlertasAprendiz />} />
-        <Route path="/aprendiz/reportar-falla" element={<ReportarFallaAprendiz />} />
-        <Route path="/aprendiz/perfil" element={<MiPerfil />} />
-        <Route path="/aprendiz/detalle-proyecto/:id" element={<DetalleProyecto />} />
-        <Route path="/aprendiz/detalle-similitud" element={<DetalleSimilitud />} />
-        <Route path="/aprendiz/detalle-ficha" element={<DetalleFicha />} />
-        <Route path="/aprendiz/analizando-proyecto" element={<AnalizandoProyecto />} />
-        <Route path="/aprendiz/resultado-analisis" element={<ResultadoAnalisis />} />
-        <Route path="/instructor/dashboard" element={<DashboardInstructor />} />
-        <Route path="/instructor/revision-propuestas" element={<RevisionPropuestas />} />
-        <Route path="/instructor/alertas" element={<AlertasInstructor />} />
-        <Route path="/instructor/perfil" element={<PerfilInstructor />} />
-        <Route path="/instructor/detalle-proyecto/:id" element={<DetalleProyectoInstructor />} />
-        <Route path="/instructor/detalle-similitud" element={<DetalleSimilitudInstructor />} />
-        <Route path="/instructor/reportar-falla" element={<ReportarFallaInstructor />} />
-        <Route path="/instructor/gestionar-fichas" element={<GestionarFichas />} />
-        <Route path="/instructor/crear-ficha" element={<CrearFicha />} />
-        <Route path="/instructor/detalle-ficha" element={<DetalleFichaInstructor />} />
-        <Route path="/instructor/directorio-ficha" element={<DirectorioFichaInstructor />} />
+        <Route path="/aprendiz/dashboard" element={<ProtectedRoute allowedRoles={['aprendiz']}><DashboardAprendiz /></ProtectedRoute>} />
+        <Route path="/aprendiz/mis-proyectos" element={<ProtectedRoute allowedRoles={['aprendiz']}><MisProyectos /></ProtectedRoute>} />
+        <Route path="/aprendiz/nuevo-proyecto" element={<ProtectedRoute allowedRoles={['aprendiz']}><NuevoProyecto /></ProtectedRoute>} />
+        <Route path="/aprendiz/unirse-ficha" element={<ProtectedRoute allowedRoles={['aprendiz']}><UnirseFicha /></ProtectedRoute>} />
+        <Route path="/aprendiz/alertas" element={<ProtectedRoute allowedRoles={['aprendiz']}><AlertasAprendiz /></ProtectedRoute>} />
+        <Route path="/aprendiz/reportar-falla" element={<ProtectedRoute allowedRoles={['aprendiz']}><ReportarFallaAprendiz /></ProtectedRoute>} />
+        <Route path="/aprendiz/perfil" element={<ProtectedRoute allowedRoles={['aprendiz']}><MiPerfil /></ProtectedRoute>} />
+        <Route path="/aprendiz/detalle-proyecto/:id" element={<ProtectedRoute allowedRoles={['aprendiz']}><DetalleProyecto /></ProtectedRoute>} />
+        <Route path="/aprendiz/detalle-similitud" element={<ProtectedRoute allowedRoles={['aprendiz']}><DetalleSimilitud /></ProtectedRoute>} />
+        <Route path="/aprendiz/detalle-ficha" element={<ProtectedRoute allowedRoles={['aprendiz']}><DetalleFicha /></ProtectedRoute>} />
+        <Route path="/aprendiz/perfil-companero" element={<ProtectedRoute allowedRoles={['aprendiz']}><DetalleCompanero /></ProtectedRoute>} />
+        <Route path="/aprendiz/analizando-proyecto" element={<ProtectedRoute allowedRoles={['aprendiz']}><AnalizandoProyecto /></ProtectedRoute>} />
+        <Route path="/aprendiz/resultado-analisis" element={<ProtectedRoute allowedRoles={['aprendiz']}><ResultadoAnalisis /></ProtectedRoute>} />
+        <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><DashboardInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/revision-propuestas" element={<ProtectedRoute allowedRoles={['instructor']}><RevisionPropuestas /></ProtectedRoute>} />
+        <Route path="/instructor/alertas" element={<ProtectedRoute allowedRoles={['instructor']}><AlertasInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/perfil" element={<ProtectedRoute allowedRoles={['instructor']}><PerfilInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/detalle-proyecto/:id" element={<ProtectedRoute allowedRoles={['instructor']}><DetalleProyectoInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/detalle-similitud" element={<ProtectedRoute allowedRoles={['instructor']}><DetalleSimilitudInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/reportar-falla" element={<ProtectedRoute allowedRoles={['instructor']}><ReportarFallaInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/gestionar-fichas" element={<ProtectedRoute allowedRoles={['instructor']}><GestionarFichas /></ProtectedRoute>} />
+        <Route path="/instructor/crear-ficha" element={<ProtectedRoute allowedRoles={['instructor']}><CrearFicha /></ProtectedRoute>} />
+        <Route path="/instructor/detalle-ficha" element={<ProtectedRoute allowedRoles={['instructor']}><DetalleFichaInstructor /></ProtectedRoute>} />
+        <Route path="/instructor/directorio-ficha" element={<ProtectedRoute allowedRoles={['instructor']}><DirectorioFichaInstructor /></ProtectedRoute>} />
 
-        <Route path="/admin/dashboard" element={<DashboardAdmin />} />
-        <Route path="/admin/gestion-usuarios" element={<GestionUsuarios />} />
-        <Route path="/admin/nuevo-usuario" element={<NuevoUsuario />} />
-        <Route path="/admin/proyectos" element={<ProyectosAdmin />} />
-        <Route path="/admin/detalle-proyecto" element={<DetalleProyectoAdmin />} />
-        <Route path="/admin/similitudes" element={<SimilitudesAdmin />} />
-        <Route path="/admin/detalle-similitud" element={<DetalleSimilitudAdmin />} />
-        <Route path="/admin/detalle-usuario" element={<DetalleUsuario />} />
-        <Route path="/admin/reportes-fallas" element={<ReportesFallas />} />
-        <Route path="/admin/detalle-reporte" element={<DetalleReporte />} />
-        <Route path="/admin/notificaciones" element={<NotificacionesAdmin />} />
-        <Route path="/admin/perfil" element={<PerfilAdmin />} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><DashboardAdmin /></ProtectedRoute>} />
+        <Route path="/admin/gestion-usuarios" element={<ProtectedRoute allowedRoles={['admin']}><GestionUsuarios /></ProtectedRoute>} />
+        <Route path="/admin/nuevo-usuario" element={<ProtectedRoute allowedRoles={['admin']}><NuevoUsuario /></ProtectedRoute>} />
+        <Route path="/admin/proyectos" element={<ProtectedRoute allowedRoles={['admin']}><ProyectosAdmin /></ProtectedRoute>} />
+        <Route path="/admin/detalle-proyecto" element={<ProtectedRoute allowedRoles={['admin']}><DetalleProyectoAdmin /></ProtectedRoute>} />
+        <Route path="/admin/similitudes" element={<ProtectedRoute allowedRoles={['admin']}><SimilitudesAdmin /></ProtectedRoute>} />
+        <Route path="/admin/detalle-similitud" element={<ProtectedRoute allowedRoles={['admin']}><DetalleSimilitudAdmin /></ProtectedRoute>} />
+        <Route path="/admin/detalle-usuario" element={<ProtectedRoute allowedRoles={['admin']}><DetalleUsuario /></ProtectedRoute>} />
+        <Route path="/admin/reportes-fallas" element={<ProtectedRoute allowedRoles={['admin']}><ReportesFallas /></ProtectedRoute>} />
+        <Route path="/admin/detalle-reporte" element={<ProtectedRoute allowedRoles={['admin']}><DetalleReporte /></ProtectedRoute>} />
+        <Route path="/admin/notificaciones" element={<ProtectedRoute allowedRoles={['admin']}><NotificacionesAdmin /></ProtectedRoute>} />
+        <Route path="/admin/perfil" element={<ProtectedRoute allowedRoles={['admin']}><PerfilAdmin /></ProtectedRoute>} />
 
         <Route path="*" element={<PaginaNoEncontrada />} />
       </Routes>

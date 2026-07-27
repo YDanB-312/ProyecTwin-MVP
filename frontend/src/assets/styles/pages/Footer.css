@@ -1,8 +1,10 @@
 .pie-pagina {
+  position: relative;
   background: var(--color-header);
   color: var(--color-fondo-elevado);
   padding: 40px 20px 0;
-  margin-top: 50px;
+  margin-top: auto;
+  width: 100%;
 }
 
 .contenedor-pie {
@@ -14,10 +16,18 @@
   padding-bottom: 32px;
 }
 
+.contenedor-pie-sin-nav {
+  grid-template-columns: 1fr 1fr;
+}
+
+.seccion-pie {
+  text-align: left;
+}
+
 .seccion-pie h3 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-fondo-elevado);
+  color: #ffffff;
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -36,28 +46,6 @@
   gap: 10px;
 }
 
-.enlaces-pie {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.enlaces-pie a {
-  color: var(--color-texto-claro);
-  text-decoration: none;
-  font-size: 0.85rem;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.enlaces-pie a:hover {
-  color: var(--color-primario);
-  padding-left: 4px;
-}
-
 .info-contacto {
   display: flex;
   flex-direction: column;
@@ -71,6 +59,12 @@
   gap: 10px;
   color: var(--color-texto-claro);
   margin-bottom: 0;
+}
+
+.logo-footer {
+  height: 40px;
+  margin-top: 12px;
+  opacity: 0.7;
 }
 
 .pie-inferior {
@@ -99,22 +93,9 @@
   .contenedor-pie {
     grid-template-columns: 1fr;
     gap: var(--space-xl);
-    text-align: center;
   }
 
-  .seccion-pie h3 {
-    justify-content: center;
-  }
-
-  .seccion-pie p {
-    justify-content: center;
-  }
-
-  .info-contacto p {
-    justify-content: center;
-  }
-
-  .enlaces-pie {
-    align-items: center;
+  .contenedor-pie-sin-nav {
+    grid-template-columns: 1fr;
   }
 }

@@ -56,7 +56,7 @@ export default function ProyectosAdmin() {
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
       <div className="contenedor-gestion fade-in">
-        <PageHeader title="Proyectos" icon="folder-open" subtitle="Consulta el listado completo de proyectos registrados en la plataforma" />
+        <PageHeader title="Proyectos" icon="folder-open" subtitle="Consulta el listado completo de proyectos registrados en la plataforma" breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Proyectos' }]} />
 
         <FilterBar title="Filtrar Proyectos" actions={<>
             <button className="btn-primario" type="button" onClick={() => setPaginaActual(1)}><i className="fas fa-search"></i> Buscar</button>

@@ -3,7 +3,7 @@ import '../SidebarAprendiz/SidebarAprendiz.css'
 
 export default function SidebarInstructor({ isOpen, onClose }) {
   return (
-    <nav className={`sidebar${isOpen ? ' abierto' : ''}`} id="sidebar">
+    <nav className={`sidebar${isOpen ? ' abierto' : ''}`} id="sidebar" aria-label="Menú principal">
       <button type="button" className="cerrar-sidebar" aria-label="Cerrar menú" onClick={onClose}>&times;</button>
       <ul className="menu-principal">
         <li><NavLink to="/instructor/dashboard" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-home"></i></div> Dashboard</NavLink></li>
@@ -12,8 +12,6 @@ export default function SidebarInstructor({ isOpen, onClose }) {
         <li><NavLink to="/instructor/alertas" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bell"></i></div> Notificaciones</NavLink></li>
         <li><NavLink to="/instructor/reportar-falla" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-bug"></i></div> Reportar Falla</NavLink></li>
         <li><NavLink to="/instructor/perfil" className={({ isActive }) => 'enlace-nav' + (isActive ? ' activo' : '')} onClick={onClose}><div className="icono-nav"><i className="fas fa-user-cog"></i></div> Mi Perfil</NavLink></li>
-        <li className="menu-divisor"></li>
-        <li><NavLink to="/" className="enlace-nav enlace-cerrar-sesion" onClick={onClose}><div className="icono-nav"><i className="fas fa-sign-out-alt"></i></div> Cerrar sesión</NavLink></li>
       </ul>
     </nav>
   )

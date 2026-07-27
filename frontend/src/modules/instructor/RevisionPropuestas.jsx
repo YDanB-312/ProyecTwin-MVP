@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/revision-propuestas.css'
 import Pagination from '../../components/Pagination/Pagination'
+import FilterBar from '../../components/FilterBar/FilterBar'
 
 const breadcrumb = [
   { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
@@ -25,6 +26,8 @@ export default function RevisionPropuestas() {
   const [paginaActual, setPaginaActual] = useState(1)
   const [mensaje, setMensaje] = useState(null)
   const [propuestasEstado, setPropuestasEstado] = useState({})
+  const [obsModal, setObsModal] = useState(null)
+  const [obsTexto, setObsTexto] = useState('')
 
   const propuestasFiltradas = propuestasData.filter(p => {
     const estadoActual = propuestasEstado[p.id] || p.estado
@@ -64,8 +67,8 @@ export default function RevisionPropuestas() {
             <i className="fas fa-check-circle"></i><span>{mensaje?.texto || ''}</span>
           </div>
 
-          <div className="filtros-card">
-            <div className="filtro-grupo">
+          <FilterBar title="Filtrar Propuestas">
+            <div className="grupo-filtro">
               <label htmlFor="estado-Propuesta" className="filtro-label">Estado</label>
               <select id="estado-Propuesta" className="campo-select" name="estado_propuesta" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
                 <option value="">Todos los estados</option>
@@ -76,7 +79,7 @@ export default function RevisionPropuestas() {
                 <option value="requiere_ajustes">Requiere ajustes</option>
               </select>
             </div>
-            <div className="filtro-grupo">
+            <div className="grupo-filtro">
               <label htmlFor="fecha-Propuesta" className="filtro-label">Fecha</label>
               <select id="fecha-Propuesta" className="campo-select" name="fecha_propuesta" value={filtroFecha} onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1) }}>
                 <option value="">Cualquier fecha</option>
@@ -85,7 +88,7 @@ export default function RevisionPropuestas() {
                 <option value="mes">Último mes</option>
               </select>
             </div>
-            <div className="filtro-grupo">
+            <div className="grupo-filtro">
               <label htmlFor="programa" className="filtro-label">Programa</label>
               <select id="programa" className="campo-select" name="programa" value={filtroPrograma} onChange={(e) => { setFiltroPrograma(e.target.value); setPaginaActual(1) }}>
                 <option value="">Todos los programas</option>
@@ -94,7 +97,7 @@ export default function RevisionPropuestas() {
                 <option value="multimedia">Multimedia</option>
               </select>
             </div>
-          </div>
+          </FilterBar>
 
           <div className="propuestas-lista">
 
@@ -138,7 +141,7 @@ export default function RevisionPropuestas() {
                   <button className={`btn-rechazar ${propuestasEstado[p.id] === 'rechazar' ? 'deshabilitado' : ''}`} type="button" disabled={propuestasEstado[p.id] === 'aprobar' || propuestasEstado[p.id] === 'rechazar'} onClick={() => accionPropuesta(p.id, 'rechazar')}><i className="fas fa-times"></i> Rechazar</button>
                 </div>
                 <div className="acciones-derecha">
-                  <button className="btn-ghost" type="button" onClick={() => accionPropuesta(p.id, 'observaciones')}><i className="fas fa-comment"></i> Observaciones</button>
+                  <button className="btn-ghost" type="button" onClick={() => { setObsModal(p.id); setObsTexto('') }}><i className="fas fa-comment"></i> Observaciones</button>
                   <Link to={`/instructor/detalle-proyecto/${p.id}`} className="btn-ghost"><i className="fas fa-eye"></i> Detalles</Link>
                 </div>
               </div>
@@ -152,6 +155,19 @@ export default function RevisionPropuestas() {
         </div>
 
       </div>
+
+      {obsModal && (
+        <div className="modal-overlay" onClick={() => setObsModal(null)}>
+          <div className="modal-contenido" onClick={(e) => e.stopPropagation()}>
+            <h3><i className="fas fa-comment"></i> Observaciones</h3>
+            <textarea className="campo-textarea" rows="5" placeholder="Escribe tus observaciones..." value={obsTexto} onChange={(e) => setObsTexto(e.target.value)} />
+            <div className="modal-acciones">
+              <button className="btn-secundario" type="button" onClick={() => setObsModal(null)}>Cancelar</button>
+              <button className="btn-primario" type="button" onClick={() => { accionPropuesta(obsModal, 'observaciones'); setObsModal(null) }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

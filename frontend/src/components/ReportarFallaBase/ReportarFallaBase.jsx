@@ -17,9 +17,14 @@ export default function ReportarFallaBase({ role, dashboardPath, dashboardTitulo
   const archivoNombre = archivo?.length > 0 ? archivo[0].name : 'No se ha seleccionado ningún archivo'
 
   const onSubmit = (data) => {
-    setEnviado(true)
-    setError(null)
-    setTimeout(() => navigate(dashboardPath), 2000)
+    try {
+      setEnviado(true)
+      setError(null)
+      // TODO: Send data to API endpoint
+      setTimeout(() => navigate(dashboardPath), 2000)
+    } catch (err) {
+      setError('Error al enviar el reporte. Intenta de nuevo.')
+    }
   }
 
   return (

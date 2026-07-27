@@ -1,4 +1,5 @@
 import { useState, Fragment } from 'react'
+import Pagination from '../../components/Pagination/Pagination'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
@@ -67,11 +68,14 @@ function agruparPorProyecto(pares) {
   })
 }
 
+const ITEMS_PER_PAGE = 5
+
 export default function SimilitudesAdmin() {
   const [expandidos, setExpandidos] = useState({})
   const [filtroNivel, setFiltroNivel] = useState('')
   const [filtroEstadoS, setFiltroEstadoS] = useState('')
   const [busquedaS, setBusquedaS] = useState('')
+  const [paginaActual, setPaginaActual] = useState(1)
   const todosProyectos = agruparPorProyecto(paresSimilitud)
   const proyectos = todosProyectos.filter(p => {
     if (filtroNivel && p.nivelGeneral.texto.toLowerCase() !== filtroNivel) return false
@@ -79,6 +83,7 @@ export default function SimilitudesAdmin() {
     if (busquedaS && !p.nombre.toLowerCase().includes(busquedaS.toLowerCase())) return false
     return true
   })
+  const proyectosPagina = proyectos.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
   const totalSimilitudes = paresSimilitud.length
 
   function toggleExpandir(nombre) {
@@ -88,10 +93,9 @@ export default function SimilitudesAdmin() {
   return (
     <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
         <div className="contenedor-gestion fade-in">
-        <PageHeader title="Similitudes" icon="search" subtitle="Listado de proyectos con similitudes detectadas" />
+        <PageHeader title="Similitudes" icon="search" subtitle="Listado de proyectos con similitudes detectadas" breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Similitudes' }]} />
 
         <FilterBar title="Filtrar Similitudes" actions={<>
-            <button className="btn-primario" type="button" onClick={() => { setBusquedaS(busquedaS) }}><i className="fas fa-search"></i> Buscar</button>
             <button className="btn-secundario" type="button" onClick={() => { setFiltroNivel(''); setFiltroEstadoS(''); setBusquedaS('') }}><i className="fas fa-eraser"></i> Limpiar</button>
           </>}>
           <div className="grupo-filtro">
@@ -137,9 +141,9 @@ export default function SimilitudesAdmin() {
                 </tr>
               </thead>
               <tbody>
-                {proyectos.map((proy, i) => (
-                  <Fragment key={i}>
-                    <tr key={i} className="fila-proyecto" onClick={() => toggleExpandir(proy.nombre)}>
+                {proyectosPagina.map((proy) => (
+                  <Fragment key={proy.nombre}>
+                    <tr className="fila-proyecto" onClick={() => toggleExpandir(proy.nombre)}>
                       <td>
                         <i className={`fas fa-chevron-${expandidos[proy.nombre] ? 'down' : 'right'}`}></i>
                       </td>
@@ -173,14 +177,7 @@ export default function SimilitudesAdmin() {
               </tbody>
             </table>
           </div>
-          <div className="contenedor-paginacion">
-            <span className="info-paginacion">Mostrando {proyectos.length} de {proyectos.length} proyectos</span>
-            <div className="paginacion">
-              <button className="btn-paginacion" type="button" disabled aria-label="Página anterior"><i className="fas fa-chevron-left"></i></button>
-              <button className="btn-paginacion activo" type="button">1</button>
-              <button className="btn-paginacion" type="button" disabled aria-label="Página siguiente"><i className="fas fa-chevron-right"></i></button>
-            </div>
-          </div>
+          <Pagination totalItems={proyectos.length} itemsPerPage={ITEMS_PER_PAGE} paginaActual={paginaActual} setPaginaActual={setPaginaActual} itemName="proyectos" showInfo={true} filteredCount={proyectos.length} />
         </DataPanel>
       </div>
     </DashboardLayout>

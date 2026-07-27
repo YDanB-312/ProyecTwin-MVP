@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/gestion-fichas.css'
+import FilterBar from '../../components/FilterBar/FilterBar'
 
 const fichas = [
   { codigo: 'ADSO-2568', nombre: 'Analisis y Desarrollo 2568', programa: 'ADSO', aprendices: 28, proyectos: 5, estado: true },
@@ -37,8 +38,8 @@ export default function GestionarFichas() {
 
           <PageHeader title="Gestión de Fichas" icon="users" breadcrumb={[ { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Gestión de Fichas' } ]} actions={<Link to="/instructor/crear-ficha" className="btn-primario"><i className="fas fa-plus"></i> Nueva Ficha</Link>} />
 
-          <div className="filtros-card">
-            <div className="filtro-grupo">
+          <FilterBar title="Filtrar Fichas">
+            <div className="grupo-filtro">
               <label htmlFor="programa-ficha" className="filtro-label">Programa</label>
               <select id="programa-ficha" className="campo-select" name="programa_ficha" value={filtroPrograma} onChange={(e) => setFiltroPrograma(e.target.value)}>
                 <option value="">Todos los programas</option>
@@ -47,7 +48,7 @@ export default function GestionarFichas() {
                 <option value="infraestructura redes">Infraestructura Redes</option>
               </select>
             </div>
-            <div className="filtro-grupo">
+            <div className="grupo-filtro">
               <label htmlFor="estado-ficha" className="filtro-label">Estado</label>
               <select id="estado-ficha" className="campo-select" name="estado_ficha" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
                 <option value="">Todos</option>
@@ -55,7 +56,7 @@ export default function GestionarFichas() {
                 <option value="inactiva">Inactivas</option>
               </select>
             </div>
-            <div className="filtro-grupo">
+            <div className="grupo-filtro">
               <label htmlFor="buscar-ficha" className="filtro-label">Buscar</label>
               <div className="input-con-icono">
                 <i className="fas fa-search"></i>
@@ -63,7 +64,7 @@ export default function GestionarFichas() {
               </div>
             </div>
             <button className="btn-limpiar" type="button" onClick={limpiarFiltros}><i className="fas fa-times"></i> Limpiar</button>
-          </div>
+          </FilterBar>
 
           <div className="tabla-container">
             <table className="tabla-premium">

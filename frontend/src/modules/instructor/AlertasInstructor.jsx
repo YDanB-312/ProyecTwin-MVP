@@ -1,5 +1,4 @@
 import AlertasBase from '../../components/AlertasBase/AlertasBase'
-import '../../assets/styles/pages/alertas-instructor.css'
 
 const filters = [
   {
