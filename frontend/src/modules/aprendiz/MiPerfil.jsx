@@ -1,4 +1,16 @@
+import { useAuth } from '../../contexts/AuthContext'
 import PerfilBase from '../../components/PerfilBase/PerfilBase'
+
+const ROLES = {
+  aprendiz: { label: 'Aprendiz', badge: 'exito' },
+  instructor: { label: 'Instructor', badge: 'advertencia' },
+  admin: { label: 'Administrador', badge: 'peligro' },
+}
+
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
 
 const breadcrumb = [
   { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
@@ -6,20 +18,24 @@ const breadcrumb = [
 ]
 
 export default function MiPerfil() {
+  const { user } = useAuth()
+  const initials = getInitials(user?.nombre)
+  const roleInfo = ROLES[user?.rol] || ROLES.aprendiz
+
   return (
     <PerfilBase
       role="aprendiz"
       dashboardTitulo="ProyecTwin - Panel del Aprendiz"
-      dashboardUsuario="Maria Gonzalez | ADSO"
-      notificaciones={5}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       breadcrumb={breadcrumb}
       avatarContent={
         <div className="cabecera-card-content">
           <div className="cabecera-izquierda">
-            <div className="perfil-avatar">MG</div>
+            <div className="perfil-avatar">{initials}</div>
             <div className="perfil-info">
-              <h2 className="perfil-nombre">Maria Gonzalez</h2>
-              <span className="perfil-rol">Aprendiz - Análisis y desarrollo de Software</span>
+              <h2 className="perfil-nombre">{user?.nombre || 'Usuario'}</h2>
+              <span className="perfil-rol">{roleInfo.label} - Análisis y desarrollo de Software</span>
               <span className="badge-activo"><i className="fas fa-circle"></i> Activo</span>
             </div>
           </div>
@@ -39,7 +55,7 @@ export default function MiPerfil() {
           </div>
         </div>
       }
-      infoDefaultValues={{ nombre: 'Maria', apellido: 'Gonzalez', correo: 'maria.gonzalez@soy.sena.edu.co', id_programa: '1' }}
+      infoDefaultValues={{ nombre: user?.nombre?.split(' ')[0] || '', apellido: user?.nombre?.split(' ').slice(1).join(' ') || '', correo: user?.correo || '', id_programa: '1' }}
       extraInfoFields={(regInfo, errInfo) => (
         <div className="campo-grupo campo-completo">
           <label htmlFor="id_programa" className="campo-label">Programa de Formación <span className="obligatorio">*</span></label>

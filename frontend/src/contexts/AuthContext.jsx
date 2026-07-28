@@ -4,6 +4,7 @@ const AuthContext = createContext(null)
 
 const USUARIOS = [
   {
+    id: 1,
     correo: 'maria.gonzalez@soy.sena.edu.co',
     password: '123456',
     nombre: 'María González',
@@ -11,6 +12,7 @@ const USUARIOS = [
     ruta: '/aprendiz/dashboard'
   },
   {
+    id: 2,
     correo: 'carlos.ruiz@sena.edu.co',
     password: '123456',
     nombre: 'Carlos Ruiz',
@@ -18,6 +20,7 @@ const USUARIOS = [
     ruta: '/instructor/dashboard'
   },
   {
+    id: 3,
     correo: 'admin@sena.edu.co',
     password: 'admin123',
     nombre: 'Administrador',
@@ -38,7 +41,7 @@ export function AuthProvider({ children }) {
     )
     if (!encontrado) return { exito: false, mensaje: 'Credenciales inválidas. Verifica tu correo y contraseña.' }
 
-    const sesion = { correo: encontrado.correo, nombre: encontrado.nombre, rol: encontrado.rol }
+    const sesion = { id: encontrado.id, correo: encontrado.correo, nombre: encontrado.nombre, rol: encontrado.rol }
     sessionStorage.setItem('auth_user', JSON.stringify(sesion))
     setUser(sesion)
     return { exito: true, ruta: encontrado.ruta }

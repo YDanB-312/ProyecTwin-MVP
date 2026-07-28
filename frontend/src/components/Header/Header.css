@@ -58,9 +58,9 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.notificaciones span {
-  background: var(--color-peligro);
-  color: white;
+.notificaciones .badge-notificacion {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.7rem;
   font-weight: 700;
   min-width: 20px;
@@ -71,6 +71,31 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+}
+
+.notificaciones .badge-notificacion.badge-activa {
+  background: var(--color-peligro);
+  color: white;
+  animation: pulse-badge 2s infinite;
+}
+
+.notificaciones.con-alerta i {
+  animation: shake-bell 0.6s ease-in-out infinite;
+  color: #fbbf24;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+@keyframes shake-bell {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  75% { transform: rotate(4deg); }
 }
 
 .btn-cerrar-sesion {
@@ -113,8 +138,52 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+.header-text-desktop {
+  display: inline;
+}
+
 @media (max-width: 768px) {
+  .contenedor-header {
+    padding: 0 16px;
+  }
   .btn-hamburguesa {
     display: flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+  .titulo-header {
+    font-size: var(--text-base);
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .logo-sena-header {
+    height: 24px;
+    margin-right: 8px;
+  }
+  .grupo-derecho {
+    gap: 6px;
+  }
+  .header-text-desktop {
+    display: none;
+  }
+  .notificaciones {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .usuario {
+    padding: 6px 10px;
+    min-height: 44px;
+  }
+  .btn-cerrar-sesion {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
   }
 }

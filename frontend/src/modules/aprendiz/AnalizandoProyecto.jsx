@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import '../../assets/styles/pages/ia.css'
 
 export default function AnalizandoProyecto() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const projectData = useRef(location.state)
@@ -17,7 +19,7 @@ export default function AnalizandoProyecto() {
   }, [navigate])
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-ia fade-in">
         <div className="card-analisis">
           <div className="ia-spinner">

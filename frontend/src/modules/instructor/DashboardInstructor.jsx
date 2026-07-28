@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import '../../assets/styles/pages/dashboard-instructor.css'
 
 export default function DashboardInstructor() {
+  const { user } = useAuth()
   const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">
@@ -88,7 +90,7 @@ export default function DashboardInstructor() {
                 <h3>Alta Similitud Detectada</h3>
                 <span className="notificacion-meta">Proyecto "Sistema de Gestion Academica" tiene <strong>65% de similitud</strong> &middot; <i className="fas fa-clock"></i> Hace 2 horas</span>
               </div>
-              <Link to={{ pathname: '/instructor/detalle-similitud', state: { proyecto: 'Sistema de Gestion Academica', desde: 'dashboard' } }} className="btn-revisar"><i className="fas fa-search"></i> Revisar</Link>
+              <Link to={{ pathname: '/instructor/detalle-similitud/sim-1', state: { proyecto: 'Sistema de Gestion Academica', desde: 'dashboard' } }} className="btn-revisar"><i className="fas fa-search"></i> Revisar</Link>
             </div>
 
           </div>

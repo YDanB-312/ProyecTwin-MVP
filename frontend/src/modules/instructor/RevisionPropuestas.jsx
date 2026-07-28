@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/revision-propuestas.css'
 import Pagination from '../../components/Pagination/Pagination'
@@ -20,6 +21,7 @@ const propuestasData = [
 ]
 
 export default function RevisionPropuestas() {
+  const { user } = useAuth()
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroFecha, setFiltroFecha] = useState('')
   const [filtroPrograma, setFiltroPrograma] = useState('')
@@ -28,11 +30,17 @@ export default function RevisionPropuestas() {
   const [propuestasEstado, setPropuestasEstado] = useState({})
   const [obsModal, setObsModal] = useState(null)
   const [obsTexto, setObsTexto] = useState('')
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   const propuestasFiltradas = propuestasData.filter(p => {
     const estadoActual = propuestasEstado[p.id] || p.estado
     if (filtroEstado && estadoActual !== filtroEstado) return false
     if (filtroPrograma && p.programa.toLowerCase() !== filtroPrograma) return false
+    if (filtroFecha && p.fecha !== filtroFecha) return false
     return true
   })
 
@@ -44,11 +52,12 @@ export default function RevisionPropuestas() {
     setPropuestasEstado(prev => ({ ...prev, [id]: accion }))
     const textos = { aprobar: 'Propuesta aprobada exitosamente', rechazar: 'Propuesta rechazada', observaciones: 'Observaciones registradas' }
     setMensaje({ tipo: 'exito', texto: textos[accion] })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="revision-propuestas-container fade-in">
         <div className="contenedor-revision">
 
@@ -122,7 +131,7 @@ export default function RevisionPropuestas() {
                   <span><i className="fas fa-calendar"></i> {p.fecha}</span>
                 </div>
                 <div className="propuesta-chips">
-                  {p.techs.map((t, i) => <span key={i} className="tech-chip">{t}</span>)}
+                  {p.techs.map((t) => <span key={t} className="tech-chip">{t}</span>)}
                 </div>
               </div>
 

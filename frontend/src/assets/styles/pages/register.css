@@ -222,7 +222,7 @@
 /* ========================================
    RESPONSIVE
    ======================================== */
-@media (max-width: 650px) {
+@media (max-width: 768px) {
     .modulo-invitado .contenedor-register {
         padding: 35px 10px 10px;
     }

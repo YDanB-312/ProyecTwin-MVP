@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import '../../assets/styles/pages/dashboard-admin.css'
 
 export default function DashboardAdmin() {
+  const { user } = useAuth()
   const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import DashboardLayout from '../DashboardLayout/DashboardLayout'
@@ -11,7 +11,12 @@ export default function ReportarFallaBase({ role, dashboardPath, dashboardTitulo
   const { register, handleSubmit, watch } = useForm()
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
+  const navTimerRef = useRef(null)
   const archivoRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
+  }, [])
   const descTexto = watch("descripcion", "")
   const archivo = watch("url_evidencia")
   const archivoNombre = archivo?.length > 0 ? archivo[0].name : 'No se ha seleccionado ningún archivo'
@@ -21,7 +26,7 @@ export default function ReportarFallaBase({ role, dashboardPath, dashboardTitulo
       setEnviado(true)
       setError(null)
       // TODO: Send data to API endpoint
-      setTimeout(() => navigate(dashboardPath), 2000)
+      navTimerRef.current = setTimeout(() => navigate(dashboardPath), 2000)
     } catch (err) {
       setError('Error al enviar el reporte. Intenta de nuevo.')
     }

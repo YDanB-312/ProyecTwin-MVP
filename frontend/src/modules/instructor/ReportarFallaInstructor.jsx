@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext'
 import ReportarFallaBase from '../../components/ReportarFallaBase/ReportarFallaBase'
 
 const tipoOptions = [
@@ -14,13 +15,14 @@ const reportesAnteriores = [
 ]
 
 export default function ReportarFallaInstructor() {
+  const { user } = useAuth()
   return (
     <ReportarFallaBase
       role="instructor"
       dashboardPath="/instructor/dashboard"
       dashboardTitulo="ProyecTwin - Panel del Instructor"
-      dashboardUsuario="Carlos Ruiz | Instr. ADSO"
-      notificaciones={8}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       tipoOptions={tipoOptions}
       reportesAnteriores={reportesAnteriores}
       cancelPath="/instructor/dashboard"

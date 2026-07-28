@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
@@ -26,18 +27,28 @@ const etiquetaReporte = {
 }
 
 export default function DetalleReporte() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
   const reporteData = location.state?.reporte
 
+  const [estado, setEstado] = useState(reporteData?.estado || 'pendiente')
+  const [mensaje, setMensaje] = useState(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
   if (!reporteData) {
     return (
-      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-gestion fade-in">
           <PageHeader title="Reporte no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/reportes-fallas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
           <div className="estado-vacio-moderno">
             <div className="estado-vacio-icono"><i className="fas fa-bug"></i></div>
             <h3 className="estado-vacio-titulo">Reporte no encontrado</h3>
-            <p className="estado-vacio-descripcion">No se encontró información del reporte de falla.</p>
+            <p className="estado-vacio-descripcion">No se encontró información del reporte de falla{ id ? ` (ID: ${id})` : '' }.</p>
             <Link to="/admin/reportes-fallas" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Reportes</Link>
           </div>
         </div>
@@ -45,19 +56,17 @@ export default function DetalleReporte() {
     )
   }
 
-  const [estado, setEstado] = useState(reporteData.estado)
-  const [mensaje, setMensaje] = useState(null)
-
   const cambiarEstado = (nuevoEstado) => {
     if (!window.confirm('¿Estás seguro de cambiar el estado del reporte?')) return
     setEstado(nuevoEstado)
     const textos = { en_revision: 'Marcado en revisión', resuelto: 'Marcado como resuelto', rechazado: 'Rechazado' }
     setMensaje({ tipo: 'exito', texto: textos[nuevoEstado] || 'Estado actualizado' })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle del Reporte de Falla"

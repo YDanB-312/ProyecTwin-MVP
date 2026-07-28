@@ -1,5 +1,17 @@
+import { useAuth } from '../../contexts/AuthContext'
 import PerfilBase from '../../components/PerfilBase/PerfilBase'
 import '../../assets/styles/pages/mi-perfil.css'
+
+const ROLES = {
+  aprendiz: { label: 'Aprendiz', badge: 'exito' },
+  instructor: { label: 'Instructor', badge: 'advertencia' },
+  admin: { label: 'Administrador', badge: 'peligro' },
+}
+
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
 
 const breadcrumb = [
   { to: '/instructor/dashboard', icon: 'home', label: 'Inicio' },
@@ -7,23 +19,27 @@ const breadcrumb = [
 ]
 
 export default function PerfilInstructor() {
+  const { user } = useAuth()
+  const initials = getInitials(user?.nombre)
+  const roleInfo = ROLES[user?.rol] || ROLES.instructor
+
   return (
     <PerfilBase
       role="instructor"
       dashboardTitulo="ProyecTwin - Panel del Instructor"
-      dashboardUsuario="Carlos Ruiz | Instr. ADSO"
-      notificaciones={8}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       breadcrumb={breadcrumb}
       avatarContent={
         <div className="cabecera-card-content">
           <div className="cabecera-izquierda">
             <div className="perfil-avatar">
-              <i className="fas fa-user-tie"></i>
+              {initials}
               <div className="cambiar-avatar"><i className="fas fa-camera"></i></div>
             </div>
             <div className="perfil-info">
-              <h2 className="perfil-nombre">Carlos Ruiz</h2>
-              <span className="perfil-rol">Instructor - Análisis y desarrollo de Software</span>
+              <h2 className="perfil-nombre">{user?.nombre || 'Usuario'}</h2>
+              <span className="perfil-rol">{roleInfo.label} - Análisis y desarrollo de Software</span>
               <span className="badge-activo"><i className="fas fa-circle"></i> Activo</span>
             </div>
           </div>
@@ -48,7 +64,7 @@ export default function PerfilInstructor() {
           </div>
         </div>
       }
-      infoDefaultValues={{ nombre: 'Carlos', apellido: 'Ruiz', correo: 'carlos.ruiz@sena.edu.co' }}
+      infoDefaultValues={{ nombre: user?.nombre?.split(' ')[0] || '', apellido: user?.nombre?.split(' ').slice(1).join(' ') || '', correo: user?.correo || '' }}
       extraInfoFields={null}
       securityBannerContent={() => (
         <>
@@ -64,7 +80,7 @@ export default function PerfilInstructor() {
       prefsDefaultValues={{
         notif_nuevos_proyectos: true, notif_revisiones_pendientes: true,
         notif_similitud: false, notif_noticias_sistema: true,
-        plantilla_comentarios: 'Estimado aprendiz,\n\nHe revisado tu proyecto y tengo los siguientes comentarios:\n\nAspectos positivos:\n-\n\nAspectos a mejorar:\n-\n\nRecomendaciones:\n-\n\nQuedo atento a cualquier inquietud.\n\nSaludos cordiales,\nCarlos Ruiz\nInstructor SENA'
+        plantilla_comentarios: 'Estimado aprendiz,\n\nHe revisado tu proyecto y tengo los siguientes comentarios:\n\nAspectos positivos:\n-\n\nAspectos a mejorar:\n-\n\nRecomendaciones:\n-\n\nQuedo atento a cualquier inquietud.\n\nSaludos cordiales,\n' + (user?.nombre || 'Instructor') + '\nInstructor SENA'
       }}
       prefsContent={(regPref) => (
         <>

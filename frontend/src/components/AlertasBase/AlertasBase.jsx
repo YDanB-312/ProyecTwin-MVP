@@ -65,8 +65,8 @@ export default function AlertasBase({
         />
 
         <div className="filtros-card">
-          {filters.map((f, i) => (
-            <div className="grupo-filtro" key={i}>
+          {filters.map((f) => (
+            <div className="grupo-filtro" key={f.id}>
               <label htmlFor={f.id}>{f.label}</label>
               <select id={f.id} className="campo-select" name={f.name} value={filtroVals[f.name] || ''} onChange={(e) => setFiltro(f.name, e.target.value)}>
                 {f.options.map((o, j) => (

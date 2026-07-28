@@ -6,7 +6,7 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
       {breadcrumb && (
         <div className="breadcrumb-moderno">
           {breadcrumb.map((item, i) => (
-            <span key={i} className="breadcrumb-item">
+            <span key={item.label} className="breadcrumb-item">
               {i > 0 && <span className="breadcrumb-sep"><i className="fas fa-chevron-right"></i></span>}
               {item.to ? (
                 <Link to={item.to}>{item.icon && <i className={`fas fa-${item.icon}`}></i>} {item.label}</Link>

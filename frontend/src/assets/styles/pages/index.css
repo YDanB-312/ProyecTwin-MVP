@@ -379,3 +379,84 @@
     font-size: 0.9rem;
     line-height: 1.5;
 }
+
+/* ========================================
+   RESPONSIVE - Landing Page
+   ======================================== */
+@media (max-width: 768px) {
+    .modulo-invitado .home-container {
+        padding: 24px 16px;
+    }
+
+    .modulo-invitado .hero-section {
+        padding: 24px 16px;
+        margin-bottom: 40px;
+    }
+
+    .modulo-invitado .hero-titulo {
+        font-size: 1.7rem;
+    }
+
+    .modulo-invitado .hero-descripcion {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .modulo-invitado .hero-botones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modulo-invitado .hero-botones .btn-primario,
+    .modulo-invitado .hero-botones .btn-secundario {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modulo-invitado .tarjetas-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .modulo-invitado .tarjeta {
+        padding: 20px;
+    }
+
+    .modulo-invitado .usuarios-titulo,
+    .modulo-invitado .como-funciona-titulo {
+        font-size: 1.4rem;
+    }
+
+    .modulo-invitado .usuarios-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .modulo-invitado .tarjeta-usuario {
+        padding: 20px;
+    }
+
+    .modulo-invitado .pasos-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .modulo-invitado .cta-section {
+        padding: 24px 16px;
+    }
+
+    .modulo-invitado .cta-titulo {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modulo-invitado .hero-titulo {
+        font-size: 1.4rem;
+    }
+
+    .modulo-invitado .hero-decoration {
+        display: none;
+    }
+}

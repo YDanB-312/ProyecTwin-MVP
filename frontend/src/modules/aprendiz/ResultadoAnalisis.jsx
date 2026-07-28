@@ -1,14 +1,16 @@
 import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import '../../assets/styles/pages/ia.css';
 
 export default function ResultadoAnalisis() {
+  const { user } = useAuth()
   const location = useLocation()
   const projectData = location.state || {}
   const proyectoNombre = projectData.titulo || 'Sistema de Gestion Academica'
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-ia fade-in">
         <div className="encabezado-pagina">
           <h1 className="titulo-pagina"><i className="fas fa-robot"></i> Resultado del Análisis</h1>
@@ -74,14 +76,14 @@ export default function ResultadoAnalisis() {
                   <td>Ana Martínez</td>
                     <td><span className="badge badge-advertencia">65%</span></td>
                   <td>Resumen</td>
-                  <td><Link to={{ pathname: '/aprendiz/detalle-similitud', state: { proyecto: 'Plataforma Educativa SENA', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>
+                  <td><Link to={{ pathname: '/aprendiz/detalle-similitud/sim-1', state: { proyecto: 'Plataforma Educativa SENA', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>
                 </tr>
                 <tr>
                   <td>Sistema de Notas Web</td>
                   <td>Juan Pérez</td>
                   <td><span className="badge badge-exito">8%</span></td>
                   <td>Tecnologias</td>
-                  <td><Link to={{ pathname: '/aprendiz/detalle-similitud', state: { proyecto: 'Sistema de Notas Web', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>
+                  <td><Link to={{ pathname: '/aprendiz/detalle-similitud/sim-2', state: { proyecto: 'Sistema de Notas Web', desde: 'resultado-analisis' } }} className="btn-ver"><i className="fas fa-eye"></i> Ver</Link></td>
                 </tr>
               </tbody>
             </table>

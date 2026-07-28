@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
@@ -18,18 +19,28 @@ const breadcrumb = [
 ]
 
 export default function DetalleProyectoAdmin() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
   const proyecto = location.state?.proyecto
 
+  const [estado, setEstado] = useState(proyecto?.estado || 'aprobado')
+  const [mensaje, setMensaje] = useState(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
   if (!proyecto) {
     return (
-      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-gestion fade-in">
           <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/proyectos" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
           <div className="estado-vacio-moderno">
             <div className="estado-vacio-icono"><i className="fas fa-folder-open"></i></div>
             <h3 className="estado-vacio-titulo">Proyecto no encontrado</h3>
-            <p className="estado-vacio-descripcion">No se encontró información del proyecto. Volvé a la lista de proyectos.</p>
+            <p className="estado-vacio-descripcion">No se encontró información del proyecto{ id ? ` (ID: ${id})` : '' }. Volvé a la lista de proyectos.</p>
             <Link to="/admin/proyectos" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Proyectos</Link>
           </div>
         </div>
@@ -37,25 +48,25 @@ export default function DetalleProyectoAdmin() {
     )
   }
 
-  const [estado, setEstado] = useState(proyecto.estado || 'aprobado')
-  const [mensaje, setMensaje] = useState(null)
-
   const cambiarEstado = (nuevoEstado) => {
     if (!window.confirm('¿Estás seguro de cambiar el estado del proyecto?')) return
     setEstado(nuevoEstado)
     const textos = { aprobado: 'Proyecto aprobado', rechazado: 'Proyecto rechazado', requiere_ajustes: 'Requiere ajustes' }
     setMensaje({ tipo: 'exito', texto: textos[nuevoEstado] || 'Estado actualizado' })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   const badgeEstado = {
+    borrador: { clase: 'badge-neutral', texto: 'Borrador' },
+    pendiente: { clase: 'badge-advertencia', texto: 'Pendiente' },
     aprobado: { clase: 'badge-exito', texto: 'Aprobado' },
     en_revision: { clase: 'badge-advertencia', texto: 'En Revisión' },
     rechazado: { clase: 'badge-peligro', texto: 'Rechazado' },
     requiere_ajustes: { clase: 'badge-advertencia', texto: 'Requiere Ajustes' },
   }
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle del Proyecto"
@@ -99,8 +110,8 @@ export default function DetalleProyectoAdmin() {
 
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
-            {miembros.map((m, i) => (
-              <div key={i} className="flex-row team-row">
+            {miembros.map((m) => (
+              <div key={m.nombre} className="flex-row team-row">
                 <div>
                   <strong>{m.nombre}</strong>
                   <br /><span className="texto-claro">{m.rol}</span>

@@ -1,14 +1,23 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import DashboardLayout from '../DashboardLayout/DashboardLayout'
 import PageHeader from '../PageHeader/PageHeader'
 import '../../assets/styles/pages/mi-perfil.css'
 import FormField from '../FormField/FormField'
 
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
+function getStoredPhoto(role) {
+  try { return localStorage.getItem(`profile_photo_${role}`) || null } catch { return null }
+}
+
 export default function PerfilBase({
   role, dashboardTitulo, dashboardUsuario, notificaciones,
   breadcrumb,
-  avatarContent,
+  userName,
   infoDefaultValues, extraInfoFields,
   securityBannerContent,
   prefsDefaultValues, prefsSectionTitle, prefsContent,
@@ -16,9 +25,42 @@ export default function PerfilBase({
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
   const [showBanner, setShowBanner] = useState(true)
+  const [photo, setPhoto] = useState(() => getStoredPhoto(role))
+  const fileInputRef = useRef(null)
   const { register: regInfo, handleSubmit: submitInfo, formState: { errors: errInfo }, reset: resetInfo } = useForm({ defaultValues: infoDefaultValues })
   const { register: regSeg, handleSubmit: submitSeg, formState: { errors: errSeg }, reset: resetSeg, watch: watchSeg } = useForm()
   const { register: regPref, handleSubmit: submitPref, formState: { errors: errPref }, reset: resetPref } = useForm({ defaultValues: prefsDefaultValues })
+
+  useEffect(() => {
+    setPhoto(getStoredPhoto(role))
+  }, [role])
+
+  const handlePhotoClick = () => fileInputRef.current?.click()
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setError('La imagen no puede superar 2 MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const base64 = ev.target.result
+      setPhoto(base64)
+      try { localStorage.setItem(`profile_photo_${role}`, base64) } catch { /* quota */ }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const removePhoto = (e) => {
+    e.stopPropagation()
+    setPhoto(null)
+    try { localStorage.removeItem(`profile_photo_${role}`) } catch { /* ignore */ }
+  }
+
+  const initials = getInitials(userName || dashboardUsuario)
 
   return (
     <DashboardLayout role={role} titulo={dashboardTitulo} usuario={dashboardUsuario} notificaciones={notificaciones}>
@@ -26,7 +68,38 @@ export default function PerfilBase({
         <PageHeader title="Mi Perfil" icon="user-cog" breadcrumb={breadcrumb} />
 
         <div className="perfil-card cabecera-card">
-          {avatarContent}
+          <div className="cabecera-card-content">
+            <div className="cabecera-izquierda">
+              <div className="perfil-avatar perfil-avatar-editable" onClick={handlePhotoClick} title="Cambiar foto de perfil" role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handlePhotoClick()}>
+                {photo ? (
+                  <img src={photo} alt="Foto de perfil" className="perfil-foto" />
+                ) : (
+                  <span>{initials}</span>
+                )}
+                <div className="cambiar-avatar">
+                  <i className="fas fa-camera"></i>
+                </div>
+                {photo && (
+                  <button className="eliminar-foto" onClick={removePhoto} title="Eliminar foto" type="button" aria-label="Eliminar foto de perfil">
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="oculto"
+                aria-label="Subir foto de perfil"
+              />
+              <div className="perfil-info">
+                <h2 className="perfil-nombre">{userName || dashboardUsuario || 'Usuario'}</h2>
+                <span className="perfil-rol">{role === 'admin' ? 'Administrador' : role === 'instructor' ? 'Instructor' : 'Aprendiz'}</span>
+                <span className="badge-activo"><i className="fas fa-circle"></i> Activo</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="perfil-card">
@@ -36,7 +109,7 @@ export default function PerfilBase({
             <i className="fas fa-check-circle"></i><span>Perfil actualizado correctamente.</span>
           </div>
           <div className={`mensaje-feedback mensaje-error ${error ? '' : 'oculto'}`}>
-            <i className="fas fa-exclamation-circle"></i><span>No se pudo actualizar el perfil. Intenta de nuevo.</span>
+            <i className="fas fa-exclamation-circle"></i><span>{error || 'No se pudo actualizar el perfil. Intenta de nuevo.'}</span>
           </div>
 
           <p className="campos-obligatorios">Los campos marcados con <span className="obligatorio">*</span> son obligatorios.</p>
@@ -45,7 +118,7 @@ export default function PerfilBase({
             try {
               setError(null)
               setEnviado(true)
-              // TODO: Send data to API endpoint
+              setTimeout(() => setEnviado(false), 3000)
               resetInfo()
             } catch (err) {
               setError('Error al actualizar el perfil.')

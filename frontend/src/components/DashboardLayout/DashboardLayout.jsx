@@ -30,10 +30,11 @@ export default function DashboardLayout({ role, titulo, usuario, notificaciones,
   return (
     <div className={`${modClass} modulo-pagina-completa${className ? ` ${className}` : ''}`}>
       <GovernmentBar />
-      <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
+      <Header titulo={titulo} usuario={usuario} notificaciones={notificaciones} role={role} onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
       <Suspense fallback={null}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </Suspense>
+      <div className={`sidebar-overlay${sidebarOpen ? ' visible' : ''}`} onClick={() => setSidebarOpen(false)} />
       <main className="contenido-principal">
         {children}
       </main>

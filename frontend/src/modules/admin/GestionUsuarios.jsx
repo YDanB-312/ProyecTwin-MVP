@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import FilterBar from '../../components/FilterBar/FilterBar'
@@ -19,6 +20,7 @@ const usuarios = [
 const ITEMS_PER_PAGE = 4
 
 export default function GestionUsuarios() {
+  const { user } = useAuth()
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -42,7 +44,7 @@ export default function GestionUsuarios() {
   const usuariosPagina = usuariosFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Gestión de Usuarios"
@@ -109,9 +111,9 @@ export default function GestionUsuarios() {
                     <td><span className={`badge badge-${u.estado ? 'exito' : 'neutral'}`}><i className="fas fa-circle"></i> {u.estado ? 'Activo' : 'Inactivo'}</span></td>
                     <td>
                       <div className="acciones-tabla">
-                        <Link to="/admin/detalle-usuario" state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Editar" aria-label="Editar usuario"><i className="fas fa-edit"></i></Link>
+                        <Link to={`/admin/detalle-usuario/${u.id}`} state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Editar" aria-label="Editar usuario"><i className="fas fa-edit"></i></Link>
                         <button className="btn-accion-tabla btn-ver" title={u.estado ? 'Desactivar' : 'Activar'} aria-label={u.estado ? 'Desactivar usuario' : 'Activar usuario'} type="button" onClick={() => toggleEstado(usuariosLocal.findIndex(x => x.nombre === u.nombre))}><i className={`fas fa-${u.estado ? 'ban' : 'check-circle'}`}></i></button>
-                        <Link to="/admin/detalle-usuario" state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle de usuario"><i className="fas fa-eye"></i></Link>
+                        <Link to={`/admin/detalle-usuario/${u.id}`} state={{ usuario: u }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle de usuario"><i className="fas fa-eye"></i></Link>
                       </div>
                     </td>
                   </tr>

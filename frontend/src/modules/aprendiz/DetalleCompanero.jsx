@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, useParams, Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/mi-perfil.css'
 
 export default function DetalleCompanero() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
-  const { nombre, iniciales, estado, foto } = location.state || {}
+  const { nombre, iniciales, estado, foto } = location.state || (id ? { nombre: id } : {})
   const [verFoto, setVerFoto] = useState(false)
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function DetalleCompanero() {
 
   if (!nombre) {
     return (
-      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-pagina fade-in">
           <PageHeader
             title="Perfil del Compañero"
@@ -37,7 +40,7 @@ export default function DetalleCompanero() {
           />
           <div className="perfil-card">
             <p>No se encontró información del compañero.</p>
-            <Link to="/aprendiz/detalle-ficha" className="btn-primario">Volver a Mi Ficha</Link>
+            <Link to="/aprendiz/detalle-ficha/ADSO-2568" className="btn-primario">Volver a Mi Ficha</Link>
           </div>
         </div>
       </DashboardLayout>
@@ -45,7 +48,7 @@ export default function DetalleCompanero() {
   }
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
         <PageHeader
           title="Perfil del Compañero"
@@ -92,7 +95,7 @@ export default function DetalleCompanero() {
           </div>
         </div>
 
-        <Link to="/aprendiz/detalle-ficha" className="btn-primario btn-volver-ficha">
+        <Link to="/aprendiz/detalle-ficha/ADSO-2568" className="btn-primario btn-volver-ficha">
           <i className="fas fa-arrow-left"></i> Volver a Mi Ficha
         </Link>
 

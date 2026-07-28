@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
@@ -24,12 +25,22 @@ const similitudesProyecto = [
 ]
 
 export default function DetalleSimilitudAdmin() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
-  const proyectoActual = location.state?.proyecto
+  const proyectoActual = location.state?.proyecto || id
+
+  const [actual, setActual] = useState(0)
+  const [mensaje, setMensaje] = useState(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   if (!proyectoActual) {
     return (
-      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-gestion fade-in">
           <PageHeader title="Similitud no encontrada" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/similitudes" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
           <div className="estado-vacio-moderno">
@@ -43,17 +54,16 @@ export default function DetalleSimilitudAdmin() {
     )
   }
 
-  const [actual, setActual] = useState(0)
   const sim = similitudesProyecto[actual] || similitudesProyecto[0]
-  const [mensaje, setMensaje] = useState(null)
 
   const marcarRevisada = () => {
     setMensaje({ tipo: 'exito', texto: 'Similitud marcada como revisada' })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle de Similitud"
@@ -68,8 +78,8 @@ export default function DetalleSimilitudAdmin() {
               <strong className="proyecto-nombre">{proyectoActual}</strong> tiene <strong>{similitudesProyecto.length} similitudes</strong> detectadas.
               Mostrando: con
               <select className="select-nav-similitud" value={actual} onChange={(e) => setActual(Number(e.target.value))}>
-                {similitudesProyecto.map((s, i) => (
-                  <option key={i} value={i}>{s.proyecto}</option>
+                {similitudesProyecto.map((s) => (
+                  <option key={s.proyecto} value={similitudesProyecto.indexOf(s)}>{s.proyecto}</option>
                 ))}
               </select>
               ({actual + 1} de {similitudesProyecto.length})
@@ -108,8 +118,8 @@ export default function DetalleSimilitudAdmin() {
           <div className="similitud-coincidencias">
             <h4><i className="fas fa-align-left"></i> Secciones Coincidentes</h4>
             <ul className="coincidencias-grid">
-              {coincidencias.map((c, i) => (
-                <li key={i} className="coincidencia-item">
+              {coincidencias.map((c) => (
+                <li key={c.seccion} className="coincidencia-item">
                   {c.seccion}: <strong>{c.pct}% de similitud</strong>
                 </li>
               ))}

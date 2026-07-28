@@ -1,18 +1,22 @@
 import { Link, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
+import { obtenerFichaAprendiz } from '../../constants/fichas'
 import '../../assets/styles/pages/dashboard-aprendiz.css'
 
 export default function DashboardAprendiz() {
+  const { user } = useAuth()
   const hoy = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
   const navigate = useNavigate()
+  const ficha = obtenerFichaAprendiz()
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-dashboard fade-in">
 
         <div className="dashboard-header">
           <div className="dashboard-header-left">
-            <h1 className="dashboard-titulo">Bienvenido, Maria</h1>
+            <h1 className="dashboard-titulo">Bienvenido, {user?.nombre?.split(' ')[0] || 'Usuario'}</h1>
             <p className="dashboard-subtitulo">Gestiona tus proyectos de formación y evita similitudes con otras propuestas.</p>
           </div>
           <span className="dashboard-fecha">{hoy}</span>
@@ -20,7 +24,7 @@ export default function DashboardAprendiz() {
 
         <div className="tarjeta-bienvenida-moderna">
           <div className="bienvenida-contenido">
-            <span className="saludo-personal">Hola, Maria</span>
+            <span className="saludo-personal">Hola, {user?.nombre?.split(' ')[0] || 'Usuario'}</span>
             <h1>Bienvenida al Sistema ProyecTwin!</h1>
             <p>Gestiona tus proyectos de formación y evita similitudes con otras propuestas.</p>
           </div>
@@ -28,6 +32,28 @@ export default function DashboardAprendiz() {
             <i className="fas fa-rocket"></i>
           </div>
         </div>
+
+        {!ficha && (
+          <section className="dashboard-section">
+            <div className="empty-state-card" style={{ borderLeft: '4px solid var(--color-advertencia)' }}>
+              <i className="fas fa-users empty-icono" style={{ color: 'var(--color-advertencia)' }}></i>
+              <h3>No perteneces a ninguna ficha</h3>
+              <p>Únete a una ficha para empezar a colaborar con tu grupo de formación.</p>
+              <button type="button" className="btn-primario" onClick={() => navigate('/aprendiz/unirse-ficha')}>+ Unirse a una ficha</button>
+            </div>
+          </section>
+        )}
+
+        {ficha && (
+          <section className="dashboard-section">
+            <div className="empty-state-card" style={{ borderLeft: '4px solid var(--color-exito)' }}>
+              <i className="fas fa-users empty-icono" style={{ color: 'var(--color-exito)' }}></i>
+              <h3>Ficha: {ficha.codigo}</h3>
+              <p>{ficha.nombre} — Programa {ficha.programa}</p>
+              <Link to="/aprendiz/detalle-ficha/ADSO-2568" className="btn-secundario"><i className="fas fa-eye"></i> Ver mi ficha</Link>
+            </div>
+          </section>
+        )}
 
         <section className="dashboard-section">
           <h2 className="titulo-seccion-dashboard">Acciones rápidas</h2>

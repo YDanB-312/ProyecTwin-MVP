@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/reportar-falla.css'
 import '../../assets/styles/pages/nuevo-proyecto.css'
 import FormField from '../../components/FormField/FormField'
 
 export default function NuevoProyecto() {
+  const { user } = useAuth()
   const [enviado, setEnviado] = useState(false)
   const [borradorGuardado, setBorradorGuardado] = useState(false)
   const [error, setError] = useState(null)
@@ -15,7 +17,7 @@ export default function NuevoProyecto() {
   const location = useLocation()
   const editProyecto = location.state?.editProyecto
 
-  const { register, handleSubmit, watch, trigger, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
     defaultValues: editProyecto ? { titulo: editProyecto.titulo, tipo_proyecto: 'aplicacion', integrantes: ['1'] } : { tipo_proyecto: 'aplicacion', integrantes: ['1'] }
   })
 
@@ -75,7 +77,7 @@ export default function NuevoProyecto() {
     }
   }
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-formulario fade-in">
 
         <PageHeader
