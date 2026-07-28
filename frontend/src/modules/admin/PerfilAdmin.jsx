@@ -1,4 +1,16 @@
+import { useAuth } from '../../contexts/AuthContext'
 import PerfilBase from '../../components/PerfilBase/PerfilBase'
+
+const ROLES = {
+  aprendiz: { label: 'Aprendiz', badge: 'exito' },
+  instructor: { label: 'Instructor', badge: 'advertencia' },
+  admin: { label: 'Administrador', badge: 'peligro' },
+}
+
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
 
 const breadcrumb = [
   { to: '/admin/dashboard', icon: 'home', label: 'Inicio' },
@@ -6,20 +18,24 @@ const breadcrumb = [
 ]
 
 export default function PerfilAdmin() {
+  const { user } = useAuth()
+  const initials = getInitials(user?.nombre)
+  const roleInfo = ROLES[user?.rol] || ROLES.admin
+
   return (
     <PerfilBase
       role="admin"
       dashboardTitulo="ProyecTwin - Panel de Administración"
-      dashboardUsuario="Admin Sistema"
-      notificaciones={2}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       breadcrumb={breadcrumb}
       avatarContent={
         <div className="cabecera-card-content">
           <div className="cabecera-izquierda">
-            <div className="perfil-avatar">AS</div>
+            <div className="perfil-avatar">{initials}</div>
             <div className="perfil-info">
-              <h2 className="perfil-nombre">Admin Sistema</h2>
-              <span className="perfil-rol">Administrador del Sistema</span>
+              <h2 className="perfil-nombre">{user?.nombre || 'Usuario'}</h2>
+              <span className="perfil-rol">{roleInfo.label} del Sistema</span>
               <span className="badge-activo"><i className="fas fa-circle"></i> Activo</span>
             </div>
           </div>
@@ -44,7 +60,7 @@ export default function PerfilAdmin() {
           </div>
         </div>
       }
-      infoDefaultValues={{ nombre: 'Admin', apellido: 'Sistema', correo: 'admin@proyectwin.sena.edu.co' }}
+      infoDefaultValues={{ nombre: user?.nombre?.split(' ')[0] || '', apellido: user?.nombre?.split(' ').slice(1).join(' ') || '', correo: user?.correo || '' }}
       extraInfoFields={null}
       securityBannerContent={() => (
         <>

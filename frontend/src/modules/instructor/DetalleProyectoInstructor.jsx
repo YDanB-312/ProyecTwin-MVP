@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
@@ -8,16 +9,22 @@ import '../../assets/styles/pages/mis-proyectos.css'
 import { propuestas, observacionesData } from '../../data/propuestasMock'
 
 export default function DetalleProyectoInstructor() {
+  const { user } = useAuth()
   const { id } = useParams()
   const location = useLocation()
   const [observacion, setObservacion] = useState('')
   const [listaObservaciones, setListaObservaciones] = useState(observacionesData)
   const [mensaje, setMensaje] = useState(null)
+  const timerRef = useRef(null)
   const propuesta = propuestas.find(p => p.id === Number(id))
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   if (!propuesta) {
     return (
-      <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+      <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-revision fade-in">
           <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={[{ to: '/instructor/dashboard', icon: 'home', label: 'Inicio' }, { label: 'No encontrado' }]} actions={<Link to="/instructor/revision-propuestas" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
           <div className="estado-vacio-moderno">
@@ -32,7 +39,9 @@ export default function DetalleProyectoInstructor() {
   }
 
   const estadoBadge = {
+    borrador: { clase: 'badge-neutral', texto: 'Borrador' },
     pendiente: { clase: 'badge-pendiente', texto: 'Pendiente' },
+    en_revision: { clase: 'badge-advertencia', texto: 'En Revisión' },
     aprobado: { clase: 'badge-exito', texto: 'Aprobado' },
     rechazado: { clase: 'badge-peligro', texto: 'Rechazado' },
     requiere_ajustes: { clase: 'badge-advertencia', texto: 'Requiere Ajustes' },
@@ -47,14 +56,16 @@ export default function DetalleProyectoInstructor() {
     setListaObservaciones(prev => [nueva, ...prev])
     setObservacion('')
     setMensaje({ tipo: 'exito', texto: 'Observación guardada exitosamente' })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   const eliminarObservacion = (index) => {
     if (!window.confirm('¿Estás seguro de eliminar esta observación?')) return
     setListaObservaciones(prev => prev.filter((_, i) => i !== index))
     setMensaje({ tipo: 'exito', texto: 'Observación eliminada' })
-    setTimeout(() => setMensaje(null), 3000)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setMensaje(null), 3000)
   }
 
   const desde = location.state?.desde
@@ -73,7 +84,7 @@ export default function DetalleProyectoInstructor() {
   breadcrumb.push({ label: propuesta.titulo })
 
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-revision fade-in">
         <PageHeader
           title={propuesta.titulo}
@@ -131,8 +142,8 @@ export default function DetalleProyectoInstructor() {
             <div className="detalle-grid-full">
               <div className="detalle-label">Palabras Clave</div>
               <div className="detalle-valor">
-                {propuesta.palabras_clave.split(', ').map((palabra, i) => (
-                  <span key={i} className="tag-pill tag-pill-gris">{palabra}</span>
+                {propuesta.palabras_clave.split(', ').map((palabra) => (
+                  <span key={palabra} className="tag-pill tag-pill-gris">{palabra}</span>
                 ))}
               </div>
             </div>
@@ -144,8 +155,8 @@ export default function DetalleProyectoInstructor() {
             <div className="detalle-grid-full">
               <div className="detalle-label">Tecnologías a Utilizar</div>
               <div className="detalle-valor mb-16">
-                {propuesta.tecnologias.split(', ').map((tech, i) => (
-                  <span key={i} className="tag-pill tag-pill-azul">{tech}</span>
+                {propuesta.tecnologias.split(', ').map((tech) => (
+                  <span key={tech} className="tag-pill tag-pill-azul">{tech}</span>
                 ))}
               </div>
             </div>
@@ -170,8 +181,8 @@ export default function DetalleProyectoInstructor() {
 
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
-            {propuesta.miembros.map((m, i) => (
-              <div key={i} className="flex-row flex-wrap team-row">
+            {propuesta.miembros.map((m) => (
+              <div key={m.nombre} className="flex-row flex-wrap team-row">
                 <div className={`avatar-miembro avatar-sm ${m.clase}`}>{m.iniciales}</div>
                 <div>
                   <strong className="texto-md">{m.nombre}</strong>

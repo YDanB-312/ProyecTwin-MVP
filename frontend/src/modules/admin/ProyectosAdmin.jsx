@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import FilterBar from '../../components/FilterBar/FilterBar'
@@ -37,6 +38,7 @@ const proyectos = [
 const ITEMS_PER_PAGE = 4
 
 export default function ProyectosAdmin() {
+  const { user } = useAuth()
   const [filtroPrograma, setFiltroPrograma] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -54,7 +56,7 @@ export default function ProyectosAdmin() {
   const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader title="Proyectos" icon="folder-open" subtitle="Consulta el listado completo de proyectos registrados en la plataforma" breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Proyectos' }]} />
 
@@ -118,7 +120,7 @@ export default function ProyectosAdmin() {
                     <td>{p.fecha}</td>
                     <td>
                       <div className="acciones-tabla">
-                        <Link to="/admin/detalle-proyecto" state={{ proyecto: p }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle de proyecto"><i className="fas fa-eye"></i></Link>
+                        <Link to={`/admin/detalle-proyecto/${p.id}`} state={{ proyecto: p }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle de proyecto"><i className="fas fa-eye"></i></Link>
                       </div>
                     </td>
                   </tr>

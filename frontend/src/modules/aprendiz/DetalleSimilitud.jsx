@@ -1,16 +1,19 @@
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, useParams, Link } from 'react-router-dom'
 import DetalleSimilitudBase from '../../components/DetalleSimilitudBase/DetalleSimilitudBase'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 
 export default function DetalleSimilitud() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
   const origen = location.state?.desde
-  const proyectoActual = location.state?.proyecto
+  const proyectoActual = location.state?.proyecto || id
 
   if (!proyectoActual) {
     return (
-      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-pagina fade-in">
           <PageHeader title="Similitud no encontrada" icon="exclamation-circle" breadcrumb={[{ to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Detalle Similitud' }]} />
           <div className="estado-vacio-moderno">
@@ -31,8 +34,8 @@ export default function DetalleSimilitud() {
     <DetalleSimilitudBase
       role="aprendiz"
       dashboardTitulo="ProyecTwin - Panel del Aprendiz"
-      dashboardUsuario="Maria Gonzalez | ADSO"
-      notificaciones={5}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       proyectoActual={proyectoActual}
       bannerPrefix="Tu"
       breadcrumbItems={[

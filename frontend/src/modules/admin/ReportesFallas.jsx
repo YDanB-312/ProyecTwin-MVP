@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import FilterBar from '../../components/FilterBar/FilterBar'
@@ -34,6 +35,7 @@ const ITEMS_PER_PAGE = 4
 const cicloEstado = { pendiente: 'en_revision', en_revision: 'resuelto', resuelto: 'resuelto', rechazado: 'rechazado' }
 
 export default function ReportesFallas() {
+  const { user } = useAuth()
   const [reportesLocal, setReportesLocal] = useState(reportes)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroFecha, setFiltroFecha] = useState('')
@@ -61,7 +63,7 @@ export default function ReportesFallas() {
   const reportesPagina = reportesFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader title="Reportes de Fallas" icon="bug" breadcrumb={[{ to: '/admin/dashboard', icon: 'home', label: 'Inicio' }, { label: 'Reportes de Fallas' }]} />
 
@@ -116,7 +118,7 @@ export default function ReportesFallas() {
                   <td>{r.fecha}</td>
                   <td>
                     <div className="acciones-tabla">
-                      <Link to="/admin/detalle-reporte" state={{ reporte: r }} className="btn-accion-tabla btn-ver" title="Ver detalle"><i className="fas fa-eye"></i></Link>
+                      <Link to={`/admin/detalle-reporte/${r.id}`} state={{ reporte: r }} className="btn-accion-tabla btn-ver" title="Ver detalle" aria-label="Ver detalle del reporte"><i className="fas fa-eye"></i></Link>
                       <button className="btn-accion-tabla btn-ver" title="Cambiar estado" aria-label="Cambiar estado del reporte" type="button" onClick={() => cambiarEstado(r.id)}><i className="fas fa-exchange-alt"></i></button>
                     </div>
                   </td>

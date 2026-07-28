@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext'
 import AlertasBase from '../../components/AlertasBase/AlertasBase'
 
 const filters = [
@@ -39,12 +40,13 @@ const notificacionesData = [
 ]
 
 export default function NotificacionesAdmin() {
+  const { user } = useAuth()
   return (
     <AlertasBase
       role="admin"
       dashboardTitulo="ProyecTwin - Panel de Administración"
-      dashboardUsuario="Admin Sistema"
-      notificaciones={2}
+      dashboardUsuario={user?.nombre || 'Usuario'}
+      notificaciones={0}
       breadcrumb={[
         { to: '/admin/dashboard', icon: 'home', label: 'Inicio' },
         { label: 'Notificaciones' },

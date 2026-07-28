@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/fichas.css'
 import FormField from '../../components/FormField/FormField'
+import { generarCodigoFicha } from '../../constants/fichas'
 
 export default function CrearFicha() {
+  const { user } = useAuth()
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
+  const [codigoGenerado, setCodigoGenerado] = useState('')
+  const [copiado, setCopiado] = useState(false)
+  const codigoRef = useRef(null)
   const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const navigate = useNavigate()
   const location = useLocation()
@@ -22,14 +28,28 @@ export default function CrearFicha() {
         nombre: editFicha.nombre || '',
         id_programa: editFicha.id_programa || ''
       })
+    } else {
+      setCodigoGenerado(generarCodigoFicha())
     }
   }, [editFicha, reset])
+
+  const copiarCodigo = async () => {
+    try {
+      await navigator.clipboard.writeText(codigoGenerado)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      codigoRef.current?.select()
+    }
+  }
 
   const onSubmit = (data) => {
     try {
       setEnviado(true)
       setError(null)
-      // TODO: Send data to API endpoint
+      const codigo = editFicha ? data.codigo : codigoGenerado
+      const fichaData = { ...data, codigo, id_instructor: user.id, estado: 'activo' }
+      // TODO: POST /api-v1/class-groups con fichaData
       navigate('/instructor/gestionar-fichas')
       reset()
     } catch (err) {
@@ -38,7 +58,7 @@ export default function CrearFicha() {
   }
 
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
         <PageHeader
           title={editFicha ? 'Editar Ficha' : 'Crear Nueva Ficha'}
@@ -58,12 +78,28 @@ export default function CrearFicha() {
           <i className="fas fa-exclamation-circle"></i><span>No se pudo crear la ficha. Verifica los datos e intenta de nuevo.</span>
         </div>
 
+        {!editFicha && codigoGenerado && (
+          <DataPanel title="Código de la Ficha" icon="key">
+            <div className="codigo-generado-box">
+              <span className="codigo-generado-label">Comparte este código con tus aprendices para que se unan:</span>
+              <div className="codigo-generado-fila">
+                <input ref={codigoRef} type="text" className="campo-input codigo-grande" value={codigoGenerado} readOnly onClick={(e) => e.target.select()} aria-label="Código de ficha generado" />
+                <button type="button" className={`btn-accion-principal ${copiado ? 'btn-exito' : ''}`} onClick={copiarCodigo} aria-label="Copiar código">
+                  <i className={`fas ${copiado ? 'fa-check' : 'fa-copy'}`}></i> {copiado ? 'Copiado' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+          </DataPanel>
+        )}
+
         <DataPanel title="Información de la Ficha" icon="info-circle">
           <form className="formulario-proyecto" onSubmit={handleSubmit(onSubmit)}>
             <div className="form-content">
-              <FormField label="Código de Ficha" htmlFor="codigo" required error={errors.codigo && 'El código es obligatorio'} helpText="Código único que identificará al grupo (ej: PROGRAMA-NÚMERO).">
-                <input type="text" id="codigo" className="campo-input" placeholder="Ej: ADSO-2568" {...register("codigo", { required: true })} />
-              </FormField>
+              {editFicha && (
+                <FormField label="Código de Ficha" htmlFor="codigo" required error={errors.codigo && 'El código es obligatorio'}>
+                  <input type="text" id="codigo" className="campo-input" {...register("codigo", { required: true })} />
+                </FormField>
+              )}
               <FormField label="Nombre de la Ficha" htmlFor="nombre" required error={errors.nombre && 'El nombre es obligatorio'} helpText="Nombre descriptivo para identificar la ficha.">
                 <input type="text" id="nombre" className="campo-input" placeholder="Ej: Análisis y Desarrollo 2568" {...register("nombre", { required: true })} />
               </FormField>
@@ -86,5 +122,3 @@ export default function CrearFicha() {
     </DashboardLayout>
   );
 }
-
-

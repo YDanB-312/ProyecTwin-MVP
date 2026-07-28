@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/detalle-compartido.css'
@@ -10,7 +11,7 @@ const proyectos = [
   {
     id: 0, titulo: 'Sistema de Gestión Académica',
     programa: 'ADSO - Análisis y Desarrollo de Software',
-    fecha: '15/03/2026', estado: 'revision', estadoTexto: 'En revisión', badgeClase: 'badge-advertencia',
+    fecha: '15/03/2026', estado: 'en_revision', estadoTexto: 'En revisión', badgeClase: 'badge-advertencia',
     descripcion: 'Desarrollo de un sistema integral para la gestión académica que permita administrar notas, horarios, asistencia y reportes académicos en tiempo real.',
     instructor: 'Carlos Ruiz',
     miembros: [
@@ -46,15 +47,21 @@ const proyectos = [
 ]
 
 export default function DetalleProyecto() {
+  const { user } = useAuth()
   const { id } = useParams()
   const navigate = useNavigate()
   const [eliminado, setEliminado] = useState(false)
+  const navTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
+  }, [])
 
   const proyecto = proyectos[id]
 
   if (!proyecto) {
     return (
-      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-proyectos fade-in">
           <PageHeader title="Proyecto no encontrado" icon="exclamation-circle" breadcrumb={[{ to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' }, { to: '/aprendiz/mis-proyectos', label: 'Mis Proyectos' }, { label: 'No encontrado' }]} />
           <div className="estado-vacio-moderno">
@@ -71,7 +78,7 @@ export default function DetalleProyecto() {
   const eliminarProyecto = () => {
     if (window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.')) {
       setEliminado(true)
-      setTimeout(() => navigate('/aprendiz/mis-proyectos'), 1500)
+      navTimerRef.current = setTimeout(() => navigate('/aprendiz/mis-proyectos'), 1500)
     }
   }
 
@@ -82,7 +89,7 @@ export default function DetalleProyecto() {
   ]
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-proyectos fade-in">
         <PageHeader
           title={proyecto.titulo}
@@ -118,8 +125,8 @@ export default function DetalleProyecto() {
 
         <DataPanel title="Integrantes del Equipo" icon="users">
           <div className="detalle-grid-moderno">
-            {proyecto.miembros.map((m, i) => (
-              <div key={i} className="flex-row flex-wrap team-row">
+            {proyecto.miembros.map((m) => (
+              <div key={m.nombre} className="flex-row flex-wrap team-row">
                 <div className={`avatar-miembro avatar-sm ${m.clase}`}>{m.iniciales}</div>
                 <div>
                   <strong className="texto-md">{m.nombre}</strong>

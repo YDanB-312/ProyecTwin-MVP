@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import '../../assets/styles/pages/login.css'
@@ -10,11 +10,16 @@ export default function RestablecerContrasena() {
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm()
   const navigate = useNavigate()
   const [enviado, setEnviado] = useState(false)
+  const navTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
+  }, [])
 
   const onSubmit = () => {
     setEnviado(true)
     reset()
-    setTimeout(() => navigate('/login'), 2000)
+    navTimerRef.current = setTimeout(() => navigate('/login'), 2000)
   }
 
   return (

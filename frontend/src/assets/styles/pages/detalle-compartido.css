@@ -565,6 +565,9 @@
     :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .grid-coincidencias {
         grid-template-columns: 1fr;
     }
+    :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .coincidencias-grid {
+        grid-template-columns: 1fr;
+    }
     :is(.modulo-aprendiz, .modulo-instructor, .modulo-admin) .encabezado-revision {
         flex-direction: column;
     }

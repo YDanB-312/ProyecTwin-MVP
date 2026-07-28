@@ -124,6 +124,15 @@
         grid-template-columns: 1fr;
     }
 
+    .dashboard-header {
+        flex-direction: column;
+    }
+
+    .dashboard-header-left {
+        min-width: 0;
+        width: 100%;
+    }
+
     .dashboard-fecha {
         align-self: flex-start;
     }

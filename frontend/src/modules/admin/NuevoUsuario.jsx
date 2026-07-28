@@ -1,28 +1,35 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/gestion-usuarios.css'
 import FormField from '../../components/FormField/FormField'
 
 export default function NuevoUsuario() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const editUser = location.state?.editUser
   const isEditing = !!editUser
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
+  const navTimerRef = useRef(null)
   const { register, handleSubmit, watch, formState: { errors } } = useForm({ defaultValues: { estado: 'true', ...editUser, estado: editUser ? String(editUser.estado) : 'true' } })
   const rol = watch('rol', '')
+
+  useEffect(() => {
+    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
+  }, [])
 
   const onSubmit = (data) => {
     try {
       setEnviado(true)
       setError(null)
       // TODO: Send data to API endpoint
-      setTimeout(() => navigate('/admin/gestion-usuarios'), 2000)
+      navTimerRef.current = setTimeout(() => navigate('/admin/gestion-usuarios'), 2000)
     } catch (err) {
       setError('Error al guardar el usuario.')
     }
@@ -35,7 +42,7 @@ export default function NuevoUsuario() {
   ]
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
         <PageHeader
           title={isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}

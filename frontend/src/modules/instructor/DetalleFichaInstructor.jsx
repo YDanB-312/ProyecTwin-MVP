@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/fichas.css'
@@ -20,7 +21,11 @@ const breadcrumb = [
 ]
 
 export default function DetalleFichaInstructor() {
+  const { user } = useAuth()
   const [copiado, setCopiado] = useState(false)
+  const location = useLocation()
+  const { id } = useParams()
+  const ficha = location.state?.ficha
 
   useEffect(() => {
     if (!copiado) return
@@ -29,11 +34,11 @@ export default function DetalleFichaInstructor() {
   }, [copiado])
 
   const handleCopiar = () => {
-    navigator.clipboard?.writeText('ADSO-2568').then(() => setCopiado(true)).catch(() => setCopiado(false))
+    navigator.clipboard?.writeText(ficha?.codigo || id || 'ADSO-2568').then(() => setCopiado(true)).catch(() => setCopiado(false))
   }
 
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
         <PageHeader
           title="Detalle de Ficha"
@@ -65,8 +70,8 @@ export default function DetalleFichaInstructor() {
 
         <DataPanel title={`Aprendices (${miembros.length})`} icon="user-graduate">
           <div className="grid-miembros">
-            {miembros.map((m, i) => (
-              <div key={i} className="tarjeta-miembro">
+            {miembros.map((m) => (
+              <div key={m.nombre} className="tarjeta-miembro">
                 <div className="avatar-miembro">{m.iniciales}</div>
                 <div className="info-miembro">
                   <h4>{m.nombre}</h4>

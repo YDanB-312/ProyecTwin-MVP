@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 
 export default function DetalleFicha() {
+  const { user } = useAuth()
   const [verFoto, setVerFoto] = useState(null)
 
   useEffect(() => {
@@ -20,14 +22,14 @@ export default function DetalleFicha() {
     }
   }, [verFoto])
   const companeros = [
-    { nombre: 'Maria Gonzalez', iniciales: 'MG', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=1' },
-    { nombre: 'Juan Pérez', iniciales: 'JP', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=3' },
-    { nombre: 'Laura Gómez', iniciales: 'LG', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=5' },
-    { nombre: 'Ana Martínez', iniciales: 'AM', estado: 'Activo', foto: 'https://i.pravatar.cc/400?img=9' },
-    { nombre: 'Diana Sánchez', iniciales: 'DS', estado: 'Inactivo', foto: 'https://i.pravatar.cc/400?img=16' },
+    { nombre: 'Maria Gonzalez', iniciales: 'MG', estado: true, foto: 'https://i.pravatar.cc/400?img=1' },
+    { nombre: 'Juan Pérez', iniciales: 'JP', estado: true, foto: 'https://i.pravatar.cc/400?img=3' },
+    { nombre: 'Laura Gómez', iniciales: 'LG', estado: true, foto: 'https://i.pravatar.cc/400?img=5' },
+    { nombre: 'Ana Martínez', iniciales: 'AM', estado: true, foto: 'https://i.pravatar.cc/400?img=9' },
+    { nombre: 'Diana Sánchez', iniciales: 'DS', estado: false, foto: 'https://i.pravatar.cc/400?img=16' },
   ]
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
 
         <PageHeader
@@ -78,11 +80,11 @@ export default function DetalleFicha() {
                 ? <img src={c.foto} alt={c.nombre} className="companero-avatar avatar-clickable" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVerFoto(c) }} />
                 : <div className="companero-avatar">{c.iniciales}</div>
               }
-              <Link to="/aprendiz/perfil-companero" state={c} className="companero-info-link">
+              <Link to={`/aprendiz/perfil-companero/${c.nombre}`} state={c} className="companero-info-link">
                 <div className="companero-info">
                   <span className="companero-nombre">{c.nombre}</span>
                 </div>
-                <span className={c.estado === 'Activo' ? 'badge-activo' : 'badge-inactivo'}>{c.estado}</span>
+                <span className={c.estado ? 'badge-activo' : 'badge-inactivo'}>{c.estado ? 'Activo' : 'Inactivo'}</span>
               </Link>
             </div>
           ))}

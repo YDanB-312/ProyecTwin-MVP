@@ -47,8 +47,8 @@ export default function DetalleSimilitudBase({
               {bannerPrefix} proyecto <strong>{proyectoActual}</strong> tiene <strong>{similitudesProyecto.length} similitudes</strong> detectadas.
               Mostrando: con
               <select className="select-nav-similitud" value={actual} onChange={(e) => setActual(Number(e.target.value))}>
-                {similitudesProyecto.map((s, i) => (
-                  <option key={i} value={i}>{s.proyecto}</option>
+                {similitudesProyecto.map((s) => (
+                  <option key={s.proyecto} value={similitudesProyecto.indexOf(s)}>{s.proyecto}</option>
                 ))}
               </select>
               ({actual + 1} de {similitudesProyecto.length})
@@ -82,8 +82,8 @@ export default function DetalleSimilitudBase({
           <div className={coincidenciasClasses.root}>
             <h4><i className="fas fa-align-left"></i> Secciones Coincidentes</h4>
             <ul className={coincidenciasClasses.list}>
-              {coincidencias.map((c, i) => (
-                <li key={i} className="coincidencia-item">
+              {coincidencias.map((c) => (
+                <li key={c.seccion} className="coincidencia-item">
                   {c.seccion}: <strong>{c.pct}% de similitud</strong>
                 </li>
               ))}

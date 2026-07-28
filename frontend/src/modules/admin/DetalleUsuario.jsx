@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import MetricCard from '../../components/MetricCard/MetricCard'
@@ -12,18 +13,20 @@ const breadcrumb = [
 ]
 
 export default function DetalleUsuario() {
+  const { user } = useAuth()
+  const { id } = useParams()
   const location = useLocation()
   const userData = location.state?.usuario
 
   if (!userData) {
     return (
-      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+      <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
         <div className="contenedor-gestion fade-in">
           <PageHeader title="Usuario no encontrado" icon="exclamation-circle" breadcrumb={breadcrumb} actions={<Link to="/admin/gestion-usuarios" className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link>} />
           <div className="estado-vacio-moderno">
             <div className="estado-vacio-icono"><i className="fas fa-user"></i></div>
             <h3 className="estado-vacio-titulo">Usuario no encontrado</h3>
-            <p className="estado-vacio-descripcion">No se encontró información del usuario.</p>
+            <p className="estado-vacio-descripcion">No se encontró información del usuario{ id ? ` (ID: ${id})` : '' }.</p>
             <Link to="/admin/gestion-usuarios" className="btn-primario"><i className="fas fa-arrow-left"></i> Volver a Gestión de Usuarios</Link>
           </div>
         </div>
@@ -32,7 +35,7 @@ export default function DetalleUsuario() {
   }
 
   return (
-    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario="Admin Sistema" notificaciones={2}>
+    <DashboardLayout role="admin" titulo="ProyecTwin - Panel de Administración" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-gestion fade-in">
         <PageHeader
           title="Detalle de Usuario"

@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import DataPanel from '../../components/DataPanel/DataPanel'
 import '../../assets/styles/pages/directorio.css'
@@ -18,8 +19,12 @@ const breadcrumb = [
 ]
 
 export default function DirectorioFichaInstructor() {
+  const { user } = useAuth()
+  const location = useLocation()
+  const { id } = useParams()
+  const ficha = location.state?.ficha
   return (
-    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario="Carlos Ruiz | Instr. ADSO" notificaciones={8}>
+    <DashboardLayout role="instructor" titulo="ProyecTwin - Panel del Instructor" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
         <PageHeader
           title="Directorio de Ficha"
@@ -30,7 +35,7 @@ export default function DirectorioFichaInstructor() {
 
         <div className="info-ficha-actual mb-30">
           <div className="ficha-detalle">
-            <h3>ADSO-2568</h3>
+            <h3>{ficha?.codigo || id || 'ADSO-2568'}</h3>
             <p>Análisis y Desarrollo de Sistemas</p>
           </div>
           <span className="badge badge-primario"><i className="fas fa-users"></i> {aprendices.length} aprendices</span>
@@ -38,8 +43,8 @@ export default function DirectorioFichaInstructor() {
 
         <DataPanel title={`Aprendices (${aprendices.length})`} icon="user-graduate">
           <div className="directorio-usuarios">
-            {aprendices.map((a, i) => (
-              <div key={i} className="tarjeta-usuario">
+            {aprendices.map((a) => (
+              <div key={a.nombre} className="tarjeta-usuario">
                 <div className={`avatar-usuario ${a.clase}`}>{a.iniciales}</div>
                 <div className="info-usuario">
                   <h4>{a.nombre}</h4>

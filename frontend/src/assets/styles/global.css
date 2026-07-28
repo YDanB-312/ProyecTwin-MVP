@@ -135,6 +135,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -592,18 +593,13 @@ body {
 }
 
 .btn-icono:hover {
-  background: var(--color-borde-suave);
-  color: var(--color-texto-secundario);
+  background-color: var(--color-borde-suave);
+  color: var(--color-primario);
   transform: scale(1.05);
 }
 
 .btn-icono:active {
   transform: scale(0.95);
-}
-
-.btn-icono:hover {
-  background-color: var(--color-borde-suave);
-  color: var(--color-primario);
 }
 
 .btn-accion-principal {
@@ -703,9 +699,9 @@ body {
   align-items: center;
   gap: var(--space-md);
   transition: all var(--transition-fast);
+  border: 1px solid var(--color-borde-suave);
   border-left: 4px solid transparent;
   border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde-suave);
 }
 
 .tarjeta-estadistica:hover {
@@ -827,6 +823,7 @@ body {
 /* Paginacion */
 .paginacion {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: var(--space-sm);
@@ -1330,6 +1327,27 @@ body {
 
 .contenedor-tabla {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .contenedor-tabla {
+    border-radius: var(--radio-borde);
+    box-shadow: inset -8px 0 8px -8px rgba(0,0,0,0.1);
+  }
+
+  .contenedor-tabla:has(.tabla-usuarios:not(:only-child))::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to left, var(--color-fondo-elevado), transparent);
+    pointer-events: none;
+    flex-shrink: 0;
+  }
 }
 
 .tabla-usuarios {
@@ -1497,6 +1515,10 @@ body {
 
   .grid-acciones {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contenido-principal {
+    margin-left: 0;
   }
 }
 
@@ -2419,7 +2441,7 @@ input, select, textarea {
 }
 
 .tabla-similitudes tbody tr:hover {
-  background-color: var(--color-fondo-hover);
+  background-color: var(--color-primario-04);
 }
 
 /* === Avatar clickable + Lightbox === */
@@ -2516,4 +2538,35 @@ input, select, textarea {
   justify-content: flex-end;
   gap: var(--space-sm);
   margin-top: var(--space-md);
+}
+
+/* FilterBar collapsible toggle */
+.filter-bar-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-bar-toggle {
+  font-size: 0.75rem;
+  color: var(--color-texto-muted);
+  transition: transform var(--transition-fast);
+}
+
+@media (min-width: 769px) {
+  .filter-bar-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-bar-body {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 var(--space-lg);
+    transition: max-height var(--transition-normal), padding var(--transition-normal);
+  }
+  .filter-bar-body.filter-bar-open {
+    max-height: 600px;
+    padding: var(--space-md) var(--space-lg);
+  }
 }

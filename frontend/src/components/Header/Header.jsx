@@ -14,9 +14,9 @@ export default function Header({ titulo, usuario, notificaciones, onToggleSideba
         </div>
         <div className="grupo-derecho">
           <img src="/images/logo-sena-blanco.png" alt="SENA" className="logo-sena-header" />
-          <div className="notificaciones" role="status" aria-live="polite"><i className="fas fa-bell"></i> Notificaciones <span>{notificaciones}</span></div>
-          <div className="usuario"><div className="avatar"><i className="fas fa-user"></i></div><span>{usuario}</span></div>
-          <button className="btn-cerrar-sesion" onClick={logout} aria-label="Cerrar sesión"><i className="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+          <div className={`notificaciones${notificaciones > 0 ? ' con-alerta' : ''}`} role="status" aria-live="polite"><i className="fas fa-bell"></i> <span className="header-text-desktop">Notificaciones</span> <span className={`badge-notificacion${notificaciones > 0 ? ' badge-activa' : ''}`}>{notificaciones}</span></div>
+          <div className="usuario"><div className="avatar"><i className="fas fa-user"></i></div><span className="header-text-desktop">{usuario}</span></div>
+          <button className="btn-cerrar-sesion" onClick={logout} aria-label="Cerrar sesión"><i className="fas fa-sign-out-alt"></i> <span className="header-text-desktop">Cerrar sesión</span></button>
         </div>
       </div>
     </header>

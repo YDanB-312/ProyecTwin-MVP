@@ -1,10 +1,11 @@
 .sidebar {
   width: 280px;
   background: var(--color-sidebar);
-  height: 100vh;
+  height: calc(100vh - 90px);
   position: fixed;
   left: 0;
   top: 90px;
+  z-index: 998;
   padding: var(--space-md) 0;
   overflow-y: auto;
   box-shadow: var(--sombra-media);
@@ -105,10 +106,14 @@
   color: var(--color-peligro, #dc2626) !important;
 }
 
+.sidebar-overlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 280px;
-    height: 100vh;
+    height: calc(100vh - 90px);
     position: fixed;
     top: 90px;
     left: -280px;
@@ -121,7 +126,23 @@
   .sidebar.abierto .cerrar-sidebar {
     display: flex;
   }
-.cerrar-sidebar {
+  .cerrar-sidebar {
     display: none;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 90px;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 997;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+  }
+  .sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

@@ -1,29 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import '../../assets/styles/pages/fichas.css'
 import FormField from '../../components/FormField/FormField'
+import { buscarFichaPorCodigo, obtenerFichaAprendiz, guardarFichaAprendiz } from '../../constants/fichas'
 
 export default function UnirseFicha() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState(null)
+  const navTimerRef = useRef(null)
   const { register, handleSubmit, formState: { errors } } = useForm()
 
-  const onSubmit = () => {
+  const fichaActual = obtenerFichaAprendiz()
+
+  useEffect(() => {
+    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
+  }, [])
+
+  const onSubmit = (data) => {
     try {
-      setEnviado(true)
       setError(null)
-      // TODO: Send data to API endpoint
-      setTimeout(() => navigate('/aprendiz/dashboard'), 2000)
+      const ficha = buscarFichaPorCodigo(data.codigo)
+      if (!ficha) {
+        setError('No se encontró una ficha con ese código. Verifica con tu instructor.')
+        return
+      }
+      guardarFichaAprendiz({ ...ficha, id_usuario: user.id, fecha_union: new Date().toISOString() })
+      setEnviado(true)
+      navTimerRef.current = setTimeout(() => navigate('/aprendiz/dashboard'), 2000)
     } catch (err) {
       setError('Error al unirse a la ficha.')
     }
   }
+
+  if (fichaActual) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
+        <div className="contenedor-pagina fade-in">
+          <PageHeader
+            title="Mi Ficha"
+            icon="users"
+            breadcrumb={[
+              { to: '/aprendiz/dashboard', icon: 'home', label: 'Inicio' },
+              { label: 'Mi Ficha' }
+            ]}
+          />
+          <div className="unirse-card">
+            <div className="mensaje-feedback mensaje-exito">
+              <i className="fas fa-check-circle"></i>
+              <span>Ya perteneces a la ficha <strong>{fichaActual.codigo}</strong> — {fichaActual.nombre}</span>
+            </div>
+            <div className="beneficios">
+              <div className="beneficio-item">
+                <span className="beneficio-icono"><i className="fas fa-code-branch"></i></span>
+                <span className="beneficio-texto">Programa: {fichaActual.programa}</span>
+              </div>
+              <div className="beneficio-item">
+                <span className="beneficio-icono"><i className="fas fa-calendar"></i></span>
+                <span className="beneficio-texto">Te uniste el {new Date(fichaActual.fecha_union).toLocaleDateString('es-CO')}</span>
+              </div>
+            </div>
+            <Link to="/aprendiz/detalle-ficha/ADSO-2568" className="btn-primario mt-lg"><i className="fas fa-eye"></i> Ver mi ficha</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-pagina fade-in">
 
         <PageHeader
@@ -44,7 +94,7 @@ export default function UnirseFicha() {
           </div>
           <div className={`mensaje-feedback mensaje-error ${error ? '' : 'oculto'}`}>
             <i className="fas fa-exclamation-circle"></i>
-            <span>No se pudo unir a la ficha. Verifica el código e intenta de nuevo.</span>
+            <span>{error}</span>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -52,7 +102,7 @@ export default function UnirseFicha() {
               <input type="text" id="codigo-ficha" className="campo-input" placeholder="ADSO-2568" {...register("codigo", { required: "El código de ficha es requerido" })} />
             </FormField>
 
-            <Link to="/aprendiz/detalle-ficha" className="ayuda-link"><i className="fas fa-question-circle"></i> ¿Que es una ficha?</Link>
+            <Link to="/aprendiz/detalle-ficha/ADSO-2568" className="ayuda-link"><i className="fas fa-question-circle"></i> ¿Que es una ficha?</Link>
 
             <button type="submit" className="btn-unirse"><i className="fas fa-sign-in-alt"></i> Unirse a la Ficha</button>
           </form>
@@ -77,5 +127,3 @@ export default function UnirseFicha() {
     </DashboardLayout>
   );
 }
-
-

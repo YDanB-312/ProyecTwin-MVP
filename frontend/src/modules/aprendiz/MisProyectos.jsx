@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout'
+import { useAuth } from '../../contexts/AuthContext'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import FilterBar from '../../components/FilterBar/FilterBar'
 import '../../assets/styles/pages/mis-proyectos.css'
@@ -30,6 +31,7 @@ const proyectosData = [
 ]
 
 export default function MisProyectos() {
+  const { user } = useAuth()
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroFecha, setFiltroFecha] = useState('')
   const [filtroInstructor, setFiltroInstructor] = useState('')
@@ -47,7 +49,7 @@ export default function MisProyectos() {
   const proyectosPagina = proyectosFiltrados.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
 
   return (
-    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario="Maria Gonzalez | ADSO" notificaciones={5}>
+    <DashboardLayout role="aprendiz" titulo="ProyecTwin - Panel del Aprendiz" usuario={user?.nombre || 'Usuario'} notificaciones={0}>
       <div className="contenedor-proyectos fade-in">
 
         <PageHeader
@@ -66,9 +68,11 @@ export default function MisProyectos() {
             <select id="estado" className="campo-select" value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1) }}>
               <option value="">Todos los estados</option>
               <option value="borrador">Borrador</option>
+              <option value="pendiente">Pendiente</option>
               <option value="en_revision">En revisión</option>
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
+              <option value="requiere_ajustes">Requiere Ajustes</option>
             </select>
           </div>
           <div className="grupo-filtro">

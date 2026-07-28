@@ -41,3 +41,30 @@
 .btn-accesibilidad:hover {
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* Responsive GovernmentBar */
+@media (max-width: 768px) {
+    .barra-gobierno {
+        padding: 6px 0;
+    }
+
+    .contenedor-barra {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .barra-gobierno .texto-barra {
+        font-size: 0.75rem;
+        display: none;
+    }
+
+    .accesibilidad {
+        gap: 6px;
+    }
+
+    .btn-accesibilidad {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+}
