@@ -19,18 +19,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-
-data class ProjectSummary(
-    val id: String,
-    val name: String,
-    val status: String,
-    val date: String,
-    val members: Int,
-    val instructor: String,
-)
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,24 +33,35 @@ fun ProjectsScreen(
     onNavigate: (String) -> Unit,
     onNewProject: () -> Unit,
     onProjectDetail: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    dashboardViewModel: DashboardViewModel = viewModel(),
+    bottomBar: @Composable () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
-    val filters = listOf("Todos", "Aprobado", "En revisión", "Borrador", "Rechazado")
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val filters = listOf("Todos", "En Progreso", "Completado", "Pendiente", "Cancelado")
 
-    val projects = remember {
-        listOf(
-            ProjectSummary("1", "Sistema de Gestión Académica", "En revisión", "15 mar 2023", 3, "Carlos Ruiz"),
-            ProjectSummary("2", "Aplicación Web de Inventarios", "Aprobado", "22 abr 2023", 2, "Ana Gomez"),
-            ProjectSummary("3", "App Móvil de Seguridad", "Borrador", "01 jun 2023", 4, "Pedro Lopez"),
-            ProjectSummary("4", "Plataforma IoT para Agricultura", "Rechazado", "10 feb 2023", 5, "Laura Diaz"),
-            ProjectSummary("5", "Chatbot de Atención al Cliente", "En revisión", "05 ene 2023", 2, "Carlos Ruiz"),
-        )
+    val authState by authViewModel.uiState.collectAsState()
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    val user = authState.user
+
+    LaunchedEffect(user, refreshTrigger) {
+        if (user != null) {
+            dashboardViewModel.loadStudentDashboard(user.id)
+        }
     }
 
-    val filteredProjects = projects.filter { project ->
-        val matchesFilter = if (selectedFilter == "Todos") true else project.status == selectedFilter
-        val matchesSearch = project.name.contains(searchQuery, ignoreCase = true)
+    LaunchedEffect(dashState.isLoading) {
+        if (!dashState.isLoading) isRefreshing = false
+    }
+
+    val filteredProjects = dashState.projects.filter { project ->
+        val matchesFilter = if (selectedFilter == "Todos") true else {
+            project.statusDisplay == selectedFilter
+        }
+        val matchesSearch = project.title.contains(searchQuery, ignoreCase = true)
         matchesFilter && matchesSearch
     }
 
@@ -68,23 +74,27 @@ fun ProjectsScreen(
                 onNavigateToAlerts = { onNavigate(AppNavigation.APRENDIZ_ALERTS) }
             )
         },
+        containerColor = senaColors().background,
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNewProject,
-                containerColor = SenaGreen,
+                containerColor = senaColors().green,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nuevo Proyecto")
             }
-        },
-        containerColor = SenaBackground
+        }
     ) { paddingValues ->
+        SenaPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; refreshTrigger++ },
+            modifier = Modifier.padding(paddingValues)
+        ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -96,7 +106,6 @@ fun ProjectsScreen(
                 )
             }
 
-            // Filter Bar
             item {
                 SenaCard(elevation = 1.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -104,7 +113,7 @@ fun ProjectsScreen(
                             "Filtros de búsqueda",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
+                            color = senaColors().textLight,
                             letterSpacing = 0.5.sp
                         )
                         SenaTextField(
@@ -114,12 +123,12 @@ fun ProjectsScreen(
                             placeholder = "Buscar por nombre...",
                             leadingIcon = Icons.Default.Search
                         )
-                        
+
                         Text(
                             "Estado del proyecto",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
+                            color = senaColors().textLight,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                         Row(
@@ -129,11 +138,11 @@ fun ProjectsScreen(
                             filters.forEach { filter ->
                                 SenaChip(
                                     text = filter,
-                                    color = if (filter == "Todos") SenaGreen else when(filter) {
-                                        "Aprobado" -> SenaSuccess
-                                        "En revisión" -> SenaAccent
-                                        "Borrador" -> SenaWarning
-                                        else -> SenaDanger
+                                    color = if (filter == "Todos") senaColors().green else when(filter) {
+                                        "En Progreso" -> senaColors().accent
+                                        "Completado" -> senaColors().success
+                                        "Pendiente" -> senaColors().warning
+                                        else -> senaColors().danger
                                     },
                                     isSelected = selectedFilter == filter,
                                     onClick = { selectedFilter = filter }
@@ -147,45 +156,47 @@ fun ProjectsScreen(
             if (filteredProjects.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No se encontraron proyectos que coincidan con tu búsqueda.", 
+                        message = "No se encontraron proyectos que coincidan con tu búsqueda.",
                         icon = Icons.Default.SearchOff
                     )
                 }
             } else {
                 items(filteredProjects) { project ->
-                    SenaCard(onClick = { onProjectDetail(project.id) }) {
+                    SenaCard(onClick = { onProjectDetail(project.id.toString()) }) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                SenaStatusBadge(status = project.status)
-                                Text(project.date, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                                SenaStatusBadge(status = project.statusDisplay)
+                                Text(project.createdAt ?: "", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                             }
                             Text(
-                                project.name,
+                                project.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = SenaText
+                                color = senaColors().text
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Group, contentDescription = null, tint = SenaTextLight, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Person, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("${project.members} integrantes", style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
+                                Text(project.studentName ?: "Sin aprendiz", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
                                 Spacer(Modifier.weight(1f))
-                                Surface(
-                                    modifier = Modifier.size(32.dp),
-                                    shape = CircleShape,
-                                    color = SenaGreen.copy(alpha = 0.1f)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                        project.instructor.split(" ").joinToString("") { it.take(1) },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SenaGreen
-                                    )
+                                if (project.instructorName != null) {
+                                    Surface(
+                                        modifier = Modifier.size(32.dp),
+                                        shape = CircleShape,
+                                        color = senaColors().green.copy(alpha = 0.1f)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                project.instructorName.split(" ").joinToString("") { it.take(1) },
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = senaColors().green
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -193,8 +204,9 @@ fun ProjectsScreen(
                     }
                 }
             }
-            
+
             item { Spacer(Modifier.height(80.dp)) }
+        }
         }
     }
 }

@@ -1,4 +1,4 @@
-Ôªøpackage com.example.proyectwin.ui.screens.admin
+package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -45,7 +45,7 @@ fun NewUserScreen(onBack: () -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(text = "Cancelar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
@@ -88,14 +88,14 @@ fun NewUserScreen(onBack: () -> Unit) {
                         SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido *", modifier = Modifier.weight(1f))
                     }
                     SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional *", leadingIcon = Icons.Default.Email)
-                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contrase√±a Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
+                    SenaTextField(value = password, onValueChange = { password = it }, label = "ContraseÒa Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
                 }
             }
 
-            SenaSectionHeader(title = "Asignaci√≥n de Rol")
+            SenaSectionHeader(title = "AsignaciÛn de Rol")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Selecciona el rol jer√°rquico", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                    Text("Selecciona el rol jer·rquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -110,8 +110,8 @@ fun NewUserScreen(onBack: () -> Unit) {
                             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true).fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = SenaGreen,
-                                unfocusedBorderColor = SenaBorder
+                                focusedBorderColor = senaColors().green,
+                                unfocusedBorderColor = senaColors().border
                             )
                         )
                         ExposedDropdownMenu(
@@ -135,15 +135,15 @@ fun NewUserScreen(onBack: () -> Unit) {
             if (selectedRol == "Aprendiz") {
                 SenaSectionHeader(title = "Detalles del Aprendiz")
                 SenaCard {
-                    SenaTextField(value = "", onValueChange = {}, label = "C√≥digo de Ficha", placeholder = "Ej: 2568421")
+                    SenaTextField(value = "", onValueChange = {}, label = "CÛdigo de Ficha", placeholder = "Ej: 2568421")
                 }
             }
 
             SenaAlertBanner(
-                title = "Activaci√≥n Autom√°tica",
-                message = "Al crear el usuario, se le enviar√° un correo de bienvenida con sus credenciales de acceso.",
+                title = "ActivaciÛn Autom·tica",
+                message = "Al crear el usuario, se le enviar· un correo de bienvenida con sus credenciales de acceso.",
                 icon = Icons.Default.Info,
-                color = SenaInfo
+                color = senaColors().info
             )
 
             Spacer(Modifier.height(80.dp))

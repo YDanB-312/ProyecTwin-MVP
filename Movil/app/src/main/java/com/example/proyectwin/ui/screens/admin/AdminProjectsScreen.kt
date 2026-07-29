@@ -1,4 +1,4 @@
-锘縫ackage com.example.proyectwin.ui.screens.admin
+package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -19,42 +19,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-
-data class AdminProjectItem(
-    val id: String,
-    val title: String,
-    val program: String,
-    val instructor: String,
-    val status: String,
-    val date: String,
-)
+import com.example.proyectwin.ui.viewmodel.AdminViewModel
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminProjectsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    adminViewModel: AdminViewModel = viewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedStatus by remember { mutableStateOf("Todos") }
-    val statuses = listOf("Todos", "Aprobado", "En Revisi贸n", "Borrador", "Rechazado")
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val statuses = listOf("Todos", "Completado", "En Progreso", "Pendiente", "Cancelado")
 
-    val projects = remember {
-        listOf(
-            AdminProjectItem("1", "Sistema IoT para Agricultura", "ADSO", "Carlos Ruiz", "Aprobado", "15/03/2026"),
-            AdminProjectItem("2", "Plataforma Educativa SENA", "ADSO", "Maria Torres", "En Revisi贸n", "02/02/2026"),
-            AdminProjectItem("3", "App de Reciclaje Inteligente", "Multimedia", "Andres Lopez", "Borrador", "20/04/2026"),
-            AdminProjectItem("4", "Red de Sensores Ambientales", "Redes", "Pedro Jimenez", "Aprobado", "10/01/2026"),
-        )
+    val allProjects = remember(refreshTrigger) {
+        MockDataProvider.getAllProjects()
     }
 
-    val filteredProjects = projects.filter { project ->
-        val matchesStatus = if (selectedStatus == "Todos") true else project.status == selectedStatus
-        val matchesSearch = project.title.contains(searchQuery, ignoreCase = true) || project.instructor.contains(searchQuery, ignoreCase = true)
-        matchesStatus && matchesSearch
+    val filteredProjects = allProjects.filter { project ->
+        val statusMatch = when (selectedStatus) {
+            "Todos" -> true
+            "Completado" -> project.estado == ProjectStatus.COMPLETADO.value
+            "En Progreso" -> project.estado == ProjectStatus.EN_PROGRESO.value
+            "Pendiente" -> project.estado == ProjectStatus.PENDIENTE.value
+            "Cancelado" -> project.estado == ProjectStatus.CANCELADO.value
+            else -> false
+        }
+        val searchMatch = project.title.contains(searchQuery, ignoreCase = true) ||
+            (project.instructorName?.contains(searchQuery, ignoreCase = true) ?: false)
+        statusMatch && searchMatch
     }
 
     Scaffold(
@@ -66,51 +70,52 @@ fun AdminProjectsScreen(
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background
     ) { paddingValues ->
+        SenaPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; refreshTrigger++ },
+            modifier = Modifier.padding(paddingValues)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 SenaPageHeader(
                     title = "Proyectos Globales",
-                    subtitle = "Supervisi贸n de todas las propuestas t茅cnicas registradas en la plataforma.",
+                    subtitle = "Supervisi髇 de todas las propuestas t閏nicas registradas en la plataforma.",
                     icon = Icons.Default.FolderSpecial
                 )
             }
 
-            // Filter Bar
             item {
-                SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        SenaTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            label = "Buscar proyectos",
-                            placeholder = "Nombre o instructor...",
-                            leadingIcon = Icons.Default.Search
-                        )
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            statuses.forEach { status ->
-                                SenaChip(
-                                    text = status,
-                                    color = when(status) {
-                                        "Aprobado" -> SenaSuccess
-                                        "En Revisi贸n" -> SenaAccent
-                                        "Borrador" -> SenaWarning
-                                        "Rechazado" -> SenaDanger
-                                        else -> SenaGreen
-                                    },
-                                    isSelected = selectedStatus == status,
-                                    onClick = { selectedStatus = status }
-                                )
-                            }
+                SenaFilterBar(title = "Filtros de proyectos") {
+                    SenaTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = "Buscar proyectos",
+                        placeholder = "Nombre o instructor...",
+                        leadingIcon = Icons.Default.Search
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        statuses.forEach { status ->
+                            SenaChip(
+                                text = status,
+                                color = when(status) {
+                                    "Completado" -> senaColors().success
+                                    "En Progreso" -> senaColors().accent
+                                    "Pendiente" -> senaColors().warning
+                                    "Cancelado" -> senaColors().danger
+                                    else -> senaColors().green
+                                },
+                                isSelected = selectedStatus == status,
+                                onClick = { selectedStatus = status }
+                            )
                         }
                     }
                 }
@@ -125,35 +130,43 @@ fun AdminProjectsScreen(
                 }
             } else {
                 items(filteredProjects) { project ->
-                    SenaCard(onClick = { onNavigate(AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", project.id)) }) {
+                    SenaCard(onClick = { onNavigate(AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", "${project.id}")) }) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                SenaStatusBadge(status = project.status)
-                                Text(project.date, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                                SenaStatusBadge(status = project.statusDisplay)
+                                project.createdAt?.let {
+                                    Text(it, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                }
                             }
 
-                            Text(project.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                            
-                            HorizontalDivider(color = SenaBorderSoft)
+                            Text(project.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+
+                            HorizontalDivider(color = senaColors().borderSoft)
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.School, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.Person, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(project.program, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
+                                Text(project.studentName ?: "Sin aprendiz", style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
                                 Spacer(Modifier.weight(1f))
-                                Text("Instructor: ${project.instructor}", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                                Text("Instructor: ${project.instructorName ?: "N/A"}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                             }
                         }
                     }
                 }
             }
-            
+
             item { Spacer(Modifier.height(40.dp)) }
         }
+        }
+    }
+
+    LaunchedEffect(refreshTrigger) {
+        kotlinx.coroutines.delay(500)
+        isRefreshing = false
     }
 }
 

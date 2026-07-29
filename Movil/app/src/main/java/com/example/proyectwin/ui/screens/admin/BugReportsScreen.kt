@@ -1,6 +1,5 @@
-锘縫ackage com.example.proyectwin.ui.screens.admin
+package com.example.proyectwin.ui.screens.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,39 +19,39 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.BugReport
+import com.example.proyectwin.data.model.BugReportStatus
+import com.example.proyectwin.data.model.BugReportType
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-
-data class BugReport(
-    val id: Int,
-    val user: String,
-    val description: String,
-    val status: String,
-    val date: String
-)
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun BugReportsScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel()
+) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedStatus by remember { mutableStateOf("Todos") }
-    val statuses = listOf("Todos", "Pendiente", "En Revisi贸n", "Resuelto", "Rechazado")
+    var selectedType by remember { mutableStateOf<BugReportType?>(null) }
+    var selectedStatus by remember { mutableStateOf<BugReportStatus?>(null) }
 
-    val reports = remember {
-        listOf(
-            BugReport(1, "Carlos Rodr铆guez D铆az", "Error al cargar la p谩gina de Dashboard, muestra pantalla blanca.", "Pendiente", "12/04/2026"),
-            BugReport(2, "Maria Gonz谩lez Torres", "No se pueden subir archivos PDF en la secci贸n de evidencias.", "Pendiente", "11/04/2026"),
-            BugReport(3, "Andr茅s Mart铆nez L贸pez", "El sistema no env铆a Notificaciones cuando un instructor revisa un proyecto.", "En Revisi贸n", "10/04/2026"),
-            BugReport(4, "Laura S谩nchez P茅rez", "El bot贸n de Cerrar sesi贸n no funciona correctamente en navegador Chrome.", "En Revisi贸n", "09/04/2026"),
-            BugReport(5, "Diego Ram铆rez Castro", "Error en la generaci贸n de reportes PDF, el archivo descargado est谩 corrupto.", "Resuelto", "08/04/2026"),
-        )
-    }
+    val reports = remember { MockDataProvider.getAllBugReports() }
+
+    val typeFilters = remember { listOf(null) + BugReportType.entries.toList() }
+    val statusFilters = remember { listOf(null) + BugReportStatus.entries.toList() }
 
     val filteredReports = reports.filter { report ->
-        val matchesStatus = if (selectedStatus == "Todos") true else report.status == selectedStatus
-        val matchesSearch = report.user.contains(searchQuery, ignoreCase = true) || report.description.contains(searchQuery, ignoreCase = true)
-        matchesStatus && matchesSearch
+        val matchesType = selectedType == null || report.bugType == selectedType
+        val matchesStatus = selectedStatus == null || report.bugStatus == selectedStatus
+        val matchesSearch = report.reporterName?.contains(searchQuery, ignoreCase = true) == true ||
+                report.descripcion.contains(searchQuery, ignoreCase = true) ||
+                report.titulo.contains(searchQuery, ignoreCase = true)
+        matchesType && matchesStatus && matchesSearch
     }
 
     Scaffold(
@@ -65,7 +63,7 @@ fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -75,7 +73,7 @@ fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             item {
                 SenaPageHeader(
                     title = "Reportes de Fallas",
-                    subtitle = "Supervisa y gestiona los errores t茅cnicos reportados por los usuarios.",
+                    subtitle = "Supervisa y gestiona los errores t閏nicos reportados por los usuarios.",
                     icon = Icons.Default.BugReport
                 )
             }
@@ -85,40 +83,82 @@ fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 SenaCard(elevation = 1.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            "Filtros de b煤squeda",
+                            "Filtros de b鷖queda",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
+                            color = senaColors().textLight,
                             letterSpacing = 0.5.sp
                         )
                         SenaTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = "",
-                            placeholder = "Buscar por usuario o descripci贸n...",
+                            placeholder = "Buscar por usuario o descripci髇...",
                             leadingIcon = Icons.Default.Search
                         )
-                        
+
                         Text(
-                            "Estado del reporte",
+                            "Tipo de falla",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
+                            color = senaColors().textLight,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            statuses.forEach { status ->
+                            typeFilters.forEach { type ->
                                 SenaChip(
-                                    text = status,
-                                    color = when(status) {
-                                        "Resuelto" -> SenaSuccess
-                                        "Pendiente" -> SenaWarning
-                                        "En Revisi贸n" -> SenaInfo
-                                        "Rechazado" -> SenaDanger
-                                        else -> SenaGreen
+                                    text = type?.let {
+                                        when (it) {
+                                            BugReportType.FUNCIONAL -> "Funcional"
+                                            BugReportType.VISUAL -> "Visual"
+                                            BugReportType.RENDIMIENTO -> "Rendimiento"
+                                            BugReportType.SEGURIDAD -> "Seguridad"
+                                            BugReportType.OTRO -> "Otro"
+                                        }
+                                    } ?: "Todos",
+                                    color = when (type) {
+                                        BugReportType.FUNCIONAL -> senaColors().info
+                                        BugReportType.VISUAL -> senaColors().warning
+                                        BugReportType.RENDIMIENTO -> senaColors().danger
+                                        BugReportType.SEGURIDAD -> senaColors().danger
+                                        else -> senaColors().green
+                                    },
+                                    isSelected = selectedType == type,
+                                    onClick = { selectedType = type }
+                                )
+                            }
+                        }
+
+                        Text(
+                            "Estado del reporte",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = senaColors().textLight,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            statusFilters.forEach { status ->
+                                SenaChip(
+                                    text = status?.let {
+                                        when (it) {
+                                            BugReportStatus.PENDIENTE -> "Pendiente"
+                                            BugReportStatus.EN_REVISION -> "En Revisi髇"
+                                            BugReportStatus.RESUELTO -> "Resuelto"
+                                            BugReportStatus.CERRADO -> "Cerrado"
+                                        }
+                                    } ?: "Todos",
+                                    color = when (status) {
+                                        BugReportStatus.RESUELTO -> senaColors().success
+                                        BugReportStatus.PENDIENTE -> senaColors().warning
+                                        BugReportStatus.EN_REVISION -> senaColors().info
+                                        BugReportStatus.CERRADO -> senaColors().textLight
+                                        else -> senaColors().green
                                     },
                                     isSelected = selectedStatus == status,
                                     onClick = { selectedStatus = status }
@@ -132,7 +172,7 @@ fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             if (filteredReports.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No se encontraron reportes que coincidan con la b煤squeda.",
+                        message = "No se encontraron reportes que coincidan con la b鷖queda.",
                         icon = Icons.Default.SearchOff
                     )
                 }
@@ -143,7 +183,7 @@ fun BugReportsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     }
                 }
             }
-            
+
             item { Spacer(Modifier.height(40.dp)) }
         }
     }
@@ -159,7 +199,7 @@ fun BugReportCard(report: BugReport, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = SenaBorderSoft,
+                    color = senaColors().borderSoft,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -167,32 +207,55 @@ fun BugReportCard(report: BugReport, onClick: () -> Unit) {
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Black,
-                        color = SenaTextSecondary
+                        color = senaColors().textSecondary
                     )
                 }
-                SenaStatusBadge(status = report.status)
+                SenaStatusBadge(status = report.statusDisplay)
             }
 
             Column {
                 Text(
-                    report.description, 
-                    style = MaterialTheme.typography.bodySmall, 
-                    fontWeight = FontWeight.Bold, 
-                    color = SenaText,
+                    report.descripcion,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = senaColors().text,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Person, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(report.user, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
+                    Text(report.reporterName ?: "An髇imo", style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
                     Spacer(Modifier.weight(1f))
-                    Text(report.date, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                    Surface(
+                        color = when (report.bugType) {
+                            BugReportType.FUNCIONAL -> senaColors().info.copy(alpha = 0.1f)
+                            BugReportType.VISUAL -> senaColors().warning.copy(alpha = 0.1f)
+                            BugReportType.RENDIMIENTO -> senaColors().danger.copy(alpha = 0.1f)
+                            BugReportType.SEGURIDAD -> senaColors().danger.copy(alpha = 0.1f)
+                            BugReportType.OTRO -> senaColors().textLight.copy(alpha = 0.1f)
+                        },
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            report.typeDisplay,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = when (report.bugType) {
+                                BugReportType.FUNCIONAL -> senaColors().info
+                                BugReportType.VISUAL -> senaColors().warning
+                                BugReportType.RENDIMIENTO -> senaColors().danger
+                                BugReportType.SEGURIDAD -> senaColors().danger
+                                BugReportType.OTRO -> senaColors().textLight
+                            },
+                            fontSize = 9.sp
+                        )
+                    }
                 }
             }
 
-            HorizontalDivider(color = SenaBorderSoft)
+            HorizontalDivider(color = senaColors().borderSoft)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

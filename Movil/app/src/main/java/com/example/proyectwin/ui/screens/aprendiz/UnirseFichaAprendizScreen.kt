@@ -20,14 +20,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UnirseFichaAprendizScreen(onBack: () -> Unit, onJoined: () -> Unit) {
+fun UnirseFichaAprendizScreen(
+    onBack: () -> Unit,
+    onJoined: () -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    fichasViewModel: FichasViewModel = viewModel()
+) {
     var codigoFicha by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
+    val uiState by fichasViewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.codigoValido) {
+        if (uiState.codigoValido == true && uiState.selectedFicha != null) {
+            fichasViewModel.joinFicha(uiState.selectedFicha!!.id)
+        }
+    }
+
+    LaunchedEffect(uiState.joinSuccess) {
+        if (uiState.joinSuccess) {
+            onJoined()
+            fichasViewModel.clearJoinSuccess()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -38,13 +60,15 @@ fun UnirseFichaAprendizScreen(onBack: () -> Unit, onJoined: () -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
                     text = "Unirse a la Ficha",
                     icon = Icons.AutoMirrored.Filled.Login,
-                    onClick = onJoined,
+                    onClick = {
+                        fichasViewModel.validarCodigo(codigoFicha)
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -71,16 +95,16 @@ fun UnirseFichaAprendizScreen(onBack: () -> Unit, onJoined: () -> Unit) {
                         Surface(
                             modifier = Modifier.size(48.dp),
                             shape = CircleShape,
-                            color = SenaGreen.copy(alpha = 0.1f)
+                            color = senaColors().green.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Numbers, contentDescription = null, tint = SenaGreen)
+                                Icon(Icons.Default.Numbers, contentDescription = null, tint = senaColors().green)
                             }
                         }
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text("Código de Acceso", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                            Text("Solicita el código a tu instructor", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                            Text("Código de Acceso", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                            Text("Solicita el código a tu instructor", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                     }
 
@@ -88,21 +112,60 @@ fun UnirseFichaAprendizScreen(onBack: () -> Unit, onJoined: () -> Unit) {
                         value = codigoFicha,
                         onValueChange = { codigoFicha = it },
                         label = "Ingresa el código *",
-                        placeholder = "Ej: 2568421",
+                        placeholder = "Ej: FT-2692701",
                         leadingIcon = Icons.Default.Key
                     )
-                    
+
+                    if (uiState.codigoValido == false) {
+                        SenaAlertBanner(
+                            title = "Código Inválido",
+                            message = "El código ingresado no es válido. Verifica e intenta de nuevo.",
+                            icon = Icons.Default.Error,
+                            color = senaColors().danger
+                        )
+                    }
+
+                    if (uiState.error != null) {
+                        SenaAlertBanner(
+                            title = "Error al unirse",
+                            message = uiState.error!!,
+                            icon = Icons.Default.Error,
+                            color = senaColors().danger
+                        )
+                    }
+
+                    if (uiState.joinSuccess) {
+                        SenaAlertBanner(
+                            title = "¡Unido exitosamente!",
+                            message = "Te has unido a la ficha correctamente.",
+                            icon = Icons.Default.CheckCircle,
+                            color = senaColors().green
+                        )
+                    }
+
+                    SenaCopyButton(
+                        textToCopy = "FT-2692701",
+                        label = "Copiar código de ejemplo"
+                    )
+
+                    SenaAlertBanner(
+                        title = "Códigos de ficha válidos",
+                        message = "FT-2692701, FT-2771109",
+                        icon = Icons.Default.Info,
+                        color = senaColors().info
+                    )
+
                     SenaAlertBanner(
                         title = "Información Importante",
                         message = "Al unirte a una ficha, tus instructores podrán ver tus proyectos y realizar observaciones.",
                         icon = Icons.Default.Info,
-                        color = SenaInfo
+                        color = senaColors().info
                     )
                 }
             }
 
             SenaSectionHeader(title = "Beneficios de unirse")
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 UnirseBenefitItem(
                     icon = Icons.Default.Groups,
@@ -133,16 +196,16 @@ fun UnirseBenefitItem(icon: ImageVector, title: String, desc: String) {
             modifier = Modifier.size(36.dp),
             shape = RoundedCornerShape(10.dp),
             color = Color.White,
-            border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorderSoft)
+            border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(18.dp))
             }
         }
         Spacer(Modifier.width(16.dp))
         Column {
-            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
-            Text(desc, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary, lineHeight = 16.sp)
+            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+            Text(desc, style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary, lineHeight = 16.sp)
         }
     }
 }

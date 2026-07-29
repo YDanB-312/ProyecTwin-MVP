@@ -29,7 +29,7 @@ fun NotFoundScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground),
+            .background(senaColors().background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -42,10 +42,10 @@ fun NotFoundScreen(
             Surface(
                 modifier = Modifier.size(120.dp),
                 shape = CircleShape,
-                color = SenaGreen.copy(alpha = 0.05f)
+                color = senaColors().green.copy(alpha = 0.05f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("404", fontSize = 48.sp, fontWeight = FontWeight.Black, color = SenaGreen)
+                    Text("404", fontSize = 48.sp, fontWeight = FontWeight.Black, color = senaColors().green)
                 }
             }
             
@@ -55,7 +55,7 @@ fun NotFoundScreen(
                 "¡Uy! Página No Encontrada",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
-                color = SenaText,
+                color = senaColors().text,
                 textAlign = TextAlign.Center
             )
             
@@ -64,7 +64,7 @@ fun NotFoundScreen(
             Text(
                 "La página que buscas no existe o ha sido movida temporalmente. Verifica la dirección o regresa al inicio.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = SenaTextSecondary,
+                color = senaColors().textSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(max = 280.dp)
             )

@@ -1,5 +1,8 @@
 package com.example.proyectwin.ui.screens.aprendiz
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,35 +20,79 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardViewModel
+import com.example.proyectwin.ui.viewmodel.ProfileViewModel
+import kotlinx.coroutines.launch
+import java.util.Base64
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun ProfileScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel(),
+    profileViewModel: ProfileViewModel = viewModel(),
+    dashboardViewModel: DashboardViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
-    var isEditing by remember { mutableStateOf(false) }
+    val authState by authViewModel.uiState.collectAsState()
+    val profileState by profileViewModel.uiState.collectAsState()
+    val user = authState.user
+    val scope = rememberCoroutineScope()
 
-    var name by remember { mutableStateOf("Maria") }
-    var lastName by remember { mutableStateOf("Gonzalez") }
-    var email by remember { mutableStateOf("maria.gonzalez@sena.edu.co") }
+    var isEditing by remember { mutableStateOf(false) }
+    var editName by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
+    var editLastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
+    var editEmail by remember(user) { mutableStateOf(user?.email ?: "") }
+    var editPhone by remember(user) { mutableStateOf(user?.telefono ?: "") }
+
+    val projectCount = remember(user) {
+        MockDataProvider.getProjectsByStudent(user?.id ?: 0).size
+    }
+
+    val context = LocalContext.current
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+                bytes?.let { b ->
+                    val base64 = Base64.getEncoder().encodeToString(b)
+                    profileViewModel.updateFoto(base64)
+                    authViewModel.getSessionManager().updateFoto(base64)
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "Mi Perfil", 
-                showProfile = false, 
+                title = "Mi Perfil",
+                showProfile = false,
                 showNotifications = true,
                 onBack = onBack,
                 onNavigateToAlerts = { onNavigate(AppNavigation.APRENDIZ_ALERTS) }
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background,
+        bottomBar = bottomBar
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -53,18 +100,12 @@ fun ProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
         ) {
-            // --- HEADER APRENDIZ (GRADIENTE AMIGABLE) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(SenaHeader, SenaGreen)
-                        )
-                    )
+                    .background(Brush.verticalGradient(colors = listOf(senaColors().header, senaColors().green)))
             ) {
-                // Decoración círculo
                 Box(
                     modifier = Modifier
                         .size(120.dp)
@@ -73,97 +114,95 @@ fun ProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 )
             }
 
-            // --- PERFIL CARD (FLOTANTE) ---
             Column(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .offset(y = (-70).dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Surface(
+                SenaAvatar(
+                    fotoBase64 = user?.fotoPerfil,
+                    nombre = user?.name ?: "Usuario",
                     modifier = Modifier.size(100.dp),
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 10.dp
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(5.dp)
-                            .fillMaxSize()
-                            .background(SenaGreen, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "${name.take(1)}${lastName.take(1)}",
-                            color = Color.White,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 32.sp
-                        )
-                    }
+                    onClick = { photoPickerLauncher.launch("image/*") }
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+                TextButton(onClick = { photoPickerLauncher.launch("image/*") }) {
+                    Text("Cambiar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().green)
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "$name $lastName",
+                    text = user?.name ?: "Usuario",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = SenaText
+                    color = senaColors().text
                 )
                 Text(
-                    text = "Aprendiz ADSO — Trimestre 3",
+                    text = "${user?.roleDisplayName ?: "Aprendiz"} — ADSO",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = SenaTextLight
+                    color = senaColors().textLight
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Métricas Aprendiz
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MetricCardAprendiz(icon = Icons.Default.Folder, value = "3", label = "Proyectos", modifier = Modifier.weight(1f))
-                    MetricCardAprendiz(icon = Icons.Default.CalendarToday, value = "12", label = "Meses", modifier = Modifier.weight(1f))
+                    MetricCardAprendiz(icon = Icons.Default.Folder, value = "$projectCount", label = "Proyectos", modifier = Modifier.weight(1f))
                     Surface(
                         modifier = Modifier.weight(0.8f).height(80.dp),
                         shape = RoundedCornerShape(20.dp),
-                        color = SenaSuccess.copy(alpha = 0.1f)
+                        color = senaColors().success.copy(alpha = 0.1f)
                     ) {
                         Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Activo", fontWeight = FontWeight.Bold, color = SenaSuccess, style = MaterialTheme.typography.labelLarge)
+                            Text("Activo", fontWeight = FontWeight.Bold, color = senaColors().success, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- SECCIONES ---
                 SenaSectionHeader(title = "Datos del Aprendiz")
                 SenaCard(elevation = 1.dp) {
                     if (isEditing) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                SenaTextField(value = name, onValueChange = { name = it }, label = "Nombre", modifier = Modifier.weight(1f))
-                                SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido", modifier = Modifier.weight(1f))
+                                SenaTextField(value = editName, onValueChange = { editName = it }, label = "Nombre", modifier = Modifier.weight(1f))
+                                SenaTextField(value = editLastName, onValueChange = { editLastName = it }, label = "Apellido", modifier = Modifier.weight(1f))
                             }
-                            SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email)
-                            
+                            SenaTextField(value = editEmail, onValueChange = { editEmail = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email)
+                            SenaTextField(value = editPhone, onValueChange = { editPhone = it }, label = "Teléfono", leadingIcon = Icons.Default.Phone)
+
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SenaButton(text = "Cerrar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
-                                SenaButton(text = "Guardar", onClick = { isEditing = false }, modifier = Modifier.weight(1f))
+                                SenaButton(text = "Guardar", onClick = {
+                                    profileViewModel.updateProfile("$editName $editLastName", editEmail, editPhone.ifBlank { null })
+                                    isEditing = false
+                                }, modifier = Modifier.weight(1f))
                             }
                         }
                     } else {
                         Column {
-                            SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = "$name $lastName")
-                            HorizontalDivider(color = SenaBorderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = email)
-                            HorizontalDivider(color = SenaBorderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.Badge, title = "Documento de Identidad", description = "1.023.456.789")
-                            
+                            SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = user?.name ?: "-")
+                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                            SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = user?.email ?: "-")
+                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                            SenaSettingsItem(icon = Icons.Default.Phone, title = "Teléfono", description = user?.telefono ?: "-")
+                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                            SenaSettingsItem(icon = Icons.Default.Badge, title = "Documento de Identidad", description = user?.documentoIdentidad ?: "-")
+
                             Spacer(modifier = Modifier.height(16.dp))
-                            SenaButton(text = "Editar Perfil", onClick = { isEditing = true }, isPrimary = false, icon = Icons.Default.Edit, modifier = Modifier.height(44.dp))
+                            SenaButton(text = "Editar Perfil", onClick = {
+                                editName = user?.name?.split(" ")?.firstOrNull() ?: ""
+                                editLastName = user?.name?.split(" ")?.getOrNull(1) ?: ""
+                                editEmail = user?.email ?: ""
+                                editPhone = user?.telefono ?: ""
+                                isEditing = true
+                            }, isPrimary = false, icon = Icons.Default.Edit, modifier = Modifier.height(44.dp))
                         }
                     }
                 }
@@ -177,38 +216,14 @@ fun ProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                             title = "Seguridad",
                             message = "Se recomienda actualizar tu clave periódicamente.",
                             icon = Icons.Default.Lock,
-                            color = SenaInfo
+                            color = senaColors().info
                         )
 
                         SenaSettingsItem(
-                            icon = Icons.Default.VpnKey, 
-                            title = "Cambiar Contraseña", 
+                            icon = Icons.Default.VpnKey,
+                            title = "Cambiar Contraseña",
                             description = "Gestión de credenciales",
                             onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SenaSectionHeader(title = "Notificaciones")
-                SenaCard(elevation = 1.dp) {
-                    Column {
-                        var notifSimilitud by remember { mutableStateOf(true) }
-                        var notifComentarios by remember { mutableStateOf(true) }
-                        
-                        SenaSettingsItem(
-                            icon = Icons.Default.NotificationsActive, 
-                            title = "Similitudes", 
-                            description = "Aviso de coincidencias",
-                            trailing = { Switch(checked = notifSimilitud, onCheckedChange = { notifSimilitud = it }, colors = SwitchDefaults.colors(checkedTrackColor = SenaGreen)) }
-                        )
-                        HorizontalDivider(color = SenaBorderSoft, modifier = Modifier.padding(start = 56.dp))
-                        SenaSettingsItem(
-                            icon = Icons.AutoMirrored.Filled.Chat, 
-                            title = "Comentarios", 
-                            description = "Retroalimentación técnica",
-                            trailing = { Switch(checked = notifComentarios, onCheckedChange = { notifComentarios = it }, colors = SwitchDefaults.colors(checkedTrackColor = SenaGreen)) }
                         )
                     }
                 }
@@ -217,12 +232,15 @@ fun ProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
 
                 SenaButton(
                     text = "Cerrar Sesión",
-                    onClick = { onNavigate(AppNavigation.HOME) },
+                    onClick = {
+                        authViewModel.logout()
+                        onNavigate(AppNavigation.HOME)
+                    },
                     icon = Icons.AutoMirrored.Filled.Logout,
-                    containerColor = SenaDanger,
+                    containerColor = senaColors().danger,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }
@@ -236,16 +254,16 @@ fun MetricCardAprendiz(icon: ImageVector, value: String, label: String, modifier
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
         shadowElevation = 2.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorderSoft)
+        border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(icon, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = SenaText)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+            Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = senaColors().text)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
         }
     }
 }

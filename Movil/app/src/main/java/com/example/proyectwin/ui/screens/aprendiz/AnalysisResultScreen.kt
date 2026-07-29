@@ -1,4 +1,4 @@
-﻿package com.example.proyectwin.ui.screens.aprendiz
+package com.example.proyectwin.ui.screens.aprendiz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,13 +30,13 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "Resultado del Análisis",
+                title = "Resultado del An�lisis",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(text = "Finalizar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
@@ -58,51 +58,51 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SenaPageHeader(
-                title = "Análisis Completado",
+                title = "An�lisis Completado",
                 subtitle = "Revisa el informe de originalidad generado por nuestro sistema.",
                 icon = Icons.Default.Verified
             )
 
             // High Level Summary Card (React style)
-            SenaCard(containerColor = SenaSuccess.copy(alpha = 0.05f), elevation = 1.dp) {
+            SenaCard(containerColor = senaColors().success.copy(alpha = 0.05f), elevation = 1.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(modifier = Modifier.size(56.dp), shape = CircleShape, color = SenaSuccess) {
+                    Surface(modifier = Modifier.size(56.dp), shape = CircleShape, color = senaColors().success) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
                         }
                     }
                     Spacer(Modifier.width(20.dp))
                     Column {
-                        Text("Análisis Exitoso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = SenaSuccess)
-                        Text("El sistema no encontró similitudes críticas en tu propuesta.", style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
+                        Text("An�lisis Exitoso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = senaColors().success)
+                        Text("El sistema no encontr� similitudes cr�ticas en tu propuesta.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
                     }
                 }
             }
 
             // Metrics Grid (React cards)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ResultMetricCard("Similitud", "12%", SenaSuccess, modifier = Modifier.weight(1f))
-                ResultMetricCard("Coincidencias", "3", SenaWarning, modifier = Modifier.weight(1f))
+                ResultMetricCard("Similitud", "12%", senaColors().success, modifier = Modifier.weight(1f))
+                ResultMetricCard("Coincidencias", "3", senaColors().warning, modifier = Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ResultMetricCard("Proyectos", "2", SenaInfo, modifier = Modifier.weight(1f))
-                ResultMetricCard("Estado", "Aprobado", SenaGreen, modifier = Modifier.weight(1f))
+                ResultMetricCard("Proyectos", "2", senaColors().info, modifier = Modifier.weight(1f))
+                ResultMetricCard("Estado", "Aprobado", senaColors().green, modifier = Modifier.weight(1f))
             }
 
             // Detailed Matches (The "Table" in React)
             SenaSectionHeader(title = "Detalle de Coincidencias")
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 MatchItem("Plataforma Educativa SENA", "65%", "Resumen", onClick = { onViewDetail("1") })
-                MatchItem("Sistema de Notas Web", "8%", "Tecnologías", onClick = { onViewDetail("2") })
+                MatchItem("Sistema de Notas Web", "8%", "Tecnolog�as", onClick = { onViewDetail("2") })
             }
 
             // Recommendations
             SenaSectionHeader(title = "Recomendaciones IA")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    RecommendationItem("El título de tu proyecto es original y descriptivo.")
-                    RecommendationItem("Las tecnologías propuestas son adecuadas.")
-                    RecommendationItem("Considera ampliar la sección de metodología.")
+                    RecommendationItem("El t�tulo de tu proyecto es original y descriptivo.")
+                    RecommendationItem("Las tecnolog�as propuestas son adecuadas.")
+                    RecommendationItem("Considera ampliar la secci�n de metodolog�a.")
                 }
             }
 
@@ -116,11 +116,11 @@ fun ResultMetricCard(label: String, value: String, color: Color, modifier: Modif
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = color)
         }
     }
@@ -131,11 +131,11 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
     SenaCard(onClick = onClick, elevation = 0.5.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(project, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                Text("Sección: $section", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                Text(project, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                Text("Secci�n: $section", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             }
             Surface(
-                color = if (percentage.toInt().let { it > 50 }) SenaWarning.copy(alpha = 0.1f) else SenaSuccess.copy(alpha = 0.1f),
+                color = if (percentage.toInt().let { it > 50 }) senaColors().warning.copy(alpha = 0.1f) else senaColors().success.copy(alpha = 0.1f),
                 shape = CircleShape
             ) {
                 Text(
@@ -143,7 +143,7 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Black,
-                    color = if (percentage.toInt().let { it > 50 }) SenaWarning else SenaSuccess
+                    color = if (percentage.toInt().let { it > 50 }) senaColors().warning else senaColors().success
                 )
             }
         }
@@ -153,9 +153,9 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
 @Composable
 fun RecommendationItem(text: String) {
     Row(verticalAlignment = Alignment.Top) {
-        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = SenaWarning, modifier = Modifier.size(16.dp).offset(y = 2.dp))
+        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = senaColors().warning, modifier = Modifier.size(16.dp).offset(y = 2.dp))
         Spacer(Modifier.width(12.dp))
-        Text(text, style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
+        Text(text, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
     }
 }
 

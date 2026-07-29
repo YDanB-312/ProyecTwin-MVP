@@ -1,4 +1,4 @@
-锘縫ackage com.example.proyectwin.ui.screens.admin
+package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,7 +30,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val scrollState = rememberScrollState()
-
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -38,26 +37,31 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "ProyecTwin",
+                title = "Auditor韆 de Proyecto",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
-                    text = "Ver Historial", 
+                    text = "HISTORIAL", 
                     onClick = { 
                         scope.launch {
-                            snackbarHostState.showSnackbar("Historial de cambios no disponible")
+                            snackbarHostState.showSnackbar("Bit醕ora t閏nica encriptada")
                         }
                     }, 
                     isPrimary = false, 
                     modifier = Modifier.weight(1f)
                 )
-                SenaButton(text = "Ver Similitudes", onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_DETAIL) }, modifier = Modifier.weight(1f))
+                SenaButton(
+                    text = "SIMILITUDES", 
+                    onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_DETAIL) }, 
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Default.Troubleshoot
+                )
             }
         }
     ) { paddingValues ->
@@ -66,100 +70,82 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
-            SenaPageHeader(
-                title = "Control de Proyecto",
-                subtitle = "Supervisi贸n detallada de la propuesta t茅cnica y su estado en el sistema.",
-                icon = Icons.Default.FolderSpecial
+            // --- HEADER PREMIUM ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xFF022C22), Color(0xFF064E3B))
+                        )
+                    )
             )
 
-            // Status Banner
-            SenaCard(containerColor = Color.White, elevation = 2.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Estado Actual", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                        Spacer(Modifier.height(4.dp))
-                        SenaStatusBadge(status = "Aprobado")
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("C贸digo Proyecto", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                        Text("#PRJ-2568", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Black, color = SenaText)
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-60).dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Info Principal Flotante
+                SenaCard(elevation = 8.dp) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SenaStatusBadge(status = "Aprobado")
+                            Text("#PRJ-2568", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
+                        }
+
+                        Text(
+                            "Sistema IoT para Agricultura de Precisi髇", 
+                            style = MaterialTheme.typography.titleLarge, 
+                            fontWeight = FontWeight.Black, 
+                            color = senaColors().text,
+                            lineHeight = 28.sp
+                        )
+
+                        HorizontalDivider(color = senaColors().borderSoft)
+
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            AdminProjectDetailRow(Icons.Default.School, "Programa", "ADSO")
+                            AdminProjectDetailRow(Icons.Default.Person, "Aprendiz L韉er", "Maria Gonzalez")
+                            AdminProjectDetailRow(Icons.Default.SupervisorAccount, "Instructor", "Carlos Ruiz")
+                        }
                     }
                 }
-            }
 
-            SenaSectionHeader(title = "Informaci贸n T茅cnica")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Sistema IoT para Agricultura de Precisi贸n", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                    HorizontalDivider(color = SenaBorderSoft)
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        AdminProjectDetailRow(Icons.Default.School, "Programa", "ADSO - An谩lisis y Desarrollo")
-                        AdminProjectDetailRow(Icons.Default.Person, "Aprendiz L铆der", "Maria Gonzalez")
-                        AdminProjectDetailRow(Icons.Default.Badge, "Ficha", "ADSO-2568")
-                        AdminProjectDetailRow(Icons.Default.CalendarToday, "Fecha Registro", "15/03/2026")
-                        AdminProjectDetailRow(Icons.Default.SupervisorAccount, "Instructor", "Carlos Ruiz")
-                    }
-                }
-            }
-
-            SenaSectionHeader(title = "Contenido de la Propuesta")
-            SenaCard {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Resumen Ejecutivo", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaTextLight)
+                SenaSectionHeader(title = "Resumen Ejecutivo")
+                SenaCard {
                     Text(
-                        "Desarrollo de un sistema basado en sensores IoT para monitorear variables ambientales en cultivos, permitiendo la toma de decisiones en tiempo real para optimizar el riego y la fertilizaci贸n.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SenaTextSecondary,
-                        lineHeight = 20.sp
+                        "Desarrollo de un sistema basado en sensores IoT para monitorear variables ambientales en cultivos, permitiendo la toma de decisiones en tiempo real.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = senaColors().textSecondary,
+                        lineHeight = 22.sp
                     )
-                    
-                    HorizontalDivider(color = SenaBorderSoft)
-                    
-                    Text("Palabras Clave", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaTextLight)
+                    Spacer(Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("IoT", "Agricultura", "Python").forEach { tag ->
-                            SenaChip(text = tag, color = SenaGreen, isSelected = false)
+                        listOf("IoT", "SENA", "AI").forEach { tag ->
+                            SenaChip(text = tag, color = senaColors().green)
                         }
                     }
                 }
-            }
 
-            SenaSectionHeader(title = "Equipo de Trabajo")
-            SenaCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf(
-                        "Maria Gonzalez" to "L铆der",
-                        "Juan P茅rez" to "Integrante",
-                        "Laura G贸mez" to "Integrante"
-                    ).forEachIndexed { index, pair ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                modifier = Modifier.size(36.dp),
-                                shape = CircleShape,
-                                color = if (index == 0) SenaGreen.copy(alpha = 0.1f) else SenaBorderSoft
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(pair.first.take(1), fontWeight = FontWeight.Bold, color = if (index == 0) SenaGreen else SenaTextMuted)
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(pair.first, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
-                                Text(pair.second, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                            }
-                        }
+                SenaSectionHeader(title = "Equipo T閏nico")
+                SenaCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        TeamMemberRow("MG", "Maria Gonzalez", "L韉er de Proyecto", true)
+                        TeamMemberRow("JP", "Juan P閞ez", "Desarrollador Backend")
+                        TeamMemberRow("LG", "Laura G髆ez", "Dise馻dora UI/UX")
                     }
                 }
-            }
 
-            Spacer(Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(60.dp))
+            }
         }
     }
 }
@@ -167,10 +153,14 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
 @Composable
 fun AdminProjectDetailRow(icon: ImageVector, label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = SenaTextLight, modifier = Modifier.size(16.dp))
+        Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = senaColors().background) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
+            }
+        }
         Spacer(modifier = Modifier.width(12.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = SenaTextLight, modifier = Modifier.width(120.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, modifier = Modifier.width(100.dp))
+        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
     }
 }
 
