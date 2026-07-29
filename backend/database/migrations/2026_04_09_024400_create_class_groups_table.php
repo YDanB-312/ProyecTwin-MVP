@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('codigo')->unique();
             $table->string('nombre');
-            $table->boolean('estado')->default(true);
+            $table->enum('estado', ['activo', 'inactivo'])->default('activo');
             $table->foreignId('id_programa')->constrained('training_programs');
             $table->foreignId('id_instructor')->nullable()->constrained('instructors');
             $table->timestamps();
