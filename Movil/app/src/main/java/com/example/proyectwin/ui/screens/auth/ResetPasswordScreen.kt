@@ -39,7 +39,7 @@ fun ResetPasswordScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground)
+            .background(senaColors().background)
             .verticalScroll(scrollState)
     ) {
         // Decorative Header
@@ -47,7 +47,7 @@ fun ResetPasswordScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
-                .background(Brush.verticalGradient(colors = listOf(SenaHeader, SenaGreen)))
+                .background(Brush.verticalGradient(colors = listOf(senaColors().header, senaColors().green)))
                 .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -83,7 +83,7 @@ fun ResetPasswordScreen(
                     Text(
                         "Crea una nueva contraseña segura para tu cuenta. Asegúrate de que sea diferente a las anteriores.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = SenaTextSecondary,
+                        color = senaColors().textSecondary,
                         textAlign = TextAlign.Center,
                         lineHeight = 18.sp
                     )

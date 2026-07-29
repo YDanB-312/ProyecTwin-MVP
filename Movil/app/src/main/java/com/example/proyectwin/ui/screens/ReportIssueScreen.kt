@@ -38,7 +38,7 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
@@ -102,11 +102,11 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 ).forEach { (id, desc, status) ->
                     SenaCard(elevation = 0.5.dp) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(id, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = SenaGreen)
+                            Text(id, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().green)
                             Spacer(Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(desc, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
-                                Text("Hace 2 días", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                                Text(desc, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                Text("Hace 2 días", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                             }
                             SenaStatusBadge(status = status)
                         }

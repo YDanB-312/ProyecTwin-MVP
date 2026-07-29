@@ -48,7 +48,7 @@ fun AnalyzingProjectScreen(onCancel: () -> Unit, onAnalysisComplete: () -> Unit)
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -69,13 +69,13 @@ fun AnalyzingProjectScreen(onCancel: () -> Unit, onAnalysisComplete: () -> Unit)
                     Surface(
                         modifier = Modifier.size(80.dp),
                         shape = CircleShape,
-                        color = SenaGreen.copy(alpha = 0.1f)
+                        color = senaColors().green.copy(alpha = 0.1f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = SenaGreen,
+                                tint = senaColors().green,
                                 modifier = Modifier.size(40.dp)
                             )
                         }
@@ -85,14 +85,14 @@ fun AnalyzingProjectScreen(onCancel: () -> Unit, onAnalysisComplete: () -> Unit)
                         "Analizando tu proyecto",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        color = SenaText,
+                        color = senaColors().text,
                         textAlign = TextAlign.Center
                     )
 
                     Text(
                         "Nuestro sistema de inteligencia artificial está revisando tu proyecto en busca de posibles similitudes con otros trabajos registrados.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SenaTextSecondary,
+                        color = senaColors().textSecondary,
                         textAlign = TextAlign.Center
                     )
 
@@ -104,8 +104,8 @@ fun AnalyzingProjectScreen(onCancel: () -> Unit, onAnalysisComplete: () -> Unit)
                                 .fillMaxWidth()
                                 .height(10.dp)
                                 .clip(CircleShape),
-                            color = SenaGreen,
-                            trackColor = SenaBorderSoft
+                            color = senaColors().green,
+                            trackColor = senaColors().borderSoft
                         )
                     }
 
@@ -124,7 +124,7 @@ fun AnalyzingProjectScreen(onCancel: () -> Unit, onAnalysisComplete: () -> Unit)
                         title = "Procesamiento IA",
                         message = "Este proceso puede tomar unos segundos. Por favor no cierres la aplicación.",
                         icon = Icons.Default.Info,
-                        color = SenaInfo
+                        color = senaColors().info
                     )
 
                     SenaButton(
@@ -145,7 +145,7 @@ fun AnalysisStepItem(text: String, isCompleted: Boolean = false, isActive: Boole
         Icon(
             imageVector = if (isCompleted) Icons.Default.CheckCircle else if (isActive) Icons.Default.Sync else Icons.Default.RadioButtonUnchecked,
             contentDescription = null,
-            tint = if (isCompleted) SenaSuccess else if (isActive) SenaGreen else SenaTextMuted,
+            tint = if (isCompleted) senaColors().success else if (isActive) senaColors().green else senaColors().textMuted,
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(12.dp))
@@ -153,7 +153,7 @@ fun AnalysisStepItem(text: String, isCompleted: Boolean = false, isActive: Boole
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-            color = if (isCompleted || isActive) SenaText else SenaTextMuted
+            color = if (isCompleted || isActive) senaColors().text else senaColors().textMuted
         )
     }
 }

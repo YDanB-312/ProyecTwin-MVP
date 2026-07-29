@@ -1,4 +1,4 @@
-ï»¿package com.example.proyectwin.ui.screens.admin
+package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -18,9 +18,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AdminViewModel
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 data class UserItem(
@@ -33,28 +36,57 @@ data class UserItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun UserManagementScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel(),
+    adminViewModel: AdminViewModel = viewModel()
+) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Todos") }
-    val roles = listOf("Todos", "Aprendiz", "Instructor", "Administrador")
-    
     var showDeleteDialog by remember { mutableStateOf(false) }
     var userToDelete by remember { mutableStateOf<UserItem?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    
-    val dummyUsers = remember {
-        listOf(
-            UserItem("Ana Martinez Lopez", "1023456789", "ana.martinez@soy.sena.edu.co", "Aprendiz", "Activo"),
-            UserItem("Juan Perez Gomez", "1045678901", "juan.perez@soy.sena.edu.co", "Aprendiz", "Inactivo"),
-            UserItem("Carlos Rodriguez Diaz", "79876543", "carlos.rodriguez@sena.edu.co", "Instructor", "Activo"),
-            UserItem("Diego Munoz Herrera", "80123456", "diego.munoz@sena.edu.co", "Administrador", "Activo"),
-        )
+    val adminState by adminViewModel.uiState.collectAsState()
+
+    LaunchedEffect(adminState.isLoading) {
+        if (!adminState.isLoading) isRefreshing = false
     }
 
-    val filteredUsers = dummyUsers.filter { user ->
+    if (adminState.isLoading && adminState.users.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                SenaSkeletonLine(width = 180.dp, height = 24.dp)
+                SenaSkeletonLine(width = 260.dp, height = 14.dp)
+                Spacer(Modifier.height(12.dp))
+                repeat(4) { SenaSkeletonCard(lines = 3, hasAvatar = true) }
+            }
+        }
+        return
+    }
+
+    val roles = remember(adminState.users) {
+        listOf("Todos") + adminState.users.map { it.roleDisplayName }.distinct().sorted()
+    }
+
+    val usersList = remember(adminState.users) {
+        adminState.users.map { user ->
+            UserItem(
+                name = user.name,
+                document = user.documentoIdentidad ?: "",
+                email = user.email,
+                role = user.roleDisplayName,
+                status = "Activo"
+            )
+        }
+    }
+
+    val filteredUsers = usersList.filter { user ->
         val matchesRole = if (selectedRole == "Todos") true else user.role == selectedRole
-        val matchesSearch = user.name.contains(searchQuery, ignoreCase = true) || user.email.contains(searchQuery, ignoreCase = true)
+        val matchesSearch = user.name.contains(searchQuery, ignoreCase = true) || user.email.contains(searchQuery, ignoreCase = true) || user.document.contains(searchQuery, ignoreCase = true)
         matchesRole && matchesSearch
     }
 
@@ -68,27 +100,33 @@ fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 showNotifications = true,
             )
         },
+        containerColor = senaColors().background,
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onNavigate(AppNavigation.ADMIN_NEW_USER) },
-                containerColor = SenaGreen,
+                containerColor = senaColors().green,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
                 Icon(Icons.Default.PersonAdd, contentDescription = "Nuevo Usuario")
             }
-        },
-        containerColor = SenaBackground
+        }
     ) { paddingValues ->
+        SenaPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; adminViewModel.refresh() },
+            modifier = Modifier.padding(paddingValues)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 SenaPageHeader(
-                    title = "GestiÃ³n de Usuarios",
+                    title = "Gestión de Usuarios",
                     subtitle = "Administra las cuentas, roles y permisos de acceso al sistema.",
                     icon = Icons.Default.ManageAccounts
                 )
@@ -96,47 +134,30 @@ fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
 
             // Filter Section
             item {
-                SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text(
-                            "Filtros de bÃºsqueda",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
-                            letterSpacing = 0.5.sp
-                        )
-                        SenaTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            label = "",
-                            placeholder = "Buscar por nombre, correo o documento...",
-                            leadingIcon = Icons.Default.Search
-                        )
-                        
-                        Text(
-                            "Filtrar por rol",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = SenaTextLight,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            roles.forEach { role ->
-                                SenaChip(
-                                    text = role,
-                                    color = when(role) {
-                                        "Aprendiz" -> SenaSuccess
-                                        "Instructor" -> SenaWarning
-                                        "Administrador" -> SenaDanger
-                                        else -> SenaGreen
-                                    },
-                                    isSelected = selectedRole == role,
-                                    onClick = { selectedRole = role }
-                                )
-                            }
+                SenaFilterBar(title = "Filtros de búsqueda") {
+                    SenaTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = "",
+                        placeholder = "Buscar por nombre, correo o documento...",
+                        leadingIcon = Icons.Default.Search
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        roles.forEach { role ->
+                            SenaChip(
+                                text = role,
+                                color = when(role) {
+                                    "Aprendiz" -> senaColors().success
+                                    "Instructor" -> senaColors().warning
+                                    "Administrador" -> senaColors().danger
+                                    else -> senaColors().green
+                                },
+                                isSelected = selectedRole == role,
+                                onClick = { selectedRole = role }
+                            )
                         }
                     }
                 }
@@ -145,7 +166,7 @@ fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             if (filteredUsers.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No hay usuarios que coincidan con los criterios de bÃºsqueda.",
+                        message = "No hay usuarios que coincidan con los criterios de búsqueda.",
                         icon = Icons.Default.GroupOff
                     )
                 }
@@ -154,15 +175,16 @@ fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     UserCard(
                         user = user,
                         onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", "1")) },
-                        onDelete = { 
+                        onDelete = {
                             userToDelete = user
-                            showDeleteDialog = true 
+                            showDeleteDialog = true
                         }
                     )
                 }
             }
-            
+
             item { Spacer(Modifier.height(80.dp)) }
+        }
         }
     }
 
@@ -170,15 +192,15 @@ fun UserManagementScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Eliminar Usuario") },
-            text = { Text("Â¿EstÃ¡s seguro de que deseas eliminar a ${userToDelete?.name}? Esta acciÃ³n no se puede deshacer.") },
+            text = { Text("¿Estás seguro de que deseas eliminar a ${userToDelete?.name}? Esta acción no se puede deshacer.") },
             confirmButton = {
-                TextButton(onClick = { 
+                TextButton(onClick = {
                     showDeleteDialog = false
                     scope.launch {
                         snackbarHostState.showSnackbar("Usuario eliminado")
                     }
                 }) {
-                    Text("Eliminar", color = SenaDanger)
+                    Text("Eliminar", color = senaColors().danger)
                 }
             },
             dismissButton = {
@@ -204,13 +226,13 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = CircleShape,
-                        color = SenaGreen.copy(alpha = 0.1f)
+                        color = senaColors().green.copy(alpha = 0.1f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 user.name.take(1).uppercase(),
                                 fontWeight = FontWeight.Bold,
-                                color = SenaGreen
+                                color = senaColors().green
                             )
                         }
                     }
@@ -220,15 +242,15 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                             user.name,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = SenaText
+                            color = senaColors().text
                         )
-                        Text(user.email, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                        Text(user.email, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     }
                 }
                 SenaStatusBadge(status = user.status)
             }
 
-            HorizontalDivider(color = SenaBorderSoft)
+            HorizontalDivider(color = senaColors().borderSoft)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -236,37 +258,37 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Rol y Documento", style = MaterialTheme.typography.labelSmall, color = SenaTextLight, fontSize = 9.sp)
+                    Text("Rol y Documento", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, fontSize = 9.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.Badge, 
-                            contentDescription = null, 
-                            tint = SenaGreen, 
+                            Icons.Default.Badge,
+                            contentDescription = null,
+                            tint = senaColors().green,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "${user.role} â€¢ ${user.document}",
+                            "${user.role} • ${user.document}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SenaTextSecondary
+                            color = senaColors().textSecondary
                         )
                     }
                 }
-                
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilledIconButton(
                         onClick = onEdit,
                         modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = SenaBorderSoft)
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = senaColors().borderSoft)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = SenaGreen, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green, modifier = Modifier.size(18.dp))
                     }
                     FilledIconButton(
                         onClick = onDelete,
                         modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = SenaBorderSoft)
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = senaColors().borderSoft)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = SenaDanger, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = senaColors().danger, modifier = Modifier.size(18.dp))
                     }
                 }
             }

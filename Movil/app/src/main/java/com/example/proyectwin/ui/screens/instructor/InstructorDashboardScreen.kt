@@ -24,36 +24,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-
-data class PendingProject(
-    val id: String,
-    val title: String,
-    val student: String,
-    val date: String,
-    val program: String = "ADSO",
-)
-
-data class InstructorDashboardData(
-    val userName: String = "Carlos",
-    val date: String = "28 may. 2026",
-    val pendingProjects: List<PendingProject> = emptyList(),
-)
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
-    val data = remember {
-        InstructorDashboardData(
-            pendingProjects = listOf(
-                PendingProject("1", "Sistema IoT para Agricultura", "Ana Martínez", "15 Nov 2026"),
-                PendingProject("2", "App Movil para Turismo Local", "Juan Pérez", "14 Nov 2026"),
-                PendingProject("3", "Plataforma de Reservas Médicas", "Diego Mora", "12 Nov 2026"),
-            )
-        )
+fun InstructorDashboardScreen(
+    onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel(),
+    dashboardViewModel: DashboardViewModel = viewModel()
+) {
+    val authState by authViewModel.uiState.collectAsState()
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    val user = authState.user
+
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(user?.id, refreshTrigger) {
+        user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
     }
+
+    LaunchedEffect(dashState.isLoading) {
+        if (!dashState.isLoading) isRefreshing = false
+    }
+
+    val pendingCount = dashState.projects.count { it.estado == ProjectStatus.PENDIENTE.value }
+    val enProgresoCount = dashState.projects.count { it.estado == ProjectStatus.EN_PROGRESO.value }
+    val inboxProjects = dashState.projects.filter { it.estado == ProjectStatus.EN_PROGRESO.value }
 
     Scaffold(
         topBar = {
@@ -64,10 +69,16 @@ fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
                 onLogout = { onNavigate(AppNavigation.HOME) }
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background,
+        bottomBar = bottomBar
     ) { paddingValues ->
+        SenaPullRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = { isRefreshing = true; refreshTrigger++ },
+            modifier = Modifier.padding(paddingValues)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
@@ -78,29 +89,29 @@ fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
                         .fillMaxWidth()
                         .height(260.dp)
                         .clip(RoundedCornerShape(bottomStart = 48.dp, bottomEnd = 48.dp))
-                        .background(Brush.verticalGradient(colors = listOf(Color(0xFF0F172A), SenaHeader))) // Midnight to Emerald
+                        .background(Brush.verticalGradient(colors = listOf(Color(0xFF0F172A), senaColors().header)))
                         .padding(24.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
                         Text(
                             "Gestión de Proyectos",
                             style = MaterialTheme.typography.labelMedium,
-                            color = SenaAccent,
+                            color = senaColors().accent,
                             letterSpacing = 2.sp,
                             fontWeight = FontWeight.Black
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Instructor ${data.userName}",
+                            "Instructor ${user?.name ?: "Instructor"}",
                             style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.Black,
                             color = Color.White
                         )
                         Spacer(Modifier.height(16.dp))
-                        
+
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            InstructorSummaryMetric("24", "Activos", SenaAccent)
-                            InstructorSummaryMetric("3", "Pendientes", SenaWarning)
+                            InstructorSummaryMetric("$enProgresoCount", "Activos", senaColors().accent)
+                            InstructorSummaryMetric("$pendingCount", "Pendientes", senaColors().warning)
                         }
                     }
                 }
@@ -129,12 +140,12 @@ fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
                             onActionClick = { onNavigate(AppNavigation.INSTRUCTOR_REVISION) }
                         )
                     }
-                    
+
                     Column(
                         modifier = Modifier.padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        data.pendingProjects.forEach { project ->
+                        inboxProjects.forEach { project ->
                             ProductivityInboxCard(project, onClick = { onNavigate("instructor_detail/${project.id}") })
                         }
                     }
@@ -157,7 +168,7 @@ fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
                                 title = "Directorio",
                                 subtitle = "Tus aprendices",
                                 icon = Icons.Default.People,
-                                color = SenaInfo,
+                                color = senaColors().info,
                                 onClick = { onNavigate(AppNavigation.INSTRUCTOR_FICHAS) }
                             )
                         }
@@ -166,13 +177,14 @@ fun InstructorDashboardScreen(onNavigate: (String) -> Unit) {
                                 title = "Gestión Fichas",
                                 subtitle = "Administrar grupos",
                                 icon = Icons.AutoMirrored.Filled.Assignment,
-                                color = SenaGreen,
+                                color = senaColors().green,
                                 onClick = { onNavigate(AppNavigation.INSTRUCTOR_MANAGE_FICHAS) }
                             )
                         }
                     }
                 }
             }
+        }
         }
     }
 }
@@ -186,27 +198,32 @@ fun InstructorSummaryMetric(value: String, label: String, color: Color) {
 }
 
 @Composable
-fun ProductivityInboxCard(project: PendingProject, onClick: () -> Unit) {
+fun ProductivityInboxCard(project: Project, onClick: () -> Unit) {
     SenaCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 modifier = Modifier.size(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = SenaBorderSoft
+                color = senaColors().borderSoft
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(project.student.take(1), fontWeight = FontWeight.Black, color = SenaText, fontSize = 20.sp)
+                    Text(
+                        project.studentName?.take(1) ?: "?",
+                        fontWeight = FontWeight.Black,
+                        color = senaColors().text,
+                        fontSize = 20.sp
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(project.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = SenaText)
-                Text("Aprendiz: ${project.student}", style = MaterialTheme.typography.bodySmall, color = SenaTextLight)
+                Text(project.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = senaColors().text)
+                Text("Aprendiz: ${project.studentName ?: "Desconocido"}", style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(project.date, style = MaterialTheme.typography.labelSmall, color = SenaTextMuted)
+                Text(project.createdAt ?: "", style = MaterialTheme.typography.labelSmall, color = senaColors().textMuted)
                 Spacer(Modifier.height(8.dp))
-                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = SenaBorder, modifier = Modifier.size(12.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = senaColors().border, modifier = Modifier.size(12.dp))
             }
         }
     }
@@ -220,7 +237,7 @@ fun ToolCard(title: String, subtitle: String, icon: ImageVector, color: Color, o
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         shadowElevation = 4.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorderSoft)
+        border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -237,16 +254,11 @@ fun ToolCard(title: String, subtitle: String, icon: ImageVector, color: Color, o
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = SenaText)
-                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = senaColors().text)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             }
         }
     }
-}
-
-@Composable
-fun PaddingRow(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier = modifier.padding(horizontal = 20.dp), content = content)
 }
 
 @Preview(showBackground = true)

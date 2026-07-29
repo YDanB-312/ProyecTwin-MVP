@@ -39,7 +39,7 @@ fun ForgotPasswordScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground)
+            .background(senaColors().background)
             .verticalScroll(scrollState)
     ) {
         // Decorative Header
@@ -47,7 +47,7 @@ fun ForgotPasswordScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
-                .background(Brush.verticalGradient(colors = listOf(SenaHeader, SenaGreen)))
+                .background(Brush.verticalGradient(colors = listOf(senaColors().header, senaColors().green)))
                 .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -83,7 +83,7 @@ fun ForgotPasswordScreen(
                     Text(
                         "Ingresa tu correo institucional y te enviaremos las instrucciones para restablecer tu contraseña.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = SenaTextSecondary,
+                        color = senaColors().textSecondary,
                         textAlign = TextAlign.Center,
                         lineHeight = 18.sp
                     )
@@ -119,9 +119,9 @@ fun ForgotPasswordScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("¿Recordaste tu contraseña? ", style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
+                Text("¿Recordaste tu contraseña? ", style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
                 TextButton(onClick = onBackToLogin) {
-                    Text("Inicia sesión", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaGreen)
+                    Text("Inicia sesión", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = senaColors().green)
                 }
             }
         }

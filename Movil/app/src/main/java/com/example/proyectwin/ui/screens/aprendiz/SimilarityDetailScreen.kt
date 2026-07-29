@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,133 +50,148 @@ fun SimilarityDetailScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "ProyecTwin",
+                title = "Comparativa Técnica",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            SenaPageHeader(
-                title = "Detalle de Similitud",
-                subtitle = "Comparativa automática entre proyectos registrados.",
-                icon = Icons.Default.Compare
-            )
-
-            // Similarity Banner (Fidelity to frontend)
+            // --- HEADER PREMIUM (SIMILARITY) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(colors = listOf(SenaHeader, SenaGreen)))
-                    .padding(20.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Tu proyecto ${data.myProjectName} tiene coincidencias detectadas.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.9f),
-                        lineHeight = 18.sp
+                    .height(200.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(senaColors().header, Color(0xFF0F172A))
+                        )
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Similitud General: ",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White
-                        )
-                        Text(
-                            "${data.totalPercentage}%",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White
-                        )
-                    }
-                }
-            }
+            )
 
-            SenaSectionHeader(title = "Comparación de Proyectos")
-            
-            // Side by Side Comparison
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // My Project
-                SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.FilePresent, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Mi Proyecto", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaGreen)
-                        }
-                        Text(data.myProjectName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                        Text("Aprendiz: Maria Gonzalez • ADSO", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                    }
-                }
-
-                // Center Icon
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Surface(
-                        modifier = Modifier.size(32.dp),
-                        shape = CircleShape,
-                        color = SenaBorderSoft,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SenaBorder)
+            // --- FLOATING CONTENT ---
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-80).dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Main Score Card
+                SenaCard(elevation = 8.dp) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = SenaTextLight, modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-
-                // Other Project
-                SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "RIESGO DE SIMILITUD",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Black,
+                            color = senaColors().danger,
+                            letterSpacing = 1.sp
+                        )
+                        
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.FilePresent, contentDescription = null, tint = SenaWarning, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Proyecto Coincidente", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaWarning)
-                        }
-                        Text(data.otherProjectName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                        Text("Aprendiz: ${data.otherAuthor} • ${data.otherProgram}", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                    }
-                }
-            }
-
-            SenaSectionHeader(title = "Secciones Coincidentes")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    data.matches.forEachIndexed { index, match ->
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(match.section, style = MaterialTheme.typography.bodySmall, color = SenaText)
-                                Text("${match.percentage}%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = if (match.percentage > 70) SenaDanger else if (match.percentage > 40) SenaWarning else SenaSuccess)
-                            }
-                            LinearProgressIndicator(
-                                progress = { match.percentage / 100f },
-                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                color = if (match.percentage > 70) SenaDanger else if (match.percentage > 40) SenaWarning else SenaGreen,
-                                trackColor = SenaBorderSoft
+                            Text(
+                                text = "${data.totalPercentage}%",
+                                style = MaterialTheme.typography.displayMedium,
+                                fontWeight = FontWeight.Black,
+                                color = senaColors().danger
                             )
                         }
-                        if (index < data.matches.size - 1) {
-                            HorizontalDivider(color = SenaBorderSoft, modifier = Modifier.padding(top = 8.dp))
+                        
+                        Text(
+                            "Coincidencias moderadas detectadas en la base de datos global.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = senaColors().textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                SenaSectionHeader(title = "Contraste de Proyectos")
+                
+                // Side by Side
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ProjectMiniCard("TU PROYECTO", data.myProjectName, senaColors().green, Modifier.weight(1f))
+                    ProjectMiniCard("COINCIDENCIA", data.otherProjectName, senaColors().warning, Modifier.weight(1f))
+                }
+
+                SenaSectionHeader(title = "Desglose por Secciones")
+                SenaCard(elevation = 1.dp) {
+                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                        data.matches.forEach { match ->
+                            MatchProgressItem(match.section, match.percentage)
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(40.dp))
+                SenaAlertBanner(
+                    title = "Acción Recomendada",
+                    message = "Considera reformular las secciones con más del 60% de similitud para asegurar la originalidad de tu propuesta.",
+                    icon = Icons.Default.Lightbulb,
+                    color = senaColors().warning
+                )
+
+                SenaButton(
+                    text = "REGRESAR A PROYECTOS",
+                    onClick = onBack,
+                    isPrimary = false,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(60.dp))
+            }
         }
+    }
+}
+
+@Composable
+fun ProjectMiniCard(label: String, title: String, color: Color, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.height(110.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = senaColors().backgroundElevated,
+        border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft),
+        shadowElevation = 2.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = color)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                title, 
+                style = MaterialTheme.typography.bodySmall, 
+                fontWeight = FontWeight.Bold, 
+                color = senaColors().text,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun MatchProgressItem(title: String, percentage: Int) {
+    val color = if (percentage > 70) senaColors().danger else if (percentage > 40) senaColors().warning else senaColors().green
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+            Text("$percentage%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Black, color = color)
+        }
+        LinearProgressIndicator(
+            progress = { percentage / 100f },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+            color = color,
+            trackColor = senaColors().borderSoft,
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+        )
     }
 }
 

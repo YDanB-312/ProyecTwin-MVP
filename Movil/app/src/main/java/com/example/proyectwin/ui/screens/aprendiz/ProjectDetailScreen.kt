@@ -1,4 +1,4 @@
-锘縫ackage com.example.proyectwin.ui.screens.aprendiz
+package com.example.proyectwin.ui.screens.aprendiz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,35 +19,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.BugReport
+import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.theme.*
-
-data class ProjectDetailData(
-    val title: String = "Sistema de Gesti贸n Acad茅mica",
-    val status: String = "En revisi贸n",
-    val program: String = "ADSO - An谩lisis y Desarrollo de Software",
-    val date: String = "15/03/2026",
-    val description: String = "Desarrollo de un sistema integral para la gesti贸n acad茅mica que permita administrar notas, horarios, asistencia y reportes acad茅micos en tiempo real.",
-    val instructor: String = "Carlos Ruiz",
-    val team: List<TeamMember> = listOf(
-        TeamMember("Maria Gonzalez", "Creador / Lider", "MG"),
-        TeamMember("Juan P茅rez", "Integrante", "JP"),
-        TeamMember("Laura G贸mez", "Integrante", "LG")
-    ),
-    val observations: List<ProjectObservation> = listOf(
-        ProjectObservation("Carlos Ruiz | Instructor", "El proyecto necesita mejorar la secci贸n de an谩lisis de requisitos. Se recomienda ampliar la documentaci贸n t茅cnica.", "10 may 2026")
-    )
-)
-
-data class TeamMember(val name: String, val role: String, val initials: String)
-data class ProjectObservation(val author: String, val text: String, val date: String)
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    val data = remember { ProjectDetailData() }
+fun ProjectDetailScreen(
+    projectId: String = "",
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
+    val project = remember(projectId) {
+        MockDataProvider.findProjectById(projectId.toIntOrNull() ?: 0)
+    }
+    val bugReports = remember(projectId) {
+        val pid = projectId.toIntOrNull() ?: 0
+        MockDataProvider.getBugReportsByProject(pid)
+    }
+    val similarities = remember(projectId) {
+        val pid = projectId.toIntOrNull() ?: 0
+        MockDataProvider.getSimilaritiesByProject(pid)
+    }
 
     Scaffold(
         topBar = {
@@ -58,17 +59,17 @@ fun ProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavigate: 
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
-                    text = "Ver Similitudes", 
+                    text = "Ver Similitudes",
                     onClick = { onNavigate(AppNavigation.APRENDIZ_SIMILARITY) },
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Warning
                 )
                 SenaButton(
-                    text = "Editar", 
+                    text = "Editar",
                     onClick = { onNavigate(AppNavigation.APRENDIZ_NEW_PROJECT) },
                     isPrimary = false,
                     modifier = Modifier.weight(1f),
@@ -86,103 +87,95 @@ fun ProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavigate: 
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SenaPageHeader(
-                title = data.title,
-                subtitle = "Detalle del proyecto de formaci贸n",
+                title = project?.title ?: "Proyecto no encontrado",
+                subtitle = "Detalle del proyecto de formaci髇",
                 icon = Icons.Default.FolderOpen
             )
 
-            SenaSectionHeader(title = "Informaci贸n General")
+            SenaSectionHeader(title = "Informaci髇 General")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    DetailRowItem(Icons.Default.Title, "Nombre del Proyecto", data.title)
-                    HorizontalDivider(color = SenaBorderSoft)
-                    DetailRowItem(Icons.Default.School, "Programa de Formaci贸n", data.program)
-                    HorizontalDivider(color = SenaBorderSoft)
+                    DetailRowItem(Icons.Default.Title, "Nombre del Proyecto", project?.title ?: "N/A")
+                    HorizontalDivider(color = senaColors().borderSoft)
+                    DetailRowItem(Icons.Default.Person, "Aprendiz", project?.studentName ?: "N/A")
+                    HorizontalDivider(color = senaColors().borderSoft)
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.weight(1f)) {
-                            DetailRowItem(Icons.Default.CalendarToday, "Fecha", data.date)
+                            DetailRowItem(Icons.Default.CalendarToday, "Fecha", project?.createdAt ?: "Sin fecha")
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                             Spacer(Modifier.height(4.dp))
-                            SenaStatusBadge(status = data.status)
+                            project?.let { SenaStatusBadge(status = it.statusDisplay) }
                         }
                     }
-                    HorizontalDivider(color = SenaBorderSoft)
+                    HorizontalDivider(color = senaColors().borderSoft)
                     Column {
-                        Text("Descripci贸n", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                        Text("Descripci髇", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            data.description, 
-                            style = MaterialTheme.typography.bodyMedium, 
-                            color = SenaTextSecondary,
+                            project?.description ?: "Sin descripci髇",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = senaColors().textSecondary,
                             lineHeight = 22.sp
                         )
                     }
                 }
             }
 
-            SenaSectionHeader(title = "Integrantes del Equipo")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    data.team.forEachIndexed { index, member ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = CircleShape,
-                                color = if (index == 0) SenaGreen else SenaBorderSoft
+            if (bugReports.isNotEmpty()) {
+                SenaSectionHeader(title = "Reportes de Error")
+                bugReports.forEach { bug ->
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
+                                Text(bug.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                SenaStatusBadge(status = bug.statusDisplay)
+                            }
+                            Text(bug.descripcion, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                            Text("Tipo: ${bug.typeDisplay}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                        }
+                    }
+                }
+            }
+
+            if (similarities.isNotEmpty()) {
+                SenaSectionHeader(title = "Similitudes Detectadas")
+                similarities.forEach { sim ->
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "${sim.project1Title} vs ${sim.project2Title}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = senaColors().text
+                                )
+                                Surface(color = senaColors().danger.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
                                     Text(
-                                        member.initials, 
-                                        style = MaterialTheme.typography.labelMedium, 
+                                        sim.similitudPercent,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (index == 0) Color.White else SenaText
+                                        color = senaColors().danger
                                     )
                                 }
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Column {
-                                Text(member.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                                Text(member.role, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                            }
-                        }
-                        if (index < data.team.size - 1) {
-                            HorizontalDivider(color = SenaBorderSoft, modifier = Modifier.padding(start = 56.dp, top = 12.dp))
+                            Text("Estado: ${sim.statusDisplay}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                     }
                 }
             }
 
             SenaSectionHeader(title = "Observaciones del Instructor")
-            if (data.observations.isEmpty()) {
-                SenaEmptyState(message = "No hay observaciones para este proyecto.", icon = Icons.AutoMirrored.Filled.Chat)
-            } else {
-                data.observations.forEach { obs ->
-                    SenaCard(containerColor = Color.White, elevation = 2.dp) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.PersonSearch, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(obs.author, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaText)
-                                }
-                                Text(obs.date, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                            }
-                            Text(
-                                obs.text, 
-                                style = MaterialTheme.typography.bodySmall, 
-                                color = SenaTextSecondary,
-                                lineHeight = 18.sp
-                            )
-                        }
-                    }
-                }
-            }
+            SenaEmptyState(message = "No hay observaciones para este proyecto.", icon = Icons.AutoMirrored.Filled.Chat)
 
             Spacer(Modifier.height(80.dp))
         }
@@ -195,16 +188,16 @@ fun DetailRowItem(icon: ImageVector, label: String, value: String) {
         Surface(
             modifier = Modifier.size(32.dp),
             shape = RoundedCornerShape(8.dp),
-            color = SenaGreen.copy(alpha = 0.1f)
+            color = senaColors().green.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(16.dp))
             }
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
         }
     }
 }

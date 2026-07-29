@@ -1,6 +1,7 @@
 package com.example.proyectwin.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,34 +21,60 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-
-data class FichaMemberItem(
-    val initials: String,
-    val name: String,
-    val status: String,
-)
-
-data class FichaDetailData(
-    val nombre: String = "Análisis y Desarrollo de Software",
-    val codigo: String = "2568421",
-    val centro: String = "Centro de Biotecnología Industrial",
-    val instructor: String = "Carlos Ruiz",
-    val members: List<FichaMemberItem> = listOf(
-        FichaMemberItem("AM", "Ana Martínez", "Activo"),
-        FichaMemberItem("JG", "Juan García", "Activo"),
-        FichaMemberItem("LG", "Laura Gómez", "Activo"),
-        FichaMemberItem("CP", "Carlos Pérez", "Inactivo"),
-        FichaMemberItem("MR", "Maria Rodriguez", "Activo"),
-    ),
-)
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    val ficha = remember { FichaDetailData() }
+fun FichaDetailScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    fichasViewModel: FichasViewModel = viewModel()
+) {
+    val authState by authViewModel.uiState.collectAsState()
+    val user = authState.user
+
+    val ficha = remember(user) {
+        val targetFichaId = user?.fichaId
+        if (targetFichaId != null) {
+            MockDataProvider.findFichaById(targetFichaId)
+        } else {
+            MockDataProvider.getActiveFichas().firstOrNull()
+        }
+    }
+
+    var lightboxEstudiante by remember { mutableStateOf<com.example.proyectwin.data.model.GeneralUser?>(null) }
+
+    if (lightboxEstudiante != null) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)).clickable { lightboxEstudiante = null },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                SenaAvatar(
+                    fotoBase64 = null,
+                    nombre = lightboxEstudiante!!.name,
+                    modifier = Modifier.size(180.dp)
+                )
+                Spacer(Modifier.height(20.dp))
+                Text(lightboxEstudiante!!.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Aprendiz • Activo", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+            }
+            IconButton(
+                onClick = { lightboxEstudiante = null },
+                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White, modifier = Modifier.size(28.dp))
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -58,7 +85,7 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -73,13 +100,12 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 )
             }
 
-            // Ficha Info Card
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Brush.linearGradient(colors = listOf(SenaHeader, SenaGreen)))
+                        .background(Brush.linearGradient(colors = listOf(senaColors().header, senaColors().green)))
                         .padding(24.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -90,13 +116,13 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    ficha.nombre,
+                                    ficha?.programa ?: "Sin ficha asignada",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
                                 Text(
-                                    "Código: ${ficha.codigo}",
+                                    "Código: ${ficha?.codigo ?: "N/A"}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.White.copy(alpha = 0.8f)
                                 )
@@ -106,7 +132,7 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                                 shape = CircleShape
                             ) {
                                 Text(
-                                    "ACTIVA",
+                                    ficha?.statusDisplay?.uppercase() ?: "N/A",
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
@@ -114,13 +140,20 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                                 )
                             }
                         }
-                        
+
                         HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                        
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(ficha.centro, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                            Text("Copiar código", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                            Spacer(Modifier.width(8.dp))
+                            ficha?.let {
+                                SenaCopyButton(textToCopy = it.codigo, label = it.codigo)
+                            }
                         }
                     }
                 }
@@ -133,16 +166,16 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         Surface(
                             modifier = Modifier.size(48.dp),
                             shape = CircleShape,
-                            color = SenaGreen.copy(alpha = 0.1f)
+                            color = senaColors().green.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.School, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.School, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(24.dp))
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
-                            Text(ficha.instructor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                            Text("Líder de Ficha • ADSO", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                            Text(ficha?.instructorName ?: "No asignado", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                            Text("Líder de Ficha • ${ficha?.programa ?: ""}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                     }
                 }
@@ -156,32 +189,46 @@ fun FichaDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 )
             }
 
-            items(ficha.members) { member ->
-                SenaCard(elevation = 0.5.dp) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = CircleShape,
-                            color = if (member.status == "Activo") SenaGreen.copy(alpha = 0.1f) else SenaBorderSoft
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    member.initials, 
-                                    fontWeight = FontWeight.Bold, 
-                                    color = if (member.status == "Activo") SenaGreen else SenaTextMuted
-                                )
+            val estudiantes = ficha?.estudiantes ?: emptyList()
+            if (estudiantes.isEmpty()) {
+                item {
+                    SenaEmptyState(message = "No hay estudiantes en esta ficha.", icon = Icons.Default.Groups)
+                }
+            } else {
+                items(estudiantes) { estudiante ->
+                    SenaCard(elevation = 0.5.dp) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                modifier = Modifier.size(40.dp).clickable { lightboxEstudiante = estudiante },
+                                shape = CircleShape,
+                                color = senaColors().green.copy(alpha = 0.1f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        estudiante.initials,
+                                        fontWeight = FontWeight.Bold,
+                                        color = senaColors().green
+                                    )
+                                }
                             }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f).clickable {
+                                onNavigate(
+                                    AppNavigation.APRENDIZ_COMPANERO_DETAIL
+                                        .replace("{nombre}", estudiante.name)
+                                        .replace("{iniciales}", estudiante.initials)
+                                        .replace("{estado}", "Activo")
+                                )
+                            }) {
+                                Text(estudiante.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                Text("Aprendiz", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                            }
+                            SenaStatusBadge(status = "Activo")
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(member.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
-                            Text("Aprendiz", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
-                        }
-                        SenaStatusBadge(status = member.status)
                     }
                 }
             }
-            
+
             item { Spacer(Modifier.height(40.dp)) }
         }
     }

@@ -30,35 +30,44 @@ val AppShapes = Shapes(
 private val DarkColorScheme = darkColorScheme(
     primary = SenaGreen,
     secondary = SenaAccent,
-    tertiary = SenaSuccess,
+    tertiary = Color(0xFF34D399),
     background = Color(0xFF0F172A),
     surface = Color(0xFF1E293B),
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White,
-    error = SenaDanger
+    onBackground = Color(0xFFE2E8F0),
+    onSurface = Color(0xFFE2E8F0),
+    error = Color(0xFFF87171)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = SenaGreen,
     secondary = SenaAccent,
-    tertiary = SenaSuccess,
-    background = SenaBackground,
+    tertiary = Color(0xFF059669),
+    background = Color(0xFFF8FAFC),
     surface = Color.White,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color.White,
-    onBackground = SenaText,
-    onSurface = SenaText,
-    error = SenaDanger
+    onBackground = Color(0xFF0F172A),
+    onSurface = Color(0xFF0F172A),
+    error = Color(0xFFEF4444)
 )
 
 // Local for manual dark mode control
 val LocalThemeIsDark = staticCompositionLocalOf<MutableState<Boolean>> {
     error("No ThemeIsDark provided")
 }
+
+// SenaColorScheme mirrors the frontend's CSS custom properties approach:
+// All UI code reads via senaColors() and automatically adapts to dark/light.
+val LocalSenaColorScheme = staticCompositionLocalOf<SenaColorScheme> {
+    error("No SenaColorScheme provided")
+}
+
+@Composable
+fun senaColors(): SenaColorScheme = LocalSenaColorScheme.current
 
 @Composable
 fun ProyecTwinTheme(
@@ -69,7 +78,10 @@ fun ProyecTwinTheme(
 ) {
     val isDarkState = remember { mutableStateOf(darkTheme) }
 
-    CompositionLocalProvider(LocalThemeIsDark provides isDarkState) {
+    CompositionLocalProvider(
+        LocalThemeIsDark provides isDarkState,
+        LocalSenaColorScheme provides if (isDarkState.value) darkSenaColors() else lightSenaColors()
+    ) {
         val currentDark = LocalThemeIsDark.current.value
         val colorScheme = when {
             (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {

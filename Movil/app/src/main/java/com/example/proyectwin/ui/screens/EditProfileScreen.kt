@@ -16,23 +16,39 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.delay
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    var name by remember { mutableStateOf("Maria") }
-    var lastName by remember { mutableStateOf("Gonzalez") }
-    var email by remember { mutableStateOf("maria.gonzalez@sena.edu.co") }
-    var phone by remember { mutableStateOf("3235421165") }
-    
+fun EditProfileScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    profileViewModel: ProfileViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
-    var isSaving by remember { mutableStateOf(false) }
+    val authState by authViewModel.uiState.collectAsState()
+    val profileState by profileViewModel.uiState.collectAsState()
+    val user = authState.user
+
+    var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
+    var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
+    var email by remember(user) { mutableStateOf(user?.email ?: "") }
+    var phone by remember(user) { mutableStateOf(user?.telefono ?: "") }
+
+    LaunchedEffect(profileState.saveSuccess) {
+        if (profileState.saveSuccess) {
+            profileViewModel.clearSaveSuccess()
+            onBack()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -43,7 +59,7 @@ fun EditProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
@@ -55,14 +71,13 @@ fun EditProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 SenaButton(
                     text = "Guardar Cambios", 
                     onClick = {
-                        isSaving = true
-                        scope.launch {
-                            delay(1000)
-                            isSaving = false
-                            onBack()
-                        }
+                        profileViewModel.updateProfile(
+                            "$name $lastName".trim(),
+                            email,
+                            phone.ifBlank { null }
+                        )
                     }, 
-                    isLoading = isSaving,
+                    isLoading = profileState.isSaving,
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Save
                 )
@@ -119,6 +134,13 @@ fun EditProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 }
             }
 
+            Text(
+                text = "Credenciales demo — Los cambios se reflejarán en tiempo real.",
+                style = MaterialTheme.typography.bodySmall,
+                color = senaColors().textMuted,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             SenaSectionHeader(title = "Seguridad")
             SenaCard(elevation = 1.dp) {
                 SenaSettingsItem(
@@ -133,8 +155,17 @@ fun EditProfileScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 title = "Privacidad de Datos",
                 message = "Tu información solo es visible para instructores y personal administrativo autorizado.",
                 icon = Icons.Default.Shield,
-                color = SenaInfo
+                color = senaColors().info
             )
+
+            if (profileState.error != null) {
+                SenaAlertBanner(
+                    title = "Error",
+                    message = profileState.error!!,
+                    icon = Icons.Default.Error,
+                    color = senaColors().danger
+                )
+            }
 
             Spacer(Modifier.height(80.dp))
         }

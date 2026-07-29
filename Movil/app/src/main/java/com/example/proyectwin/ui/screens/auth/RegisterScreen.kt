@@ -25,37 +25,42 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
 fun RegisterScreen(
     onBackToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onRegisterSuccess: () -> Unit,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("Aprendiz") }
-    var isLoading by remember { mutableStateOf(false) }
+    var selectedRole by remember { mutableStateOf("aprendiz") }
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
+    val uiState by authViewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            onRegisterSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground)
+            .background(senaColors().background)
             .verticalScroll(scrollState)
     ) {
-        // --- PREMIUM REGISTER HEADER ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .background(Brush.verticalGradient(colors = listOf(Color(0xFF0F172A), SenaHeader)))
+                .background(Brush.verticalGradient(colors = listOf(Color(0xFF0F172A), senaColors().header)))
                 .padding(24.dp)
         ) {
             IconButton(
@@ -71,22 +76,21 @@ fun RegisterScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    "Nueva Misión", 
-                    style = MaterialTheme.typography.labelMedium, 
-                    color = SenaAccent,
+                    "Nueva Misión",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = senaColors().accent,
                     letterSpacing = 4.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "CREAR CUENTA", 
-                    style = MaterialTheme.typography.headlineMedium, 
-                    fontWeight = FontWeight.Black, 
+                    "CREAR CUENTA",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Black,
                     color = Color.White
                 )
             }
         }
 
-        // --- REGISTER FORM CARD ---
         Column(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
@@ -94,7 +98,7 @@ fun RegisterScreen(
         ) {
             SenaCard(elevation = 12.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
-                    
+
                     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             SenaTextField(value = name, onValueChange = { name = it }, label = "Nombre", modifier = Modifier.weight(1f), placeholder = "Ej: Maria")
@@ -104,12 +108,20 @@ fun RegisterScreen(
                         SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseña de Acceso", isPassword = true, leadingIcon = Icons.Default.Lock)
                     }
 
-                    HorizontalDivider(color = SenaBorderSoft)
+                    if (uiState.error != null) {
+                        SenaAlertBanner(
+                            title = "Error",
+                            message = uiState.error!!,
+                            icon = Icons.Default.Error,
+                            color = senaColors().danger
+                        )
+                    }
 
-                    // --- ROLE PICKER PREMIUM ---
+                    HorizontalDivider(color = senaColors().borderSoft)
+
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("IDENTIFICACIÓN DE ROL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = SenaTextMuted, letterSpacing = 1.sp)
-                        
+                        Text("IDENTIFICACIÓN DE ROL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textMuted, letterSpacing = 1.sp)
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -117,15 +129,15 @@ fun RegisterScreen(
                             PremiumRoleCard(
                                 title = "Aprendiz",
                                 icon = Icons.Default.School,
-                                isSelected = selectedRole == "Aprendiz",
-                                onClick = { selectedRole = "Aprendiz" },
+                                isSelected = selectedRole == "aprendiz",
+                                onClick = { selectedRole = "aprendiz" },
                                 modifier = Modifier.weight(1f)
                             )
                             PremiumRoleCard(
                                 title = "Instructor",
                                 icon = Icons.Default.SupervisorAccount,
-                                isSelected = selectedRole == "Instructor",
-                                onClick = { selectedRole = "Instructor" },
+                                isSelected = selectedRole == "instructor",
+                                onClick = { selectedRole = "instructor" },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -134,13 +146,12 @@ fun RegisterScreen(
                     SenaButton(
                         text = "FINALIZAR REGISTRO",
                         onClick = {
-                            isLoading = true
-                            scope.launch {
-                                delay(1500)
-                                onRegisterSuccess()
+                            val fullName = "$name $lastName".trim()
+                            if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.register(fullName, email, password, selectedRole)
                             }
                         },
-                        isLoading = isLoading,
+                        isLoading = uiState.isLoading,
                         icon = Icons.Default.HowToReg,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -152,7 +163,7 @@ fun RegisterScreen(
                 onClick = onBackToLogin,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("¿YA TIENES CUENTA? INICIA SESIÓN", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = SenaTextLight)
+                Text("¿YA TIENES CUENTA? INICIA SESIÓN", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
             }
         }
 
@@ -173,10 +184,10 @@ fun PremiumRoleCard(
             .height(100.dp)
             .clip(RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        color = if (isSelected) SenaGreen.copy(alpha = 0.05f) else Color.White,
+        color = if (isSelected) senaColors().green.copy(alpha = 0.05f) else Color.White,
         border = androidx.compose.foundation.BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) SenaGreen else SenaBorder
+            color = if (isSelected) senaColors().green else senaColors().border
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
@@ -186,17 +197,17 @@ fun PremiumRoleCard(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                icon, 
-                contentDescription = null, 
-                tint = if (isSelected) SenaGreen else SenaTextMuted,
+                icon,
+                contentDescription = null,
+                tint = if (isSelected) senaColors().green else senaColors().textMuted,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                title, 
-                style = MaterialTheme.typography.labelMedium, 
-                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, 
-                color = if (isSelected) SenaGreen else SenaTextSecondary
+                title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                color = if (isSelected) senaColors().green else senaColors().textSecondary
             )
         }
     }

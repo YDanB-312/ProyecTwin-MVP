@@ -26,7 +26,7 @@ fun ConfirmationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground),
+            .background(senaColors().background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -39,13 +39,13 @@ fun ConfirmationScreen(
             Surface(
                 modifier = Modifier.size(100.dp),
                 shape = CircleShape,
-                color = SenaSuccess.copy(alpha = 0.1f)
+                color = senaColors().success.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.CheckCircle, 
                         contentDescription = null, 
-                        tint = SenaSuccess,
+                        tint = senaColors().success,
                         modifier = Modifier.size(64.dp)
                     )
                 }
@@ -57,7 +57,7 @@ fun ConfirmationScreen(
                 "¡Operación Exitosa!",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
-                color = SenaText,
+                color = senaColors().text,
                 textAlign = TextAlign.Center
             )
             
@@ -66,7 +66,7 @@ fun ConfirmationScreen(
             Text(
                 "La operación se ha realizado correctamente en el sistema ProyecTwin. Ya puedes continuar con tus tareas.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = SenaTextSecondary,
+                color = senaColors().textSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(max = 300.dp)
             )

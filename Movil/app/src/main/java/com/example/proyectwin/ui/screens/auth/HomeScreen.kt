@@ -9,7 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,28 +21,42 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
 fun HomeScreen(
     onLoginClick: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val scrollState = rememberScrollState()
+    val uiState by authViewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        if (uiState.isLoggedIn && uiState.user != null) {
+            // Redirect handled by AppNavigation checking initial route
+        }
+    }
+
+    if (uiState.isLoading) {
+        SenaLoadingState(message = "Verificando sesión...")
+        return
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SenaBackground)
+            .background(senaColors().background)
             .verticalScroll(scrollState)
     ) {
-        // Header Section
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(280.dp)
-                .background(Brush.verticalGradient(colors = listOf(SenaHeader, SenaGreen)))
+                .background(Brush.verticalGradient(colors = listOf(senaColors().header, senaColors().green)))
                 .padding(24.dp)
         ) {
             Column(
@@ -76,7 +90,6 @@ fun HomeScreen(
             }
         }
 
-        // Action Buttons Section
         Column(
             modifier = Modifier
                 .padding(24.dp)
@@ -92,16 +105,16 @@ fun HomeScreen(
                         "Optimiza tus proyectos de formación del SENA",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = SenaText,
+                        color = senaColors().text,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     SenaButton(
                         text = "Ingresar Ahora",
                         onClick = onLoginClick,
                         icon = Icons.Default.Login
                     )
-                    
+
                     SenaButton(
                         text = "Crear Cuenta",
                         onClick = onRegisterClick,
@@ -112,7 +125,6 @@ fun HomeScreen(
             }
         }
 
-        // Roles Section
         Column(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -121,28 +133,27 @@ fun HomeScreen(
                 "Acceso por Rol",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = SenaText
+                color = senaColors().text
             )
-            
+
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 HomeRoleCard(
                     title = "Aprendiz",
                     icon = Icons.Default.School,
                     desc = "Gestiona tus proyectos y recibe feedback.",
-                    color = SenaGreen,
+                    color = senaColors().green,
                     modifier = Modifier.weight(1f)
                 )
                 HomeRoleCard(
                     title = "Instructor",
                     icon = Icons.Default.SupervisorAccount,
                     desc = "Evalúa y supervisa el progreso.",
-                    color = SenaAccent,
+                    color = senaColors().accent,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        // Features Section
         Column(
             modifier = Modifier.padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -151,9 +162,9 @@ fun HomeScreen(
                 "¿Cómo funciona?",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = SenaText
+                color = senaColors().text
             )
-            
+
             HomeStepItem(1, "Regístrate", "Crea tu cuenta según tu rol institucional.")
             HomeStepItem(2, "Sube tu Proyecto", "Registra tu propuesta y analiza similitudes.")
             HomeStepItem(3, "Mejora", "Recibe retroalimentación y evoluciona tu idea.")
@@ -177,9 +188,9 @@ fun HomeRoleCard(title: String, icon: ImageVector, desc: String, color: Color, m
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = SenaText)
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = senaColors().text)
             Spacer(Modifier.height(4.dp))
-            Text(desc, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary, textAlign = TextAlign.Center, lineHeight = 14.sp)
+            Text(desc, style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary, textAlign = TextAlign.Center, lineHeight = 14.sp)
         }
     }
 }
@@ -190,7 +201,7 @@ fun HomeStepItem(number: Int, title: String, desc: String) {
         Surface(
             modifier = Modifier.size(32.dp),
             shape = CircleShape,
-            color = SenaHeader
+            color = senaColors().header
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(number.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -198,8 +209,8 @@ fun HomeStepItem(number: Int, title: String, desc: String) {
         }
         Spacer(Modifier.width(16.dp))
         Column {
-            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = SenaText)
-            Text(desc, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = senaColors().text)
+            Text(desc, style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
         }
     }
 }

@@ -1,4 +1,4 @@
-ï»¿package com.example.proyectwin.ui.screens.instructor
+package com.example.proyectwin.ui.screens.instructor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -23,9 +23,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 data class FichaItem(
     val code: String,
@@ -43,18 +47,28 @@ fun ManageFichasScreen(
     onViewDetail: (String) -> Unit,
     onViewDirectory: (String) -> Unit,
     onCreateFicha: () -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel(),
+    fichasViewModel: FichasViewModel = viewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todas") }
-    val filters = listOf("Todas", "Activa", "Inactiva")
+    val filters = listOf("Todas", "Activo", "Inactivo")
+    val uiState by fichasViewModel.uiState.collectAsState()
 
-    val fichas = remember {
-        listOf(
-            FichaItem("ADSO-2568", "AnÃ¡lisis y Desarrollo 2568", "ADSO", 28, 5, "Activa"),
-            FichaItem("ADSO-2634", "AnÃ¡lisis y Desarrollo 2634", "ADSO", 25, 3, "Activa"),
-            FichaItem("MM-3102", "ProducciÃ³n Multimedia 3102", "Multimedia", 22, 4, "Activa"),
-            FichaItem("IR-2801", "Infraestructura Redes 2801", "Infraestructura", 20, 0, "Inactiva"),
+    LaunchedEffect(Unit) {
+        fichasViewModel.loadAllFichas()
+    }
+
+    val fichas = uiState.fichas.map { ficha ->
+        FichaItem(
+            code = ficha.codigo,
+            name = ficha.programa,
+            program = ficha.programa,
+            students = ficha.estudiantes.size,
+            projects = MockDataProvider.getProjectsByFicha(ficha.id).size,
+            status = ficha.statusDisplay
         )
     }
 
@@ -76,7 +90,7 @@ fun ManageFichasScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateFicha,
-                containerColor = SenaGreen,
+                containerColor = senaColors().green,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
@@ -84,7 +98,8 @@ fun ManageFichasScreen(
                 Icon(Icons.Default.PlusOne, contentDescription = "Nueva Ficha")
             }
         },
-        containerColor = SenaBackground
+        containerColor = senaColors().background,
+        bottomBar = bottomBar
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -94,7 +109,7 @@ fun ManageFichasScreen(
             item {
                 SenaPageHeader(
                     title = "Gestionar Fichas",
-                    subtitle = "Administra los grupos de formaciÃ³n y supervisa el progreso de los aprendices.",
+                    subtitle = "Administra los grupos de formación y supervisa el progreso de los aprendices.",
                     icon = Icons.Default.LayerGroup
                 )
             }
@@ -108,17 +123,17 @@ fun ManageFichasScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("${fichas.size} Fichas Registradas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = SenaText)
-                            Text("Panel de control de instructor", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                            Text("${fichas.size} Fichas Registradas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                            Text("Panel de control de instructor", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                         Surface(
-                            color = SenaGreen.copy(alpha = 0.1f),
+                            color = senaColors().green.copy(alpha = 0.1f),
                             shape = CircleShape
                         ) {
                             Icon(
                                 Icons.Default.Add, 
                                 contentDescription = null, 
-                                tint = SenaGreen, 
+                                tint = senaColors().green, 
                                 modifier = Modifier.padding(8.dp).size(20.dp)
                             )
                         }
@@ -133,8 +148,8 @@ fun ManageFichasScreen(
                         SenaTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            label = "BÃºsqueda rÃ¡pida",
-                            placeholder = "Buscar por cÃ³digo o nombre...",
+                            label = "Búsqueda rápida",
+                            placeholder = "Buscar por código o nombre...",
                             leadingIcon = Icons.Default.Search
                         )
                         Row(
@@ -144,7 +159,7 @@ fun ManageFichasScreen(
                             filters.forEach { filter ->
                                 SenaChip(
                                     text = filter,
-                                    color = if (filter == "Activa") SenaSuccess else if (filter == "Inactiva") SenaDanger else SenaGreen,
+                                    color = if (filter == "Activo") senaColors().success else if (filter == "Inactivo") senaColors().danger else senaColors().green,
                                     isSelected = selectedFilter == filter,
                                     onClick = { selectedFilter = filter }
                                 )
@@ -154,10 +169,16 @@ fun ManageFichasScreen(
                 }
             }
 
-            if (filteredFichas.isEmpty()) {
+            if (uiState.isLoading) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = senaColors().green)
+                    }
+                }
+            } else if (filteredFichas.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No se encontraron fichas que coincidan con la bÃºsqueda.",
+                        message = "No se encontraron fichas que coincidan con la búsqueda.",
                         icon = Icons.Default.SearchOff
                     )
                 }
@@ -187,7 +208,7 @@ fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirect
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = SenaBorderSoft,
+                    color = senaColors().borderSoft,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -195,15 +216,15 @@ fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirect
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Black,
-                        color = SenaTextSecondary
+                        color = senaColors().textSecondary
                     )
                 }
                 SenaStatusBadge(status = ficha.status)
             }
 
             Column {
-                Text(ficha.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                Text(ficha.program, style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                Text(ficha.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                Text(ficha.program, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             }
 
             Row(
@@ -214,7 +235,7 @@ fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirect
                 FichaStatMini(Icons.Default.FolderOpen, "${ficha.projects} Proyectos", Modifier.weight(1f))
             }
 
-            HorizontalDivider(color = SenaBorderSoft)
+            HorizontalDivider(color = senaColors().borderSoft)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -231,9 +252,9 @@ fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirect
 @Composable
 fun FichaStatMini(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = SenaTextLight, modifier = Modifier.size(14.dp))
+        Icon(icon, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(6.dp))
-        Text(text, style = MaterialTheme.typography.labelSmall, color = SenaTextSecondary)
+        Text(text, style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
     }
 }
 

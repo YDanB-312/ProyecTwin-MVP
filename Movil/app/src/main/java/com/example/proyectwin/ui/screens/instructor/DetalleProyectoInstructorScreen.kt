@@ -1,4 +1,4 @@
-﻿package com.example.proyectwin.ui.screens.instructor
+package com.example.proyectwin.ui.screens.instructor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,14 +20,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.BugReport
+import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) {
+fun DetalleProyectoInstructorScreen(
+    projectId: String = "",
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
     var observationText by remember { mutableStateOf("") }
+
+    val project = remember(projectId) {
+        MockDataProvider.findProjectById(projectId.toIntOrNull() ?: 0)
+    }
+    val bugReports = remember(projectId) {
+        val pid = projectId.toIntOrNull() ?: 0
+        MockDataProvider.getBugReportsByProject(pid)
+    }
+    val similarities = remember(projectId) {
+        val pid = projectId.toIntOrNull() ?: 0
+        MockDataProvider.getSimilaritiesByProject(pid)
+    }
+    val maxSimilarity = similarities.maxOfOrNull { it.similitud } ?: 0.0
 
     Scaffold(
         topBar = {
@@ -38,11 +61,11 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
                 showNotifications = true
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(text = "Aprobar", onClick = { onBack() }, modifier = Modifier.weight(1f))
-                SenaButton(text = "Rechazar", onClick = { onBack() }, isPrimary = false, modifier = Modifier.weight(1f), containerColor = SenaDanger)
+                SenaButton(text = "Rechazar", onClick = { onBack() }, isPrimary = false, modifier = Modifier.weight(1f), containerColor = senaColors().danger)
             }
         }
     ) { paddingValues ->
@@ -55,12 +78,11 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             SenaPageHeader(
-                title = "Revisión de Proyecto",
-                subtitle = "Evaluación detallada de la propuesta enviada por el aprendiz.",
+                title = "Revisi�n de Proyecto",
+                subtitle = "Evaluaci�n detallada de la propuesta enviada por el aprendiz.",
                 icon = Icons.Default.FolderOpen
             )
 
-            // Info Card
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(
@@ -68,27 +90,29 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SenaStatusBadge(status = "Pendiente")
-                        Surface(color = SenaDanger.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                            Text(
-                                "45% Similitud", 
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = SenaDanger
-                            )
+                        SenaStatusBadge(status = project?.statusDisplay ?: "Desconocido")
+                        if (maxSimilarity > 0) {
+                            Surface(color = senaColors().danger.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                                Text(
+                                    "%d%% Similitud".format((maxSimilarity * 100).toInt()),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = senaColors().danger
+                                )
+                            }
                         }
                     }
 
-                    Text("Sistema IoT para Agricultura", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SenaText)
-                    
-                    HorizontalDivider(color = SenaBorderSoft)
-                    
+                    Text(project?.title ?: "Proyecto no encontrado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+
+                    HorizontalDivider(color = senaColors().borderSoft)
+
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        InstructorDetailRow(Icons.Default.Person, "Aprendiz", "Ana Martínez")
-                        InstructorDetailRow(Icons.Default.School, "Programa", "ADSO - Trimestre 3")
-                        InstructorDetailRow(Icons.Default.CalendarToday, "Fecha", "15/11/2026")
-                        InstructorDetailRow(Icons.Default.Work, "Área", "Tecnología e Informática")
+                        InstructorDetailRow(Icons.Default.Person, "Aprendiz", project?.studentName ?: "N/A")
+                        InstructorDetailRow(Icons.Default.School, "Programa", "ADSO")
+                        InstructorDetailRow(Icons.Default.CalendarToday, "Fecha", project?.createdAt ?: "Sin fecha")
+                        InstructorDetailRow(Icons.Default.Work, "�rea", "Tecnolog�a e Inform�tica")
                     }
                 }
             }
@@ -96,32 +120,65 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
             SenaSectionHeader(title = "Resumen del Proyecto")
             SenaCard {
                 Text(
-                    "Sistema de monitoreo inteligente para cultivos utilizando sensores IoT que miden humedad, temperatura y nutrientes del suelo, permitiendo la toma de decisiones en tiempo real.",
+                    project?.description ?: "Sin descripci�n disponible.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = SenaTextSecondary,
+                    color = senaColors().textSecondary,
                     lineHeight = 22.sp
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("IoT", "Sensores", "Sena").forEach { tag ->
-                        SenaChip(text = tag, color = SenaTextMuted, isSelected = false)
+                    listOf("Proyecto", "Sena", "Tecnolog�a").forEach { tag ->
+                        SenaChip(text = tag, color = senaColors().textMuted, isSelected = false)
                     }
                 }
             }
 
-            SenaSectionHeader(title = "Objetivos y Entregables")
-            SenaCard {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Objetivos Específicos", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = SenaTextLight)
-                    listOf(
-                        "Diseñar una red de sensores IoT.",
-                        "Desarrollar plataforma web de visualización.",
-                        "Implementar algoritmos de alerta."
-                    ).forEach { obj ->
-                        Row(verticalAlignment = Alignment.Top) {
-                            Icon(Icons.Default.Circle, contentDescription = null, tint = SenaGreen, modifier = Modifier.size(8.dp).padding(top = 4.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Text(obj, style = MaterialTheme.typography.bodySmall, color = SenaTextSecondary)
+            if (bugReports.isNotEmpty()) {
+                SenaSectionHeader(title = "Reportes de Error")
+                bugReports.forEach { bug ->
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(bug.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                SenaStatusBadge(status = bug.statusDisplay)
+                            }
+                            Text(bug.descripcion, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                            Text("Tipo: ${bug.typeDisplay}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                        }
+                    }
+                }
+            }
+
+            if (similarities.isNotEmpty()) {
+                SenaSectionHeader(title = "Similitudes Detectadas")
+                similarities.forEach { sim ->
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "${sim.project1Title} vs ${sim.project2Title}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = senaColors().text
+                                )
+                                Surface(color = senaColors().danger.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                                    Text(
+                                        sim.similitudPercent,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = senaColors().danger
+                                    )
+                                }
+                            }
+                            Text("Estado: ${sim.statusDisplay}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                     }
                 }
@@ -136,26 +193,25 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Carlos Ruiz | Instructor", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
-                            Text("10 may 2026", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                            Text("${project?.instructorName ?: "Instructor"} | Instructor", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                            Text(project?.createdAt ?: "Sin fecha", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                         Text(
-                            "El proyecto necesita mejorar la sección de análisis de requisitos. Se recomienda ampliar la documentación técnica.",
+                            "El proyecto necesita mejorar la secci�n de an�lisis de requisitos. Se recomienda ampliar la documentaci�n t�cnica.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SenaTextSecondary
+                            color = senaColors().textSecondary
                         )
                     }
                 }
 
-                // Add observation box
-                SenaCard(containerColor = Color.White, elevation = 2.dp) {
+                SenaCard(elevation = 2.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Agregar Observación", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
+                        Text("Agregar Observaci�n", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
                         SenaTextField(
                             value = observationText,
                             onValueChange = { observationText = it },
                             label = "",
-                            placeholder = "Escribe tu comentario aquí...",
+                            placeholder = "Escribe tu comentario aqu�...",
                             modifier = Modifier.heightIn(min = 100.dp)
                         )
                         SenaButton(
@@ -176,10 +232,10 @@ fun DetalleProyectoInstructorScreen(projectId: String = "", onBack: () -> Unit) 
 @Composable
 fun InstructorDetailRow(icon: ImageVector, label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = SenaTextLight, modifier = Modifier.size(16.dp))
+        Icon(icon, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(12.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = SenaTextLight, modifier = Modifier.width(100.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = SenaText)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, modifier = Modifier.width(100.dp))
+        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
     }
 }
 

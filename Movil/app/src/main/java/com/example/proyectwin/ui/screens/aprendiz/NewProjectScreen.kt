@@ -52,7 +52,7 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
                 showNotifications = false
             )
         },
-        containerColor = SenaBackground,
+        containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
                 SenaButton(text = "Cancelar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
@@ -96,13 +96,13 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
                     "Paso 1 de 4: Información Básica",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = SenaGreen
+                    color = senaColors().green
                 )
                 LinearProgressIndicator(
                     progress = { 0.25f },
                     modifier = Modifier.width(100.dp).height(6.dp),
-                    color = SenaGreen,
-                    trackColor = SenaBorderSoft,
+                    color = senaColors().green,
+                    trackColor = senaColors().borderSoft,
                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
             }
@@ -161,7 +161,7 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
                     Text(
                         "Selecciona los integrantes de tu equipo (máx 5)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = SenaTextLight
+                        color = senaColors().textLight
                     )
                     
                     repeat(3) { index ->
@@ -172,12 +172,12 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
                             Checkbox(
                                 checked = index == 0, 
                                 onCheckedChange = {},
-                                colors = CheckboxDefaults.colors(checkedColor = SenaGreen)
+                                colors = CheckboxDefaults.colors(checkedColor = senaColors().green)
                             )
                             Text(
                                 if (index == 0) "Maria Gonzalez (Tú)" else if (index == 1) "Juan Perez" else "Laura Gomez",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (index == 0) SenaText else SenaTextSecondary
+                                color = if (index == 0) senaColors().text else senaColors().textSecondary
                             )
                         }
                     }
@@ -187,17 +187,17 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
             SenaSectionHeader(title = "Información Técnica")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Text("Tipo de proyecto", style = MaterialTheme.typography.labelSmall, color = SenaTextLight)
+                    Text("Tipo de proyecto", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         SenaChip(
                             text = "Software", 
-                            color = SenaGreen, 
+                            color = senaColors().green, 
                             isSelected = formData.projectType == "aplicacion",
                             onClick = { formData = formData.copy(projectType = "aplicacion") }
                         )
                         SenaChip(
                             text = "Investigación", 
-                            color = SenaAccent, 
+                            color = senaColors().accent, 
                             isSelected = formData.projectType == "investigacion",
                             onClick = { formData = formData.copy(projectType = "investigacion") }
                         )
