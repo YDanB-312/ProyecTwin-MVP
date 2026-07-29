@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('titulo')->nullable();
             $table->text('descripcion');
-            $table->string('tipo');
+            $table->enum('tipo', ['sistema', 'proyecto', 'datos', 'otro']);
             $table->text('pasos')->nullable();
             $table->string('url_evidencia')->nullable();
-            $table->string('estado');
+            $table->enum('estado', ['pendiente', 'en_revision', 'resuelto', 'rechazado'])->default('pendiente');
             $table->date('fecha');
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
