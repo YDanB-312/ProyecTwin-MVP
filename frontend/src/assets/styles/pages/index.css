@@ -2,16 +2,7 @@
    INDEX - PÃ¡gina de Inicio (Landing Page)
    ======================================== */
 
-/* Header estilo landing */
-.modulo-invitado .header-principal {
-    background: var(--color-fondo-elevado);
-    box-shadow: var(--sombra-ring-md);
-    border-bottom: 1px solid var(--color-borde-suave);
-}
-
-.modulo-invitado .titulo-header {
-    color: var(--color-primario);
-}
+/* Header estilo landing: las reglas de layout y colores viven en components/Header/Header.css */
 
 /* ========================================
    CONTENEDOR PRINCIPAL
