@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -36,12 +37,12 @@ fun HomeScreen(
     val uiState by authViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        if (uiState.isLoggedIn && uiState.user != null) {
+        if (uiState is AuthUiState.LoggedIn) {
             // Redirect handled by AppNavigation checking initial route
         }
     }
 
-    if (uiState.isLoading) {
+    if (uiState is AuthUiState.Loading) {
         SenaLoadingState(message = "Verificando sesión...")
         return
     }

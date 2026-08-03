@@ -14,7 +14,7 @@ import com.example.proyectwin.data.model.UserRole
 object MockDataProvider {
 
     // Users
-    val users = listOf(
+    val users = mutableListOf(
         GeneralUser(
             id = 1, name = "Carlos Instructor", email = "instructor@test.com",
             role = UserRole.INSTRUCTOR.value, token = "mock-token-instructor",
@@ -34,6 +34,32 @@ object MockDataProvider {
 
     fun findUserByEmail(email: String): GeneralUser? = users.find { it.email == email }
     fun findUserById(id: Int): GeneralUser? = users.find { it.id == id }
+
+    fun createUser(name: String, email: String, role: String, fichaId: Int? = null): GeneralUser {
+        val nextId = (users.maxOfOrNull { it.id } ?: 0) + 1
+        val user = GeneralUser(
+            id = nextId,
+            name = name,
+            email = email,
+            role = role,
+            token = "mock-token-$nextId",
+            fichaId = fichaId
+        )
+        users.add(user)
+        return user
+    }
+
+    fun deleteUser(id: Int) {
+        users.removeAll { it.id == id }
+    }
+
+    private val inactiveUserIds = mutableSetOf<Int>()
+
+    fun deactivateUser(id: Int) {
+        inactiveUserIds.add(id)
+    }
+
+    fun isUserActive(id: Int): Boolean = id !in inactiveUserIds
 
     private var nextFichaId: Int = 13
 
@@ -80,8 +106,18 @@ object MockDataProvider {
         return ficha
     }
 
+    fun joinFicha(codigo: String, estudiante: GeneralUser): Boolean {
+        val index = fichaList.indexOfFirst { it.codigo == codigo }
+        if (index == -1) return false
+        val ficha = fichaList[index]
+        if (ficha.estudiantes.any { it.id == estudiante.id }) return true
+        fichaList[index] = ficha.copy(estudiantes = ficha.estudiantes + estudiante)
+        return true
+    }
+
     // Projects
-    private val projectList = listOf(
+    private var nextProjectId: Int = 6
+    private val projectList = mutableListOf(
         Project(
             id = 1, title = "Sistema de Ventas", description = "App de punto de venta",
             estado = ProjectStatus.EN_PROGRESO.value, studentId = 2, instructorId = 1, fichaId = 1,
@@ -115,8 +151,47 @@ object MockDataProvider {
     fun getProjectsByInstructor(instructorId: Int): List<Project> = projectList.filter { it.instructorId == instructorId }
     fun getProjectsByFicha(fichaId: Int): List<Project> = projectList.filter { it.fichaId == fichaId }
 
+    fun createProject(
+        title: String,
+        description: String,
+        studentId: Int,
+        instructorId: Int,
+        fichaId: Int,
+        studentName: String,
+        instructorName: String
+    ): Project {
+        val project = Project(
+            id = nextProjectId++,
+            title = title,
+            description = description,
+            estado = ProjectStatus.PENDIENTE.value,
+            studentId = studentId,
+            instructorId = instructorId,
+            fichaId = fichaId,
+            studentName = studentName,
+            instructorName = instructorName
+        )
+        projectList.add(project)
+        return project
+    }
+
+    fun updateProjectEstado(id: Int, estado: String) {
+        val index = projectList.indexOfFirst { it.id == id }
+        if (index != -1) {
+            projectList[index] = projectList[index].copy(estado = estado)
+        }
+    }
+
+    fun updateProject(id: Int, title: String, description: String) {
+        val index = projectList.indexOfFirst { it.id == id }
+        if (index != -1) {
+            projectList[index] = projectList[index].copy(title = title, description = description)
+        }
+    }
+
     // BugReports
-    private val bugReportList = listOf(
+    private var nextBugReportId: Int = 4
+    private val bugReportList = mutableListOf(
         BugReport(
             id = 1, titulo = "Error al guardar", descripcion = "No guarda los cambios",
             tipo = BugReportType.FUNCIONAL.value, estado = "pendiente",
@@ -136,9 +211,39 @@ object MockDataProvider {
 
     fun getAllBugReports(): List<BugReport> = bugReportList
     fun getBugReportsByProject(projectId: Int): List<BugReport> = bugReportList.filter { it.projectId == projectId }
+    fun getBugReportsByReporter(reporterId: Int): List<BugReport> = bugReportList.filter { it.reporterId == reporterId }
+
+    fun updateBugReportEstado(id: Int, estado: String) {
+        val index = bugReportList.indexOfFirst { it.id == id }
+        if (index != -1) {
+            bugReportList[index] = bugReportList[index].copy(estado = estado)
+        }
+    }
+
+    fun createBugReport(
+        titulo: String,
+        descripcion: String,
+        tipo: String,
+        projectId: Int,
+        reporterId: Int,
+        reporterName: String
+    ): BugReport {
+        val report = BugReport(
+            id = nextBugReportId++,
+            titulo = titulo,
+            descripcion = descripcion,
+            tipo = tipo,
+            estado = "pendiente",
+            projectId = projectId,
+            reporterId = reporterId,
+            reporterName = reporterName
+        )
+        bugReportList.add(report)
+        return report
+    }
 
     // Similarities
-    private val similarityList = listOf(
+    private val similarityList = mutableListOf(
         Similarity(
             id = 1, projectId1 = 1, projectId2 = 4,
             project1Title = "Sistema de Ventas", project2Title = "Gestor de Proyectos",
@@ -157,8 +262,15 @@ object MockDataProvider {
     fun getSimilaritiesByProject(projectId: Int): List<Similarity> =
         similarityList.filter { it.projectId1 == projectId || it.projectId2 == projectId }
 
+    fun updateSimilarityEstado(id: Int, estado: String) {
+        val index = similarityList.indexOfFirst { it.id == id }
+        if (index != -1) {
+            similarityList[index] = similarityList[index].copy(estado = estado)
+        }
+    }
+
     // Notifications
-    private val notificationList = listOf(
+    private val notificationList = mutableListOf(
         Notification(id = 1, mensaje = "Proyecto 'Sistema de Ventas' ha sido actualizado", tipo = NotificationType.INFO.value, userId = 1, projectId = 1, leido = false),
         Notification(id = 2, mensaje = "Nuevo reporte de bug en 'Sistema de Ventas'", tipo = NotificationType.WARNING.value, userId = 1, projectId = 1, leido = false),
         Notification(id = 3, mensaje = "Similitud detectada entre proyectos", tipo = NotificationType.WARNING.value, userId = 1, leido = false),
@@ -169,4 +281,10 @@ object MockDataProvider {
 
     fun getNotificationsByUser(userId: Int): List<Notification> = notificationList.filter { it.userId == userId }
     fun getUnreadNotificationsByUser(userId: Int): List<Notification> = getNotificationsByUser(userId).filter { !it.leido }
+    fun markNotificationAsRead(notificationId: Int) {
+        val index = notificationList.indexOfFirst { it.id == notificationId }
+        if (index != -1) {
+            notificationList[index] = notificationList[index].copy(leido = true)
+        }
+    }
 }

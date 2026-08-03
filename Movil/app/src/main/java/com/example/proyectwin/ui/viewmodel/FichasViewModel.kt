@@ -1,67 +1,77 @@
 package com.example.proyectwin.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.local.SessionManager
+import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.repository.FichasRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-data class FichasUiState(
-    val isLoading: Boolean = true,
-    val fichas: List<Ficha> = emptyList(),
+sealed class FichasUiState {
+    data object Loading : FichasUiState()
+    data class Success(val fichas: List<Ficha>) : FichasUiState()
+    data class Error(val message: String) : FichasUiState()
+}
+
+data class FichasActionState(
     val selectedFicha: Ficha? = null,
-    val codigoGenerado: String? = null,
     val codigoValido: Boolean? = null,
+    val codigoGenerado: String? = null,
     val joinSuccess: Boolean = false,
-    val error: String? = null
+    val message: String? = null
 )
 
-class FichasViewModel(
-    private val fichasRepository: FichasRepository = FichasRepository(),
-    private val sessionManager: SessionManager? = null
-) : ViewModel() {
+class FichasViewModel(application: Application) : AndroidViewModel(application) {
+    private val fichasRepository = FichasRepository()
+    private val sessionManager = SessionManager(application)
 
-    private val _uiState = MutableStateFlow(FichasUiState())
+    private val _uiState = MutableStateFlow<FichasUiState>(FichasUiState.Loading)
     val uiState: StateFlow<FichasUiState> = _uiState.asStateFlow()
+
+    private val _actionState = MutableStateFlow(FichasActionState())
+    val actionState: StateFlow<FichasActionState> = _actionState.asStateFlow()
 
     fun loadAllFichas() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = FichasUiState.Loading
             fichasRepository.getAllFichas().collect { fichas ->
-                _uiState.value = _uiState.value.copy(fichas = fichas, isLoading = false)
+                _uiState.value = FichasUiState.Success(fichas)
             }
         }
     }
 
     fun loadActiveFichas() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = FichasUiState.Loading
             fichasRepository.getActiveFichas().collect { fichas ->
-                _uiState.value = _uiState.value.copy(fichas = fichas, isLoading = false)
+                _uiState.value = FichasUiState.Success(fichas)
             }
         }
     }
 
     fun loadFichaById(id: Int) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = FichasUiState.Loading
             fichasRepository.getFichaById(id).collect { ficha ->
-                _uiState.value = _uiState.value.copy(selectedFicha = ficha, isLoading = false)
+                _actionState.value = _actionState.value.copy(selectedFicha = ficha)
+                _uiState.value = FichasUiState.Success(ficha?.let { listOf(it) } ?: emptyList())
             }
         }
     }
 
     fun validarCodigo(codigo: String) {
         val valido = fichasRepository.esCodigoValido(codigo)
-        _uiState.value = _uiState.value.copy(codigoValido = valido)
+        _actionState.value = _actionState.value.copy(codigoValido = valido, selectedFicha = null)
         if (valido) {
             viewModelScope.launch {
                 fichasRepository.getFichaByCodigo(codigo).collect { ficha ->
-                    _uiState.value = _uiState.value.copy(selectedFicha = ficha)
+                    _actionState.value = _actionState.value.copy(selectedFicha = ficha)
                 }
             }
         }
@@ -69,25 +79,33 @@ class FichasViewModel(
 
     fun generarCodigo() {
         val codigo = fichasRepository.generarCodigo()
-        _uiState.value = _uiState.value.copy(codigoGenerado = codigo)
+        _actionState.value = _actionState.value.copy(codigoGenerado = codigo)
     }
 
     fun joinFicha(fichaId: Int) {
         viewModelScope.launch {
             try {
-                sessionManager?.joinFicha(fichaId)
-                _uiState.value = _uiState.value.copy(joinSuccess = true)
+                sessionManager.joinFicha(fichaId)
+                val ficha = MockDataProvider.findFichaById(fichaId)
+                val user = sessionManager.currentUser.first()
+                if (ficha != null && user != null) {
+                    MockDataProvider.joinFicha(ficha.codigo, user)
+                }
+                _actionState.value = _actionState.value.copy(joinSuccess = true, message = null)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _actionState.value = _actionState.value.copy(message = e.message ?: "Error al unirse a la ficha")
             }
         }
     }
 
     fun clearJoinSuccess() {
-        _uiState.value = _uiState.value.copy(joinSuccess = false)
+        _actionState.value = _actionState.value.copy(joinSuccess = false)
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _actionState.value = _actionState.value.copy(message = null)
+        if (_uiState.value is FichasUiState.Error) {
+            _uiState.value = FichasUiState.Loading
+        }
     }
 }

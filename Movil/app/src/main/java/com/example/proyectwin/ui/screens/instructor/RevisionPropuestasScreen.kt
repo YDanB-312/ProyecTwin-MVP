@@ -27,7 +27,9 @@ import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +43,7 @@ fun RevisionPropuestasScreen(
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
 
     LaunchedEffect(user) {
         user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
@@ -55,7 +57,7 @@ fun RevisionPropuestasScreen(
     val scope = rememberCoroutineScope()
     val statuses = listOf("Todos", "Pendiente", "En Progreso", "Completado", "Cancelado")
 
-    val filteredPropuestas = dashState.projects.filter { proposal ->
+    val filteredPropuestas = (dashState as? DashboardUiState.Success)?.projects?.filter { proposal ->
         val statusMatch = when (selectedStatus) {
             "Todos" -> true
             "Pendiente" -> proposal.estado == ProjectStatus.PENDIENTE.value
@@ -67,7 +69,7 @@ fun RevisionPropuestasScreen(
         val searchMatch = proposal.title.contains(searchQuery, ignoreCase = true) ||
             (proposal.studentName?.contains(searchQuery, ignoreCase = true) ?: false)
         statusMatch && searchMatch
-    }
+    } ?: emptyList()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -89,14 +91,14 @@ fun RevisionPropuestasScreen(
         ) {
             item {
                 SenaPageHeader(
-                    title = "Revisión de Propuestas",
-                    subtitle = "Evalúa las propuestas de proyectos enviadas por los aprendices.",
+                    title = "Revisiï¿½n de Propuestas",
+                    subtitle = "Evalï¿½a las propuestas de proyectos enviadas por los aprendices.",
                     icon = Icons.AutoMirrored.Filled.List
                 )
             }
 
             item {
-                SenaFilterBar(title = "Filtros de revisión") {
+                SenaFilterBar(title = "Filtros de revisiï¿½n") {
                     SenaTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },

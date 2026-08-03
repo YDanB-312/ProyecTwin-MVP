@@ -128,6 +128,7 @@ fun ResultMetricCard(label: String, value: String, color: Color, modifier: Modif
 
 @Composable
 fun MatchItem(project: String, percentage: String, section: String, onClick: () -> Unit) {
+    val value = percentage.replace("%", "").trim().toIntOrNull() ?: 0
     SenaCard(onClick = onClick, elevation = 0.5.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -135,7 +136,7 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
                 Text("Secci�n: $section", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             }
             Surface(
-                color = if (percentage.toInt().let { it > 50 }) senaColors().warning.copy(alpha = 0.1f) else senaColors().success.copy(alpha = 0.1f),
+                color = if (value > 50) senaColors().warning.copy(alpha = 0.1f) else senaColors().success.copy(alpha = 0.1f),
                 shape = CircleShape
             ) {
                 Text(
@@ -143,7 +144,7 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Black,
-                    color = if (percentage.toInt().let { it > 50 }) senaColors().warning else senaColors().success
+                    color = if (value > 50) senaColors().warning else senaColors().success
                 )
             }
         }

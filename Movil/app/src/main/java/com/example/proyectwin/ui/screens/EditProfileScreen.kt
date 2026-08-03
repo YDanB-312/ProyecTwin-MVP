@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
@@ -35,16 +36,18 @@ fun EditProfileScreen(
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val authState by authViewModel.uiState.collectAsState()
-    val profileState by profileViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
+    val saveSuccess by profileViewModel.saveSuccess.collectAsState()
+    val isSaving by profileViewModel.isSaving.collectAsState()
+    val saveError by profileViewModel.saveError.collectAsState()
 
     var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
     var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
     var email by remember(user) { mutableStateOf(user?.email ?: "") }
     var phone by remember(user) { mutableStateOf(user?.telefono ?: "") }
 
-    LaunchedEffect(profileState.saveSuccess) {
-        if (profileState.saveSuccess) {
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
             profileViewModel.clearSaveSuccess()
             onBack()
         }
@@ -77,7 +80,7 @@ fun EditProfileScreen(
                             phone.ifBlank { null }
                         )
                     }, 
-                    isLoading = profileState.isSaving,
+                    isLoading = isSaving,
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Save
                 )
@@ -158,10 +161,10 @@ fun EditProfileScreen(
                 color = senaColors().info
             )
 
-            if (profileState.error != null) {
+            if (saveError != null) {
                 SenaAlertBanner(
                     title = "Error",
-                    message = profileState.error!!,
+                    message = saveError!!,
                     icon = Icons.Default.Error,
                     color = senaColors().danger
                 )

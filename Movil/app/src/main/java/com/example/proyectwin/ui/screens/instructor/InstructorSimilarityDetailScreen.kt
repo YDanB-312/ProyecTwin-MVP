@@ -21,6 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.Similarity
+import com.example.proyectwin.data.model.SimilarityStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -28,13 +31,18 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, similarityId: String = "") {
     val scrollState = rememberScrollState()
     var selectedComparison by remember { mutableIntStateOf(0) }
-    val comparisons = listOf("Plataforma Educativa SENA", "Sistema de Notas Web")
-    
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    var similarity by remember(similarityId) {
+        mutableStateOf(
+            MockDataProvider.getAllSimilarities().find { it.id == (similarityId.toIntOrNull() ?: 0) }
+        )
+    }
+    val comparisons = listOfNotNull(similarity?.project1Title, similarity?.project2Title)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -52,6 +60,10 @@ fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) ->
                 SenaButton(
                     text = "REVISADO", 
                     onClick = { 
+                        similarity?.let { s ->
+                            MockDataProvider.updateSimilarityEstado(s.id, SimilarityStatus.REVISADO.value)
+                            similarity = s.copy(estado = SimilarityStatus.REVISADO.value)
+                        }
                         scope.launch {
                             snackbarHostState.showSnackbar("Caso marcado como revisado")
                             kotlinx.coroutines.delay(1000)
@@ -70,6 +82,20 @@ fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) ->
             }
         }
     ) { paddingValues ->
+        if (similarity == null) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SenaEmptyState(
+                    message = "No se encontraron similitudes para revisar.",
+                    icon = Icons.Default.SearchOff
+                )
+            }
+            return@Scaffold
+        }
+
+        val sim = similarity!!
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -95,7 +121,7 @@ fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) ->
                         letterSpacing = 1.sp
                     )
                     Text(
-                        "Sistema de Gestión Académica — Maria Gonzalez",
+                        "${sim.project1Title ?: "Propuesta"} — ${sim.project1Student ?: "Aprendiz"}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = senaColors().text
@@ -116,7 +142,7 @@ fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) ->
                         onExpandedChange = { expanded = it }
                     ) {
                         OutlinedTextField(
-                            value = comparisons[selectedComparison],
+                            value = comparisons.getOrNull(selectedComparison) ?: "",
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -150,16 +176,27 @@ fun InstructorSimilarityDetailScreen(onBack: () -> Unit, onNavigate: (String) ->
             
             // Grid de Comparación
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                InstructorCompCard("Tu Aprendiz", "Maria G.", senaColors().green, Modifier.weight(1f))
-                InstructorCompCard("Preexistente", "Ana M.", senaColors().warning, Modifier.weight(1f))
+                InstructorCompCard("Tu Aprendiz", sim.project1Student ?: "Sin asignar", senaColors().green, Modifier.weight(1f))
+                InstructorCompCard("Preexistente", sim.project2Student ?: "Sin asignar", senaColors().warning, Modifier.weight(1f))
             }
 
             SenaSectionHeader(title = "Métricas de Similitud")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    MatchMetricItem("Resumen Ejecutivo", 72)
-                    MatchMetricItem("Objetivos Generales", 55)
-                    MatchMetricItem("Stack Tecnológico", 40)
+                    MatchMetricItem("Similitud Global", (sim.similitud * 100).toInt())
+                    MatchMetricItem("Objetivos Generales", maxOf((sim.similitud * 100).toInt() - 20, 0))
+                    MatchMetricItem("Stack Tecnológico", maxOf((sim.similitud * 100).toInt() - 45, 0))
+                }
+            }
+
+            SenaCard(elevation = 1.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Estado del caso", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    SenaStatusBadge(status = sim.statusDisplay)
                 }
             }
 

@@ -64,13 +64,13 @@ fun ProjectDetailScreen(
             SenaBottomBar {
                 SenaButton(
                     text = "Ver Similitudes",
-                    onClick = { onNavigate(AppNavigation.APRENDIZ_SIMILARITY) },
+                    onClick = { onNavigate(AppNavigation.APRENDIZ_SIMILARITY.replace("{projectId}", projectId)) },
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Warning
                 )
                 SenaButton(
                     text = "Editar",
-                    onClick = { onNavigate(AppNavigation.APRENDIZ_NEW_PROJECT) },
+                    onClick = { onNavigate(AppNavigation.APRENDIZ_NEW_PROJECT.replace("{projectId}", projectId)) },
                     isPrimary = false,
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Edit
@@ -88,11 +88,11 @@ fun ProjectDetailScreen(
         ) {
             SenaPageHeader(
                 title = project?.title ?: "Proyecto no encontrado",
-                subtitle = "Detalle del proyecto de formación",
+                subtitle = "Detalle del proyecto de formaciï¿½n",
                 icon = Icons.Default.FolderOpen
             )
 
-            SenaSectionHeader(title = "Información General")
+            SenaSectionHeader(title = "Informaciï¿½n General")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     DetailRowItem(Icons.Default.Title, "Nombre del Proyecto", project?.title ?: "N/A")
@@ -111,10 +111,10 @@ fun ProjectDetailScreen(
                     }
                     HorizontalDivider(color = senaColors().borderSoft)
                     Column {
-                        Text("Descripción", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                        Text("Descripciï¿½n", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            project?.description ?: "Sin descripción",
+                            project?.description ?: "Sin descripciï¿½n",
                             style = MaterialTheme.typography.bodyMedium,
                             color = senaColors().textSecondary,
                             lineHeight = 22.sp

@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasActionState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 import kotlinx.coroutines.launch
 
@@ -34,7 +35,7 @@ fun JoinFichaScreen(
     var programa by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    val uiState by fichasViewModel.uiState.collectAsState()
+    val actionState by fichasViewModel.actionState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -77,7 +78,7 @@ fun JoinFichaScreen(
             SenaSectionHeader(title = "Información del Grupo")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    if (uiState.codigoGenerado != null) {
+                    if (actionState.codigoGenerado != null) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -99,13 +100,13 @@ fun JoinFichaScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        uiState.codigoGenerado!!,
+                                        actionState.codigoGenerado!!,
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Black,
                                         color = senaColors().green,
                                         letterSpacing = 2.sp
                                     )
-                                    SenaCopyButton(textToCopy = uiState.codigoGenerado!!)
+                                    SenaCopyButton(textToCopy = actionState.codigoGenerado!!)
                                 }
                             }
                             Text(

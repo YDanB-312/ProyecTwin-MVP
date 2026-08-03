@@ -22,5 +22,7 @@ data class Project(
         ProjectStatus.COMPLETADO -> "Completado"
         ProjectStatus.PENDIENTE -> "Pendiente"
         ProjectStatus.CANCELADO -> "Cancelado"
+        ProjectStatus.APROBADO -> "Aprobado"
+        ProjectStatus.RECHAZADO -> "Rechazado"
     }
 }

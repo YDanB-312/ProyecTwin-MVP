@@ -30,7 +30,9 @@ import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +45,7 @@ fun InstructorDashboardScreen(
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -52,13 +54,15 @@ fun InstructorDashboardScreen(
         user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
     }
 
-    LaunchedEffect(dashState.isLoading) {
-        if (!dashState.isLoading) isRefreshing = false
+    val isLoading = dashState is DashboardUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
-    val pendingCount = dashState.projects.count { it.estado == ProjectStatus.PENDIENTE.value }
-    val enProgresoCount = dashState.projects.count { it.estado == ProjectStatus.EN_PROGRESO.value }
-    val inboxProjects = dashState.projects.filter { it.estado == ProjectStatus.EN_PROGRESO.value }
+    val projects = (dashState as? DashboardUiState.Success)?.projects ?: emptyList()
+    val pendingCount = projects.count { it.estado == ProjectStatus.PENDIENTE.value }
+    val enProgresoCount = projects.count { it.estado == ProjectStatus.EN_PROGRESO.value }
+    val inboxProjects = projects.filter { it.estado == ProjectStatus.EN_PROGRESO.value }
 
     Scaffold(
         topBar = {

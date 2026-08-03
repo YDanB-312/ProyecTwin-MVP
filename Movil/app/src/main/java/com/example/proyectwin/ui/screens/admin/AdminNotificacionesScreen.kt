@@ -25,6 +25,7 @@ import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.NotificationType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,11 +34,11 @@ fun AdminNotificacionesScreen(
     onBack: () -> Unit,
     onNavigateToUser: (String) -> Unit,
     onNavigateToReport: (String) -> Unit,
-    onNavigateToSimilarity: () -> Unit,
+    onNavigateToSimilarity: (String) -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
-    val userId = authState.user?.id ?: 1
+    val userId = (authState as? AuthUiState.LoggedIn)?.user?.id ?: 1
 
     val notifications = remember(userId) { MockDataProvider.getNotificationsByUser(userId) }
 
@@ -68,10 +69,15 @@ fun AdminNotificacionesScreen(
             items(notifications) { notification ->
                 AdminNotificationCard(notification = notification) {
                     val module = detectNotificationModule(notification.mensaje)
+                    val projectId = notification.projectId ?: 0
                     when (module) {
-                        "Usuarios" -> onNavigateToUser("1")
-                        "Reportes" -> onNavigateToReport("1")
-                        "Similitudes" -> onNavigateToSimilarity()
+                        "Usuarios" -> onNavigateToUser(notification.userId.toString())
+                        "Reportes" -> onNavigateToReport(
+                            MockDataProvider.getBugReportsByProject(projectId).firstOrNull()?.id?.toString() ?: "1"
+                        )
+                        "Similitudes" -> onNavigateToSimilarity(
+                            MockDataProvider.getSimilaritiesByProject(projectId).firstOrNull()?.id?.toString() ?: "1"
+                        )
                         else -> {}
                     }
                 }

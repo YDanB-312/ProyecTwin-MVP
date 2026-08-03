@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.UserRole
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import kotlinx.coroutines.delay
@@ -55,6 +57,15 @@ fun NewUserScreen(onBack: () -> Unit) {
                         isSaving = true
                         scope.launch {
                             delay(1000)
+                            MockDataProvider.createUser(
+                                name = "${name.trim()} ${lastName.trim()}".trim(),
+                                email = email.trim(),
+                                role = when (selectedRol) {
+                                    "Aprendiz" -> UserRole.APRENDIZ.value
+                                    "Instructor" -> UserRole.INSTRUCTOR.value
+                                    else -> UserRole.ADMINISTRADOR.value
+                                }
+                            )
                             isSaving = false
                             onBack()
                         }
@@ -88,14 +99,14 @@ fun NewUserScreen(onBack: () -> Unit) {
                         SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido *", modifier = Modifier.weight(1f))
                     }
                     SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional *", leadingIcon = Icons.Default.Email)
-                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseña Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
+                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseï¿½a Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
                 }
             }
 
-            SenaSectionHeader(title = "Asignación de Rol")
+            SenaSectionHeader(title = "Asignaciï¿½n de Rol")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Selecciona el rol jerárquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    Text("Selecciona el rol jerï¿½rquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -135,13 +146,13 @@ fun NewUserScreen(onBack: () -> Unit) {
             if (selectedRol == "Aprendiz") {
                 SenaSectionHeader(title = "Detalles del Aprendiz")
                 SenaCard {
-                    SenaTextField(value = "", onValueChange = {}, label = "Código de Ficha", placeholder = "Ej: 2568421")
+                    SenaTextField(value = "", onValueChange = {}, label = "Cï¿½digo de Ficha", placeholder = "Ej: 2568421")
                 }
             }
 
             SenaAlertBanner(
-                title = "Activación Automática",
-                message = "Al crear el usuario, se le enviará un correo de bienvenida con sus credenciales de acceso.",
+                title = "Activaciï¿½n Automï¿½tica",
+                message = "Al crear el usuario, se le enviarï¿½ un correo de bienvenida con sus credenciales de acceso.",
                 icon = Icons.Default.Info,
                 color = senaColors().info
             )

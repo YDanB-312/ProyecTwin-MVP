@@ -17,8 +17,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,8 +41,28 @@ data class NewProjectFormData(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
-    var formData by remember { mutableStateOf(NewProjectFormData()) }
+fun NewProjectScreen(
+    onBack: () -> Unit,
+    onSubmit: () -> Unit = {},
+    projectId: String = "",
+    authViewModel: AuthViewModel = viewModel()
+) {
+    val authState by authViewModel.uiState.collectAsState()
+    val currentUser = (authState as? AuthUiState.LoggedIn)?.user
+    val existingProject = remember(projectId) {
+        projectId.toIntOrNull()?.let { MockDataProvider.findProjectById(it) }
+    }
+    var formData by remember {
+        mutableStateOf(
+            existingProject?.let { project ->
+                NewProjectFormData(
+                    title = project.title,
+                    summary = project.description,
+                    observations = "Editando proyecto existente"
+                )
+            } ?: NewProjectFormData()
+        )
+    }
     var isSubmitting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -62,6 +86,23 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
                         isSubmitting = true
                         scope.launch {
                             delay(1500)
+                            if (existingProject != null) {
+                                MockDataProvider.updateProject(
+                                    id = existingProject.id,
+                                    title = formData.title,
+                                    description = formData.summary
+                                )
+                            } else {
+                                MockDataProvider.createProject(
+                                    title = formData.title,
+                                    description = formData.summary,
+                                    studentId = currentUser?.id ?: 2,
+                                    instructorId = 1,
+                                    fichaId = currentUser?.fichaId ?: 1,
+                                    studentName = currentUser?.name ?: "Ana Aprendiz",
+                                    instructorName = "Carlos Instructor"
+                                )
+                            }
                             isSubmitting = false
                             onSubmit()
                         }
@@ -81,8 +122,8 @@ fun NewProjectScreen(onBack: () -> Unit, onSubmit: () -> Unit = {}) {
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             SenaPageHeader(
-                title = "Nuevo Proyecto",
-                subtitle = "Inicia una idea desde cero y compártela con tus instructores.",
+                title = if (existingProject != null) "Editar Proyecto" else "Nuevo Proyecto",
+                subtitle = if (existingProject != null) "Modifica la información de tu propuesta." else "Inicia una idea desde cero y compártela con tus instructores.",
                 icon = Icons.Default.AddCircle
             )
 

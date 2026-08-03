@@ -12,7 +12,7 @@ class AuthRepository(private val sessionManager: SessionManager) {
 
     suspend fun login(email: String, password: String): Result<GeneralUser> {
         val user = MockDataProvider.findUserByEmail(email)
-        if (user != null && password == "123456") {
+        if (user != null && MockDataProvider.isUserActive(user.id) && password == "123456") {
             sessionManager.saveUser(user)
             return Result.success(user)
         }
@@ -31,6 +31,7 @@ class AuthRepository(private val sessionManager: SessionManager) {
             role = role,
             token = "mock-token-${email.split("@")[0]}"
         )
+        MockDataProvider.users.add(newUser)
         sessionManager.saveUser(newUser)
         return Result.success(newUser)
     }

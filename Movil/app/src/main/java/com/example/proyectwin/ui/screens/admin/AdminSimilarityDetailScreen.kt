@@ -18,22 +18,35 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.Similarity
+import com.example.proyectwin.data.model.SimilarityStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
+fun AdminSimilarityDetailScreen(onBack: () -> Unit, similarityId: String = "") {
     val scrollState = rememberScrollState()
-    var selectedComparison by remember { mutableIntStateOf(0) }
-    val comparisons = listOf("Plataforma Educativa SENA", "Plataforma de Cursos Online")
-    
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    var similarity by remember(similarityId) {
+        mutableStateOf(
+            MockDataProvider.getAllSimilarities().find { it.id == (similarityId.toIntOrNull() ?: 0) }
+        )
+    }
+    var selectedComparison by remember { mutableIntStateOf(0) }
+
+    val comparisons = listOfNotNull(
+        similarity?.project1Title,
+        similarity?.project2Title
+    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -47,33 +60,58 @@ fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
         },
         containerColor = senaColors().background,
         bottomBar = {
-            SenaBottomBar {
-                SenaButton(
-                    text = "Marcar Resuelto", 
-                    onClick = { 
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Caso marcado como resuelto")
-                            kotlinx.coroutines.delay(1000)
-                            onBack()
-                        }
-                    }, 
-                    modifier = Modifier.weight(1f)
-                )
-                SenaButton(
-                    text = "Desestimar", 
-                    onClick = { 
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Similitud desestimada")
-                            kotlinx.coroutines.delay(1000)
-                            onBack()
-                        }
-                    }, 
-                    isPrimary = false, 
-                    modifier = Modifier.weight(1f)
-                )
+            if (similarity != null) {
+                SenaBottomBar {
+                    SenaButton(
+                        text = "Marcar Resuelto",
+                        onClick = {
+                            similarity?.let { s ->
+                                MockDataProvider.updateSimilarityEstado(s.id, SimilarityStatus.CONFIRMADO.value)
+                                similarity = s.copy(estado = SimilarityStatus.CONFIRMADO.value)
+                            }
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Caso marcado como resuelto")
+                                kotlinx.coroutines.delay(1000)
+                                onBack()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    SenaButton(
+                        text = "Desestimar",
+                        onClick = {
+                            similarity?.let { s ->
+                                MockDataProvider.updateSimilarityEstado(s.id, SimilarityStatus.RECHAZADO.value)
+                                similarity = s.copy(estado = SimilarityStatus.RECHAZADO.value)
+                            }
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Similitud desestimada")
+                                kotlinx.coroutines.delay(1000)
+                                onBack()
+                            }
+                        },
+                        isPrimary = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     ) { paddingValues ->
+        if (similarity == null) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SenaEmptyState(
+                    message = "No se encontraron similitudes para revisar.",
+                    icon = Icons.Default.SearchOff
+                )
+            }
+            return@Scaffold
+        }
+
+        val sim = similarity!!
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -83,8 +121,8 @@ fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SenaPageHeader(
-                title = "An�lisis de Control",
-                subtitle = "Comparativa t�cnica de alto nivel para la supervisi�n de integridad acad�mica.",
+                title = "An\u00e1lisis de Control",
+                subtitle = "Comparativa t\u00e9cnica de alto nivel para la supervisi\u00f3n de integridad acad\u00e9mica.",
                 icon = Icons.Default.ExclamationTriangle
             )
 
@@ -92,7 +130,7 @@ fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
             SenaCard(elevation = 2.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Proyecto Bajo Supervisi�n: Sistema de Gesti�n Acad�mica",
+                        "Proyecto Bajo Supervisi\u00f3n: ${sim.project1Title ?: "Proyecto ${sim.projectId1}"}",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = senaColors().text
@@ -102,14 +140,14 @@ fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
                         style = MaterialTheme.typography.labelSmall,
                         color = senaColors().textLight
                     )
-                    
+
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = it }
                     ) {
                         OutlinedTextField(
-                            value = comparisons[selectedComparison],
+                            value = comparisons.getOrNull(selectedComparison) ?: "",
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -140,21 +178,32 @@ fun AdminSimilarityDetailScreen(onBack: () -> Unit) {
             }
 
             SenaSectionHeader(title = "Comparativa Directa")
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminCompCard("Proyecto Original", "Juan P�rez", senaColors().green, Modifier.fillMaxWidth())
+                AdminCompCard("Proyecto Original", sim.project1Student ?: "Sin asignar", senaColors().green, Modifier.fillMaxWidth())
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(24.dp))
                 }
-                AdminCompCard("Caso Coincidente", "Ana Mart�nez", senaColors().warning, Modifier.fillMaxWidth())
+                AdminCompCard("Caso Coincidente", sim.project2Student ?: "Sin asignar", senaColors().warning, Modifier.fillMaxWidth())
             }
 
             SenaSectionHeader(title = "Niveles de Coincidencia")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    AdminMatchItem("Descripci�n T�cnica", 72, senaColors().danger)
-                    AdminMatchItem("Alcance y Objetivos", 55, senaColors().warning)
-                    AdminMatchItem("Metodolog�a", 45, senaColors().warning)
+                    AdminMatchItem("Similitud Global", (sim.similitud * 100).toInt(), senaColors().danger)
+                    AdminMatchItem("Alcance y Objetivos", minOf((sim.similitud * 100).toInt() - 15, 100).coerceAtLeast(0), senaColors().warning)
+                    AdminMatchItem("Metodolog\u00eda", maxOf((sim.similitud * 100).toInt() - 30, 0), senaColors().warning)
+                }
+            }
+
+            SenaCard(elevation = 1.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Estado del caso", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    SenaStatusBadge(status = sim.statusDisplay)
                 }
             }
 
@@ -204,6 +253,6 @@ val Icons.Filled.ExclamationTriangle: ImageVector get() = Icons.Default.Warning
 @Composable
 fun AdminSimilarityDetailPreview() {
     ProyecTwinTheme {
-        AdminSimilarityDetailScreen(onBack = {})
+        AdminSimilarityDetailScreen(similarityId = "1", onBack = {})
     }
 }

@@ -37,11 +37,11 @@ object AppNavigation {
     const val APRENDIZ_GRAPH = "aprendiz_graph"
     const val APRENDIZ_DASHBOARD = "aprendiz_dashboard"
     const val APRENDIZ_PROJECTS = "aprendiz_projects"
-    const val APRENDIZ_NEW_PROJECT = "aprendiz_new_project"
+    const val APRENDIZ_NEW_PROJECT = "aprendiz_new_project/{projectId}"
     const val APRENDIZ_ANALYZING = "aprendiz_analyzing"
     const val APRENDIZ_ANALYSIS_RESULT = "aprendiz_analysis_result"
     const val APRENDIZ_DETAIL = "aprendiz_detail/{projectId}"
-    const val APRENDIZ_SIMILARITY = "aprendiz_similarity"
+    const val APRENDIZ_SIMILARITY = "aprendiz_similarity/{projectId}"
     const val APRENDIZ_PROFILE = "aprendiz_profile"
     const val APRENDIZ_ALERTS = "aprendiz/alerts"
     const val APRENDIZ_FICHA_DETAIL = "aprendiz/ficha"
@@ -57,10 +57,10 @@ object AppNavigation {
     const val INSTRUCTOR_REVISION = "instructor/revision"
     const val INSTRUCTOR_DETAIL = "instructor_detail/{projectId}"
     const val INSTRUCTOR_PROFILE = "instructor/profile"
-    const val INSTRUCTOR_SIMILARITY_DETAIL = "instructor/similarity-detail"
+    const val INSTRUCTOR_SIMILARITY_DETAIL = "instructor/similarity-detail/{projectId}"
     const val INSTRUCTOR_MANAGE_FICHAS = "instructor/fichas/manage"
     const val INSTRUCTOR_ALERTS = "instructor/alerts"
-    const val INSTRUCTOR_FICHA_DETAIL = "instructor_ficha_detail"
+    const val INSTRUCTOR_FICHA_DETAIL = "instructor_ficha_detail/{fichaId}"
 
     // Admin Graph
     const val ADMIN_GRAPH = "admin_graph"
@@ -70,7 +70,7 @@ object AppNavigation {
     const val ADMIN_PROJECTS = "admin/projects"
     const val ADMIN_PROJECT_DETAIL = "admin/project/{projectId}"
     const val ADMIN_SIMILARITY_LIST = "admin/similarities"
-    const val ADMIN_SIMILARITY_DETAIL = "admin/similarity/detail"
+    const val ADMIN_SIMILARITY_DETAIL = "admin/similarity/{projectId}"
     const val ADMIN_NEW_USER = "admin/users/new"
     const val ADMIN_USER_DETAIL = "admin/user/{userId}"
     const val ADMIN_PROFILE = "admin/profile"
@@ -165,25 +165,32 @@ object AppNavigation {
 
         navigation(startDestination = APRENDIZ_DASHBOARD, route = APRENDIZ_GRAPH) {
             composable(APRENDIZ_DASHBOARD) { 
-                DashboardScreen(onNavigate = { route -> navController.navigate(route) }, bottomBar = { bottomBar() }) 
+                DashboardScreen(onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) 
             }
             composable(APRENDIZ_PROJECTS) { ProjectsScreen(
-                onNavigate = { route -> navController.navigate(route) },
-                onNewProject = { navController.navigate(APRENDIZ_NEW_PROJECT) },
+                onNavigate = { route -> navController.navigateTo(route) },
+                onNewProject = { navController.navigate(APRENDIZ_NEW_PROJECT.replace("{projectId}", "")) },
                 onProjectDetail = { id -> navController.navigate("aprendiz_detail/$id") },
                 bottomBar = { bottomBar() }
             ) }
-            composable(APRENDIZ_NEW_PROJECT) { NewProjectScreen(
-                onBack = { navController.popBackStack() },
-                onSubmit = { navController.navigate(APRENDIZ_ANALYZING) }
-            ) }
+            composable(
+                route = APRENDIZ_NEW_PROJECT,
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+                NewProjectScreen(
+                    projectId = projectId,
+                    onBack = { navController.popBackStack() },
+                    onSubmit = { navController.navigate(APRENDIZ_ANALYZING) }
+                )
+            }
             composable(APRENDIZ_ANALYZING) { AnalyzingProjectScreen(
                 onCancel = { navController.popBackStack(APRENDIZ_NEW_PROJECT, inclusive = true) },
                 onAnalysisComplete = { navController.navigate(APRENDIZ_ANALYSIS_RESULT) { popUpTo(APRENDIZ_ANALYZING) { inclusive = true } } }
             ) }
             composable(APRENDIZ_ANALYSIS_RESULT) { AnalysisResultScreen(
                 onBack = { navController.popBackStack() },
-                onViewDetail = { _ -> navController.navigate(APRENDIZ_SIMILARITY) }
+                onViewDetail = { id -> navController.navigate(APRENDIZ_SIMILARITY.replace("{projectId}", id)) }
             ) }
             composable(
                 route = APRENDIZ_DETAIL,
@@ -193,20 +200,26 @@ object AppNavigation {
                 ProjectDetailScreen(
                     projectId = projectId, 
                     onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigate(route) }
+                    onNavigate = { route -> navController.navigateTo(route) }
                 )
             }
-            composable(APRENDIZ_SIMILARITY) { SimilarityDetailScreen(onBack = { navController.popBackStack() }) }
-            composable(APRENDIZ_PROFILE) { ProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }, bottomBar = { bottomBar() }) }
+            composable(
+                route = APRENDIZ_SIMILARITY,
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+                SimilarityDetailScreen(projectId = projectId, onBack = { navController.popBackStack() })
+            }
+            composable(APRENDIZ_PROFILE) { ProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) }
             composable(APRENDIZ_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 onBack = { navController.popBackStack() },
                 profileRoute = APRENDIZ_PROFILE,
                 similarityRoute = APRENDIZ_SIMILARITY,
                 detailRoute = "aprendiz_detail/{id}",
                 bottomBar = { bottomBar() }
             ) }
-            composable(APRENDIZ_FICHA_DETAIL) { FichaDetailScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
+            composable(APRENDIZ_FICHA_DETAIL) { FichaDetailScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
             composable(APRENDIZ_JOIN_FICHA) { UnirseFichaAprendizScreen(onBack = { navController.popBackStack() }, onJoined = { navController.popBackStack() }) }
             composable(
                 route = APRENDIZ_COMPANERO_DETAIL,
@@ -226,8 +239,8 @@ object AppNavigation {
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
-            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
+            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
+            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
         }
     }
 
@@ -249,11 +262,11 @@ object AppNavigation {
         }
 
         navigation(startDestination = INSTRUCTOR_DASHBOARD, route = INSTRUCTOR_GRAPH) {
-            composable(INSTRUCTOR_DASHBOARD) { InstructorDashboardScreen(onNavigate = { route -> navController.navigate(route) }, bottomBar = { bottomBar() }) }
+            composable(INSTRUCTOR_DASHBOARD) { InstructorDashboardScreen(onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) }
             composable(INSTRUCTOR_FICHAS) { FichaDirectoryScreen(
                 onBack = { navController.popBackStack() },
                 onCreateFicha = { navController.navigate(INSTRUCTOR_CREAR_FICHA) },
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigateTo(route) }
             ) }
             composable(INSTRUCTOR_JOIN_FICHA) { JoinFichaScreen(
                 onBack = { navController.popBackStack() },
@@ -280,35 +293,54 @@ object AppNavigation {
             }
             composable(INSTRUCTOR_PROFILE) { InstructorProfileScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 bottomBar = { bottomBar() }
             ) }
-            composable(INSTRUCTOR_SIMILARITY_DETAIL) { InstructorSimilarityDetailScreen(
-                onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) }
-            ) }
+            composable(
+                route = INSTRUCTOR_SIMILARITY_DETAIL,
+                arguments = listOf(
+                    navArgument("projectId") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    }
+                )
+            ) { backStackEntry ->
+                val similarityId = backStackEntry.arguments?.getString("projectId") ?: ""
+                InstructorSimilarityDetailScreen(
+                    similarityId = similarityId,
+                    onBack = { navController.popBackStack() },
+                    onNavigate = { route -> navController.navigateTo(route) }
+                )
+            }
             composable(INSTRUCTOR_MANAGE_FICHAS) { ManageFichasScreen(
                 onBack = { navController.popBackStack() },
-                onViewDetail = { id -> navController.navigate(INSTRUCTOR_FICHA_DETAIL) },
-                onViewDirectory = { id -> navController.navigate(INSTRUCTOR_FICHAS) },
+                onViewDetail = { fichaId -> navController.navigate(INSTRUCTOR_FICHA_DETAIL.replace("{fichaId}", fichaId)) },
+                onViewDirectory = { fichaId -> navController.navigate(INSTRUCTOR_FICHAS) },
                 onCreateFicha = { navController.navigate(INSTRUCTOR_CREAR_FICHA) },
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 bottomBar = { bottomBar() }
             ) }
             composable(INSTRUCTOR_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 onBack = { navController.popBackStack() },
                 profileRoute = INSTRUCTOR_PROFILE,
                 similarityRoute = INSTRUCTOR_SIMILARITY_DETAIL,
                 detailRoute = "instructor_detail/{id}",
                 bottomBar = { bottomBar() }
             ) }
-            composable(INSTRUCTOR_FICHA_DETAIL) { DetalleFichaInstructorScreen(
-                onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) }
-            ) }
-            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
-            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
+            composable(
+                route = INSTRUCTOR_FICHA_DETAIL,
+                arguments = listOf(navArgument("fichaId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val fichaId = backStackEntry.arguments?.getString("fichaId") ?: ""
+                DetalleFichaInstructorScreen(
+                    fichaId = fichaId,
+                    onBack = { navController.popBackStack() },
+                    onNavigate = { route -> navController.navigateTo(route) }
+                )
+            }
+            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
+            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
         }
     }
 
@@ -330,19 +362,19 @@ object AppNavigation {
         }
 
         navigation(startDestination = ADMIN_DASHBOARD, route = ADMIN_GRAPH) {
-            composable(ADMIN_DASHBOARD) { AdminDashboardScreen(onNavigate = { route -> navController.navigate(route) }, bottomBar = { bottomBar() }) }
+            composable(ADMIN_DASHBOARD) { AdminDashboardScreen(onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) }
             composable(ADMIN_USERS) { UserManagementScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 bottomBar = { bottomBar() }
             ) }
             composable(ADMIN_BUGS) { BugReportsScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigateTo(route) }
             ) }
             composable(ADMIN_PROJECTS) { AdminProjectsScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigateTo(route) }
             ) }
             composable(
                 route = ADMIN_PROJECT_DETAIL,
@@ -352,17 +384,29 @@ object AppNavigation {
                 AdminProjectDetailScreen(
                     projectId = projectId, 
                     onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigate(route) }
+                    onNavigate = { route -> navController.navigateTo(route) }
                 )
             }
             composable(ADMIN_SIMILARITY_LIST) { AdminSimilarityListScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 bottomBar = { bottomBar() }
             ) }
-            composable(ADMIN_SIMILARITY_DETAIL) { AdminSimilarityDetailScreen(
-                onBack = { navController.popBackStack() }
-            ) }
+            composable(
+                route = ADMIN_SIMILARITY_DETAIL,
+                arguments = listOf(
+                    navArgument("projectId") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    }
+                )
+            ) { backStackEntry ->
+                val similarityId = backStackEntry.arguments?.getString("projectId") ?: ""
+                AdminSimilarityDetailScreen(
+                    similarityId = similarityId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
             composable(ADMIN_NEW_USER) { NewUserScreen(onBack = { navController.popBackStack() }) }
             composable(
                 route = ADMIN_USER_DETAIL,
@@ -372,12 +416,12 @@ object AppNavigation {
                 UserDetailScreen(
                     userId = userId, 
                     onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigate(route) }
+                    onNavigate = { route -> navController.navigateTo(route) }
                 )
             }
             composable(ADMIN_PROFILE) { AdminProfileScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 bottomBar = { bottomBar() }
             ) }
             composable(
@@ -391,7 +435,7 @@ object AppNavigation {
                 )
             }
             composable(ADMIN_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigate = { route -> navController.navigateTo(route) },
                 onBack = { navController.popBackStack() },
                 profileRoute = ADMIN_PROFILE,
                 similarityRoute = ADMIN_SIMILARITY_DETAIL,
@@ -402,10 +446,20 @@ object AppNavigation {
                 onBack = { navController.popBackStack() },
                 onNavigateToUser = { id -> navController.navigate(ADMIN_USER_DETAIL.replace("{userId}", id)) },
                 onNavigateToReport = { id -> navController.navigate(ADMIN_BUG_DETAIL.replace("{bugId}", id)) },
-                onNavigateToSimilarity = { navController.navigate(ADMIN_SIMILARITY_DETAIL) }
+                onNavigateToSimilarity = { id -> navController.navigate(ADMIN_SIMILARITY_DETAIL.replace("{projectId}", id)) }
             ) }
-            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
-            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigate(route) }) }
+            composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
+            composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
         }
+    }
+}
+
+private fun NavHostController.navigateTo(route: String) {
+    if (route == AppNavigation.HOME) {
+        navigate(route) {
+            popUpTo(0) { inclusive = true }
+        }
+    } else {
+        navigate(route)
     }
 }

@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.BugReportType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import kotlinx.coroutines.delay
@@ -26,6 +28,7 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var reportes by remember { mutableStateOf(MockDataProvider.getBugReportsByReporter(2)) }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
@@ -47,6 +50,19 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         isLoading = true
                         scope.launch {
                             delay(1500)
+                            if (title.isNotBlank() && description.isNotBlank()) {
+                                MockDataProvider.createBugReport(
+                                    titulo = title.trim(),
+                                    descripcion = description.trim(),
+                                    tipo = BugReportType.FUNCIONAL.value,
+                                    projectId = 1,
+                                    reporterId = 2,
+                                    reporterName = "Ana Aprendiz"
+                                )
+                                reportes = MockDataProvider.getBugReportsByReporter(2)
+                                title = ""
+                                description = ""
+                            }
                             isLoading = false
                             onBack()
                         }
@@ -95,20 +111,23 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             SenaSectionHeader(title = "Tus Reportes Recientes")
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                listOf(
-                    Triple("#001", "Error en Dashboard", "Resuelto"),
-                    Triple("#002", "Notificaciones duplicadas", "En Proceso"),
-                    Triple("#003", "Botón no funciona", "Pendiente")
-                ).forEach { (id, desc, status) ->
-                    SenaCard(elevation = 0.5.dp) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(id, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().green)
-                            Spacer(Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(desc, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
-                                Text("Hace 2 días", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                if (reportes.isEmpty()) {
+                    SenaEmptyState(
+                        message = "Aún no has registrado reportes de falla.",
+                        icon = Icons.Default.BugReport
+                    )
+                } else {
+                    reportes.forEach { r ->
+                        SenaCard(elevation = 0.5.dp) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("#${r.id.toString().padStart(3, '0')}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().green)
+                                Spacer(Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(r.titulo, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                    Text(r.descripcion, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, maxLines = 1)
+                                }
+                                SenaStatusBadge(status = r.statusDisplay)
                             }
-                            SenaStatusBadge(status = status)
                         }
                     }
                 }
