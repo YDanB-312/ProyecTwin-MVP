@@ -39,7 +39,24 @@ class ModelsTest {
     @Test
     fun ficha_generarCodigo_format() {
         val codigo = Ficha.generarCodigo()
-        assertTrue(codigo.matches(Regex("^FT-\\d{6}$")))
+        assertTrue(codigo.matches(Regex("^FT-\\d{7}$")))
+        assertTrue(Ficha.esCodigoValido(codigo))
+    }
+
+    @Test
+    fun ficha_generarCodigoLibre_excludesUsed() {
+        val usados = listOf("FT-2692701", "FT-2771109")
+        repeat(20) {
+            val codigo = Ficha.generarCodigoLibre(usados)
+            assertTrue(codigo.matches(Regex("^FT-\\d{7}$")))
+            assertFalse(usados.contains(codigo))
+            assertTrue(Ficha.esCodigoValido(codigo))
+        }
+    }
+
+    @Test
+    fun ficha_codigosValidos_ampliados() {
+        assertTrue(Ficha.fichasValidas.size >= 30)
     }
 
     @Test

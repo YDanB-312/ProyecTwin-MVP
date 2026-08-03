@@ -31,6 +31,7 @@ import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
@@ -49,7 +50,7 @@ fun InstructorProfileScreen(
 ) {
     val scrollState = rememberScrollState()
     val authState by authViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
     val scope = rememberCoroutineScope()
 
     var isEditing by remember { mutableStateOf(false) }

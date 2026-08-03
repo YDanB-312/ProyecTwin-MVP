@@ -4,7 +4,9 @@ enum class ProjectStatus(val value: String) {
     EN_PROGRESO("en_progreso"),
     COMPLETADO("completado"),
     PENDIENTE("pendiente"),
-    CANCELADO("cancelado");
+    CANCELADO("cancelado"),
+    APROBADO("aprobado"),
+    RECHAZADO("rechazado");
 
     companion object {
         fun fromValue(value: String): ProjectStatus =
@@ -50,6 +52,7 @@ enum class BugReportType(val value: String) {
 
 enum class SimilarityStatus(val value: String) {
     PENDIENTE("pendiente"),
+    REVISADO("revisado"),
     CONFIRMADO("confirmado"),
     RECHAZADO("rechazado");
 

@@ -18,6 +18,7 @@ data class Similarity(
     val simStatus: SimilarityStatus get() = SimilarityStatus.fromValue(estado)
     val statusDisplay: String get() = when (simStatus) {
         SimilarityStatus.PENDIENTE -> "Pendiente"
+        SimilarityStatus.REVISADO -> "Revisado"
         SimilarityStatus.CONFIRMADO -> "Confirmado"
         SimilarityStatus.RECHAZADO -> "Rechazado"
     }

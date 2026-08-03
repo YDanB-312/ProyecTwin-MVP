@@ -24,7 +24,9 @@ import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +47,7 @@ fun ProjectsScreen(
 
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
 
     LaunchedEffect(user, refreshTrigger) {
         if (user != null) {
@@ -53,17 +55,18 @@ fun ProjectsScreen(
         }
     }
 
-    LaunchedEffect(dashState.isLoading) {
-        if (!dashState.isLoading) isRefreshing = false
+    val isLoading = dashState is DashboardUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
-    val filteredProjects = dashState.projects.filter { project ->
+    val filteredProjects = (dashState as? DashboardUiState.Success)?.projects?.filter { project ->
         val matchesFilter = if (selectedFilter == "Todos") true else {
             project.statusDisplay == selectedFilter
         }
         val matchesSearch = project.title.contains(searchQuery, ignoreCase = true)
         matchesFilter && matchesSearch
-    }
+    } ?: emptyList()
 
     Scaffold(
         topBar = {

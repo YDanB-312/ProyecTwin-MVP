@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.BugReport
+import com.example.proyectwin.data.model.BugReportStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -40,8 +41,10 @@ fun BugReportDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val bug = remember(bugId) {
-        MockDataProvider.getAllBugReports().find { it.id == (bugId.toIntOrNull() ?: 0) }
+    var bug by remember(bugId) {
+        mutableStateOf(
+            MockDataProvider.getAllBugReports().find { it.id == (bugId.toIntOrNull() ?: 0) }
+        )
     }
 
     Scaffold(
@@ -60,6 +63,10 @@ fun BugReportDetailScreen(
                 SenaButton(
                     text = "ASIGNAR T�CNICO",
                     onClick = {
+                        bug?.let { b ->
+                            MockDataProvider.updateBugReportEstado(b.id, BugReportStatus.EN_REVISION.value)
+                            bug = b.copy(estado = BugReportStatus.EN_REVISION.value)
+                        }
                         scope.launch {
                             snackbarHostState.showSnackbar("Reporte escalado a Nivel 2")
                         }
@@ -68,7 +75,17 @@ fun BugReportDetailScreen(
                 )
                 SenaButton(
                     text = "CERRAR CASO", 
-                    onClick = { onBack() }, 
+                    onClick = {
+                        bug?.let { b ->
+                            MockDataProvider.updateBugReportEstado(b.id, BugReportStatus.CERRADO.value)
+                            bug = b.copy(estado = BugReportStatus.CERRADO.value)
+                        }
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Caso cerrado")
+                            kotlinx.coroutines.delay(600)
+                            onBack()
+                        }
+                    }, 
                     isPrimary = false, 
                     containerColor = senaColors().danger,
                     modifier = Modifier.weight(1f)

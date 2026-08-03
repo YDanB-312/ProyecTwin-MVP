@@ -26,7 +26,9 @@ import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -42,14 +44,15 @@ fun AdminDashboardScreen(
     val scope = rememberCoroutineScope()
     val authState by authViewModel.uiState.collectAsState()
     val adminState by adminViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(adminState.isLoading) {
-        if (!adminState.isLoading) isRefreshing = false
+    val isLoading = adminState is AdminUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
-    if (adminState.isLoading && adminState.users.isEmpty()) {
+    if (adminState is AdminUiState.Loading) {
         Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 SenaSkeletonLine(width = 200.dp, height = 24.dp)
@@ -63,6 +66,15 @@ fun AdminDashboardScreen(
         }
         return
     }
+
+    if (adminState is AdminUiState.Error) {
+        Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+            SenaErrorState(message = (adminState as AdminUiState.Error).message, onRetry = { adminViewModel.refresh() })
+        }
+        return
+    }
+
+    val adminSuccess = adminState as AdminUiState.Success
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -136,7 +148,7 @@ fun AdminDashboardScreen(
                         item {
                             SenaMetricCard(
                                 icon = Icons.Default.Groups,
-                                value = "${adminState.users.size}",
+                                value = "${adminSuccess.users.size}",
                                 label = "Usuarios",
                                 color = senaColors().info,
                                 modifier = Modifier.width(160.dp)
@@ -145,7 +157,7 @@ fun AdminDashboardScreen(
                         item {
                             SenaMetricCard(
                                 icon = Icons.Default.FolderSpecial,
-                                value = "${adminState.projects.size}",
+                                value = "${adminSuccess.projects.size}",
                                 label = "Proyectos",
                                 color = senaColors().success,
                                 modifier = Modifier.width(160.dp)
@@ -154,7 +166,7 @@ fun AdminDashboardScreen(
                         item {
                             SenaMetricCard(
                                 icon = Icons.Default.BugReport,
-                                value = "${adminState.bugReports.size}",
+                                value = "${adminSuccess.bugReports.size}",
                                 label = "Reportes",
                                 color = senaColors().warning,
                                 modifier = Modifier.width(160.dp)
@@ -163,7 +175,7 @@ fun AdminDashboardScreen(
                         item {
                             SenaMetricCard(
                                 icon = Icons.Default.Plagiarism,
-                                value = "${adminState.similarities.size}",
+                                value = "${adminSuccess.similarities.size}",
                                 label = "Similitudes",
                                 color = senaColors().danger,
                                 modifier = Modifier.width(160.dp)
@@ -184,7 +196,7 @@ fun AdminDashboardScreen(
                         modifier = Modifier.padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        adminState.projects.take(5).forEach { project ->
+                        adminSuccess.projects.take(5).forEach { project ->
                             AdminProjectRow(project = project)
                         }
                     }

@@ -25,6 +25,7 @@ import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 import kotlinx.coroutines.launch
 
@@ -54,16 +55,17 @@ fun FichaDirectoryScreen(
         fichasViewModel.loadAllFichas()
     }
 
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading) isRefreshing = false
+    val isLoading = uiState is FichasUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
-    val ficha = uiState.fichas.firstOrNull { it.estado == "activo" }
+    val ficha = (uiState as? FichasUiState.Success)?.fichas?.firstOrNull { it.estado == "activo" }
     val members = ficha?.estudiantes?.map { student ->
         DirectoryMember(
             name = student.name,
             info = student.email,
-            initials = student.name.first().uppercase(),
+            initials = student.name.firstOrNull()?.uppercase() ?: "?",
             isActive = true
         )
     } ?: emptyList()
@@ -108,41 +110,47 @@ fun FichaDirectoryScreen(
                 )
             }
 
-            if (uiState.isLoading) {
-                item {
+            when (val state = uiState) {
+                is FichasUiState.Loading -> item {
                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = senaColors().green)
                     }
                 }
-            } else if (ficha == null) {
-                item {
-                    SenaCard(elevation = 1.dp) {
-                        Text("No hay fichas activas disponibles", color = senaColors().textMuted)
-                    }
+                is FichasUiState.Error -> item {
+                    SenaErrorState(message = state.message, onRetry = { fichasViewModel.loadAllFichas() })
                 }
-            } else {
-                item {
-                    SenaCard(elevation = 1.dp) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(ficha.codigo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
-                                Text(ficha.programa, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                is FichasUiState.Success -> {
+                    if (ficha == null) {
+                        item {
+                            SenaCard(elevation = 1.dp) {
+                                Text("No hay fichas activas disponibles", color = senaColors().textMuted)
                             }
-                            Surface(
-                                color = senaColors().green.copy(alpha = 0.1f),
-                                shape = CircleShape
-                            ) {
+                        }
+                    } else {
+                        item {
+                            SenaCard(elevation = 1.dp) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Groups, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("${members.size} Aprendices", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = senaColors().green)
+                                    Column {
+                                        Text(ficha.codigo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+                                        Text(ficha.programa, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                    }
+                                    Surface(
+                                        color = senaColors().green.copy(alpha = 0.1f),
+                                        shape = CircleShape
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Groups, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("${members.size} Aprendices", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = senaColors().green)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -155,7 +163,7 @@ fun FichaDirectoryScreen(
             }
 
             items(members) { member ->
-                SenaCard(elevation = 0.5.dp, onClick = { onNavigate(AppNavigation.INSTRUCTOR_FICHA_DETAIL) }) {
+                SenaCard(elevation = 0.5.dp, onClick = { onNavigate(AppNavigation.INSTRUCTOR_FICHA_DETAIL.replace("{fichaId}", ficha?.codigo ?: "")) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             modifier = Modifier.size(44.dp),

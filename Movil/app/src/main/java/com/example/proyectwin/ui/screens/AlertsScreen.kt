@@ -26,6 +26,7 @@ import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.NotificationType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 enum class AlertType(val label: String) {
@@ -41,13 +42,13 @@ fun AlertsScreen(
     onNavigate: (String) -> Unit,
     onBack: () -> Unit = {},
     profileRoute: String = "aprendiz_profile",
-    similarityRoute: String = "aprendiz_similarity",
+    similarityRoute: String = "aprendiz_similarity/{projectId}",
     detailRoute: String = "aprendiz_detail/{id}",
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = viewModel()
 ) {
     val uiState by authViewModel.uiState.collectAsState()
-    val user = uiState.user
+    val user = (uiState as? AuthUiState.LoggedIn)?.user
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -126,12 +127,15 @@ fun AlertsScreen(
             } else {
                 items(filteredAlerts, key = { it.id }) { alert ->
                     NotificationCard(alert, onClick = {
+                        MockDataProvider.markNotificationAsRead(alert.id)
+                        refreshTrigger++
                         val category = when (alert.notifType) {
                             NotificationType.INFO, NotificationType.SUCCESS -> "Sistema"
                             NotificationType.WARNING, NotificationType.ERROR -> "Similitud"
                         }
-                        if (category == "Similitud") onNavigate(similarityRoute)
-                        else onNavigate(detailRoute.replace("{id}", "1"))
+                        val projectId = alert.projectId ?: 1
+                        if (category == "Similitud") onNavigate(similarityRoute.replace("{projectId}", projectId.toString()))
+                        else onNavigate(detailRoute.replace("{id}", projectId.toString()))
                     })
                 }
             }

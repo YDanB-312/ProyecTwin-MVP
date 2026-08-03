@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -43,11 +44,10 @@ fun LoginScreen(
     var rememberMe by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
+    val isSubmitting by authViewModel.isSubmitting.collectAsState()
 
-    LaunchedEffect(uiState.isLoggedIn, uiState.user) {
-        if (uiState.isLoggedIn && uiState.user != null) {
-            onLoginSuccess(uiState.user!!.role)
-        }
+    LaunchedEffect(uiState) {
+        (uiState as? AuthUiState.LoggedIn)?.let { onLoginSuccess(it.user.role) }
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "login_bg")
@@ -138,10 +138,10 @@ fun LoginScreen(
                         leadingIcon = Icons.Default.LockPerson
                     )
 
-                    if (uiState.error != null) {
+                    if (uiState is AuthUiState.Error) {
                         SenaAlertBanner(
                             title = "Error",
-                            message = uiState.error!!,
+                            message = (uiState as AuthUiState.Error).message,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
@@ -170,7 +170,7 @@ fun LoginScreen(
                     SenaButton(
                         text = "ENTRAR AL SISTEMA",
                         onClick = { authViewModel.login(email, password) },
-                        isLoading = uiState.isLoading,
+                        isLoading = isSubmitting,
                         icon = Icons.AutoMirrored.Filled.Login,
                         modifier = Modifier.fillMaxWidth()
                     )

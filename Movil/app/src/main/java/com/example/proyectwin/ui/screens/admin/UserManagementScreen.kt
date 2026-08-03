@@ -19,14 +19,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 data class UserItem(
+    val id: Int,
     val name: String,
     val document: String,
     val email: String,
@@ -52,11 +55,12 @@ fun UserManagementScreen(
     val scope = rememberCoroutineScope()
     val adminState by adminViewModel.uiState.collectAsState()
 
-    LaunchedEffect(adminState.isLoading) {
-        if (!adminState.isLoading) isRefreshing = false
+    val isLoading = adminState is AdminUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
-    if (adminState.isLoading && adminState.users.isEmpty()) {
+    if (adminState is AdminUiState.Loading) {
         Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 SenaSkeletonLine(width = 180.dp, height = 24.dp)
@@ -68,13 +72,23 @@ fun UserManagementScreen(
         return
     }
 
-    val roles = remember(adminState.users) {
-        listOf("Todos") + adminState.users.map { it.roleDisplayName }.distinct().sorted()
+    if (adminState is AdminUiState.Error) {
+        Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+            SenaErrorState(message = (adminState as AdminUiState.Error).message, onRetry = { adminViewModel.refresh() })
+        }
+        return
     }
 
-    val usersList = remember(adminState.users) {
-        adminState.users.map { user ->
+    val adminSuccess = adminState as AdminUiState.Success
+
+    val roles = remember(adminSuccess.users) {
+        listOf("Todos") + adminSuccess.users.map { it.roleDisplayName }.distinct().sorted()
+    }
+
+    val usersList = remember(adminSuccess.users) {
+        adminSuccess.users.map { user ->
             UserItem(
+                id = user.id,
                 name = user.name,
                 document = user.documentoIdentidad ?: "",
                 email = user.email,
@@ -126,7 +140,7 @@ fun UserManagementScreen(
         ) {
             item {
                 SenaPageHeader(
-                    title = "Gestión de Usuarios",
+                    title = "Gestiï¿½n de Usuarios",
                     subtitle = "Administra las cuentas, roles y permisos de acceso al sistema.",
                     icon = Icons.Default.ManageAccounts
                 )
@@ -134,7 +148,7 @@ fun UserManagementScreen(
 
             // Filter Section
             item {
-                SenaFilterBar(title = "Filtros de búsqueda") {
+                SenaFilterBar(title = "Filtros de bï¿½squeda") {
                     SenaTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -166,7 +180,7 @@ fun UserManagementScreen(
             if (filteredUsers.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No hay usuarios que coincidan con los criterios de búsqueda.",
+                        message = "No hay usuarios que coincidan con los criterios de bï¿½squeda.",
                         icon = Icons.Default.GroupOff
                     )
                 }
@@ -174,7 +188,7 @@ fun UserManagementScreen(
                 items(filteredUsers) { user ->
                     UserCard(
                         user = user,
-                        onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", "1")) },
+                        onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", user.id.toString())) },
                         onDelete = {
                             userToDelete = user
                             showDeleteDialog = true
@@ -192,10 +206,14 @@ fun UserManagementScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Eliminar Usuario") },
-            text = { Text("¿Estás seguro de que deseas eliminar a ${userToDelete?.name}? Esta acción no se puede deshacer.") },
+            text = { Text("ï¿½Estï¿½s seguro de que deseas eliminar a ${userToDelete?.name}? Esta acciï¿½n no se puede deshacer.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
+                    userToDelete?.let {
+                        MockDataProvider.deleteUser(it.id)
+                        adminViewModel.loadAll()
+                    }
                     scope.launch {
                         snackbarHostState.showSnackbar("Usuario eliminado")
                     }
@@ -268,7 +286,7 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "${user.role} • ${user.document}",
+                            "${user.role} ï¿½ ${user.document}",
                             style = MaterialTheme.typography.bodySmall,
                             color = senaColors().textSecondary
                         )

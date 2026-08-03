@@ -30,7 +30,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -47,10 +49,10 @@ fun DashboardScreen(
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
 
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
     val userName = user?.name?.split(" ")?.firstOrNull() ?: "Usuario"
     val todayDate = remember {
-        SimpleDateFormat("d MMM. yyyy", Locale("es", "CO")).format(Date())
+        SimpleDateFormat("d MMM. yyyy", Locale.forLanguageTag("es-CO")).format(Date())
     }
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
@@ -78,10 +80,10 @@ fun DashboardScreen(
         containerColor = senaColors().background,
         bottomBar = bottomBar
     ) { paddingValues ->
-        if (dashState.isLoading) {
-            SenaLoadingState(modifier = Modifier.padding(paddingValues))
-        } else {
-            SenaPullRefresh(
+        when (val state = dashState) {
+            is DashboardUiState.Loading -> SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            is DashboardUiState.Error -> SenaErrorState(message = state.message, onRetry = { user?.let { dashboardViewModel.loadStudentDashboard(it.id) } })
+            is DashboardUiState.Success -> SenaPullRefresh(
                 isRefreshing = isRefreshing,
                 onRefresh = { isRefreshing = true; refreshTrigger++ },
                 modifier = Modifier.padding(paddingValues)
@@ -158,7 +160,7 @@ fun DashboardScreen(
                                     title = "Nuevo Proyecto",
                                     icon = Icons.Default.AddCircle,
                                     color = senaColors().success,
-                                    onClick = { onNavigate(AppNavigation.APRENDIZ_NEW_PROJECT) }
+                                    onClick = { onNavigate(AppNavigation.APRENDIZ_NEW_PROJECT.replace("{projectId}", "")) }
                                 )
                             }
                             item {
@@ -191,7 +193,7 @@ fun DashboardScreen(
                             )
                         }
 
-                        if (dashState.projects.isEmpty()) {
+                        if (state.projects.isEmpty()) {
                             PaddingRow {
                                 SenaEmptyState(
                                     message = "No hay misiones activas. Inicia una nueva propuesta ahora.",
@@ -199,7 +201,7 @@ fun DashboardScreen(
                                 )
                             }
                         } else {
-                            dashState.projects.forEach { project ->
+                            state.projects.forEach { project ->
                                 PaddingRow(Modifier.padding(bottom = 16.dp)) {
                                     DashboardProjectCard(
                                         title = project.title,
@@ -244,8 +246,9 @@ fun DashboardScreen(
         }
     }
 
-    LaunchedEffect(dashState.isLoading) {
-        if (!dashState.isLoading) isRefreshing = false
+    val isLoading = dashState is DashboardUiState.Loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 }
 

@@ -47,6 +47,9 @@ fun UserDetailScreen(
     val user = remember(userId) {
         MockDataProvider.findUserById(userId.toIntOrNull() ?: 0)
     }
+    var isActive by remember(userId) {
+        mutableStateOf(MockDataProvider.isUserActive(userId.toIntOrNull() ?: 0))
+    }
     val userProjects = remember(userId) {
         val uid = userId.toIntOrNull() ?: 0
         MockDataProvider.getProjectsByStudent(uid)
@@ -66,7 +69,13 @@ fun UserDetailScreen(
         bottomBar = {
             SenaBottomBar {
                 SenaButton(text = "Editar Usuario", onClick = { onNavigate(AppNavigation.ADMIN_NEW_USER) }, modifier = Modifier.weight(1f))
-                SenaButton(text = "Desactivar", onClick = { showDeactivateDialog = true }, isPrimary = false, containerColor = senaColors().danger, modifier = Modifier.weight(1f))
+                SenaButton(text = "Desactivar", onClick = {
+                    if (isActive) {
+                        showDeactivateDialog = true
+                    } else {
+                        scope.launch { snackbarHostState.showSnackbar("El usuario ya est\u00e1 inactivo") }
+                    }
+                }, isPrimary = false, containerColor = senaColors().danger, modifier = Modifier.weight(1f))
             }
         }
     ) { paddingValues ->
@@ -80,7 +89,7 @@ fun UserDetailScreen(
         ) {
             SenaPageHeader(
                 title = "Detalle de Usuario",
-                subtitle = "Información completa y actividad del usuario en el sistema.",
+                subtitle = "Informaciï¿½n completa y actividad del usuario en el sistema.",
                 icon = Icons.Default.Person
             )
 
@@ -109,7 +118,7 @@ fun UserDetailScreen(
                 }
             }
 
-            SenaSectionHeader(title = "Información Personal")
+            SenaSectionHeader(title = "Informaciï¿½n Personal")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     UserDetailRow(Icons.Default.School, "Rol", user?.roleDisplayName ?: "N/A")
@@ -125,7 +134,7 @@ fun UserDetailScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                             Spacer(Modifier.height(4.dp))
-                            SenaStatusBadge(status = "Activo")
+                            SenaStatusBadge(status = if (isActive) "Activo" else "Inactivo")
                         }
                     }
                 }
@@ -175,10 +184,12 @@ fun UserDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeactivateDialog = false },
             title = { Text("Desactivar Usuario") },
-            text = { Text("¿Estás seguro de que deseas desactivar esta cuenta? El usuario ya no podrá iniciar sesión.") },
+            text = { Text("ï¿½Estï¿½s seguro de que deseas desactivar esta cuenta? El usuario ya no podrï¿½ iniciar sesiï¿½n.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeactivateDialog = false
+                    user?.let { MockDataProvider.deactivateUser(it.id) }
+                    isActive = false
                     scope.launch {
                         snackbarHostState.showSnackbar("Cuenta desactivada")
                     }

@@ -109,12 +109,14 @@ fun AdminSimilarityListScreen(
                                     text = status?.let {
                                         when (it) {
                                             SimilarityStatus.PENDIENTE -> "Pendiente"
+                                            SimilarityStatus.REVISADO -> "Revisado"
                                             SimilarityStatus.CONFIRMADO -> "Confirmado"
                                             SimilarityStatus.RECHAZADO -> "Rechazado"
                                         }
                                     } ?: "Todos",
                                     color = when (status) {
                                         SimilarityStatus.PENDIENTE -> senaColors().warning
+                                        SimilarityStatus.REVISADO -> senaColors().info
                                         SimilarityStatus.CONFIRMADO -> senaColors().success
                                         SimilarityStatus.RECHAZADO -> senaColors().danger
                                         else -> senaColors().green
@@ -129,7 +131,7 @@ fun AdminSimilarityListScreen(
             }
 
             items(filteredGroups) { group ->
-                SimilarityGroupCard(group, onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_DETAIL) })
+                SimilarityGroupCard(group, onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_DETAIL.replace("{projectId}", group.id.toString())) })
             }
 
             item { Spacer(Modifier.height(40.dp)) }
@@ -141,12 +143,12 @@ fun AdminSimilarityListScreen(
 fun SimilarityGroupCard(group: Similarity, onClick: () -> Unit) {
     val percentage = (group.similitud * 100).toInt()
     val level = when {
-        percentage >= 60 -> "Crítico"
+        percentage >= 60 -> "Crï¿½tico"
         percentage >= 30 -> "Moderado"
         else -> "Bajo"
     }
     val levelColor = when(level) {
-        "Crítico" -> senaColors().danger
+        "Crï¿½tico" -> senaColors().danger
         "Moderado" -> senaColors().warning
         else -> senaColors().success
     }
@@ -196,7 +198,7 @@ fun SimilarityGroupCard(group: Similarity, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Máxima Similitud", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    Text("Mï¿½xima Similitud", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     Text(group.similitudPercent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = levelColor)
                 }
 

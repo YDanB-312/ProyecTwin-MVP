@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -32,12 +33,16 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val project = remember(projectId) {
+        projectId.toIntOrNull()?.let { MockDataProvider.findProjectById(it) }
+    }
+    val estado = project?.estado ?: "aprobado"
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "Auditoría de Proyecto",
+                title = "Auditorï¿½a de Proyecto",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
@@ -50,7 +55,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                     text = "HISTORIAL", 
                     onClick = { 
                         scope.launch {
-                            snackbarHostState.showSnackbar("Bitácora técnica encriptada")
+                            snackbarHostState.showSnackbar("Bitï¿½cora tï¿½cnica encriptada")
                         }
                     }, 
                     isPrimary = false, 
@@ -97,12 +102,12 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            SenaStatusBadge(status = "Aprobado")
-                            Text("#PRJ-2568", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
+                            SenaStatusBadge(status = project?.statusDisplay ?: "Aprobado")
+                            Text("#PRJ-${project?.id?.toString()?.padStart(4, '0') ?: "2568"}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
                         }
 
                         Text(
-                            "Sistema IoT para Agricultura de Precisión", 
+                            project?.title ?: "Sistema IoT para Agricultura de Precisiï¿½n", 
                             style = MaterialTheme.typography.titleLarge, 
                             fontWeight = FontWeight.Black, 
                             color = senaColors().text,
@@ -113,8 +118,8 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
 
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             AdminProjectDetailRow(Icons.Default.School, "Programa", "ADSO")
-                            AdminProjectDetailRow(Icons.Default.Person, "Aprendiz Líder", "Maria Gonzalez")
-                            AdminProjectDetailRow(Icons.Default.SupervisorAccount, "Instructor", "Carlos Ruiz")
+                            AdminProjectDetailRow(Icons.Default.Person, "Aprendiz Lï¿½der", project?.studentName ?: "Maria Gonzalez")
+                            AdminProjectDetailRow(Icons.Default.SupervisorAccount, "Instructor", project?.instructorName ?: "Carlos Ruiz")
                         }
                     }
                 }
@@ -135,12 +140,12 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                     }
                 }
 
-                SenaSectionHeader(title = "Equipo Técnico")
+                SenaSectionHeader(title = "Equipo Tï¿½cnico")
                 SenaCard {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TeamMemberRow("MG", "Maria Gonzalez", "Líder de Proyecto", true)
-                        TeamMemberRow("JP", "Juan Pérez", "Desarrollador Backend")
-                        TeamMemberRow("LG", "Laura Gómez", "Diseñadora UI/UX")
+                        TeamMemberRow("MG", "Maria Gonzalez", "Lï¿½der de Proyecto", true)
+                        TeamMemberRow("JP", "Juan Pï¿½rez", "Desarrollador Backend")
+                        TeamMemberRow("LG", "Laura Gï¿½mez", "Diseï¿½adora UI/UX")
                     }
                 }
 

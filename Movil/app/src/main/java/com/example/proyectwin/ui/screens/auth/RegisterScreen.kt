@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -43,9 +44,10 @@ fun RegisterScreen(
     var selectedRole by remember { mutableStateOf("aprendiz") }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
+    val isSubmitting by authViewModel.isSubmitting.collectAsState()
 
-    LaunchedEffect(uiState.isLoggedIn) {
-        if (uiState.isLoggedIn) {
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.LoggedIn) {
             onRegisterSuccess()
         }
     }
@@ -108,10 +110,10 @@ fun RegisterScreen(
                         SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseña de Acceso", isPassword = true, leadingIcon = Icons.Default.Lock)
                     }
 
-                    if (uiState.error != null) {
+                    if (uiState is AuthUiState.Error) {
                         SenaAlertBanner(
                             title = "Error",
-                            message = uiState.error!!,
+                            message = (uiState as AuthUiState.Error).message,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
@@ -151,7 +153,7 @@ fun RegisterScreen(
                                 authViewModel.register(fullName, email, password, selectedRole)
                             }
                         },
-                        isLoading = uiState.isLoading,
+                        isLoading = isSubmitting,
                         icon = Icons.Default.HowToReg,
                         modifier = Modifier.fillMaxWidth()
                     )

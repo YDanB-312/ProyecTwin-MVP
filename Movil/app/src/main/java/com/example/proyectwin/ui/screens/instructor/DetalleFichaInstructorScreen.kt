@@ -27,6 +27,7 @@ import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 import kotlinx.coroutines.launch
 
@@ -37,6 +38,7 @@ data class MemberItem(val name: String, val email: String, val status: String)
 fun DetalleFichaInstructorScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    fichaId: String = "",
     authViewModel: AuthViewModel = viewModel(),
     fichasViewModel: FichasViewModel = viewModel()
 ) {
@@ -49,7 +51,8 @@ fun DetalleFichaInstructorScreen(
         fichasViewModel.loadActiveFichas()
     }
 
-    val ficha = uiState.fichas.firstOrNull { it.estado == "activo" }
+    val allFichas = (uiState as? FichasUiState.Success)?.fichas.orEmpty()
+    val ficha = allFichas.firstOrNull { it.codigo == fichaId || it.id.toString() == fichaId }
 
     val members = ficha?.estudiantes?.map { student ->
         MemberItem(
@@ -85,7 +88,7 @@ fun DetalleFichaInstructorScreen(
                     )
                     SenaButton(
                         text = "Editar Ficha",
-                        onClick = { onNavigate(AppNavigation.INSTRUCTOR_JOIN_FICHA) },
+                        onClick = { onNavigate(AppNavigation.INSTRUCTOR_CREAR_FICHA) },
                         isPrimary = false,
                         modifier = Modifier.weight(1f)
                     )
@@ -93,21 +96,28 @@ fun DetalleFichaInstructorScreen(
             }
         }
     ) { paddingValues ->
-        if (uiState.isLoading) {
-            Box(
+        when (val state = uiState) {
+            is FichasUiState.Loading -> Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = senaColors().green)
             }
-        } else if (ficha == null) {
-            Box(
+            is FichasUiState.Error -> Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No hay fichas activas disponibles", color = senaColors().textMuted)
+                SenaErrorState(message = state.message, onRetry = { fichasViewModel.loadActiveFichas() })
             }
-        } else {
+            is FichasUiState.Success -> {
+                if (ficha == null) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Ficha no encontrada", color = senaColors().textMuted)
+                    }
+                } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -206,6 +216,8 @@ fun DetalleFichaInstructorScreen(
                 }
 
                 Spacer(Modifier.height(40.dp))
+            }
+                }
             }
         }
     }

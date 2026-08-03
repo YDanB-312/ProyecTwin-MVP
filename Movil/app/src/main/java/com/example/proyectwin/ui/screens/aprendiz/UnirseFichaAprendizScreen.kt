@@ -21,9 +21,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasActionState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,16 +38,16 @@ fun UnirseFichaAprendizScreen(
 ) {
     var codigoFicha by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
-    val uiState by fichasViewModel.uiState.collectAsState()
+    val actionState by fichasViewModel.actionState.collectAsState()
 
-    LaunchedEffect(uiState.codigoValido) {
-        if (uiState.codigoValido == true && uiState.selectedFicha != null) {
-            fichasViewModel.joinFicha(uiState.selectedFicha!!.id)
+    LaunchedEffect(actionState.codigoValido) {
+        if (actionState.codigoValido == true && actionState.selectedFicha != null) {
+            fichasViewModel.joinFicha(actionState.selectedFicha!!.id)
         }
     }
 
-    LaunchedEffect(uiState.joinSuccess) {
-        if (uiState.joinSuccess) {
+    LaunchedEffect(actionState.joinSuccess) {
+        if (actionState.joinSuccess) {
             onJoined()
             fichasViewModel.clearJoinSuccess()
         }
@@ -116,7 +118,7 @@ fun UnirseFichaAprendizScreen(
                         leadingIcon = Icons.Default.Key
                     )
 
-                    if (uiState.codigoValido == false) {
+                    if (actionState.codigoValido == false) {
                         SenaAlertBanner(
                             title = "Código Inválido",
                             message = "El código ingresado no es válido. Verifica e intenta de nuevo.",
@@ -125,16 +127,16 @@ fun UnirseFichaAprendizScreen(
                         )
                     }
 
-                    if (uiState.error != null) {
+                    if (actionState.message != null) {
                         SenaAlertBanner(
                             title = "Error al unirse",
-                            message = uiState.error!!,
+                            message = actionState.message!!,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
                     }
 
-                    if (uiState.joinSuccess) {
+                    if (actionState.joinSuccess) {
                         SenaAlertBanner(
                             title = "¡Unido exitosamente!",
                             message = "Te has unido a la ficha correctamente.",
@@ -150,7 +152,7 @@ fun UnirseFichaAprendizScreen(
 
                     SenaAlertBanner(
                         title = "Códigos de ficha válidos",
-                        message = "FT-2692701, FT-2771109",
+                        message = "Existen ${Ficha.fichasValidas.size} códigos de ficha activos. Ejemplo: ${Ficha.fichasValidas.take(3).joinToString(", ")}",
                         icon = Icons.Default.Info,
                         color = senaColors().info
                     )

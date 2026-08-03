@@ -29,9 +29,11 @@ import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 data class FichaItem(
+    val id: Int,
     val code: String,
     val name: String,
     val program: String,
@@ -61,8 +63,9 @@ fun ManageFichasScreen(
         fichasViewModel.loadAllFichas()
     }
 
-    val fichas = uiState.fichas.map { ficha ->
+    val fichas = (uiState as? FichasUiState.Success)?.fichas?.map { ficha ->
         FichaItem(
+            id = ficha.id,
             code = ficha.codigo,
             name = ficha.programa,
             program = ficha.programa,
@@ -70,7 +73,7 @@ fun ManageFichasScreen(
             projects = MockDataProvider.getProjectsByFicha(ficha.id).size,
             status = ficha.statusDisplay
         )
-    }
+    } ?: emptyList()
 
     val filteredFichas = fichas.filter { ficha ->
         val matchesFilter = if (selectedFilter == "Todas") true else ficha.status == selectedFilter
@@ -109,7 +112,7 @@ fun ManageFichasScreen(
             item {
                 SenaPageHeader(
                     title = "Gestionar Fichas",
-                    subtitle = "Administra los grupos de formación y supervisa el progreso de los aprendices.",
+                    subtitle = "Administra los grupos de formaciï¿½n y supervisa el progreso de los aprendices.",
                     icon = Icons.Default.LayerGroup
                 )
             }
@@ -148,8 +151,8 @@ fun ManageFichasScreen(
                         SenaTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            label = "Búsqueda rápida",
-                            placeholder = "Buscar por código o nombre...",
+                            label = "Bï¿½squeda rï¿½pida",
+                            placeholder = "Buscar por cï¿½digo o nombre...",
                             leadingIcon = Icons.Default.Search
                         )
                         Row(
@@ -169,27 +172,33 @@ fun ManageFichasScreen(
                 }
             }
 
-            if (uiState.isLoading) {
-                item {
+            when (val state = uiState) {
+                is FichasUiState.Loading -> item {
                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = senaColors().green)
                     }
                 }
-            } else if (filteredFichas.isEmpty()) {
-                item {
-                    SenaEmptyState(
-                        message = "No se encontraron fichas que coincidan con la búsqueda.",
-                        icon = Icons.Default.SearchOff
-                    )
+                is FichasUiState.Error -> item {
+                    SenaErrorState(message = state.message, onRetry = { fichasViewModel.loadAllFichas() })
                 }
-            } else {
-                items(filteredFichas) { ficha ->
-                    InstructorFichaCard(
-                        ficha = ficha,
-                        onViewDetail = { onViewDetail(ficha.code) },
-                        onViewDirectory = { onViewDirectory(ficha.code) },
-                        onEdit = { onNavigate(AppNavigation.INSTRUCTOR_JOIN_FICHA) }
-                    )
+                is FichasUiState.Success -> {
+                    if (filteredFichas.isEmpty()) {
+                        item {
+                            SenaEmptyState(
+                                message = "No se encontraron fichas que coincidan con la b\u00fasqueda.",
+                                icon = Icons.Default.SearchOff
+                            )
+                        }
+                    } else {
+                        items(filteredFichas) { ficha ->
+                            InstructorFichaCard(
+                                ficha = ficha,
+                                onViewDetail = { onViewDetail(ficha.id.toString()) },
+                                onViewDirectory = { onViewDirectory(ficha.id.toString()) },
+                                onEdit = { onNavigate(AppNavigation.INSTRUCTOR_CREAR_FICHA) }
+                            )
+                        }
+                    }
                 }
             }
             

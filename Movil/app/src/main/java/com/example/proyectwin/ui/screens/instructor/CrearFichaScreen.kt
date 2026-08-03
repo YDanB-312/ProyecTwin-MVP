@@ -18,7 +18,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.FichasActionState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +32,7 @@ fun CrearFichaScreen(
     fichasViewModel: FichasViewModel = viewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
 
     var nombre by remember { mutableStateOf("") }
     var programa by remember { mutableStateOf("Análisis y Desarrollo de Software") }
@@ -55,7 +57,8 @@ fun CrearFichaScreen(
         fichasViewModel.generarCodigo()
     }
 
-    val codigo = fichasViewModel.uiState.value.codigoGenerado
+    val actionState by fichasViewModel.actionState.collectAsState()
+    val codigo = actionState.codigoGenerado
 
     Scaffold(
         topBar = {

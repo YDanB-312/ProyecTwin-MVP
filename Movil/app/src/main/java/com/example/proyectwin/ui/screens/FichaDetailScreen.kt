@@ -27,6 +27,7 @@ import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
@@ -39,7 +40,7 @@ fun FichaDetailScreen(
     fichasViewModel: FichasViewModel = viewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
-    val user = authState.user
+    val user = (authState as? AuthUiState.LoggedIn)?.user
 
     val ficha = remember(user) {
         val targetFichaId = user?.fichaId
@@ -52,7 +53,8 @@ fun FichaDetailScreen(
 
     var lightboxEstudiante by remember { mutableStateOf<com.example.proyectwin.data.model.GeneralUser?>(null) }
 
-    if (lightboxEstudiante != null) {
+    val estudiante = lightboxEstudiante
+    if (estudiante != null) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)).clickable { lightboxEstudiante = null },
             contentAlignment = Alignment.Center
@@ -60,11 +62,11 @@ fun FichaDetailScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 SenaAvatar(
                     fotoBase64 = null,
-                    nombre = lightboxEstudiante!!.name,
+                    nombre = estudiante.name,
                     modifier = Modifier.size(180.dp)
                 )
                 Spacer(Modifier.height(20.dp))
-                Text(lightboxEstudiante!!.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(estudiante.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
                 Text("Aprendiz • Activo", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
             }
             IconButton(
@@ -183,9 +185,7 @@ fun FichaDetailScreen(
 
             item {
                 SenaSectionHeader(
-                    title = "Compañeros de Ficha",
-                    actionText = "Ver todos",
-                    onActionClick = { onNavigate(AppNavigation.INSTRUCTOR_FICHA_DETAIL) }
+                    title = "Compañeros de Ficha"
                 )
             }
 

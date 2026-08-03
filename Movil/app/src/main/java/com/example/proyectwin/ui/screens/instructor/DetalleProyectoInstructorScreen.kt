@@ -24,10 +24,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.BugReport
 import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +39,14 @@ fun DetalleProyectoInstructorScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var observationText by remember { mutableStateOf("") }
 
-    val project = remember(projectId) {
-        MockDataProvider.findProjectById(projectId.toIntOrNull() ?: 0)
+    var project by remember(projectId) {
+        mutableStateOf(
+            MockDataProvider.findProjectById(projectId.toIntOrNull() ?: 0)
+        )
     }
     val bugReports = remember(projectId) {
         val pid = projectId.toIntOrNull() ?: 0
@@ -62,10 +68,31 @@ fun DetalleProyectoInstructorScreen(
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             SenaBottomBar {
-                SenaButton(text = "Aprobar", onClick = { onBack() }, modifier = Modifier.weight(1f))
-                SenaButton(text = "Rechazar", onClick = { onBack() }, isPrimary = false, modifier = Modifier.weight(1f), containerColor = senaColors().danger)
+                SenaButton(text = "Aprobar", onClick = {
+                    project?.let { p ->
+                        MockDataProvider.updateProjectEstado(p.id, ProjectStatus.APROBADO.value)
+                        project = p.copy(estado = ProjectStatus.APROBADO.value)
+                    }
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Proyecto aprobado")
+                        kotlinx.coroutines.delay(800)
+                        onBack()
+                    }
+                }, modifier = Modifier.weight(1f))
+                SenaButton(text = "Rechazar", onClick = {
+                    project?.let { p ->
+                        MockDataProvider.updateProjectEstado(p.id, ProjectStatus.RECHAZADO.value)
+                        project = p.copy(estado = ProjectStatus.RECHAZADO.value)
+                    }
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Proyecto rechazado")
+                        kotlinx.coroutines.delay(800)
+                        onBack()
+                    }
+                }, isPrimary = false, modifier = Modifier.weight(1f), containerColor = senaColors().danger)
             }
         }
     ) { paddingValues ->

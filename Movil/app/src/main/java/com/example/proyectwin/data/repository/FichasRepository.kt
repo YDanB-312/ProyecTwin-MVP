@@ -25,5 +25,5 @@ class FichasRepository {
 
     fun esCodigoValido(codigo: String): Boolean = Ficha.esCodigoValido(codigo)
 
-    fun generarCodigo(): String = Ficha.generarCodigo()
+    fun generarCodigo(): String = Ficha.generarCodigoLibre(MockDataProvider.getAllFichas().map { it.codigo })
 }
