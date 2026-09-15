@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('titulo');
             $table->text('descripcion')->nullable();
-            $table->enum('tipo', ['similitud', 'revision', 'mensaje', 'sistema']);
+            $table->enum('tipo', ['similitud', 'observacion', 'revision', 'mensaje', 'sistema']);
             $table->string('enlace')->nullable();
             $table->boolean('leida')->default(false);
             $table->date('fecha');

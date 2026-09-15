@@ -12,6 +12,10 @@ class Similarity extends Model
 
     protected $fillable = ['porcentaje', 'estado', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2', 'id_instructor'];
 
+    protected $casts = [
+        'detalles' => 'array',
+    ];
+
     protected $allowIncluded = ['project1', 'project2', 'instructor'];
 
     public function scopeIncluded(Builder $query)

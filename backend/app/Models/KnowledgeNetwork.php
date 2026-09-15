@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
-class TrainingProgram extends Model
+class KnowledgeNetwork extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'red', 'knowledge_network_id', 'nivel', 'num_trimestres'];
+    protected $fillable = ['nombre'];
 
-    protected $allowIncluded = ['apprentices', 'classGroups', 'knowledgeNetwork'];
+    protected $allowIncluded = ['trainingPrograms'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -29,18 +29,8 @@ class TrainingProgram extends Model
         $query->with($relations);
     }
 
-    public function apprentices()
+    public function trainingPrograms()
     {
-        return $this->hasMany(Apprentice::class, 'id_programa');
-    }
-
-    public function classGroups()
-    {
-        return $this->hasMany(ClassGroup::class, 'id_programa');
-    }
-
-    public function knowledgeNetwork()
-    {
-        return $this->belongsTo(KnowledgeNetwork::class, 'knowledge_network_id');
+        return $this->hasMany(TrainingProgram::class, 'knowledge_network_id');
     }
 }

@@ -17,9 +17,10 @@ class ClassGroupController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'codigo' => 'required|max:255',
+            'codigo' => 'required|max:255|unique:class_groups,codigo',
+            'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo',
+            'estado' => 'required|in:activo,inactivo,finalizado',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
         ]);
@@ -37,9 +38,10 @@ class ClassGroupController extends Controller
     public function update(Request $request, ClassGroup $class_group)
     {
         $request->validate([
-            'codigo' => 'required|max:255',
+            'codigo' => 'required|max:255|unique:class_groups,codigo,' . $class_group->id,
+            'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo',
+            'estado' => 'required|in:activo,inactivo,finalizado',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
         ]);

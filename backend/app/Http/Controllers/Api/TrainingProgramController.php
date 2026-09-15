@@ -18,6 +18,8 @@ class TrainingProgramController extends Controller
     {
         $request->validate([
             'nombre' => 'required|max:255',
+            'red' => 'nullable|max:255',
+            'knowledge_network_id' => 'nullable|exists:knowledge_networks,id',
             'nivel' => 'required|max:255',
             'num_trimestres' => 'required|integer',
         ]);
@@ -36,6 +38,8 @@ class TrainingProgramController extends Controller
     {
         $request->validate([
             'nombre' => 'required|max:255',
+            'red' => 'nullable|max:255',
+            'knowledge_network_id' => 'nullable|exists:knowledge_networks,id',
             'nivel' => 'required|max:255',
             'num_trimestres' => 'required|integer',
         ]);

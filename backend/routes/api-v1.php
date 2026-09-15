@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GeneralUserController;
+use App\Http\Controllers\Api\KnowledgeNetworkController;
 use App\Http\Controllers\Api\TrainingProgramController;
 use App\Http\Controllers\Api\InstructorController;
 use App\Http\Controllers\Api\ClassGroupController;
@@ -21,6 +22,13 @@ Route::post('general-users', [GeneralUserController::class, 'store']);
 Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
 Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
 Route::delete('general-users/{general_user}', [GeneralUserController::class, 'destroy']);
+
+// Knowledge Networks
+Route::get('knowledge-networks', [KnowledgeNetworkController::class, 'index']);
+Route::post('knowledge-networks', [KnowledgeNetworkController::class, 'store']);
+Route::get('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'show']);
+Route::put('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'update']);
+Route::delete('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'destroy']);
 
 // Training Programs
 Route::get('training-programs', [TrainingProgramController::class, 'index']);

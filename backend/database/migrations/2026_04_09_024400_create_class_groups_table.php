@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('class_groups', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
+            $table->string('numero')->nullable();
             $table->string('nombre');
-            $table->enum('estado', ['activo', 'inactivo'])->default('activo');
+            $table->enum('estado', ['activo', 'inactivo', 'finalizado'])->default('activo');
             $table->foreignId('id_programa')->constrained('training_programs');
             $table->foreignId('id_instructor')->nullable()->constrained('instructors');
             $table->timestamps();

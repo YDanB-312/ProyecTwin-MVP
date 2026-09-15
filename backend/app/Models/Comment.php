@@ -10,9 +10,9 @@ class Comment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['texto', 'id_proyecto', 'id_usuario'];
+    protected $fillable = ['texto', 'id_proyecto', 'id_usuario', 'respuesta_a'];
 
-    protected $allowIncluded = ['project', 'user'];
+    protected $allowIncluded = ['project', 'user', 'parent', 'replies'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -37,5 +37,15 @@ class Comment extends Model
     public function user()
     {
         return $this->belongsTo(GeneralUser::class, 'id_usuario');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Comment::class, 'respuesta_a');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Comment::class, 'respuesta_a');
     }
 }

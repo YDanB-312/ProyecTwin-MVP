@@ -10,7 +10,7 @@ class ClassGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['codigo', 'nombre', 'estado', 'id_programa', 'id_instructor'];
+    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor'];
 
     protected $allowIncluded = ['program', 'instructor', 'apprentices'];
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->enum('tipo', ['sistema', 'proyecto', 'datos', 'otro']);
             $table->text('pasos')->nullable();
             $table->string('url_evidencia')->nullable();
-            $table->enum('estado', ['pendiente', 'en_revision', 'resuelto', 'rechazado'])->default('pendiente');
+            $table->enum('estado', ['pendiente', 'en_revision', 'resuelto', 'cerrado', 'rechazado'])->default('pendiente');
             $table->date('fecha');
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
