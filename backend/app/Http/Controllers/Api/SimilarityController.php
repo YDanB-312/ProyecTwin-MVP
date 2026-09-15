@@ -8,9 +8,14 @@ use Illuminate\Http\Request;
 
 class SimilarityController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Similarity::included()->get();
+        $items = Similarity::included()
+            ->search($request->query('search'))
+            ->byCentro($request->query('centro_id'))
+            ->byFicha($request->query('ficha_id'))
+            ->byPrograma($request->query('programa'))
+            ->get();
         return $items;
     }
 

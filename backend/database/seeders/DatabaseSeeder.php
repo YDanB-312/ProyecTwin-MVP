@@ -20,33 +20,51 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Usuarios basicos: 1 aprendiz, 1 instructor, 1 admin
+        // Seed alineado con frontend/src/data/mockData.js (13 usuarios + IDs/pw oficiales).
         $aprendiz = GeneralUser::create([
-            'nombre' => 'Juan',
-            'apellido' => 'Perez',
-            'correo' => 'juan@sena.edu.co',
-            'password' => Hash::make('password123'),
+            'id' => 1,
+            'nombre' => 'María',
+            'apellido' => 'González',
+            'correo' => 'maria.gonzalez@soy.sena.edu.co',
+            'password' => Hash::make('123456'),
             'rol' => 'aprendiz',
             'estado' => true,
         ]);
+        GeneralUser::create(['id' => 4, 'nombre' => 'Ana', 'apellido' => 'Martínez', 'correo' => 'ana.martinez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::create(['id' => 5, 'nombre' => 'Juan', 'apellido' => 'Pérez', 'correo' => 'juan.perez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::create(['id' => 6, 'nombre' => 'Laura', 'apellido' => 'Gómez', 'correo' => 'laura.gomez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::create(['id' => 9, 'nombre' => 'Laura', 'apellido' => 'Sánchez Pérez', 'correo' => 'laura.sanchez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::create(['id' => 10, 'nombre' => 'Diego', 'apellido' => 'Ramírez Castro', 'correo' => 'diego.ramirez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::create(['id' => 11, 'nombre' => 'Patricia', 'apellido' => 'Morales Vega', 'correo' => 'patricia.morales@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
 
         $instructorUser = GeneralUser::create([
+            'id' => 2,
             'nombre' => 'Carlos',
             'apellido' => 'Ruiz',
-            'correo' => 'carlos@sena.edu.co',
-            'password' => Hash::make('password123'),
+            'correo' => 'carlos.ruiz@sena.edu.co',
+            'password' => Hash::make('123456'),
             'rol' => 'instructor',
             'estado' => true,
         ]);
+        GeneralUser::create(['id' => 7, 'nombre' => 'Carlos', 'apellido' => 'Rodríguez Díaz', 'correo' => 'carlos.rodriguez@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
+        GeneralUser::create(['id' => 8, 'nombre' => 'Andrés', 'apellido' => 'Martínez López', 'correo' => 'andres.martinez@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
+        GeneralUser::create(['id' => 13, 'nombre' => 'Luis', 'apellido' => 'Fernando García', 'correo' => 'luis.garcia@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
 
         $adminUser = GeneralUser::create([
-            'nombre' => 'Admin',
-            'apellido' => 'General',
-            'correo' => 'admin@proyectwin.com',
+            'id' => 3,
+            'nombre' => 'Administrador',
+            'apellido' => '',
+            'correo' => 'admin@sena.edu.co',
             'password' => Hash::make('admin123'),
             'rol' => 'admin',
             'estado' => true,
         ]);
+        GeneralUser::create(['id' => 12, 'nombre' => 'María', 'apellido' => 'Fernanda Torres', 'correo' => 'maria.torres@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'admin', 'estado' => true]);
+
+        // Compat: los tests legados usaban estos alias extra (las credenciales que esperan son las de las cuentas mock)
+        GeneralUser::firstOrCreate(['correo' => 'juan@sena.edu.co'], ['nombre' => 'Juan', 'apellido' => 'Pérez', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        GeneralUser::firstOrCreate(['correo' => 'carlos@sena.edu.co'], ['nombre' => 'Carlos', 'apellido' => 'Ruiz', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
+        GeneralUser::firstOrCreate(['correo' => 'admin@proyectwin.com'], ['nombre' => 'Admin', 'apellido' => 'General', 'password' => Hash::make('admin123'), 'rol' => 'admin', 'estado' => true]);
 
         // Redes de Conocimiento + Programa
         $redInformatica = KnowledgeNetwork::create([

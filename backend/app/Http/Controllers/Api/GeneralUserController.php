@@ -8,9 +8,16 @@ use Illuminate\Http\Request;
 
 class GeneralUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = GeneralUser::included()->get();
+        $items = GeneralUser::included()
+            ->search($request->query('search'))
+            ->byRol($request->query('role'))
+            ->byEstado($request->query('estado'))
+            ->byCentro($request->query('centro_id'))
+            ->byFicha($request->query('ficha_id'))
+            ->byPrograma($request->query('programa'))
+            ->get();
         return $items;
     }
 
