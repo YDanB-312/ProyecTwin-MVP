@@ -14,7 +14,14 @@ use App\Http\Controllers\Api\AssessmentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\ApprenticeProjectController;
+use App\Http\Controllers\Api\CentroController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
+
+// Auth (Sanctum)
+Route::post('auth/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('auth/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->get('auth/me', [AuthController::class, 'me']);
 
 // General Users
 Route::get('general-users', [GeneralUserController::class, 'index']);
@@ -106,6 +113,13 @@ Route::post('apprentice-projects', [ApprenticeProjectController::class, 'store']
 Route::get('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'show']);
 Route::put('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'update']);
 Route::delete('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'destroy']);
+
+// Centros
+Route::get('centros', [CentroController::class, 'index']);
+Route::post('centros', [CentroController::class, 'store']);
+Route::get('centros/{centro}', [CentroController::class, 'show']);
+Route::put('centros/{centro}', [CentroController::class, 'update']);
+Route::delete('centros/{centro}', [CentroController::class, 'destroy']);
 
 // Comments
 Route::get('comments', [CommentController::class, 'index']);

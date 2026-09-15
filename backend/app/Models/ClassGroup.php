@@ -10,9 +10,9 @@ class ClassGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor'];
+    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor', 'centro_id'];
 
-    protected $allowIncluded = ['program', 'instructor', 'apprentices'];
+    protected $allowIncluded = ['program', 'instructor', 'apprentices', 'centro'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -42,5 +42,10 @@ class ClassGroup extends Model
     public function apprentices()
     {
         return $this->hasMany(Apprentice::class, 'id_class_group');
+    }
+
+    public function centro()
+    {
+        return $this->belongsTo(Centro::class, 'centro_id');
     }
 }

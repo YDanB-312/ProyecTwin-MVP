@@ -10,13 +10,13 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Project::included();
-
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->get('estado'));
-        }
-
-        $items = $query->get();
+        $items = Project::included()
+            ->search($request->query('search'))
+            ->byEstado($request->query('estado'))
+            ->byCentro($request->query('centro_id'))
+            ->byFicha($request->query('ficha_id'))
+            ->byPrograma($request->query('programa'))
+            ->get();
         return $items;
     }
 
