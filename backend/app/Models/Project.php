@@ -10,9 +10,14 @@ class Project extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['titulo', 'tipo_proyecto', 'resumen', 'palabras_clave', 'area_aplicacion', 'tecnologias', 'objetivos', 'entregables', 'url_logo', 'estado', 'observaciones', 'id_creador', 'id_instructor_asignado'];
+    protected $fillable = ['titulo', 'tipo_proyecto', 'resumen', 'palabras_clave', 'area_aplicacion', 'tecnologias', 'objetivos', 'entregables', 'url_logo', 'estado', 'observaciones', 'id_creador', 'id_instructor_asignado', 'id_class_group'];
 
-    protected $allowIncluded = ['creator', 'instructor', 'apprentices', 'assessments', 'comments', 'similaritiesAsOrigin', 'similaritiesAsDestination'];
+    protected $casts = [
+        'objetivos' => 'array',
+        'entregables' => 'array',
+    ];
+
+    protected $allowIncluded = ['creator', 'instructor', 'classGroup', 'apprentices', 'assessments', 'comments', 'similaritiesAsOrigin', 'similaritiesAsDestination'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -37,6 +42,11 @@ class Project extends Model
     public function instructor()
     {
         return $this->belongsTo(Instructor::class, 'id_instructor_asignado');
+    }
+
+    public function classGroup()
+    {
+        return $this->belongsTo(ClassGroup::class, 'id_class_group');
     }
 
     public function apprentices()

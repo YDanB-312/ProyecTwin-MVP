@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('training_programs', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
+            $table->string('red')->nullable();
             $table->string('nivel');
             $table->integer('num_trimestres');
             $table->timestamps();

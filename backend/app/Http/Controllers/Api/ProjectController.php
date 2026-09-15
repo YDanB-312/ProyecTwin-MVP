@@ -8,9 +8,15 @@ use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Project::included()->get();
+        $query = Project::included();
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->get('estado'));
+        }
+
+        $items = $query->get();
         return $items;
     }
 
@@ -26,10 +32,11 @@ class ProjectController extends Controller
             'objetivos' => 'required|array',
             'entregables' => 'required|array',
             'url_logo' => 'nullable|max:255',
-            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes',
+            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes,en_progreso,completado,cancelado',
             'observaciones' => 'nullable',
             'id_creador' => 'required|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
         ]);
 
         $item = Project::create($request->all());
@@ -54,10 +61,11 @@ class ProjectController extends Controller
             'objetivos' => 'required|array',
             'entregables' => 'required|array',
             'url_logo' => 'nullable|max:255',
-            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes',
+            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes,en_progreso,completado,cancelado',
             'observaciones' => 'nullable',
             'id_creador' => 'required|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
         ]);
 
         $project->update($request->all());

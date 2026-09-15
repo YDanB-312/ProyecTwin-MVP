@@ -10,9 +10,9 @@ class TrainingProgram extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'nivel', 'num_trimestres'];
+    protected $fillable = ['nombre', 'red', 'knowledge_network_id', 'nivel', 'num_trimestres'];
 
-    protected $allowIncluded = ['apprentices', 'classGroups'];
+    protected $allowIncluded = ['apprentices', 'classGroups', 'knowledgeNetwork'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -37,5 +37,10 @@ class TrainingProgram extends Model
     public function classGroups()
     {
         return $this->hasMany(ClassGroup::class, 'id_programa');
+    }
+
+    public function knowledgeNetwork()
+    {
+        return $this->belongsTo(KnowledgeNetwork::class, 'knowledge_network_id');
     }
 }

@@ -20,6 +20,7 @@ class CommentController extends Controller
             'texto' => 'required',
             'id_proyecto' => 'required|exists:projects,id',
             'id_usuario' => 'required|exists:general_users,id',
+            'respuesta_a' => 'nullable|exists:comments,id',
         ]);
 
         $item = Comment::create($request->all());
@@ -38,6 +39,7 @@ class CommentController extends Controller
             'texto' => 'required',
             'id_proyecto' => 'required|exists:projects,id',
             'id_usuario' => 'required|exists:general_users,id',
+            'respuesta_a' => 'nullable|exists:comments,id',
         ]);
 
         $comment->update($request->all());

@@ -19,7 +19,7 @@ class NotificationController extends Controller
         $request->validate([
             'titulo' => 'required|max:255',
             'descripcion' => 'nullable',
-            'tipo' => 'required|in:similitud,revision,mensaje,sistema',
+            'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
             'enlace' => 'nullable|max:255',
             'leida' => 'nullable|boolean',
             'fecha' => 'required|date',
@@ -41,7 +41,7 @@ class NotificationController extends Controller
         $request->validate([
             'titulo' => 'required|max:255',
             'descripcion' => 'nullable',
-            'tipo' => 'required|in:similitud,revision,mensaje,sistema',
+            'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
             'enlace' => 'nullable|max:255',
             'leida' => 'nullable|boolean',
             'fecha' => 'required|date',
