@@ -10,7 +10,10 @@ class ApprenticeProject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_aprendiz', 'id_proyecto', 'rol_en_proyecto', 'fecha_union'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
+    protected $fillable = ['id_aprendiz', 'id_proyecto'];
 
     protected $allowIncluded = ['apprentice', 'project'];
 
@@ -22,7 +25,8 @@ class ApprenticeProject extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }

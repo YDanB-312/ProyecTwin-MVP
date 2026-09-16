@@ -13,7 +13,7 @@ class ProjectController extends Controller
         $items = Project::included()
             ->search($request->query('search'))
             ->byEstado($request->query('estado'))
-            ->byCentro($request->query('centro_id'))
+            ->byTrainingCenter($request->query('training_center_id'))
             ->byFicha($request->query('ficha_id'))
             ->byPrograma($request->query('programa'))
             ->get();
@@ -24,45 +24,36 @@ class ProjectController extends Controller
     {
         $request->validate([
             'titulo' => 'required|max:255',
-            'tipo_proyecto' => 'nullable|max:255',
             'resumen' => 'required',
-            'palabras_clave' => 'required',
+            'palabras_clave' => 'nullable|max:255',
             'area_aplicacion' => 'required|max:255',
-            'tecnologias' => 'required',
-            'objetivos' => 'required|array',
-            'entregables' => 'required|array',
-            'url_logo' => 'nullable|max:255',
-            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes,en_progreso,completado,cancelado',
-            'observaciones' => 'nullable',
+            'objetivo_general' => 'nullable',
+            'objetivos_especificos' => 'nullable|array',
+            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
             'id_creador' => 'required|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
             'id_class_group' => 'nullable|exists:class_groups,id',
         ]);
 
         $item = Project::create($request->all());
-        return $item;
+        return response()->json($item, 201);
     }
 
     public function show($id)
     {
-        $item = Project::included()->findOrFail($id);
-        return $item;
+        return Project::included()->findOrFail($id);
     }
 
     public function update(Request $request, Project $project)
     {
         $request->validate([
             'titulo' => 'required|max:255',
-            'tipo_proyecto' => 'nullable|max:255',
             'resumen' => 'required',
-            'palabras_clave' => 'required',
+            'palabras_clave' => 'nullable|max:255',
             'area_aplicacion' => 'required|max:255',
-            'tecnologias' => 'required',
-            'objetivos' => 'required|array',
-            'entregables' => 'required|array',
-            'url_logo' => 'nullable|max:255',
-            'estado' => 'nullable|in:borrador,pendiente,en_revision,aprobado,rechazado,requiere_ajustes,en_progreso,completado,cancelado',
-            'observaciones' => 'nullable',
+            'objetivo_general' => 'nullable',
+            'objetivos_especificos' => 'nullable|array',
+            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
             'id_creador' => 'required|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
             'id_class_group' => 'nullable|exists:class_groups,id',

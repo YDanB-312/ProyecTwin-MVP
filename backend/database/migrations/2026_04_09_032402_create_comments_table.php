@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Observaciones (hilo de comentarios) sobre una propuesta.
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
             $table->text('texto');

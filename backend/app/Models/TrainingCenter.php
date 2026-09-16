@@ -6,11 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
-class Centro extends Model
+class TrainingCenter extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'ciudad'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
+    protected $fillable = ['name', 'city'];
 
     protected $allowIncluded = ['classGroups'];
 
@@ -22,7 +25,8 @@ class Centro extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
@@ -31,6 +35,6 @@ class Centro extends Model
 
     public function classGroups()
     {
-        return $this->hasMany(ClassGroup::class, 'centro_id');
+        return $this->hasMany(ClassGroup::class, 'training_center_id');
     }
 }

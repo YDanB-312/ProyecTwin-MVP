@@ -10,7 +10,10 @@ class TrainingProgram extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'red', 'knowledge_network_id', 'nivel', 'num_trimestres'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
+    protected $fillable = ['nombre', 'nivel', 'num_trimestres', 'knowledge_network_id'];
 
     protected $allowIncluded = ['apprentices', 'classGroups', 'knowledgeNetwork'];
 
@@ -22,7 +25,8 @@ class TrainingProgram extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }

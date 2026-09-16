@@ -10,9 +10,18 @@ class Instructor extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['fecha_ingreso', 'plantilla_comentarios', 'id_usuario'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
 
-    protected $allowIncluded = ['generalUser', 'projects', 'assessments', 'similarities', 'classGroups'];
+    protected $fillable = ['fecha_ingreso', 'id_usuario'];
+
+    // Normaliza cualquier fecha ISO/datetime a la columna `date`.
+    public function setFechaIngresoAttribute($valor): void
+    {
+        $this->attributes['fecha_ingreso'] = $valor ? substr((string) $valor, 0, 10) : null;
+    }
+
+    protected $allowIncluded = ['generalUser', 'projects', 'classGroups'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -22,7 +31,8 @@ class Instructor extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
@@ -37,16 +47,6 @@ class Instructor extends Model
     public function projects()
     {
         return $this->hasMany(Project::class, 'id_instructor_asignado');
-    }
-
-    public function assessments()
-    {
-        return $this->hasMany(Assessment::class, 'id_instructor');
-    }
-
-    public function similarities()
-    {
-        return $this->hasMany(Similarity::class, 'id_instructor');
     }
 
     public function classGroups()

@@ -10,38 +10,34 @@ class TrainingProgramController extends Controller
 {
     public function index()
     {
-        $items = TrainingProgram::included()->get();
-        return $items;
+        return TrainingProgram::included()->get();
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'nombre' => 'required|max:255',
-            'red' => 'nullable|max:255',
-            'knowledge_network_id' => 'nullable|exists:knowledge_networks,id',
             'nivel' => 'required|max:255',
             'num_trimestres' => 'required|integer',
+            'knowledge_network_id' => 'required|exists:knowledge_networks,id',
         ]);
 
         $item = TrainingProgram::create($request->all());
-        return $item;
+        return response()->json($item, 201);
     }
 
     public function show($id)
     {
-        $item = TrainingProgram::included()->findOrFail($id);
-        return $item;
+        return TrainingProgram::included()->findOrFail($id);
     }
 
     public function update(Request $request, TrainingProgram $training_program)
     {
         $request->validate([
             'nombre' => 'required|max:255',
-            'red' => 'nullable|max:255',
-            'knowledge_network_id' => 'nullable|exists:knowledge_networks,id',
             'nivel' => 'required|max:255',
             'num_trimestres' => 'required|integer',
+            'knowledge_network_id' => 'required|exists:knowledge_networks,id',
         ]);
 
         $training_program->update($request->all());
