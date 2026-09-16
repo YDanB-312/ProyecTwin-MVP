@@ -1,0 +1,7 @@
+﻿.estadoPair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1_5);
+  align-items: center;
+}
+.tira{display:flex;gap:var(--sp-2_5);flex-wrap:wrap}

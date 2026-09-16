@@ -1,116 +1,142 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import DashboardLayout from '../DashboardLayout/DashboardLayout'
+import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, MagnifyingGlass, CheckCircle, ChatCircle, GearSix } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
-import '../../assets/styles/pages/alertas.css'
-import Pagination from '../Pagination/Pagination'
+import Badge from '../Badge/Badge'
+import Button from '../Button/Button'
+import EmptyState from '../EmptyState/EmptyState'
+import ApiState from '../ApiState/ApiState'
+import { useAuth } from '../../contexts/AuthContext'
+import { useApi } from '../../lib/useApi'
+import { notificaciones as apiNotificaciones } from '../../lib/recursos'
+import { formatearFecha } from '../../utils/helpers'
+import s from './AlertasBase.module.css'
 
-const badgeClaseTipo = {
-  similitud: 'badge-similitud',
-  revision: 'badge-revision',
-  mensaje: 'badge-mensaje',
-  sistema: 'badge-sistema',
+const TIPO_CONFIG = {
+  observacion: { icon: <ChatCircle size={18} />, label: 'Observación', variant: 'primary' },
+  similitud: { icon: <MagnifyingGlass size={18} />, label: 'Similitud', variant: 'warning' },
+  revision: { icon: <CheckCircle size={18} />, label: 'Revisión', variant: 'info' },
+  mensaje: { icon: <ChatCircle size={18} />, label: 'Mensaje', variant: 'neutral' },
+  sistema: { icon: <GearSix size={18} />, label: 'Sistema', variant: 'primary' },
 }
 
-const ITEMS_PER_PAGE = 4
+// La API guarda el destino como 'proyecto:<id>' o 'reporte:<id>'.
+function decodificarEnlace(enlace) {
+  if (!enlace) return {}
+  const [tipo, valor] = String(enlace).split(':')
+  if (tipo === 'proyecto') return { projectId: Number(valor) }
+  if (tipo === 'reporte') return { reporteId: Number(valor) }
+  return {}
+}
 
-export default function AlertasBase({
-  role, dashboardTitulo, dashboardUsuario, notificaciones,
-  breadcrumb,
-  filters,
-  notificacionesData,
-  volverPath,
-  iconoMarca = 'fa-check',
-}) {
-  const filterStateNames = filters.map(f => f.name)
-  const [filtroVals, setFiltroVals] = useState(Object.fromEntries(filterStateNames.map(n => [n, ''])))
-  const [leidas, setLeidas] = useState(notificacionesData.map(n => n.leida))
-  const [paginaActual, setPaginaActual] = useState(1)
+// fecha (ISO) de Laravel → "d mmm aaaa".
+function fechaCorta(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return String(iso)
+  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
+}
 
-  const setFiltro = (name, value) => {
-    setFiltroVals(prev => ({ ...prev, [name]: value }))
-    setPaginaActual(1)
+export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  // Notificaciones del usuario autenticado (fuente única: la API).
+  const { data, cargando, error, recargar } = useApi(
+    () => apiNotificaciones.listar(),
+    [user?.id],
+    { inicial: [] }
+  )
+
+  const alertas = useMemo(() => {
+    if (!user) return []
+    return (data || [])
+      .filter((n) => Number(n.id_usuario) === Number(user.id))
+      .sort((a, b) => Number(b.id) - Number(a.id))
+  }, [data, user])
+
+  const sinLeer = useMemo(() => alertas.filter((n) => !n.leida).length, [alertas])
+
+  const marcarTodas = async () => {
+    const pendientes = alertas.filter((n) => !n.leida)
+    await Promise.all(pendientes.map((n) => apiNotificaciones.marcarLeida(n, true).catch(() => null)))
+    await recargar()
   }
 
-  const marcarLeida = (i) => {
-    setLeidas(prev => {
-      const next = [...prev]
-      next[i] = true
-      return next
-    })
-  }
-
-  const marcarTodasLeidas = () => {
-    setLeidas(prev => prev.map(() => true))
-  }
-
-  const notificacionesFiltradas = notificacionesData.filter((n) => {
-    for (const [name, value] of Object.entries(filtroVals)) {
-      if (value !== '' && n[name] !== value) return false
+  const handleClick = async (n) => {
+    if (!n.leida) {
+      try {
+        await apiNotificaciones.marcarLeida(n, true)
+        await recargar()
+      } catch {
+        // Si falla la marca, igualmente se navega al destino.
+      }
     }
-    return true
-  })
-
-  const notificacionesPagina = notificacionesFiltradas.slice((paginaActual - 1) * ITEMS_PER_PAGE, paginaActual * ITEMS_PER_PAGE)
-  const indicesPagina = notificacionesPagina.map(n => notificacionesData.indexOf(n))
+    const { projectId, reporteId } = decodificarEnlace(n.enlace)
+    if (projectId) navigate(`${detallePath}/detalle-proyecto/${projectId}`)
+    // Solo el admin tiene detalle-reporte; en otros roles solo se marca como leída.
+    else if (reporteId && detallePath === '/admin') navigate(`${detallePath}/detalle-reporte/${reporteId}`)
+  }
 
   return (
-    <DashboardLayout role={role} titulo={dashboardTitulo} usuario={dashboardUsuario} notificaciones={notificaciones}>
-      <div className="contenedor-alertas fade-in">
-        <PageHeader
-          title="Notificaciones"
-          icon="bell"
-          breadcrumb={breadcrumb}
-          actions={<><Link to={volverPath} className="btn-secundario"><i className="fas fa-arrow-left"></i> Volver</Link><button className="btn-marcar-todas" type="button" onClick={marcarTodasLeidas}><i className="fas fa-check-double"></i> Marcar todas como leídas</button></>}
-        />
+    <div className={s.wrapper}>
+      <PageHeader
+        title={titulo}
+        subtitle={subtitle}
+        icon={<Bell size={20} />}
+        actions={
+          <Button type="button" variant="secondary" onClick={marcarTodas} disabled={sinLeer === 0}>
+            <CheckCircle size={14} /> Marcar todas como leídas
+          </Button>
+        }
+      />
 
-        <div className="filtros-card">
-          {filters.map((f) => (
-            <div className="grupo-filtro" key={f.id}>
-              <label htmlFor={f.id}>{f.label}</label>
-              <select id={f.id} className="campo-select" name={f.name} value={filtroVals[f.name] || ''} onChange={(e) => setFiltro(f.name, e.target.value)}>
-                {f.options.map((o, j) => (
-                  <option key={j} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
+      <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+        {sinLeer > 0 && (
+          <p className={s.summary}>
+            Tienes <strong className={`mono ${s.sinLeer}`}>{sinLeer}</strong> alerta{sinLeer !== 1 ? 's' : ''} sin leer.
+          </p>
+        )}
 
-        <div className="lista-notificaciones">
-          {notificacionesPagina.length === 0 ? (
-            <div className="estado-vacio-moderno"><div className="estado-vacio-icono"><i className="fas fa-bell-slash"></i></div><h3 className="estado-vacio-titulo">No hay notificaciones</h3><p className="estado-vacio-descripcion">No se encontraron notificaciones que coincidan con los filtros.</p></div>
-          ) : notificacionesPagina.map((n, idx) => {
-            const i = indicesPagina[idx]
-            return (
-            <div className="notificacion-card" key={i}>
-              <div className={`notificacion-icono${n.iconoClase ? ' ' + n.iconoClase : ''}`}><i className={`fas fa-${n.icono}`}></i></div>
-              <div className="notificacion-cuerpo">
-                <div className="notificacion-fila-superior">
-                  <h3 className="notificacion-titulo">{n.titulo}</h3>
-                  <span className={leidas[i] ? 'badge-leida' : 'badge-no-leida'}>{leidas[i] ? 'Leída' : 'No leída'}</span>
-                </div>
-                <p className="notificacion-descripcion">{n.descripcion}</p>
-                <div className="notificacion-fila-inferior">
-                  <div className="notificacion-metas">
-                    <span className="notificacion-tiempo">{n.tiempo}</span>
-                    <span className="notificacion-proyecto">{n.proyecto}</span>
-                    <span className={`badge-estado ${badgeClaseTipo[n.tipo] || ''}`}>{n.tipoLabel || n.tipo}</span>
-                  </div>
-                  <div className="notificacion-acciones">
-                    <Link to={{ pathname: n.enlace, state: n.state || {} }} className="btn-accion"><i className={`fas fa-${n.iconoEnlace}`}></i> {n.textoEnlace}</Link>
-                    <button className="btn-accion-secundaria" type="button" onClick={() => marcarLeida(i)} disabled={leidas[i]}><i className={`fas ${iconoMarca}`}></i> Marcar como leída</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            )
-          })}
-        </div>
-
-        <Pagination totalItems={notificacionesFiltradas.length} itemsPerPage={ITEMS_PER_PAGE} paginaActual={paginaActual} setPaginaActual={setPaginaActual} />
-
-      </div>
-    </DashboardLayout>
+        {alertas.length === 0 ? (
+          <EmptyState
+            icon={<Bell size={40} />}
+            title="Sin alertas por ahora"
+            message="Cuando haya novedades sobre tus proyectos o similitudes, aparecerán aquí."
+            actionLabel={emptyActionLabel}
+            onAction={emptyActionTo ? () => navigate(emptyActionTo) : undefined}
+          />
+        ) : (
+          <ul className={s.list}>
+            {alertas.map((n) => {
+              const info = TIPO_CONFIG[n.tipo] || TIPO_CONFIG.sistema
+              const { projectId, reporteId } = decodificarEnlace(n.enlace)
+              const puedeAbrir = Boolean(projectId) || Boolean(reporteId && detallePath === '/admin')
+              return (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    className={`${s.item} ${s[`tipo-${n.tipo}`] || ''} ${!n.leida ? s.unread : ''}`}
+                    onClick={() => handleClick(n)}
+                    title={puedeAbrir ? 'Abrir detalle' : 'Marcar como leída'}
+                  >
+                    <span className={s.rail} aria-hidden="true" />
+                    <span className={s.icon} aria-hidden="true">{info.icon}</span>
+                    <span className={s.body}>
+                      <span className={s.top}>
+                        <Badge variant={info.variant}>{info.label}</Badge>
+                        {!n.leida && <span className={s.unreadDot}>Nueva</span>}
+                        <time className={`mono ${s.date}`}>{fechaCorta(n.fecha)}</time>
+                      </span>
+                      <span className={s.message}>{n.titulo}</span>
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </ApiState>
+    </div>
   )
 }

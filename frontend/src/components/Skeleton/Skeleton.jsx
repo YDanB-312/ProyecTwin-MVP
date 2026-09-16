@@ -1,45 +1,32 @@
-import './Skeleton.css'
+import s from './Skeleton.module.css'
 
-export function SkeletonLine({ width, height = '1rem', className = '' }) {
-  return <div className={`skeleton-line ${className}`} style={{ width, height }} />
+export function SkeletonLine({ width = '100%', height = 12, className = '' }) {
+  return <div className={`${s.line} ${className}`} style={{ width, height }} aria-hidden="true" />
 }
 
-export function SkeletonCircle({ size = 40, className = '' }) {
-  return <div className={`skeleton-circle ${className}`} style={{ width: size, height: size }} />
+export function SkeletonCircle({ size = 36, className = '' }) {
+  return <div className={`${s.circle} ${className}`} style={{ width: size, height: size }} aria-hidden="true" />
 }
 
-export function SkeletonCard({ lines = 3, hasAvatar = false, hasImage = false, className = '' }) {
+export function SkeletonCard({ lines = 3, className = '' }) {
   return (
-    <div className={`skeleton-card ${className}`}>
-      <div className="skeleton-card-header">
-        {hasAvatar && <SkeletonCircle size={40} />}
-        <div className="skeleton-card-lines">
-          <SkeletonLine width="60%" height="0.9rem" />
-          <SkeletonLine width="40%" height="0.75rem" />
-        </div>
-      </div>
-      {hasImage && <SkeletonLine width="100%" height="120px" className="skeleton-mt" />}
-      <div className="skeleton-card-body">
-        {Array.from({ length: lines }, (_, i) => (
-          <SkeletonLine key={i} width={i === lines - 1 ? '70%' : '100%'} height="0.8rem" className="skeleton-mt" />
-        ))}
-      </div>
+    <div className={`${s.card} ${className}`} aria-hidden="true">
+      <SkeletonLine width="40%" height={16} />
+      {Array.from({ length: lines }).map((_, i) => (
+        <SkeletonLine key={i} width={i === lines - 1 ? '60%' : '100%'} />
+      ))}
     </div>
   )
 }
 
-export function SkeletonTable({ rows = 5, cols = 4 }) {
+export function SkeletonTable({ rows = 5, cols = 4, className = '' }) {
   return (
-    <div className="skeleton-table">
-      <div className="skeleton-table-header">
-        {Array.from({ length: cols }, (_, i) => (
-          <SkeletonLine key={i} width={`${100 / cols}%`} height="0.8rem" />
-        ))}
-      </div>
-      {Array.from({ length: rows }, (_, r) => (
-        <div className="skeleton-table-row" key={r}>
-          {Array.from({ length: cols }, (_, c) => (
-            <SkeletonLine key={c} width={c === 0 ? '50%' : `${60 + Math.random() * 30}%`} height="0.8rem" />
+    <div className={`${s.table} ${className}`} aria-hidden="true">
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className={s.row}>
+          <SkeletonCircle size={28} />
+          {Array.from({ length: cols }).map((_, c) => (
+            <SkeletonLine key={c} width={`${100 / (cols + 1)}%`} height={10} />
           ))}
         </div>
       ))}
@@ -47,14 +34,14 @@ export function SkeletonTable({ rows = 5, cols = 4 }) {
   )
 }
 
-export function SkeletonStats({ count = 4 }) {
+export function SkeletonStats({ count = 4, className = '' }) {
   return (
-    <div className="skeleton-stats">
-      {Array.from({ length: count }, (_, i) => (
-        <div className="skeleton-stat-card" key={i}>
-          <SkeletonCircle size={36} />
-          <SkeletonLine width="50%" height="1.5rem" className="skeleton-mt" />
-          <SkeletonLine width="70%" height="0.7rem" className="skeleton-mt" />
+    <div className={`${s.stats} ${className}`} aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className={s.stat}>
+          <SkeletonCircle size={32} />
+          <SkeletonLine width="70%" height={18} />
+          <SkeletonLine width="45%" height={10} />
         </div>
       ))}
     </div>

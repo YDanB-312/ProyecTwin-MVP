@@ -1,0 +1,436 @@
+﻿/* ── Shared layout for DetalleProyecto ×3 (aprendiz · instructor · admin) ── */
+
+/* Page wrapper */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* Two-column responsive grid */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-5);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* Dossier de lectura (detalle aprendiz): contenido + rail derecho */
+.dossier {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.dossier > * {
+  min-width: 0;
+}
+
+/* Solo lectura (sin rail): una columna a todo el ancho útil */
+.dossierSolo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 1000px;
+  min-width: 0;
+}
+
+.colPrincipal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+.rail {
+  position: sticky;
+  top: calc(var(--govbar-h) + var(--header-h) + var(--sp-4));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* Hilos acotados con scroll propio: ni muchas similitudes ni muchas
+   observaciones alargan la página; el formulario queda siempre visible */
+.rail .simList,
+.hilosScroll {
+  max-height: 420px;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  padding-right: var(--sp-1);
+}
+
+@media (max-width: 1023.98px) {
+  .dossier {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: static;
+  }
+}
+
+/* Badge row */
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+/* Detail list (dl/dt/dd) — compartido por los 3 roles */
+.detailList {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--sp-4);
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2_5) 0;
+  border-bottom: 1px solid var(--c-border-2);
+}
+
+.detailRow dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+}
+
+.detailRow dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text);
+  text-align: right;
+}
+
+/* Section subtitles */
+.subTitle {
+  margin: var(--sp-5) 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.subTitle::before {
+  content: '';
+  width: 3px;
+  align-self: stretch;
+  border-radius: var(--r-full);
+  background: var(--c-primary);
+  box-shadow: var(--glow-soft);
+}
+
+/* Paragraph text */
+.paragraph {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text);
+  white-space: pre-line;
+}
+
+/* Objectives list */
+.objList {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1_5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text);
+}
+
+.objList li::marker {
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+/* Pre-formatted code/text blocks */
+.pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-2);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border-2);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+/* Keyword chips container */
+.chips,
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.keyword {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1) var(--sp-2_5);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--r-full);
+  background: var(--c-success-bg);
+  color: var(--c-success);
+  border: 1px solid var(--g-200);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Inline link */
+.link {
+  font-weight: 600;
+  color: var(--c-primary);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Muted/secondary text */
+.muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-text-3);
+}
+
+/* ── Read-only banner (instructor: viendo propuesta de otra ficha) ── */
+.bannerLectura {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-info-bg);
+  color: var(--c-info);
+  border: 1px solid var(--t-200);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ── Similarity list (instructor + admin) ── */
+.simList {
+  display: flex;
+  flex-direction: column;
+}
+
+.simRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--c-border-2);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.simList li:last-child .simRow {
+  border-bottom: none;
+}
+
+.simRow:hover {
+  background: var(--c-border);
+}
+
+.simPair {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.simRow:hover .simPair {
+  color: var(--c-primary);
+}
+
+.simRight {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.pct {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-width: 48px;
+  text-align: right;
+}
+
+.pctHigh { color: var(--c-danger); }
+.pctMid { color: var(--c-warning-text); }
+.pctLow { color: var(--c-info); }
+
+/* ── Person/Student card (instructor + admin) ── */
+.personCard {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.personInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-0_5);
+  flex: 1;
+  min-width: 180px;
+}
+
+.personName {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.personEmail {
+  font-size: var(--text-sm);
+  color: var(--c-text-2);
+}
+
+.avatarBtn {
+  border-radius: var(--r-full);
+  cursor: zoom-in;
+  transition: transform var(--dur-fast) var(--ease-out);
+  background: 0 0;
+  border: none;
+  padding: 0;
+  line-height: 0;
+}
+
+.avatarBtn:hover {
+  transform: scale(1.03);
+}
+
+/* ── Response chip (instructor + admin) ── */
+.respondiendoChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1_5) var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r-full);
+  background: var(--c-primary-light);
+  color: var(--c-primary-strong);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.respondiendoChip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--r-full);
+}
+
+.respondiendoChip button:hover {
+  background: var(--c-chip-hover);
+}
+
+/* ── Observation form ── */
+.obsForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* ── Admin description text (legacy, se mantiene por compat.) ── */
+.description {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--c-text-2);
+  margin: 0 0 var(--sp-5) 0;
+}
+
+/* ── Estado form (DataPanel action — admin) ── */
+.stateForm {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stateForm :global(select),
+.stateForm select {
+  min-width: 180px;
+  flex: 1;
+}
+
+/* ── Admin objective blocks ── */
+.blocks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+
+.blockTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1_5);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+  margin: 0 0 var(--sp-2_5) 0;
+}
+
+/* ── Responsive breakpoints ── */
+@media (min-width: 768px) {
+  .stateForm {
+    max-width: 520px;
+  }
+
+  .stateForm :global(select),
+  .stateForm select {
+    max-width: 260px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 3fr 2fr;
+  }
+
+  .blocks {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -1,64 +1,169 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { RUTA_POR_ROL } from '../constants/routes'
+import {
+  apiFetch, apiLogin, apiLogout, apiMe, apiPasswordReset, setAuthToken, haySesion,
+  EVENTO_SESION_EXPIRADA,
+} from '../lib/api'
+
+// Sesión del usuario.
+//
+// Fuente única: la API. `user` es una versión mínima de la cuenta
+// ({ id, correo, nombre, rol }) que se guarda en localStorage/sessionStorage
+// solo para pintar la interfaz sin parpadeos; el token vive aparte y se
+// valida contra /auth/me al recargar.
 
 const AuthContext = createContext(null)
 
-const USUARIOS = [
-  {
-    id: 1,
-    correo: 'maria.gonzalez@soy.sena.edu.co',
-    password: '123456',
-    nombre: 'María González',
-    rol: 'aprendiz',
-    ruta: '/aprendiz/dashboard'
-  },
-  {
-    id: 2,
-    correo: 'carlos.ruiz@sena.edu.co',
-    password: '123456',
-    nombre: 'Carlos Ruiz',
-    rol: 'instructor',
-    ruta: '/instructor/dashboard'
-  },
-  {
-    id: 3,
-    correo: 'admin@sena.edu.co',
-    password: 'admin123',
-    nombre: 'Administrador',
-    rol: 'admin',
-    ruta: '/admin/dashboard'
+const CLAVE_USUARIO = 'auth_user'
+
+function leerUsuarioGuardado() {
+  const guardado = localStorage.getItem(CLAVE_USUARIO) || sessionStorage.getItem(CLAVE_USUARIO)
+  if (!guardado) return null
+  try {
+    return JSON.parse(guardado)
+  } catch {
+    localStorage.removeItem(CLAVE_USUARIO)
+    sessionStorage.removeItem(CLAVE_USUARIO)
+    return null
   }
-]
+}
+
+function guardarUsuario(usuario, remember = true) {
+  const destino = remember ? localStorage : sessionStorage
+  const otro = remember ? sessionStorage : localStorage
+  destino.setItem(CLAVE_USUARIO, JSON.stringify(usuario))
+  otro.removeItem(CLAVE_USUARIO)
+}
+
+function limpiarUsuario() {
+  localStorage.removeItem(CLAVE_USUARIO)
+  sessionStorage.removeItem(CLAVE_USUARIO)
+}
+
+// Normaliza la cuenta de la API al shape mínimo de sesión.
+function aSesion(u) {
+  return {
+    id: u.id,
+    correo: u.correo,
+    nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
+    rol: String(u.rol || '').toLowerCase(),
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const guardado = sessionStorage.getItem('auth_user')
-    return guardado ? JSON.parse(guardado) : null
-  })
+  const [user, setUser] = useState(leerUsuarioGuardado)
 
-  const login = useCallback((correo, password) => {
-    const encontrado = USUARIOS.find(
-      u => u.correo === correo && u.password === password
-    )
-    if (!encontrado) return { exito: false, mensaje: 'Credenciales inválidas. Verifica tu correo y contraseña.' }
-
-    const sesion = { id: encontrado.id, correo: encontrado.correo, nombre: encontrado.nombre, rol: encontrado.rol }
-    sessionStorage.setItem('auth_user', JSON.stringify(sesion))
-    setUser(sesion)
-    return { exito: true, ruta: encontrado.ruta }
+  // ---------------------------------------------------------------- Login
+  const login = useCallback(async (correo, password, recordarme) => {
+    try {
+      const { user: cuenta } = await apiLogin(correo.trim().toLowerCase(), password, recordarme)
+      const sesion = aSesion(cuenta)
+      guardarUsuario(sesion, recordarme)
+      setUser(sesion)
+      return { exito: true, ruta: RUTA_POR_ROL[sesion.rol] || '/' }
+    } catch (err) {
+      const mensaje = err?.data?.message
+        || (err?.status === 0 ? 'No se pudo conectar con el servidor.' : 'Credenciales incorrectas. Verifica tus datos.')
+      return { exito: false, mensaje }
+    }
   }, [])
 
+  // ---------------------------------------------------------------- Registro
+  const register = useCallback(async ({ nombre, apellido, correo, password, rol }) => {
+    try {
+      await apiFetch('/general-users', {
+        method: 'POST',
+        auth: false,
+        body: { nombre: nombre.trim(), apellido: apellido.trim(), correo: correo.trim().toLowerCase(), password, rol },
+      })
+      return { exito: true, email: correo.trim().toLowerCase() }
+    } catch (err) {
+      if (err?.status === 422) return { exito: false, mensaje: 'Este correo ya está registrado.' }
+      return { exito: false, mensaje: err?.data?.message || 'No se pudo crear la cuenta.' }
+    }
+  }, [])
+
+  // ---------------------------------------------------------------- Contraseñas
+  // Restablecer (sin sesión): el backend actualiza y el usuario vuelve al login.
+  const cambiarContrasena = useCallback(async (correo, nuevaPassword) => {
+    try {
+      await apiPasswordReset(correo.trim().toLowerCase(), nuevaPassword)
+      return true
+    } catch {
+      return false
+    }
+  }, [])
+
+  // Cambio autenticado: verifica la actual y actualiza el propio perfil.
+  const cambiarMiContrasena = useCallback(async (actual, nueva) => {
+    if (!user?.correo) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
+    try {
+      // Validar la contraseña actual con un login de prueba (no altera el token guardado).
+      await apiLogin(user.correo, actual, false)
+    } catch {
+      return { exito: false, mensaje: 'La contraseña actual no es correcta.' }
+    }
+    try {
+      const cuenta = await apiFetch(`/general-users/${user.id}`)
+      await apiFetch(`/general-users/${user.id}`, {
+        method: 'PUT',
+        body: { ...cuenta, password: nueva },
+      })
+      return { exito: true }
+    } catch (err) {
+      return { exito: false, mensaje: err?.data?.message || 'No se pudo actualizar la contraseña.' }
+    }
+  }, [user])
+
+  // ---------------------------------------------------------------- Logout
   const logout = useCallback(() => {
-    sessionStorage.removeItem('auth_user')
+    setAuthToken(null)
+    limpiarUsuario()
+    sessionStorage.removeItem('ficha_aprendiz')
     setUser(null)
+    apiLogout()
+  }, [])
+
+  // Rehidratar/validar la cuenta al arrancar: si hay token, se pregunta a la
+  // API quién es. Un token inválido (p. ej. tras resembrar la base) limpia la
+  // sesión en lugar de dejar la UI "logueada" mostrando errores.
+  useEffect(() => {
+    if (!haySesion()) return
+    let vivo = true
+    apiMe()
+      .then((cuenta) => {
+        if (!vivo || !cuenta?.id) return
+        const sesion = aSesion(cuenta)
+        guardarUsuario(sesion, !!localStorage.getItem(CLAVE_USUARIO))
+        setUser(sesion)
+      })
+      .catch(() => {
+        if (!vivo) return
+        setAuthToken(null)
+        limpiarUsuario()
+        setUser(null)
+      })
+    return () => { vivo = false }
+  }, [])
+
+  // La API avisa (evento global) cuando una llamada autenticada recibe 401.
+  useEffect(() => {
+    const alExpirar = () => {
+      limpiarUsuario()
+      setUser(null)
+    }
+    window.addEventListener(EVENTO_SESION_EXPIRADA, alExpirar)
+    return () => window.removeEventListener(EVENTO_SESION_EXPIRADA, alExpirar)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, cambiarMiContrasena, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- useAuth se exporta junto al provider para mantener un único contexto
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider')

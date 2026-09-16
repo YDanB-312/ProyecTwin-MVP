@@ -1,62 +1,30 @@
 import { Component } from 'react'
-import './ErrorBoundary.css'
+import s from './ErrorBoundary.module.css'
 
-export default class ErrorBoundary extends Component {
+export class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false, error: null }
   }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error }
-  }
-
-  componentDidCatch(error, errorInfo) {
-    if (import.meta.env.DEV) {
-      console.error('ErrorBoundary caught:', error, errorInfo)
-    }
-  }
-
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null })
-  }
-
-  handleGoHome = () => {
-    this.setState({ hasError: false, error: null })
-    window.location.href = '/'
-  }
-
+  static getDerivedStateFromError(error) { return { hasError: true, error } }
   render() {
     if (this.state.hasError) {
+      if (typeof this.props.fallbackRender === 'function') {
+        return this.props.fallbackRender(this.state.error)
+      }
       return (
-        <div className="error-boundary">
-          <div className="error-boundary-card">
-            <div className="error-boundary-icon">
-              <i className="fas fa-exclamation-triangle"></i>
-            </div>
-            <h1 className="error-boundary-titulo">Algo salió mal</h1>
-            <p className="error-boundary-mensaje">
-              Ha ocurrido un error inesperado. Por favor, intenta de nuevo.
-            </p>
-            {this.state.error && (
-              <details className="error-boundary-detalle">
-                <summary>Detalles del error</summary>
-                <pre>{this.state.error.message}</pre>
-              </details>
-            )}
-            <div className="error-boundary-acciones">
-              <button className="btn-primario" onClick={this.handleRetry}>
-                <i className="fas fa-redo"></i> Reintentar
-              </button>
-              <button className="btn-secundario" onClick={this.handleGoHome}>
-                <i className="fas fa-home"></i> Ir al inicio
-              </button>
-            </div>
+        <div className={s.wrapper}>
+          <div className={s.content}>
+            <div className={s.icon}>⚠️</div>
+            <h2 className={s.title}>Algo salió mal</h2>
+            <p className={s.message}>{this.state.error?.message}</p>
+            <button className={s.btn} onClick={() => window.location.reload()}>Recargar</button>
           </div>
         </div>
       )
     }
-
     return this.props.children
   }
 }
+
+export default ErrorBoundary

@@ -1,0 +1,90 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--govbar-h);
+  background: var(--c-govbar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: var(--z-govbar);
+}
+
+.container {
+  max-width: none;
+  height: 100%;
+  padding: 0 var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.accessibility {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--govbar-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.motor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--govbar-text-dim);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--c-primary-hover);
+  box-shadow: var(--glow-soft);
+  animation: fx-pulse-dot var(--dur-loop) var(--ease-out) infinite;
+}
+
+.themeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  color: var(--govbar-text-dim);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.themeBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--govbar-text);
+}
+
+.motorCorto {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .motorFull {
+    display: none;
+  }
+
+  .motorCorto {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 var(--sp-3);
+  }
+
+  .accessibility {
+    font-size: 0.6875rem;
+  }
+}

@@ -1,32 +1,80 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'phosphor-react'
+import Actions from '../Actions/Actions'
+import s from './PageHeader.module.css'
 
-export default function PageHeader({ title, subtitle, icon, actions, breadcrumb }) {
+function CrumbIcon({ icon }) {
+  if (!icon) return null
+  return typeof icon === 'string' ? <span aria-hidden="true">{icon}</span> : icon
+}
+
+export default function PageHeader({ title, subtitle, icon, actions, breadcrumb = [], showBack = true, onBack }) {
+  const navigate = useNavigate()
+
+  const handleBack = () => {
+    if (typeof onBack === 'function') {
+      onBack()
+      return
+    }
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      const parent = breadcrumb.find(c => c.to)
+      if (parent) navigate(parent.to)
+    }
+  }
+
   return (
-    <div className="encabezado-pagina-moderno">
-      {breadcrumb && (
-        <div className="breadcrumb-moderno">
-          {breadcrumb.map((item, i) => (
-            <span key={item.label} className="breadcrumb-item">
-              {i > 0 && <span className="breadcrumb-sep"><i className="fas fa-chevron-right"></i></span>}
-              {item.to ? (
-                <Link to={item.to}>{item.icon && <i className={`fas fa-${item.icon}`}></i>} {item.label}</Link>
-              ) : (
-                <span className="breadcrumb-actual">{item.label}</span>
-              )}
-            </span>
-          ))}
-        </div>
+    <header className={s.header}>
+      {breadcrumb.length > 0 && (
+        <nav className={s.breadcrumbNav} aria-label="Breadcrumb">
+          {showBack && (
+            <button type="button" className={s.backBtn} onClick={handleBack} aria-label="Volver">
+              <ArrowLeft size={16} weight="bold" />
+            </button>
+          )}
+          <ol className={s.breadcrumb}>
+            {breadcrumb.map((item, i) => {
+              const isLast = i === breadcrumb.length - 1
+              return (
+                <li key={i} className={isLast ? s.current : undefined} aria-current={isLast ? 'page' : undefined}>
+                  {item.onClick && !isLast ? (
+                    <button type="button" className={s.crumb} onClick={item.onClick}>
+                      <CrumbIcon icon={item.icon} />
+                      {item.label}
+                    </button>
+                  ) : item.to && !isLast ? (
+                    <Link to={item.to} className={s.crumb}>
+                      <CrumbIcon icon={item.icon} />
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <span className={s.crumb}>
+                      <CrumbIcon icon={item.icon} />
+                      {item.label}
+                    </span>
+                  )}
+                  {!isLast && <span className={s.sep} aria-hidden="true">/</span>}
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
       )}
-      <div className="encabezado-row">
-        <div className="encabezado-info">
-          {icon && <div className="encabezado-icono"><i className={`fas fa-${icon}`}></i></div>}
+      <div className={s.row}>
+        <div className={s.titleWrap}>
+          {icon && (
+            <span className={s.icon} aria-hidden="true">
+              {typeof icon === 'string' ? icon : icon}
+            </span>
+          )}
           <div>
-            <h1 className="encabezado-titulo">{title}</h1>
-            {subtitle && <p className="encabezado-subtitulo">{subtitle}</p>}
+            <h1 className={s.title}>{title}</h1>
+            {subtitle && <p className={s.subtitle}>{subtitle}</p>}
           </div>
         </div>
-        {actions && <div className="encabezado-acciones">{actions}</div>}
+        {actions && <Actions className={s.actions}>{actions}</Actions>}
       </div>
-    </div>
+    </header>
   )
 }
