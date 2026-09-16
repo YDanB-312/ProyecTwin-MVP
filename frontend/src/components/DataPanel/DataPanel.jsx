@@ -1,18 +1,18 @@
-export default function DataPanel({ title, icon, action, children, className }) {
+import s from './DataPanel.module.css'
+
+export default function DataPanel({ title, icon, action, children, className = '' }) {
   return (
-    <section className={`data-panel${className ? ` ${className}` : ''}`}>
-      {title && (
-        <div className="data-panel-header">
-          <h2 className="data-panel-titulo">
-            {icon && <i className={`fas fa-${icon}`}></i>}
-            {title}
-          </h2>
-          {action && <div className="data-panel-action">{action}</div>}
-        </div>
+    <section className={`${s.panel} ${className}`}>
+      {(title || action) && (
+        <header className={s.header}>
+          <div className={s.titleWrap}>
+            {icon && <span className={s.icon} aria-hidden="true">{icon}</span>}
+            {title && <h2 className={s.title}>{title}</h2>}
+          </div>
+          {action && <div className={s.action}>{action}</div>}
+        </header>
       )}
-      <div className="data-panel-body">
-        {children}
-      </div>
+      <div className={s.body}>{children}</div>
     </section>
   )
 }

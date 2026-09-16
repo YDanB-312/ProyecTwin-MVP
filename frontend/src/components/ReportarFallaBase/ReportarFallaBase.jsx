@@ -1,115 +1,78 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import DashboardLayout from '../DashboardLayout/DashboardLayout'
+import { useState } from 'react'
+import { Bug, PaperPlaneRight } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
-import '../../assets/styles/pages/reportar-falla.css'
+import DataPanel from '../DataPanel/DataPanel'
+import ConsoleCard from '../ConsoleCard/ConsoleCard'
 import FormField from '../FormField/FormField'
+import Actions from '../Actions/Actions'
+import Button from '../Button/Button'
+import { Input, Textarea, Select } from '../Input/Input'
+import s from './ReportarFallaBase.module.css'
 
-export default function ReportarFallaBase({ role, dashboardPath, dashboardTitulo, dashboardUsuario, notificaciones, tipoOptions, reportesAnteriores, cancelPath }) {
-  const navigate = useNavigate()
-  const { register, handleSubmit, watch } = useForm()
+export default function ReportarFallaBase({ role, onSubmit }) {
+  const [form, setForm] = useState({ titulo: '', descripcion: '', tipo: 'bug_ui', prioridad: 'media' })
   const [enviado, setEnviado] = useState(false)
-  const [error, setError] = useState(null)
-  const navTimerRef = useRef(null)
-  const archivoRef = useRef(null)
 
-  useEffect(() => {
-    return () => { if (navTimerRef.current) clearTimeout(navTimerRef.current) }
-  }, [])
-  const descTexto = watch("descripcion", "")
-  const archivo = watch("url_evidencia")
-  const archivoNombre = archivo?.length > 0 ? archivo[0].name : 'No se ha seleccionado ningún archivo'
+  const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const onSubmit = (data) => {
-    try {
-      setEnviado(true)
-      setError(null)
-      // TODO: Send data to API endpoint
-      navTimerRef.current = setTimeout(() => navigate(dashboardPath), 2000)
-    } catch (err) {
-      setError('Error al enviar el reporte. Intenta de nuevo.')
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await onSubmit?.(form)
+    setEnviado(true)
+  }
+
+  if (enviado) {
+    return (
+      <div className={s.wrapper}>
+        <DataPanel title="Reporte enviado" icon={<Bug size={18} />}>
+          <div className={s.success}>
+            <p className={s.successTitle}>¡Gracias por reportar!</p>
+            <p className={s.successMsg}>Tu reporte ha sido registrado y será revisado por un administrador.</p>
+          </div>
+        </DataPanel>
+      </div>
+    )
   }
 
   return (
-    <DashboardLayout role={role} titulo={dashboardTitulo} usuario={dashboardUsuario} notificaciones={notificaciones}>
-      <div className="contenedor-gestion fade-in">
-        <PageHeader title="Reportar Falla" icon="bug" breadcrumb={[{ to: dashboardPath, icon: 'home', label: 'Inicio' }, { label: 'Reportar Falla' }]} />
+    <div className={s.wrapper}>
+      <PageHeader title="Reportar Falla" subtitle={`Reporta un problema que encuentres como ${role}`} icon={<Bug size={20} />} />
 
-        <div className="seccion-card">
-          <div className="seccion-card-header">
-            <i className="fas fa-exclamation-triangle"></i>
-            <h3>Nuevo reporte de Falla</h3>
+      <ConsoleCard title="Detalles de la falla" subtitle="Describe lo ocurrido con el mayor detalle posible" glow>
+        <form className={s.form} onSubmit={handleSubmit}>
+          <FormField label="Título del reporte" required>
+            <Input type="text" value={form.titulo} onChange={handleChange('titulo')} placeholder="Ej: Error al cargar proyectos" required />
+          </FormField>
+
+          <FormField label="Descripción" required>
+            <Textarea value={form.descripcion} onChange={handleChange('descripcion')} placeholder="Describe el problema con el mayor detalle posible..." rows={5} required />
+          </FormField>
+
+          <div className={s.row}>
+            <FormField label="Tipo de falla">
+              <Select value={form.tipo} onChange={handleChange('tipo')}>
+                <option value="bug_ui">Bug de UI</option>
+                <option value="error_datos">Error de datos</option>
+                <option value="rendimiento">Rendimiento</option>
+                <option value="seguridad">Seguridad</option>
+                <option value="otro">Otro</option>
+              </Select>
+            </FormField>
+            <FormField label="Prioridad">
+              <Select value={form.prioridad} onChange={handleChange('prioridad')}>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
+              </Select>
+            </FormField>
           </div>
 
-          <div className={`mensaje-feedback mensaje-exito ${enviado ? '' : 'oculto'}`}>
-            <i className="fas fa-check-circle"></i><span>Reporte enviado correctamente.</span>
-          </div>
-          <div className={`mensaje-feedback mensaje-error ${error ? '' : 'oculto'}`}>
-            <i className="fas fa-exclamation-circle"></i><span>No se pudo enviar el reporte. Intenta de nuevo.</span>
-          </div>
-
-          <form id="formularioFalla" onSubmit={handleSubmit(onSubmit)}>
-            <div className="form-body">
-              <FormField label="Título del Reporte" htmlFor="titulo-falla" required>
-                <input type="text" id="titulo-falla" className="campo-input" placeholder="Ej: Error al cargar página de login" {...register("titulo", { required: true })} />
-              </FormField>
-              <FormField label="Tipo de Falla" htmlFor="tipo-falla" required>
-                <select id="tipo-falla" className="campo-select" {...register("tipo", { required: true })}>
-                  <option value="" disabled>-- Selecciona una opción --</option>
-                  {tipoOptions.map((opt, i) => (
-                    <option key={i} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Descripción Detallada" htmlFor="descripcion" required>
-                <textarea id="descripcion" className="campo-textarea" placeholder="Describe con detalle el problema encontrado..." {...register("descripcion", { required: true, maxLength: 500 })}></textarea>
-                <div className="desc-contador">{descTexto.length}/500 caracteres</div>
-              </FormField>
-              <FormField label="Pasos para Reproducir" htmlFor="pasos" helpText="Describe los pasos exactos para que otro usuario pueda replicar el problema.">
-                <textarea id="pasos" className="campo-textarea" placeholder="1. Ir a la página de login&#10;2. Ingresar credenciales incorrectas&#10;3. Hacer clic en 'Iniciar sesión'&#10;4. Observar el error..." rows="4" {...register("pasos")}></textarea>
-              </FormField>
-              <FormField label="Adjuntar Evidencia (Opcional)" htmlFor="evidencia" helpText="Formatos aceptados: JPG, PNG, PDF, Word (Max. 10MB por archivo)">
-                <div className="file-input-wrapper">
-                  <button type="button" className="btn-file" onClick={() => archivoRef.current?.click()}><i className="fas fa-paperclip"></i> Elegir archivo</button>
-                  <span className="file-name">{archivoNombre}</span>
-                  <input type="file" id="evidencia" ref={archivoRef} className="file-input-real" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" {...register("url_evidencia")} />
-                </div>
-              </FormField>
-            </div>
-            <div className="form-footer">
-              <Link to={cancelPath} className="btn-cancelar"><i className="fas fa-times"></i> Cancelar</Link>
-              <button type="submit" className="btn-enviar"><i className="fas fa-paper-plane"></i> Enviar reporte</button>
-            </div>
-          </form>
-        </div>
-
-        <div className="seccion-card">
-          <div className="seccion-card-header">
-            <i className="fas fa-history"></i>
-            <h3>Mis reportes Anteriores</h3>
-            <span className="reportes-count">{reportesAnteriores.length} reportes registrados</span>
-          </div>
-
-          <div className="reportes-grid">
-            {reportesAnteriores.map((r, i) => (
-              <div className="reporte-card" key={i}>
-                <div className="reporte-card-header">
-                  <span className="reporte-id">#{String(i + 1).padStart(3, '0')}</span>
-                  <span className={`badge-tipo badge-tipo-${r.tipoClase}`}>{r.tipo}</span>
-                </div>
-                <p className="reporte-descripcion">{r.descripcion}</p>
-                <div className="reporte-card-footer">
-                  <span className={`badge-estado-reporte ${r.estadoClase}`}><i className={`fas ${r.estadoIcono}`}></i> {r.estado}</span>
-                  <span className="reporte-fecha">{r.fecha}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-    </DashboardLayout>
+          <Actions className={s.actions}>
+            <Button size="lg" type="submit"><PaperPlaneRight size={16} /> Enviar reporte</Button>
+          </Actions>
+        </form>
+      </ConsoleCard>
+    </div>
   )
 }

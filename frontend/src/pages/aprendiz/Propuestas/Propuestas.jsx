@@ -1,0 +1,526 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
+import PageHeader from '../../../components/PageHeader/PageHeader'
+import FilterBar from '../../../components/FilterBar/FilterBar'
+import Pagination from '../../../components/Pagination/Pagination'
+import EmptyState from '../../../components/EmptyState/EmptyState'
+import Badge from '../../../components/Badge/Badge'
+import GradeBadge from '../../../components/GradeBadge/GradeBadge'
+import Button from '../../../components/Button/Button'
+import Actions from '../../../components/Actions/Actions'
+import Alert from '../../../components/Alert/Alert'
+import ApiState from '../../../components/ApiState/ApiState'
+import { Input, Select, Textarea } from '../../../components/Input/Input'
+import FormField from '../../../components/FormField/FormField'
+import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, Plus, Tray } from 'phosphor-react'
+import { useAuth } from '../../../contexts/AuthContext'
+import { useApi } from '../../../lib/useApi'
+import { toFieldErrors } from '../../../lib/api'
+import { proyectos, aprendices, fichas, similitudes as similitudesApi } from '../../../lib/recursos'
+import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
+import { formatearFecha } from '../../../utils/helpers'
+import { PAGINA_TARJETAS } from '../../../constants/pagination'
+import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
+// Estilos reutilizados de las páginas originales (lista + formulario)
+import s from '../../../components/ListaBase/ListaBase.module.css'
+import n from '../../../components/FormularioBase/FormularioBase.module.css'
+
+const ITEMS_POR_PAGINA = PAGINA_TARJETAS
+
+// Relaciones necesarias para detectar al equipo (pivote) en la lista.
+const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
+
+const AREAS = [
+  'Desarrollo Web',
+  'Inteligencia Artificial',
+  'Ciencia de Datos',
+  'Ciberseguridad',
+  'Otro',
+]
+
+const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' }
+
+// Errores 422 de la API (columnas del backend) → campos del formulario.
+const CAMPOS_API = {
+  titulo: 'title',
+  resumen: 'description',
+  objetivo_general: 'objetivoGeneral',
+  objetivos_especificos: 'objetivosEspecificos',
+  area_aplicacion: 'areaAplicacion',
+  palabras_clave: 'keywords',
+}
+
+// Una propuesta es del aprendiz si la creó o si figura en su equipo.
+function esMio(proyecto, userId) {
+  if (!proyecto) return false
+  if (Number(proyecto.id_creador) === Number(userId)) return true
+  return (proyecto.apprentices || []).some(
+    (a) => Number(a.generalUser?.id) === Number(userId) || Number(a.id_usuario) === Number(userId)
+  )
+}
+
+function infoSimilitud(lista, projectId) {
+  const pares = (lista || []).filter(
+    (x) => Number(x.id_proyecto_1) === Number(projectId) || Number(x.id_proyecto_2) === Number(projectId)
+  )
+  if (pares.length === 0) return null
+  return {
+    pct: Math.max(...pares.map((x) => Math.round(Number(x.porcentaje) || 0))),
+    count: pares.length,
+  }
+}
+
+function nombreAprendiz(a) {
+  const g = a?.generalUser || {}
+  return [g.nombre, g.apellido].filter(Boolean).join(' ').trim() || g.correo || `Aprendiz #${a?.id}`
+}
+
+export default function Propuestas() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
+
+  // Reacciona si se navega a ?crear=1 ya estando en la lista
+  useEffect(() => {
+    if (searchParams.get('crear') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCreando(true)
+    }
+  }, [searchParams])
+
+  /* ---------- Lista ---------- */
+  const [filtro, setFiltro] = useState('todos')
+  const [pagina, setPagina] = useState(1)
+
+  const { data: todosProyectos, cargando, error, recargar } = useApi(
+    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
+    [],
+    { inicial: [] }
+  )
+  const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  const proyectosMios = useMemo(
+    () => todosProyectos.filter((p) => esMio(p, user.id)),
+    [todosProyectos, user.id]
+  )
+
+  const filtrados = useMemo(
+    () => (filtro === 'todos' ? proyectosMios : proyectosMios.filter((p) => p.estado === filtro)),
+    [proyectosMios, filtro]
+  )
+
+  const inicio = (pagina - 1) * ITEMS_POR_PAGINA
+  const visibles = filtrados.slice(inicio, inicio + ITEMS_POR_PAGINA)
+
+  function cambiarFiltro(valor) {
+    setFiltro(valor)
+    setPagina(1)
+  }
+
+  /* ---------- Ficha y compañeros del aprendiz ---------- */
+  const { data: aprendicesApi, cargando: cargandoPerfil, error: errorPerfil, recargar: recargarPerfil } =
+    useApi(() => aprendices.listar(), [], { inicial: [] })
+  const { data: fichasApi, cargando: cargandoFichas, error: errorFichas, recargar: recargarFichas } =
+    useApi(() => fichas.listar(), [], { inicial: [] })
+
+  const miAprendiz = useMemo(
+    () => aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null,
+    [aprendicesApi, user.id]
+  )
+  const miFicha = useMemo(
+    () => (miAprendiz ? fichasApi.find((f) => Number(f.id) === Number(miAprendiz.id_class_group)) || null : null),
+    [miAprendiz, fichasApi]
+  )
+  const instructorId = miFicha?.instructor?.id ?? null
+
+  const companeros = useMemo(
+    () => (miFicha
+      ? aprendicesApi.filter(
+          (a) => Number(a.id_class_group) === Number(miFicha.id) && Number(a.id_usuario) !== Number(user.id)
+        )
+      : []),
+    [aprendicesApi, miFicha, user.id]
+  )
+
+  /* ---------- Creación ---------- */
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    objetivoGeneral: '',
+    objetivosEspecificos: '',
+    areaAplicacion: '',
+    keywords: '',
+  })
+  const [errors, setErrors] = useState({})
+  const [errorGeneral, setErrorGeneral] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [seleccionados, setSeleccionados] = useState([])
+
+  function alternarCompanero(id) {
+    setSeleccionados((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
+  }
+
+  const objetivosValidos = useMemo(
+    () =>
+      form.objetivosEspecificos
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean),
+    [form.objetivosEspecificos]
+  )
+
+  function set(campo, valor) {
+    setForm((f) => ({ ...f, [campo]: valor }))
+    setErrors((e) => ({ ...e, [campo]: undefined }))
+  }
+
+  function validar() {
+    const errs = {}
+    if (form.title.trim().length < 5) errs.title = 'El nombre debe tener al menos 5 caracteres.'
+    if (form.description.trim().length < 20) {
+      errs.description = 'La descripción debe tener al menos 20 caracteres.'
+    }
+    if (form.objetivoGeneral.trim().length < 15) {
+      errs.objetivoGeneral = 'El objetivo general debe tener al menos 15 caracteres.'
+    }
+    if (objetivosValidos.length < 2) {
+      errs.objetivosEspecificos = 'Escribe al menos 2 objetivos específicos (uno por línea).'
+    } else if (objetivosValidos.some((o) => o.length < 8)) {
+      errs.objetivosEspecificos = 'Cada objetivo específico debe tener al menos 8 caracteres.'
+    }
+    if (!form.areaAplicacion) errs.areaAplicacion = 'Selecciona un área de aplicación.'
+    return errs
+  }
+
+  function empezar() {
+    setCreando(true)
+  }
+
+  function volverALista() {
+    setCreando(false)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const errs = validar()
+    setErrors(errs)
+    setErrorGeneral('')
+    if (Object.keys(errs).length > 0 || !miFicha || !miAprendiz) return
+
+    setGuardando(true)
+    try {
+      // 1) Crear la propuesta en el backend.
+      const nueva = await proyectos.crear({
+        titulo: form.title.trim(),
+        resumen: form.description.trim(),
+        palabras_clave: form.keywords.trim() || null,
+        area_aplicacion: form.areaAplicacion,
+        objetivo_general: form.objetivoGeneral.trim(),
+        objetivos_especificos: objetivosValidos,
+        estado: 'pendiente',
+        id_creador: Number(user.id),
+        id_instructor_asignado: instructorId,
+        id_class_group: Number(miFicha.id),
+      })
+
+      // 2) Vincular a los compañeros seleccionados al equipo (pivote).
+      for (const idAprendiz of seleccionados) {
+        try {
+          await proyectos.agregarAlEquipo(Number(idAprendiz), Number(nueva.id))
+        } catch {
+          // El pivote pudo existir ya; se ignora para no bloquear la creación.
+        }
+      }
+
+      // 3) Disparar el motor de similitud del backend.
+      try {
+        await similitudesApi.detectar(nueva.id)
+      } catch {
+        // El análisis puede recalcularse después; no impide continuar.
+      }
+
+      navigate('/aprendiz/analizando-proyecto', { state: { projectId: nueva.id }, replace: true })
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      const traducidos = {}
+      for (const [clave, mensaje] of Object.entries(campos)) {
+        traducidos[CAMPOS_API[clave] || clave] = mensaje
+      }
+      setErrors(traducidos)
+      if (Object.keys(traducidos).length === 0) {
+        setErrorGeneral(err?.message || 'No se pudo crear la propuesta. Intenta de nuevo.')
+      }
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  // Carga inicial del perfil académico (aprendiz ↔ ficha).
+  if (cargandoPerfil || cargandoFichas) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}><ApiState cargando /></div>
+      </DashboardLayout>
+    )
+  }
+
+  if (errorPerfil || errorFichas) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}>
+          <ApiState error={errorPerfil || errorFichas} onReintentar={() => { recargarPerfil(); recargarFichas() }} />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!miFicha || !miAprendiz) {
+    return (
+      <DashboardLayout role="aprendiz" titulo="Mis Propuestas">
+        <div className={s.page}>
+          <EmptyState
+            icon={<GraduationCap size={40} weight="light" />}
+            title="Aún no perteneces a una ficha"
+            message="La asignación de tu ficha la gestiona coordinación. Consulta tu ficha o contacta a tu instructor."
+            actionLabel="Ir a Mi Ficha"
+            onAction={() => navigate('/aprendiz/ficha')}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  return (
+    <DashboardLayout role="aprendiz" titulo={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}>
+      <div className={s.page}>
+        <PageHeader
+          title={creando ? 'Nueva Propuesta' : 'Mis Propuestas'}
+          subtitle={
+            creando
+              ? 'Registra tu idea: una solución de software para un problema concreto. No necesitas definir tecnologías ni entregables todavía.'
+              : 'Administra y revisa el estado de tus propuestas académicas'
+          }
+          icon={creando ? <Plus /> : <FolderOpen />}
+          breadcrumb={
+            creando
+              ? [
+                  { label: 'Dashboard', to: '/aprendiz/dashboard', icon: <ChartBar size={14} /> },
+                  { label: 'Mis Propuestas', icon: <FolderOpen size={14} />, onClick: volverALista },
+                  { label: 'Nueva propuesta' },
+                ]
+              : []
+          }
+          onBack={creando ? volverALista : undefined}
+          actions={
+            !creando ? (
+              <Button type="button" onClick={empezar}>
+                <Plus size={14} /> Nueva propuesta
+              </Button>
+            ) : undefined
+          }
+        />
+
+        {creando ? (
+          <form className={n.form} onSubmit={handleSubmit} noValidate>
+                <FormField label="Nombre de la propuesta" error={errors.title} required>
+                  <Input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => set('title', e.target.value)}
+                    placeholder="Ej: Sistema de monitoreo ambiental con IoT"
+                    maxLength={MAX_TITULO}
+                    autoFocus
+                  />
+                </FormField>
+
+                <FormField
+                  label="Descripción del problema y la solución"
+                  error={errors.description}
+                  help={`${form.description.length}/600 caracteres`}
+                  required
+                >
+                  <Textarea
+                    rows={5}
+                    value={form.description}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="¿Qué problema quieres resolver? ¿Cómo lo resolvería tu software? ¿Quiénes se beneficiarían?"
+                    maxLength={MAX_DESCRIPCION}
+                  />
+                </FormField>
+
+                <FormField
+                  label="Objetivo general"
+                  error={errors.objetivoGeneral}
+                  help="Qué quieres lograr con la solución, en una sola frase."
+                  required
+                >
+                  <Textarea
+                    rows={3}
+                    value={form.objetivoGeneral}
+                    onChange={(e) => set('objetivoGeneral', e.target.value)}
+                    placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
+                    maxLength={MAX_DESCRIPCION_CORTA}
+                    autoFocus
+                  />
+                </FormField>
+
+                <FormField
+                  label="Objetivos específicos"
+                  error={errors.objetivosEspecificos}
+                  help={`Un objetivo por línea (mínimo 2). Usa verbos como Implementar, Diseñar, Evaluar. Llevas ${objetivosValidos.length}.`}
+                  required
+                >
+                  <Textarea
+                    rows={5}
+                    value={form.objetivosEspecificos}
+                    onChange={(e) => set('objetivosEspecificos', e.target.value)}
+                    placeholder={'Implementar sensores de humedad en el cultivo.\nDiseñar un panel web para visualizar los datos.\nEvaluar el ahorro de agua durante un mes.'}
+                  />
+                </FormField>
+
+                <FormField
+                  label={`Integrantes del equipo${seleccionados.length > 0 ? ` (${seleccionados.length})` : ''}`}
+                  help="Opcional. Compañeros de tu ficha con los que desarrollarás la propuesta."
+                >
+                  {companeros.length === 0 ? (
+                    <p className={n.hint}>Aún no hay compañeros en tu ficha para invitar.</p>
+                  ) : (
+                    <div className={n.chipList}>
+                      {companeros.map((c) => {
+                        const activo = seleccionados.includes(c.id)
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className={`${n.chip} ${activo ? n.chipActive : ''}`}
+                            onClick={() => alternarCompanero(c.id)}
+                            aria-pressed={activo}
+                          >
+                            {nombreAprendiz(c)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </FormField>
+
+                <FormField label="Área de aplicación" error={errors.areaAplicacion} required>
+                  <Select
+                    value={form.areaAplicacion}
+                    onChange={(e) => set('areaAplicacion', e.target.value)}
+                  >
+                    <option value="">Selecciona un área...</option>
+                    {AREAS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                <p className={n.hint}>
+                  Ficha de formación: {miFicha.nombre} · {miFicha.codigo}
+                </p>
+
+                <FormField
+                  label="Palabras clave"
+                  help="Opcional. Si aún no las tienes claras, puedes agregarlas después."
+                >
+                  <Input
+                    type="text"
+                    value={form.keywords}
+                    onChange={(e) => set('keywords', e.target.value)}
+                    placeholder="iot, sensores, agricultura"
+                  />
+                </FormField>
+
+            {errorGeneral && <Alert variant="danger">{errorGeneral}</Alert>}
+
+            <Actions className={n.actions}>
+              <Button type="submit" disabled={guardando}>
+                {guardando ? 'Enviando...' : 'Enviar propuesta y analizar'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={volverALista}>
+                Cancelar
+              </Button>
+            </Actions>
+          </form>
+        ) : (
+          <>
+            <FilterBar title="Filtros">
+              <label className={s.field}>
+                <span className={s.label}>Estado</span>
+                <Select
+                  value={filtro}
+                  onChange={(e) => cambiarFiltro(e.target.value)}
+                >
+                  <option value="todos">Todos</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aprobado">Aprobado</option>
+                  <option value="rechazado">Rechazado</option>
+                </Select>
+              </label>
+            </FilterBar>
+
+            <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+              {filtrados.length === 0 ? (
+                <EmptyState
+                  icon={<Tray />}
+                  title={filtro === 'todos' && proyectosMios.length === 0 ? 'Aún no tienes propuestas' : 'Sin resultados'}
+                  message={
+                    filtro === 'todos' && proyectosMios.length === 0
+                      ? 'Registra tu primera propuesta para comenzar a analizarla en ProyecTwin.'
+                      : 'No hay propuestas con el estado seleccionado. Prueba con otro filtro.'
+                  }
+                  actionLabel={
+                    filtro === 'todos' && proyectosMios.length === 0 ? 'Crear propuesta' : undefined
+                  }
+                  actionIcon={<Plus size={14} />}
+                  onAction={
+                    filtro === 'todos' && proyectosMios.length === 0 ? empezar : undefined
+                  }
+                />
+              ) : (
+                <>
+                  <div className={s.cardGrid}>
+                    {visibles.map((p) => {
+                      const info = infoSimilitud(todasSimilitudes, p.id)
+                      return (
+                        <Link key={p.id} to={`/aprendiz/detalle-proyecto/${p.id}`} viewTransition className={s.card}>
+                          <header className={s.cardHeader}>
+                            <h3 className={s.cardTitle}>{p.titulo}</h3>
+                            <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
+                              {ESTADO_LABEL[p.estado] || p.estado}
+                            </Badge>
+                          </header>
+                          <p className={s.cardDesc}>{p.resumen}</p>
+                          <footer className={s.cardFooter}>
+                            <span className={s.cardMeta}><CalendarBlank size={14} /> {formatearFecha(p.created_at)}</span>
+                            {info && (
+                              <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
+                                <GradeBadge score={info.pct} size="sm" />
+                              </span>
+                            )}
+                          </footer>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  <Pagination
+                    totalItems={filtrados.length}
+                    filteredCount={filtrados.length}
+                    itemsPerPage={ITEMS_POR_PAGINA}
+                    paginaActual={pagina}
+                    setPaginaActual={setPagina}
+                    itemName="propuestas"
+                  />
+                </>
+              )}
+            </ApiState>
+          </>
+        )}
+      </div>
+    </DashboardLayout>
+  )
+}

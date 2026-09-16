@@ -7,21 +7,33 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "test": "playwright test",
+    "test:e2e": "node e2e/run-aislado.mjs",
+    "test:unit": "vitest run",
+    "preview": "vite preview",
+    "test:e2e:aislado": "node e2e/run-aislado.mjs"
   },
   "dependencies": {
+    "phosphor-react": "^1.4.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.80.0",
     "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "vite": "^8.0.10"
+    "jsdom": "^29.1.1",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.11"
   }
 }

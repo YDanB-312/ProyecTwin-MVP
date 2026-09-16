@@ -1,20 +1,29 @@
 import { useState } from 'react'
+import Actions from '../Actions/Actions'
+import s from './FilterBar.module.css'
 
-export default function FilterBar({ title, children, actions }) {
-  const [expanded, setExpanded] = useState(false)
+export default function FilterBar({ title = 'Filtros', children, actions, defaultOpen = true, className = '' }) {
+  const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="filter-bar">
-      <div className="filter-bar-header" onClick={() => setExpanded(prev => !prev)}>
-        <span className="filter-bar-titulo"><i className="fas fa-filter"></i> {title || 'Filtros'}</span>
-        <i className={`fas fa-chevron-${expanded ? 'up' : 'down'} filter-bar-toggle`}></i>
-      </div>
-      <div className={`filter-bar-body${expanded ? ' filter-bar-open' : ''}`}>
-        <div className="filter-bar-grid">
-          {children}
+    <section className={`${s.bar} ${className}`}>
+      <button
+        type="button"
+        className={s.toggle}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="filterbar-content"
+      >
+        <span className={s.icon} aria-hidden="true">⚙</span>
+        <span className={s.title}>{title}</span>
+        <span className={`${s.chevron} ${open ? s.open : ''}`} aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <div id="filterbar-content" className={s.content}>
+          <div className={s.filters}>{children}</div>
+          {actions && <Actions className={s.actions}>{actions}</Actions>}
         </div>
-        {actions && <div className="filter-bar-acciones">{actions}</div>}
-      </div>
-    </div>
+      )}
+    </section>
   )
 }

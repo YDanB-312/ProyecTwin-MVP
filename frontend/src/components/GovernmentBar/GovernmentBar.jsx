@@ -1,31 +1,48 @@
-import { useState, useEffect } from 'react'
-import './GovernmentBar.css'
-
-function getInitialTheme() {
-  const stored = localStorage.getItem('theme')
-  if (stored === 'dark' || stored === 'light') return stored
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
+import { Sun, Moon } from 'phosphor-react'
+import { useTheme } from '../../contexts/useTheme'
+import { useApi } from '../../lib/useApi'
+import { motor as apiMotor } from '../../lib/recursos'
+import s from './GovernmentBar.module.css'
 
 export default function GovernmentBar() {
-  const [theme, setTheme] = useState(getInitialTheme)
+  const { theme, alternarTema } = useTheme()
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
-
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark')
+  // Configuración del motor de similitudes (endpoint público de solo lectura).
+  const { data: motor, error } = useApi(() => apiMotor.obtener(), [])
+  const umbralPct = motor ? Math.round(Number(motor.umbral) * 100) : null
+  const etiquetaMotor = error
+    ? 'MOTOR · NO DISPONIBLE'
+    : umbralPct != null
+      ? `MOTOR · UMBRAL ${umbralPct}% · CORPUS ${motor.meses}M`
+      : 'MOTOR · CONECTANDO…'
 
   return (
-    <div className="barra-gobierno">
-      <div className="contenedor-barra">
-        <span>Portal del SENA - República de Colombia</span>
-        <div className="accesibilidad">
-          <button className="btn-accesibilidad" aria-label="Cambiar tema" type="button" onClick={toggleTheme}>
-            <i className={`fas fa-${theme === 'dark' ? 'sun' : 'moon'}`}></i>
-          </button>
-        </div>
+    <div className={s.bar}>
+      <div className={s.container}>
+        <p className={s.accessibility}>Portal del SENA - República de Colombia</p>
+        <p
+          className={`mono ${s.motor}`}
+          aria-label={
+            umbralPct != null
+              ? `Motor de similitud: umbral ${umbralPct} por ciento, corpus de ${motor.meses} meses`
+              : 'Motor de similitud'
+          }
+        >
+          <span className={s.dot} aria-hidden="true" />
+          <span className={s.motorFull}>{etiquetaMotor}</span>
+          <span className={s.motorCorto} aria-hidden="true">
+            {umbralPct != null ? `UMBRAL ${umbralPct}%` : 'MOTOR'}
+          </span>
+        </p>
+        <button
+          type="button"
+          className={s.themeBtn}
+          onClick={alternarTema}
+          aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+          title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        >
+          {theme === 'dark' ? <Sun size={16} weight="regular" /> : <Moon size={16} weight="regular" />}
+        </button>
       </div>
     </div>
   )
