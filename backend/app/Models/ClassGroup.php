@@ -10,9 +10,12 @@ class ClassGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor', 'centro_id'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
 
-    protected $allowIncluded = ['program', 'instructor', 'apprentices', 'centro'];
+    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor', 'training_center_id'];
+
+    protected $allowIncluded = ['program', 'instructor', 'apprentices', 'trainingCenter'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -22,7 +25,8 @@ class ClassGroup extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
@@ -44,8 +48,8 @@ class ClassGroup extends Model
         return $this->hasMany(Apprentice::class, 'id_class_group');
     }
 
-    public function centro()
+    public function trainingCenter()
     {
-        return $this->belongsTo(Centro::class, 'centro_id');
+        return $this->belongsTo(TrainingCenter::class, 'training_center_id');
     }
 }

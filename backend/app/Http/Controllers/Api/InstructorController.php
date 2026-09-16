@@ -10,33 +10,29 @@ class InstructorController extends Controller
 {
     public function index()
     {
-        $items = Instructor::included()->get();
-        return $items;
+        return Instructor::included()->get();
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'fecha_ingreso' => 'required|date',
-            'plantilla_comentarios' => 'nullable|max:255',
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
         $item = Instructor::create($request->all());
-        return $item;
+        return response()->json($item, 201);
     }
 
     public function show($id)
     {
-        $item = Instructor::included()->findOrFail($id);
-        return $item;
+        return Instructor::included()->findOrFail($id);
     }
 
     public function update(Request $request, Instructor $instructor)
     {
         $request->validate([
             'fecha_ingreso' => 'required|date',
-            'plantilla_comentarios' => 'nullable|max:255',
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 

@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Redes de conocimiento (agrupación institucional de programas).
         Schema::create('knowledge_networks', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();

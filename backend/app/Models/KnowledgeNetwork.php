@@ -10,6 +10,9 @@ class KnowledgeNetwork extends Model
 {
     use HasFactory;
 
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
     protected $fillable = ['nombre'];
 
     protected $allowIncluded = ['trainingPrograms'];
@@ -22,7 +25,8 @@ class KnowledgeNetwork extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }

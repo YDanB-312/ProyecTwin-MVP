@@ -8,16 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Par de propuestas con similitud detectada por el motor. `detalles`
+        // guarda la explicación (términos compartidos) para la UI.
         Schema::create('similarities', function (Blueprint $table) {
             $table->id();
             $table->float('porcentaje');
-            $table->enum('estado', ['pendiente', 'revisada', 'resuelta'])->default('pendiente');
             $table->json('detalles')->nullable();
             $table->date('fecha')->nullable();
 
             $table->foreignId('id_proyecto_1')->constrained('projects')->onDelete('cascade');
             $table->foreignId('id_proyecto_2')->constrained('projects')->onDelete('cascade');
-            $table->foreignId('id_instructor')->nullable()->constrained('instructors')->nullOnDelete();
 
             $table->unique(['id_proyecto_1', 'id_proyecto_2']);
             $table->timestamps();

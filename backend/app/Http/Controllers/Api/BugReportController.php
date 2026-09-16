@@ -8,10 +8,11 @@ use Illuminate\Http\Request;
 
 class BugReportController extends Controller
 {
+    private const TIPOS = 'sistema,proyecto,datos,bug_ui,error_datos,rendimiento,seguridad,otro';
+
     public function index()
     {
-        $items = BugReport::included()->get();
-        return $items;
+        return BugReport::included()->get();
     }
 
     public function store(Request $request)
@@ -19,23 +20,19 @@ class BugReportController extends Controller
         $request->validate([
             'titulo' => 'nullable|max:255',
             'descripcion' => 'required',
-            'tipo' => 'required|max:255',
-            'pasos' => 'nullable',
-            'url_evidencia' => 'nullable|max:255',
+            'tipo' => 'required|in:' . self::TIPOS,
             'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
             'fecha' => 'required|date',
             'id_usuario' => 'required|exists:general_users,id',
-            'id_admin' => 'nullable|exists:admins,id',
         ]);
 
         $item = BugReport::create($request->all());
-        return $item;
+        return response()->json($item, 201);
     }
 
     public function show($id)
     {
-        $item = BugReport::included()->findOrFail($id);
-        return $item;
+        return BugReport::included()->findOrFail($id);
     }
 
     public function update(Request $request, BugReport $bug_report)
@@ -43,13 +40,10 @@ class BugReportController extends Controller
         $request->validate([
             'titulo' => 'nullable|max:255',
             'descripcion' => 'required',
-            'tipo' => 'required|max:255',
-            'pasos' => 'nullable',
-            'url_evidencia' => 'nullable|max:255',
+            'tipo' => 'required|in:' . self::TIPOS,
             'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
             'fecha' => 'required|date',
             'id_usuario' => 'required|exists:general_users,id',
-            'id_admin' => 'nullable|exists:admins,id',
         ]);
 
         $bug_report->update($request->all());

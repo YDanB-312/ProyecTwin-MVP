@@ -45,4 +45,21 @@ class AuthController extends Controller
     {
         return $request->user();
     }
+
+    // Restablecimiento público (flujo "olvidé mi contraseña"): sin token.
+    // Si el correo no existe se responde 422 para que la UI lo informe.
+    public function passwordReset(Request $request)
+    {
+        $request->validate([
+            'correo' => 'required|email',
+            'password' => 'required|min:6|max:255',
+        ]);
+
+        $user = GeneralUser::where('correo', $request->correo)->first();
+        if (!$user) {
+            return response()->json(['message' => 'No encontramos una cuenta registrada con ese correo.'], 422);
+        }
+        $user->update(['password' => Hash::make($request->password)]);
+        return response()->json(['message' => 'Contraseña actualizada.']);
+    }
 }

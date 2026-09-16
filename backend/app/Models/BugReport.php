@@ -10,9 +10,18 @@ class BugReport extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['titulo', 'descripcion', 'tipo', 'pasos', 'url_evidencia', 'estado', 'fecha', 'id_usuario', 'id_admin'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
 
-    protected $allowIncluded = ['generalUser', 'admin'];
+    protected $fillable = ['titulo', 'descripcion', 'tipo', 'estado', 'fecha', 'id_usuario'];
+
+    // Normaliza cualquier fecha ISO/datetime a la columna `date`.
+    public function setFechaAttribute($valor): void
+    {
+        $this->attributes['fecha'] = $valor ? substr((string) $valor, 0, 10) : null;
+    }
+
+    protected $allowIncluded = ['generalUser'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -22,7 +31,8 @@ class BugReport extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
@@ -32,10 +42,5 @@ class BugReport extends Model
     public function generalUser()
     {
         return $this->belongsTo(GeneralUser::class, 'id_usuario');
-    }
-
-    public function admin()
-    {
-        return $this->belongsTo(Admin::class, 'id_admin');
     }
 }

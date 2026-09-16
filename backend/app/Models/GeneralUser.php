@@ -11,7 +11,15 @@ class GeneralUser extends Model
 {
     use HasFactory, HasApiTokens;
 
-    protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado', 'notif_similitud', 'notif_comentarios_instructor', 'notif_nuevos_proyectos', 'notif_revisiones_pendientes', 'notif_noticias_sistema'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
+    protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado'];
+
+    // El hash nunca sale por la API (login/me/listados).
+    protected $hidden = ['password'];
+
+    protected $casts = ['estado' => 'boolean'];
 
     protected $allowIncluded = ['apprentice', 'instructor', 'admin', 'projects', 'notifications', 'comments', 'bugReports'];
 
@@ -23,13 +31,15 @@ class GeneralUser extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
         $query->with($relations);
     }
 
+    // ---------------------------------------------------------------- Filtros de listado
     public function scopeSearch(Builder $query, ?string $term)
     {
         if (empty($term)) return $query;
@@ -52,10 +62,10 @@ class GeneralUser extends Model
         return $query->where('estado', $val);
     }
 
-    public function scopeByCentro(Builder $query, $centroId)
+    public function scopeByTrainingCenter(Builder $query, $trainingCenterId)
     {
-        if (empty($centroId) || $centroId === 'todos') return $query;
-        return $query->whereHas('apprentice.classGroup', fn (Builder $q) => $q->where('centro_id', $centroId));
+        if (empty($trainingCenterId) || $trainingCenterId === 'todos') return $query;
+        return $query->whereHas('apprentice.classGroup', fn (Builder $q) => $q->where('training_center_id', $trainingCenterId));
     }
 
     public function scopeByFicha(Builder $query, $fichaId)
@@ -71,6 +81,7 @@ class GeneralUser extends Model
             ->orWhereHas('apprentice.classGroup.program', fn (Builder $q) => $q->where('nombre', $programa));
     }
 
+    // ---------------------------------------------------------------- Relaciones
     public function apprentice()
     {
         return $this->hasOne(Apprentice::class, 'id_usuario');

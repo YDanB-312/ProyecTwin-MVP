@@ -8,14 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Ficha de formación (grupo). `estado` incluye 'archivado': cierra la
+        // ficha conservando historial y bloqueando nuevas uniones.
         Schema::create('class_groups', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
             $table->string('numero')->nullable();
             $table->string('nombre');
-            $table->enum('estado', ['activo', 'inactivo', 'finalizado'])->default('activo');
+            $table->enum('estado', ['activo', 'inactivo', 'finalizado', 'archivado'])->default('activo');
             $table->foreignId('id_programa')->constrained('training_programs');
             $table->foreignId('id_instructor')->nullable()->constrained('instructors');
+            $table->foreignId('training_center_id')->nullable()->constrained('training_centers')->nullOnDelete();
             $table->timestamps();
         });
     }

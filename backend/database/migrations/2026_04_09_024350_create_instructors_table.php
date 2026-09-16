@@ -11,10 +11,7 @@ return new class extends Migration
         Schema::create('instructors', function (Blueprint $table) {
             $table->id();
             $table->date('fecha_ingreso');
-            $table->text('plantilla_comentarios')->nullable();
-
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
-            
             $table->timestamps();
         });
     }

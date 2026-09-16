@@ -18,7 +18,7 @@ class ApprenticeController extends Controller
     {
         $request->validate([
             'codigo' => 'required|max:255',
-            'id_class_group' => 'required|exists:class_groups,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
             'id_programa' => 'required|exists:training_programs,id',
         ]);
@@ -37,7 +37,7 @@ class ApprenticeController extends Controller
     {
         $request->validate([
             'codigo' => 'required|max:255',
-            'id_class_group' => 'required|exists:class_groups,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
             'id_programa' => 'required|exists:training_programs,id',
         ]);

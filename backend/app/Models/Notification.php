@@ -10,7 +10,16 @@ class Notification extends Model
 {
     use HasFactory;
 
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
     protected $fillable = ['titulo', 'descripcion', 'tipo', 'enlace', 'leida', 'fecha', 'id_usuario'];
+
+    // Normaliza cualquier fecha ISO/datetime a la columna `date`.
+    public function setFechaAttribute($valor): void
+    {
+        $this->attributes['fecha'] = $valor ? substr((string) $valor, 0, 10) : null;
+    }
 
     protected $allowIncluded = ['user'];
 
@@ -22,7 +31,8 @@ class Notification extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }

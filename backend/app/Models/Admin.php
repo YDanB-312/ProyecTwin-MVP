@@ -10,9 +10,12 @@ class Admin extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['area_encargada', 'notif_correo', 'alertas_usuarios', 'id_usuario'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
 
-    protected $allowIncluded = ['generalUser', 'bugReports'];
+    protected $fillable = ['id_usuario'];
+
+    protected $allowIncluded = ['generalUser'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -22,7 +25,8 @@ class Admin extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
@@ -32,10 +36,5 @@ class Admin extends Model
     public function generalUser()
     {
         return $this->belongsTo(GeneralUser::class, 'id_usuario');
-    }
-
-    public function bugReports()
-    {
-        return $this->hasMany(BugReport::class, 'id_admin');
     }
 }

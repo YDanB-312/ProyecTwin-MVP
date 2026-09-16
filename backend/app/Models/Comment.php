@@ -10,6 +10,9 @@ class Comment extends Model
 {
     use HasFactory;
 
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
     protected $fillable = ['texto', 'id_proyecto', 'id_usuario', 'respuesta_a'];
 
     protected $allowIncluded = ['project', 'user', 'parent', 'replies'];
@@ -22,7 +25,8 @@ class Comment extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }

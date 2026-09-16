@@ -10,8 +10,7 @@ class ClassGroupController extends Controller
 {
     public function index()
     {
-        $items = ClassGroup::included()->get();
-        return $items;
+        return ClassGroup::included()->get();
     }
 
     public function store(Request $request)
@@ -20,19 +19,19 @@ class ClassGroupController extends Controller
             'codigo' => 'required|max:255|unique:class_groups,codigo',
             'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo,finalizado',
+            'estado' => 'required|in:activo,inactivo,finalizado,archivado',
             'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'required|exists:instructors,id',
+            'id_instructor' => 'nullable|exists:instructors,id',
+            'training_center_id' => 'nullable|exists:training_centers,id',
         ]);
 
         $item = ClassGroup::create($request->all());
-        return $item;
+        return response()->json($item, 201);
     }
 
     public function show($id)
     {
-        $item = ClassGroup::included()->findOrFail($id);
-        return $item;
+        return ClassGroup::included()->findOrFail($id);
     }
 
     public function update(Request $request, ClassGroup $class_group)
@@ -41,9 +40,10 @@ class ClassGroupController extends Controller
             'codigo' => 'required|max:255|unique:class_groups,codigo,' . $class_group->id,
             'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo,finalizado',
+            'estado' => 'required|in:activo,inactivo,finalizado,archivado',
             'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'required|exists:instructors,id',
+            'id_instructor' => 'nullable|exists:instructors,id',
+            'training_center_id' => 'nullable|exists:training_centers,id',
         ]);
 
         $class_group->update($request->all());

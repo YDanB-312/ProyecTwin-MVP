@@ -10,13 +10,22 @@ class Similarity extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['porcentaje', 'estado', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2', 'id_instructor'];
+    // Relaciones en camelCase en el JSON (el frontend es JS).
+    public static $snakeAttributes = false;
+
+    protected $fillable = ['porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2'];
+
+    // Normaliza cualquier fecha ISO/datetime a la columna `date`.
+    public function setFechaAttribute($valor): void
+    {
+        $this->attributes['fecha'] = $valor ? substr((string) $valor, 0, 10) : null;
+    }
 
     protected $casts = [
         'detalles' => 'array',
     ];
 
-    protected $allowIncluded = ['project1', 'project2', 'instructor'];
+    protected $allowIncluded = ['project1', 'project2'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -26,13 +35,15 @@ class Similarity extends Model
         $relations = explode(',', request('included'));
         $allowIncluded = collect($this->allowIncluded);
         foreach ($relations as $key => $relationship) {
-            if (!$allowIncluded->contains($relationship)) {
+            // Admite rutas anidadas (classGroup.program): valida la raiz.
+            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
                 unset($relations[$key]);
             }
         }
         $query->with($relations);
     }
 
+    // ---------------------------------------------------------------- Filtros de listado
     public function scopeSearch(Builder $query, ?string $term)
     {
         if (empty($term)) return $query;
@@ -43,12 +54,12 @@ class Similarity extends Model
         });
     }
 
-    public function scopeByCentro(Builder $query, $centroId)
+    public function scopeByTrainingCenter(Builder $query, $trainingCenterId)
     {
-        if (empty($centroId) || $centroId === 'todos') return $query;
-        return $query->where(function (Builder $q) use ($centroId) {
-            $q->whereHas('project1.classGroup', fn (Builder $qq) => $qq->where('centro_id', $centroId))
-              ->orWhereHas('project2.classGroup', fn (Builder $qq) => $qq->where('centro_id', $centroId));
+        if (empty($trainingCenterId) || $trainingCenterId === 'todos') return $query;
+        return $query->where(function (Builder $q) use ($trainingCenterId) {
+            $q->whereHas('project1.classGroup', fn (Builder $qq) => $qq->where('training_center_id', $trainingCenterId))
+              ->orWhereHas('project2.classGroup', fn (Builder $qq) => $qq->where('training_center_id', $trainingCenterId));
         });
     }
 
@@ -70,6 +81,7 @@ class Similarity extends Model
         });
     }
 
+    // ---------------------------------------------------------------- Relaciones
     public function project1()
     {
         return $this->belongsTo(Project::class, 'id_proyecto_1');
@@ -78,10 +90,5 @@ class Similarity extends Model
     public function project2()
     {
         return $this->belongsTo(Project::class, 'id_proyecto_2');
-    }
-
-    public function instructor()
-    {
-        return $this->belongsTo(Instructor::class, 'id_instructor');
     }
 }

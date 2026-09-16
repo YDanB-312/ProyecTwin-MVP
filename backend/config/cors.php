@@ -19,7 +19,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    // 5173 = dev (vite), 4173 = preview (E2E). Ambos locales.
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173'), 'http://localhost:4173'],
 
     'allowed_origins_patterns' => [],
 
