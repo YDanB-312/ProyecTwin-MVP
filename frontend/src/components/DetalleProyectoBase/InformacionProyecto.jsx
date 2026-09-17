@@ -3,7 +3,7 @@ import Badge from '../Badge/Badge'
 import Tag from '../Tag/Tag'
 import s from './DetalleProyectoBase.module.css'
 import { PROJECT_ESTADO_VARIANT as ESTADO_VARIANT } from '../../constants/badgeVariants'
-import { formatearFecha } from '../../utils/helpers'
+import { fechaDesdeApi } from '../../utils/helpers'
 
 // Etiquetas legibles del estado de la propuesta (columnas reales de la API).
 const ESTADO_LABEL = {
@@ -15,14 +15,6 @@ const ESTADO_LABEL = {
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// created_at de Laravel llega en ISO; se muestra como "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 /**
@@ -49,11 +41,15 @@ export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
   const instructor = proyecto.instructor?.generalUser
     ? nombreCompleto(proyecto.instructor.generalUser)
     : null
-  const integrantes = (proyecto.apprentices || [])
-    .map((a) => nombreCompleto(a.generalUser))
-    .filter(Boolean)
+  // Integrantes = creador + equipo (pivote), sin duplicados ni vacíos.
+  // El pivote ya incluye al creador, pero se refuerza por si hay datos previos.
   const creador = nombreCompleto(proyecto.creator)
-  const integrantesTexto = integrantes.length ? integrantes.join(', ') : creador || '—'
+  const nombres = [
+    creador,
+    ...(proyecto.apprentices || []).map((a) => nombreCompleto(a.generalUser)),
+  ].map((n) => String(n || '').trim()).filter(Boolean)
+  const integrantes = [...new Set(nombres)]
+  const integrantesTexto = integrantes.length ? integrantes.join(', ') : '—'
 
   // Ficha: preferimos la relación completa; si no, el classGroup del proyecto.
   const fichaInfo = ficha || proyecto.classGroup || null
@@ -73,7 +69,7 @@ export default function InformacionProyecto({ proyecto, ficha, fichaHref }) {
       <dl className={s.detailList}>
         <div className={s.detailRow}>
           <dt>Fecha de creación</dt>
-          <dd>{fechaCorta(proyecto.created_at)}</dd>
+          <dd>{fechaDesdeApi(proyecto.created_at)}</dd>
         </div>
         <div className={s.detailRow}>
           <dt>Instructor</dt>

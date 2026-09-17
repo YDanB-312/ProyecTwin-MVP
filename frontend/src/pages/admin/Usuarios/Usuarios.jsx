@@ -11,7 +11,7 @@ import Avatar from '../../../components/Avatar/Avatar'
 import Alert from '../../../components/Alert/Alert'
 import Button from '../../../components/Button/Button'
 import Actions from '../../../components/Actions/Actions'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
@@ -292,9 +292,8 @@ export default function Usuarios() {
                   error={errores.password}
                   help="Mínimo 6 caracteres. El usuario podrá cambiarla después."
                 >
-                  <Input
+                  <PasswordInput
                     name="password"
-                    type="password"
                     value={form.password}
                     onChange={onChange}
                     placeholder="••••••"

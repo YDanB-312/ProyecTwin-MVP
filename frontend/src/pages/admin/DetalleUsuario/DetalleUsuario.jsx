@@ -19,7 +19,7 @@ import { useApi } from '../../../lib/useApi'
 import { usuarios, aprendices, fichas, proyectos, similitudes } from '../../../lib/recursos'
 import { esEmailValido } from '../../../utils/validation'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
@@ -44,14 +44,6 @@ function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
 }
 
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
-}
-
 // Contraseña temporal legible para el reinicio del admin: sena-xxxxxx.
 function passwordTemporal() {
   const abc = 'abcdefghijkmnpqrstuvwxyz23456789'
@@ -63,8 +55,9 @@ function passwordTemporal() {
 export default function DetalleUsuario() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user: sesion } = useAuth()
+  const { user: sesion, sincronizarSesion } = useAuth()
   const [modalEliminar, setModalEliminar] = useState(false)
+  const [correoPendiente, setCorreoPendiente] = useState(null)
 
   // Edición
   const [editando, setEditando] = useState(false)
@@ -81,7 +74,7 @@ export default function DetalleUsuario() {
         usuarios.obtener(id),
         aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
         fichas.listar('program,trainingCenter', {}),
-        proyectos.listar(),
+        proyectos.listar({ included: 'creator,classGroup.program,apprentices.generalUser' }),
         similitudes.listar(),
       ])
       return { usuario, listaAprendices, listaFichas, listaProyectos, listaSimilitudes }
@@ -129,9 +122,13 @@ export default function DetalleUsuario() {
     || (perfilAprendiz?.id_class_group ? listaFichas.find((f) => Number(f.id) === Number(perfilAprendiz.id_class_group)) : null)
     || null
 
-  // Propuestas creadas por el usuario (columna id_creador).
+  // Propuestas del aprendiz: creador O integrante del equipo (misma regla que
+  // usa el propio aprendiz en su dashboard, para que los conteos coincidan).
   const proyectosDelUsuario = usuario.rol === 'aprendiz'
-    ? (data.listaProyectos || []).filter((p) => Number(p.id_creador) === Number(usuario.id))
+    ? (data.listaProyectos || []).filter((p) =>
+        Number(p.id_creador) === Number(usuario.id)
+        || (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
+      )
     : []
 
   // Máximo porcentaje y conteo de coincidencias de una propuesta.
@@ -211,6 +208,15 @@ export default function DetalleUsuario() {
       return
     }
     const nuevoEmail = form.email.trim().toLowerCase()
+    // Si un admin cambia su propio correo (su usuario de acceso), se confirma.
+    if (esMiCuenta && nuevoEmail !== usuario.correo) {
+      setCorreoPendiente(nuevoEmail)
+      return
+    }
+    await guardarCambios(nuevoEmail)
+  }
+
+  const guardarCambios = async (nuevoEmail) => {
     try {
       // 1) Datos de la cuenta (nombre/apellido/correo/rol/estado son obligatorios en PUT).
       if (nuevoEmail !== usuario.correo || form.role !== usuario.rol) {
@@ -231,7 +237,10 @@ export default function DetalleUsuario() {
         }
       }
       await recargar()
-      setEditando(false)
+      // Si el admin editó su propio correo, la sesión en pantalla debe reflejarlo.
+      if (esMiCuenta && nuevoEmail !== usuario.correo) {
+        sincronizarSesion(null, nuevoEmail)
+      }      setEditando(false)
       setGuardado(true)
     } catch (err2) {
       const campos = err2?.data?.errors || {}
@@ -421,7 +430,7 @@ export default function DetalleUsuario() {
                       <Link to={`/admin/detalle-proyecto/${p.id}`} className={s.row}>
                         <span className={s.rowInfo}>
                           <span className={s.rowTitle}>{p.titulo}</span>
-                          <span className={s.rowMeta}>Enviado el {fechaCorta(p.created_at)}</span>
+                          <span className={s.rowMeta}>Enviado el {fechaDesdeApi(p.created_at)}</span>
                         </span>
                         {info && (
                           <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
@@ -449,6 +458,20 @@ export default function DetalleUsuario() {
         textoCancelar="Cancelar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
+      />
+
+      <ConfirmModal
+        open={!!correoPendiente}
+        titulo="Cambiar correo electrónico"
+        mensaje={`Vas a cambiar tu correo de "${usuario.correo}" a "${correoPendiente}". Con el nuevo correo iniciarás sesión y recibirás notificaciones. ¿Confirmas el cambio?`}
+        textoConfirmar="Sí, cambiar correo"
+        textoCancelar="Cancelar"
+        onConfirmar={() => {
+          const nuevo = correoPendiente
+          setCorreoPendiente(null)
+          guardarCambios(nuevo)
+        }}
+        onCancelar={() => setCorreoPendiente(null)}
       />
     </DashboardLayout>
   )

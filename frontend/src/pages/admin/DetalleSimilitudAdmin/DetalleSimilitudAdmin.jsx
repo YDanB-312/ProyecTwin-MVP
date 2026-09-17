@@ -11,7 +11,7 @@ import Tag from '../../../components/Tag/Tag'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, observaciones } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
 
 const ROL_CHIP = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin' }
@@ -21,20 +21,12 @@ function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
 }
 
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
-}
-
 function mapearObservaciones(lista, projectId) {
   return (lista || []).map((o) => ({
     id: o.id,
     projectId,
     autor: `${nombreCompleto(o.user) || 'Usuario'} | ${ROL_CHIP[o.user?.rol] || 'Usuario'}`,
-    fecha: fechaCorta(o.created_at),
+    fecha: fechaDesdeApi(o.created_at),
     texto: o.texto,
   }))
 }

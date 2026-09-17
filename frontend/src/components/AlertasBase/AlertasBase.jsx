@@ -9,7 +9,7 @@ import ApiState from '../ApiState/ApiState'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { notificaciones as apiNotificaciones } from '../../lib/recursos'
-import { formatearFecha } from '../../utils/helpers'
+import { fechaDesdeApi } from '../../utils/helpers'
 import s from './AlertasBase.module.css'
 
 const TIPO_CONFIG = {
@@ -27,14 +27,6 @@ function decodificarEnlace(enlace) {
   if (tipo === 'proyecto') return { projectId: Number(valor) }
   if (tipo === 'reporte') return { reporteId: Number(valor) }
   return {}
-}
-
-// fecha (ISO) de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 export default function AlertasBase({ titulo, subtitle, detallePath, emptyActionLabel, emptyActionTo }) {
@@ -126,7 +118,7 @@ export default function AlertasBase({ titulo, subtitle, detallePath, emptyAction
                       <span className={s.top}>
                         <Badge variant={info.variant}>{info.label}</Badge>
                         {!n.leida && <span className={s.unreadDot}>Nueva</span>}
-                        <time className={`mono ${s.date}`}>{fechaCorta(n.fecha)}</time>
+                        <time className={`mono ${s.date}`}>{fechaDesdeApi(n.fecha)}</time>
                       </span>
                       <span className={s.message}>{n.titulo}</span>
                     </span>

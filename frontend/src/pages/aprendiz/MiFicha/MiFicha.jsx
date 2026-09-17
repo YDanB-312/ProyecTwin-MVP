@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
-import { GraduationCap, Users } from 'phosphor-react'
+import { CheckCircle, GraduationCap, Key, SignOut, Users } from 'phosphor-react'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import Badge from '../../../components/Badge/Badge'
 import Avatar from '../../../components/Avatar/Avatar'
@@ -8,6 +9,11 @@ import Alert from '../../../components/Alert/Alert'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import Button from '../../../components/Button/Button'
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
+import DataPanel from '../../../components/DataPanel/DataPanel'
+import FormField from '../../../components/FormField/FormField'
+import { Input } from '../../../components/Input/Input'
+import Actions from '../../../components/Actions/Actions'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { aprendices, fichas, proyectos } from '../../../lib/recursos'
@@ -28,6 +34,15 @@ export default function MiFicha() {
     useApi(() => fichas.listar(), [], { inicial: [] })
   const { data: todosProyectos } = useApi(() => proyectos.listar(), [], { inicial: [] })
 
+  const [codigo, setCodigo] = useState('')
+  const [previa, setPrevia] = useState(null)
+  const [buscando, setBuscando] = useState(false)
+  const [uniendose, setUniendose] = useState(false)
+  const [codigoError, setCodigoError] = useState('')
+  const [confirmarSalida, setConfirmarSalida] = useState(false)
+  const [saliendo, setSaliendo] = useState(false)
+  const [aviso, setAviso] = useState('')
+
   const miAprendiz = aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null
   const ficha = miAprendiz
     ? fichasApi.find((f) => Number(f.id) === Number(miAprendiz.id_class_group)) || null
@@ -43,6 +58,58 @@ export default function MiFicha() {
   const cargando = cargandoA || cargandoF
   const error = errorA || errorF
   const recargar = () => { recargarA(); recargarF() }
+
+  // ---------------------------------------------------------------- Acciones
+  async function buscar(e) {
+    e.preventDefault()
+    setCodigoError('')
+    setPrevia(null)
+    setAviso('')
+    if (!codigo.trim()) {
+      setCodigoError('Ingresa el código de la ficha.')
+      return
+    }
+    setBuscando(true)
+    try {
+      setPrevia(await aprendices.previsualizarCodigo(codigo))
+    } catch (err) {
+      setCodigoError(err?.data?.message || 'No encontramos una ficha con ese código.')
+    } finally {
+      setBuscando(false)
+    }
+  }
+
+  async function unirme() {
+    setCodigoError('')
+    setUniendose(true)
+    try {
+      const nombreFicha = previa?.nombre || 'la ficha'
+      await aprendices.unirmeAlCodigo(codigo)
+      setPrevia(null)
+      setCodigo('')
+      setAviso(`Te uniste a ${nombreFicha}.`)
+      await recargar()
+    } catch (err) {
+      setCodigoError(err?.data?.message || 'No fue posible unirte a la ficha.')
+    } finally {
+      setUniendose(false)
+    }
+  }
+
+  async function salir() {
+    setConfirmarSalida(false)
+    setSaliendo(true)
+    setAviso('')
+    try {
+      await aprendices.salirDeFicha()
+      setAviso('Saliste de tu ficha. Puedes unirte a otra con el código que te comparta un instructor.')
+      await recargar()
+    } catch (err) {
+      setAviso(err?.data?.message || 'No fue posible salir de la ficha.')
+    } finally {
+      setSaliendo(false)
+    }
+  }
 
   if (cargando) {
     return (
@@ -60,25 +127,95 @@ export default function MiFicha() {
     )
   }
 
-  /* ---------- SIN FICHA: la asignación la gestiona coordinación ---------- */
+  /* ---------- SIN FICHA: unirse con el código del instructor ---------- */
   if (!ficha) {
     return (
       <DashboardLayout role="aprendiz" titulo="Ficha">
         <div>
           <PageHeader
             title="Mi Ficha"
-            subtitle="Consulta aquí tu ficha de formación y tus compañeros"
+            subtitle="Únete a tu ficha con el código que te comparte tu instructor"
             icon={<GraduationCap />}
           />
 
-          <EmptyState
-            icon={<GraduationCap size={40} weight="light" />}
-            title="Aún no tienes una ficha asignada"
-            message="La vinculación a las fichas la gestiona coordinación o tu instructor. Cuando estés asignado, verás aquí tu ficha y tus compañeros."
-          />
+          {aviso && <Alert variant="success">{aviso}</Alert>}
+
+          <DataPanel title="Unirme a una ficha" icon={<Key />}>
+            <form onSubmit={buscar} className={sd.joinForm}>
+              <FormField
+                label="Código de la ficha"
+                required
+                error={codigoError}
+                help="Es el código que te compartió tu instructor (por ejemplo, xkp-mqwr)."
+              >
+                <Input
+                  value={codigo}
+                  onChange={(e) => { setCodigo(e.target.value); setCodigoError('') }}
+                  placeholder="xkp-mqwr"
+                  maxLength={40}
+                  autoComplete="off"
+                />
+              </FormField>
+              <Actions form>
+                <Button type="submit" disabled={buscando}>
+                  {buscando ? 'Buscando…' : 'Buscar ficha'}
+                </Button>
+              </Actions>
+            </form>
+          </DataPanel>
+
+          {previa && (
+            <section className={sd.infoCard} aria-label="Ficha encontrada">
+              <header className={sd.infoHeader}>
+                <span className={sd.infoIcon} aria-hidden="true"><GraduationCap size={22} /></span>
+                <div>
+                  <h2 className={sd.infoTitle}>{previa.nombre}</h2>
+                  <span className={`${sd.infoCodigo} ${sd.mono}`}>{previa.codigo}</span>
+                </div>
+                <Badge variant={previa.estado === 'activo' ? 'success' : 'danger'}>
+                  {previa.estado === 'activo' ? 'Activa' : 'No disponible'}
+                </Badge>
+              </header>
+
+              <dl className={sd.infoGrid}>
+                <div className={sd.infoItem}>
+                  <dt>Número de ficha</dt>
+                  <dd>N° {previa.numero || '—'}</dd>
+                </div>
+                <div className={sd.infoItem}>
+                  <dt>Programa</dt>
+                  <dd>{previa.program?.nombre || '—'}</dd>
+                </div>
+                <div className={sd.infoItem}>
+                  <dt>Instructor</dt>
+                  <dd>{nombreUsuario(previa.instructor?.generalUser)}</dd>
+                </div>
+                <div className={sd.infoItem}>
+                  <dt>Aprendices</dt>
+                  <dd>{previa.apprentices_count ?? 0}</dd>
+                </div>
+              </dl>
+
+              {previa.estado === 'activo' ? (
+                <Actions form>
+                  <Button type="button" onClick={unirme} disabled={uniendose}>
+                    <CheckCircle size={14} /> {uniendose ? 'Uniéndome…' : 'Unirme a esta ficha'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setPrevia(null)}>
+                    Cancelar
+                  </Button>
+                </Actions>
+              ) : (
+                <Alert variant="warning">
+                  Esta ficha no acepta nuevos integrantes. Pídele a tu instructor un código vigente.
+                </Alert>
+              )}
+            </section>
+          )}
 
           <Alert variant="info">
-            ¿Crees que es un error? Contacta a tu instructor o a coordinación académica.
+            ¿No tienes código? Pídeselo a tu instructor. También puedes consultar tus propuestas
+            mientras tanto.
           </Alert>
 
           <Button as="link" to="/aprendiz/propuestas" variant="secondary">
@@ -102,6 +239,8 @@ export default function MiFicha() {
           icon={<GraduationCap />}
           breadcrumb={[{ label: 'Dashboard', to: '/aprendiz/dashboard' }, { label: 'Mi Ficha' }]}
         />
+
+        {aviso && <Alert variant="success">{aviso}</Alert>}
 
         <section className={sd.infoCard}>
           <header className={sd.infoHeader}>
@@ -148,8 +287,20 @@ export default function MiFicha() {
         </section>
 
         <Alert variant="info">
-          La asignación de aprendices a la ficha la gestiona coordinación académica.
+          Puedes salir de tu ficha cuando quieras y unirte a otra con el código que te dé un
+          instructor. Tus propuestas se conservan en la ficha donde las registraste.
         </Alert>
+
+        <Actions className={sd.fichaActions}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setConfirmarSalida(true)}
+            disabled={saliendo}
+          >
+            <SignOut size={14} /> {saliendo ? 'Saliendo…' : 'Salir de la ficha'}
+          </Button>
+        </Actions>
 
         {compañeros.length === 0 ? (
           <EmptyState
@@ -178,6 +329,15 @@ export default function MiFicha() {
             </ul>
           </>
         )}
+
+        <ConfirmModal
+          open={confirmarSalida}
+          titulo="Salir de la ficha"
+          mensaje={`¿Seguro que quieres salir de "${ficha.nombre}"? Podrás unirte a otra ficha con el código que te comparta un instructor. Tus propuestas se conservan.`}
+          textoConfirmar="Sí, salir"
+          onConfirmar={salir}
+          onCancelar={() => setConfirmarSalida(false)}
+        />
       </div>
     </DashboardLayout>
   )

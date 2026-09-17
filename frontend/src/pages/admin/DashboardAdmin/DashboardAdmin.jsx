@@ -13,7 +13,7 @@ import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { usuarios, proyectos, similitudes, reportes, notificaciones, motor } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from './DashboardAdmin.module.css'
 import { RECIENTES } from '../../../constants/pagination'
 
@@ -24,14 +24,6 @@ const TIPO_NOTIF = {
   revision: 'Revisión',
   mensaje: 'Mensaje',
   sistema: 'Sistema',
-}
-
-// fecha (ISO) de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 export default function DashboardAdmin() {
@@ -166,7 +158,7 @@ export default function DashboardAdmin() {
                       <Link to="/admin/notificaciones" viewTransition className={s.fila}>
                         <span className={s.filaMain}>
                           <span className={s.filaTitulo}>{n.titulo}</span>
-                          <span className={s.filaMeta}>{TIPO_NOTIF[n.tipo] || 'Notificación'} · {fechaCorta(n.fecha)}</span>
+                          <span className={s.filaMeta}>{TIPO_NOTIF[n.tipo] || 'Notificación'} · {fechaDesdeApi(n.fecha)}</span>
                         </span>
                         {!n.leida && <Badge variant="primary">Nueva</Badge>}
                       </Link>

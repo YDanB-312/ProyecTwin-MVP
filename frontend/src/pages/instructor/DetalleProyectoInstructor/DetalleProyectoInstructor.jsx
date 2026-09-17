@@ -23,7 +23,7 @@ import {
   fichas,
   instructores,
 } from '../../../lib/recursos'
-import { agruparObservaciones, formatearFecha } from '../../../utils/helpers'
+import { agruparObservaciones, formatearFecha, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
@@ -49,14 +49,6 @@ const ROL_LABEL = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admi
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// created_at de Laravel llega en ISO; se muestra como "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 export default function DetalleProyectoInstructor() {
@@ -216,7 +208,7 @@ export default function DetalleProyectoInstructor() {
       <div className={s.page}>
         <PageHeader
           title={proyecto.titulo}
-          subtitle={`Enviado el ${fechaCorta(proyecto.created_at)} por ${nombreCompleto(proyecto.creator) || 'Aprendiz'}`}
+          subtitle={`Enviado el ${fechaDesdeApi(proyecto.created_at)} por ${nombreCompleto(proyecto.creator) || 'Aprendiz'}`}
           icon={<FolderOpen />}
           breadcrumb={[
             { label: 'Dashboard', to: '/instructor/dashboard' },

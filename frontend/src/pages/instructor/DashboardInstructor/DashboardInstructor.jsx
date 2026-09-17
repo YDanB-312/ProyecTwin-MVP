@@ -13,7 +13,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from './DashboardInstructor.module.css'
 import { RECIENTES } from '../../../constants/pagination'
 
@@ -25,14 +25,6 @@ const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// created_at de Laravel llega en ISO; se muestra como "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 // Máximo porcentaje y conteo de coincidencias de una propuesta.
@@ -60,7 +52,9 @@ export default function DashboardInstructor() {
   )
   const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
   const { data: misNotificaciones } = useApi(
-    () => (user?.id ? notificaciones.listar({ id_usuario: user.id }) : Promise.resolve([])),
+    // El backend ya acota las notificaciones al usuario autenticado: misma URL
+    // que usa el layout, así se comparte una sola petición.
+    () => (user?.id ? notificaciones.listar() : Promise.resolve([])),
     [user?.id],
     { inicial: [] }
   )
@@ -164,7 +158,7 @@ export default function DashboardInstructor() {
                         <span className={`mono ${s.orden}`}>{String(i + 1).padStart(2, '0')}</span>
                         <span className={s.casoMain}>
                           <span className={s.casoTitulo}>{p.titulo}</span>
-                          <span className={s.casoMeta}>{nombreCompleto(p.creator)} · {fechaCorta(p.created_at)}</span>
+                          <span className={s.casoMeta}>{nombreCompleto(p.creator)} · {fechaDesdeApi(p.created_at)}</span>
                         </span>
                         <span className={s.casoLado}>
                           {info ? <GradeBadge score={info.pct} size="sm" /> : null}

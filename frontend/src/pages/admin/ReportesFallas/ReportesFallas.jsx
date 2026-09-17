@@ -9,7 +9,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
-import { norm, formatearFecha } from '../../../utils/helpers'
+import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { useApi } from '../../../lib/useApi'
 import { reportes } from '../../../lib/recursos'
 import s from '../../../components/ListaBase/ListaBase.module.css'
@@ -69,19 +69,13 @@ function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
 }
 
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
-}
-
 export default function ReportesFallas() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [filtroPrioridad, setFiltroPrioridad] = useState('todos')
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
   const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Reportes con su usuario incluido.
@@ -112,7 +106,11 @@ export default function ReportesFallas() {
     const coincideEstado = filtroEstado === 'todos' || r.estado === filtroEstado
     const coincideTipo = filtroTipo === 'todos' || r.tipo === filtroTipo
     const coincidePrioridad = filtroPrioridad === 'todos' || clavePrioridad(r) === filtroPrioridad
-    return coincideQ && coincideEstado && coincideTipo && coincidePrioridad
+    // Rango de fechas (fecha date-only en formato YYYY-MM-DD: comparable como texto).
+    const fecha = String(r.fecha || '').slice(0, 10)
+    const coincideDesde = !fechaDesde || (fecha && fecha >= fechaDesde)
+    const coincideHasta = !fechaHasta || (fecha && fecha <= fechaHasta)
+    return coincideQ && coincideEstado && coincideTipo && coincidePrioridad && coincideDesde && coincideHasta
   })
 
   const paginados = filtrados.slice(
@@ -125,6 +123,8 @@ export default function ReportesFallas() {
     setFiltroEstado('todos')
     setFiltroTipo('todos')
     setFiltroPrioridad('todos')
+    setFechaDesde('')
+    setFechaHasta('')
     setPagina(1)
   }
 
@@ -204,6 +204,28 @@ export default function ReportesFallas() {
                 <option value="critica">Crítica</option>
               </Select>
             </label>
+            <label className={s.field}>
+              <span className={s.label}>Desde</span>
+              <Input
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => {
+                  setFechaDesde(e.target.value)
+                  setPagina(1)
+                }}
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Hasta</span>
+              <Input
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => {
+                  setFechaHasta(e.target.value)
+                  setPagina(1)
+                }}
+              />
+            </label>
             <p className={s.info}>
               {filtrados.length} reporte{filtrados.length !== 1 ? 's' : ''}
             </p>
@@ -262,7 +284,7 @@ export default function ReportesFallas() {
                       </Badge>
                     ),
                   },
-                  { key: 'fecha', header: 'Fecha', render: (r) => fechaCorta(r.fecha) },
+                  { key: 'fecha', header: 'Fecha', render: (r) => fechaDesdeApi(r.fecha) },
                   {
                     key: 'acciones',
                     header: 'Acciones',

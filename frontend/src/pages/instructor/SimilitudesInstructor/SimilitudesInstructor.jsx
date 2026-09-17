@@ -17,6 +17,7 @@ import { proyectos, similitudes as similitudesApi, fichas, instructores } from '
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesInstructor.module.css'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import { fechaDesdeApi } from '../../../utils/helpers'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
 
@@ -187,12 +188,7 @@ export default function SimilitudesInstructor() {
     {
       key: 'fecha',
       header: 'Fecha',
-      render: (sim) => {
-        if (!sim.fecha) return '—'
-        const d = new Date(sim.fecha)
-        if (Number.isNaN(d.getTime())) return String(sim.fecha)
-        return `${d.getDate()} ${['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][d.getMonth()]} ${d.getFullYear()}`
-      },
+      render: (sim) => fechaDesdeApi(sim.fecha) || '—',
     },
     {
       key: 'acciones',

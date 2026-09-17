@@ -23,6 +23,9 @@ function getToken() {
 }
 
 export function setAuthToken(token, remember = true) {
+  // Cambio de sesión (login/logout): los datos en caché pertenecen al usuario
+  // anterior, así que se descartan.
+  if (getToken() !== (token || null)) invalidarCache()
   const destino = remember ? localStorage : sessionStorage
   const otro = remember ? sessionStorage : localStorage
   try {
@@ -38,6 +41,29 @@ export function haySesion() {
   return !!getToken()
 }
 
+// ---------------------------------------------------------------- Caché de GET
+//
+// Dos problemas concretos de rendimiento que se resuelven aquí, sin tocar cada
+// página:
+//   1. Peticiones idénticas simultáneas (p. ej. React StrictMode monta los
+//      efectos dos veces en desarrollo, o la campana y el perfil se piden en
+//      cada página) se unifican en una sola llamada de red.
+//   2. Un GET repetido dentro del TTL no vuelve al servidor.
+// Cualquier escritura (POST/PUT/PATCH/DELETE) invalida la caché completa, para
+// que el patrón "mutar y recargar" siga viendo datos frescos.
+const TTL_GET_MS = 15000
+
+let generacion = 0
+const cacheGet = new Map() // url -> { ts, data }
+const enVuelo = new Map() // url -> Promise
+
+// Descarta lo cacheado y anula escrituras pendientes de peticiones en curso.
+export function invalidarCache() {
+  generacion++
+  cacheGet.clear()
+  enVuelo.clear()
+}
+
 // ---------------------------------------------------------------- Fetch
 
 // Construye un query string ignorando valores vacíos.
@@ -50,50 +76,75 @@ export function qs(params = {}) {
 
 // Petición base. Valida `response.ok` (fetch resuelve incluso en 4xx/5xx) y
 // lanza un Error enriquecido con `status` y `data` para que la UI decida.
-export async function apiFetch(path, { method = 'GET', body, auth = true, timeout = 15000 } = {}) {
+// `cache: false` fuerza ir a la red (p. ej. un "Recargar" explícito).
+export async function apiFetch(path, { method = 'GET', body, auth = true, timeout = 15000, cache = true } = {}) {
   if (!BASE) throw new Error('VITE_API_URL no configurado')
   const url = `${BASE}${path.startsWith('/') ? '' : '/'}${path}`
 
-  const headers = { 'Content-Type': 'application/json', Accept: 'application/json' }
-  const token = auth ? getToken() : null
-  if (token) headers.Authorization = `Bearer ${token}`
+  const esGet = method === 'GET'
+  const usaCache = esGet && cache
+  const gen = generacion
 
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), timeout)
-  try {
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      signal: ctrl.signal,
-    })
-    const text = await res.text()
-    let data = null
-    try { data = text ? JSON.parse(text) : null } catch { data = text }
-
-    if (!res.ok) {
-      // 401 en una llamada autenticada = token inválido o vencido. Se descarta
-      // la sesión local y se avisa a la app (AuthContext redirige a /login).
-      if (res.status === 401 && auth) {
-        setAuthToken(null)
-        try { window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA)) } catch { /* SSR/entornos sin window */ }
-      }
-      const err = new Error(data?.message || `Error ${res.status}`)
-      err.status = res.status
-      err.data = data
-      throw err
-    }
-    return data
-  } catch (err) {
-    if (err?.name === 'AbortError') {
-      const e = new Error('El servidor tardó demasiado en responder.')
-      e.status = 0
-      throw e
-    }
-    throw err
-  } finally {
-    clearTimeout(timer)
+  if (usaCache) {
+    const guardado = cacheGet.get(url)
+    if (guardado && Date.now() - guardado.ts < TTL_GET_MS) return guardado.data
+    const enCurso = enVuelo.get(url)
+    if (enCurso) return enCurso
   }
+
+  // Una escritura invalida lo cacheado antes y después: cualquier GET lanzado
+  // mientras tanto traerá datos frescos.
+  if (!esGet) invalidarCache()
+  const genEscritura = generacion
+
+  const peticion = (async () => {
+    const headers = { 'Content-Type': 'application/json', Accept: 'application/json' }
+    const token = auth ? getToken() : null
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), timeout)
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal,
+      })
+      const text = await res.text()
+      let data = null
+      try { data = text ? JSON.parse(text) : null } catch { data = text }
+
+      if (!res.ok) {
+        // 401 en una llamada autenticada = token inválido o vencido. Se descarta
+        // la sesión local y se avisa a la app (AuthContext redirige a /login).
+        if (res.status === 401 && auth) {
+          setAuthToken(null)
+          try { window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA)) } catch { /* SSR/entornos sin window */ }
+        }
+        const err = new Error(data?.message || `Error ${res.status}`)
+        err.status = res.status
+        err.data = data
+        throw err
+      }
+      if (usaCache && gen === generacion) cacheGet.set(url, { ts: Date.now(), data })
+      return data
+    } catch (err) {
+      if (err?.name === 'AbortError') {
+        const e = new Error('El servidor tardó demasiado en responder.')
+        e.status = 0
+        throw e
+      }
+      throw err
+    } finally {
+      clearTimeout(timer)
+      if (enVuelo.get(url) === peticion) enVuelo.delete(url)
+      if (!esGet && genEscritura === generacion) invalidarCache()
+    }
+  })()
+
+  if (usaCache) enVuelo.set(url, peticion)
+  return peticion
 }
 
 // ---------------------------------------------------------------- Sesión

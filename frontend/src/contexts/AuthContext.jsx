@@ -119,9 +119,19 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setAuthToken(null)
     limpiarUsuario()
-    sessionStorage.removeItem('ficha_aprendiz')
     setUser(null)
     apiLogout()
+  }, [])
+
+  // Refresca nombre/correo tras editar el perfil (estado + almacenamiento), para
+  // que la cabecera y los formularios no sigan mostrando los datos viejos.
+  const sincronizarSesion = useCallback((nombre, correo) => {
+    setUser((actual) => {
+      if (!actual) return actual
+      const sesion = { ...actual, nombre: nombre || actual.nombre, correo: correo || actual.correo }
+      guardarUsuario(sesion, !!localStorage.getItem(CLAVE_USUARIO))
+      return sesion
+    })
   }, [])
 
   // Rehidratar/validar la cuenta al arrancar: si hay token, se pregunta a la
@@ -157,7 +167,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, cambiarMiContrasena, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

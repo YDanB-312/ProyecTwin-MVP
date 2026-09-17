@@ -11,9 +11,11 @@ import Actions from '../../../components/Actions/Actions'
 import { Input } from '../../../components/Input/Input'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
+import Pagination from '../../../components/Pagination/Pagination'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import { norm } from '../../../utils/helpers'
+import { PAGINA_TABLA } from '../../../constants/pagination'
 import { MAX_NOMBRE, MAX_PROGRAMA } from '../../../utils/validation'
 import { ShareNetwork, Plus, Trash, PencilSimple, CheckCircle, X, Warning, CaretDown, CaretUp, ChartBar } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
@@ -22,6 +24,8 @@ import { toFieldErrors } from '../../../lib/api'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import nu from '../../../components/FormularioBase/FormularioBase.module.css'
 import cs from './RedesConocimiento.module.css'
+
+const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 // Datos por defecto de un programa nuevo (la API exige nivel y trimestres).
 const PROGRAMA_DEFECTO = { nivel: 'Tecnologo', num_trimestres: 6 }
@@ -148,6 +152,7 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
 
 export default function RedesConocimiento() {
   const [busqueda, setBusqueda] = useState('')
+  const [pagina, setPagina] = useState(1)
 
   // Fuente única: la API. Redes + programas + fichas (para el conteo).
   const { data, cargando, error, recargar } = useApi(
@@ -192,6 +197,12 @@ export default function RedesConocimiento() {
     if (!q) return true
     return norm(r.nombre).includes(q) || r.programas.some((p) => norm(p.nombre).includes(q))
   })
+
+  // Paginación (mismo patrón que las demás tablas admin).
+  const paginadas = filtradas.slice(
+    (pagina - 1) * ITEMS_POR_PAGINA,
+    pagina * ITEMS_POR_PAGINA
+  )
 
   // Form state
   const [formNombre, setFormNombre] = useState('')
@@ -413,7 +424,7 @@ export default function RedesConocimiento() {
                   <span className={s.label}>Buscar</span>
                   <Input
                     value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
+                    onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
                     placeholder="Nombre de red o programa…"
                   />
                 </label>
@@ -433,6 +444,7 @@ export default function RedesConocimiento() {
                   onAction={redesConProgramas.length === 0 ? abrirCrear : () => { setBusqueda('') }}
                 />
               ) : (
+                <>
                 <DataTable
                   ariaLabel="Redes de conocimiento"
                   columns={[
@@ -489,9 +501,18 @@ export default function RedesConocimiento() {
                       },
                     },
                   ]}
-                  rows={filtradas}
-                  keyOf={(r) => r.id}
-                />
+                    rows={paginadas}
+                    keyOf={(r) => r.id}
+                  />
+                  <Pagination
+                    totalItems={filtradas.length}
+                    itemsPerPage={ITEMS_POR_PAGINA}
+                    paginaActual={pagina}
+                    setPaginaActual={setPagina}
+                    itemName="redes"
+                    filteredCount={filtradas.length}
+                  />
+                </>
               )}
             </>
           )}

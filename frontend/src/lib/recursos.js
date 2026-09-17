@@ -48,6 +48,12 @@ export const aprendices = {
   listar: (included = 'generalUser,classGroup') => apiFetch(`/apprentices${qs({ included })}`).then(lista),
   crear: (body) => apiFetch('/apprentices', { method: 'POST', body }),
   actualizar: (id, body) => apiFetch(`/apprentices/${id}`, { method: 'PUT', body }),
+  // Mi ficha (aprendiz): siempre sobre el usuario del token.
+  previsualizarCodigo: (codigo) =>
+    apiFetch(`/apprentices/me/ficha/codigo/${encodeURIComponent(codigo.trim().toLowerCase())}`),
+  unirmeAlCodigo: (codigo) =>
+    apiFetch('/apprentices/me/ficha', { method: 'POST', body: { codigo: codigo.trim().toLowerCase() } }),
+  salirDeFicha: () => apiFetch('/apprentices/me/ficha', { method: 'DELETE' }),
 }
 
 // ---------------------------------------------------------------- Fichas
