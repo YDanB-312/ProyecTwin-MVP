@@ -19,7 +19,7 @@ import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes, observaciones, notificaciones } from '../../../lib/recursos'
-import { agruparObservaciones, formatearFecha } from '../../../utils/helpers'
+import { agruparObservaciones, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 
@@ -32,14 +32,6 @@ const ROL_CHIP = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Admin
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 // Campos que acepta PUT /projects (varios son obligatorios).
@@ -141,7 +133,7 @@ export default function DetalleProyectoAdmin() {
   const observacionesMapeadas = (data.listaObservaciones || []).map((o) => ({
     id: o.id,
     autor: `${nombreCompleto(o.user) || 'Usuario'} | ${ROL_CHIP[o.user?.rol] || 'Usuario'}`,
-    fecha: fechaCorta(o.created_at),
+    fecha: fechaDesdeApi(o.created_at),
     texto: o.texto,
     respuestaA: o.respuesta_a,
   }))
@@ -250,7 +242,7 @@ export default function DetalleProyectoAdmin() {
       <div className={s.page}>
         <PageHeader
           title={proyecto.titulo}
-          subtitle={`Enviado el ${fechaCorta(proyecto.created_at)} por ${nombreCompleto(estudiante) || '—'}`}
+          subtitle={`Enviado el ${fechaDesdeApi(proyecto.created_at)} por ${nombreCompleto(estudiante) || '—'}`}
           icon={<FolderOpen />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard' },

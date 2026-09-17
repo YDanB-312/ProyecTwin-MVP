@@ -13,7 +13,7 @@ import StatChip from '../../../components/StatChip/StatChip'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
 import { similitudes, proyectos, centros, programas, fichas, motor } from '../../../lib/recursos'
-import { norm } from '../../../utils/helpers'
+import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './SimilitudesAdmin.module.css'
 import { Eye, MagnifyingGlass } from 'phosphor-react'
@@ -307,7 +307,7 @@ export default function SimilitudesAdmin() {
                       )
                     },
                   },
-                  { key: 'fecha', header: 'Fecha', render: (sim) => sim.fecha || '—' },
+                    { key: 'fecha', header: 'Fecha', render: (sim) => fechaDesdeApi(sim.fecha) || '—' },
                   {
                     key: 'acciones',
                     header: 'Acciones',

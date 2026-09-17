@@ -14,7 +14,7 @@ import Pagination from '../../../components/Pagination/Pagination'
 import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash } from 'phosphor-react'
+import { ArrowClockwise, Books, ChartBar, CheckCircle, Copy, Eye, Plus, Trash } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
@@ -57,6 +57,7 @@ export default function Fichas() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [aEliminar, setAEliminar] = useState(null)
+  const [copiado, setCopiado] = useState(null)
 
   // Catálogos y datos: fuente única la API.
   const { data: instructoresApi } = useApi(() => instructores.listar(), [], { inicial: [] })
@@ -140,6 +141,29 @@ export default function Fichas() {
   }
 
   const regenerarCodigo = () => setCodigo(generarCodigoFicha(fichasApi))
+
+  // Copia el código para compartirlo con los aprendices.
+  async function copiarCodigo(valor) {
+    try {
+      await navigator.clipboard.writeText(valor)
+    } catch {
+      try {
+        const campo = document.createElement('textarea')
+        campo.value = valor
+        campo.setAttribute('readonly', '')
+        campo.style.position = 'absolute'
+        campo.style.left = '-9999px'
+        document.body.appendChild(campo)
+        campo.select()
+        document.execCommand('copy')
+        document.body.removeChild(campo)
+      } catch {
+        return
+      }
+    }
+    setCopiado(valor)
+    setTimeout(() => setCopiado((actual) => (actual === valor ? null : actual)), 1800)
+  }
 
   // Programas pertenecientes a la red seleccionada.
   const programasDeRed = programasApi.filter(
@@ -310,7 +334,7 @@ export default function Fichas() {
 
               <FormField
                 label="Código de la ficha"
-                help="El sistema genera un código único automáticamente. Los aprendices lo usarán para unirse."
+                help="Código único que compartes con tus aprendices para que se unan a la ficha."
               >
                 <div className={c.codigoRow}>
                   <code className={c.codigo}>{codigo}</code>
@@ -394,7 +418,19 @@ export default function Fichas() {
                       return (
                         <article key={f.id} className={s.card}>
                           <header className={s.cardHeader}>
-                            <code className={s.codigo}>{f.codigo}</code>
+                            <span className={s.codigoWrap}>
+                              <code className={s.codigo}>{f.codigo}</code>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copiarCodigo(f.codigo)}
+                                aria-label={`Copiar código ${f.codigo}`}
+                              >
+                                <Copy size={14} />
+                                {copiado === f.codigo ? 'Copiado' : 'Copiar'}
+                              </Button>
+                            </span>
                             <Badge variant={FICHA_ESTADO_VARIANT[f.estado] || 'neutral'}>
                               {ESTADO_LABEL[f.estado] || f.estado}
                             </Badge>

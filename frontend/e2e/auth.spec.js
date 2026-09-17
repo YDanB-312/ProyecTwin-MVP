@@ -28,6 +28,19 @@ test.describe('Autenticación por rol', () => {
     await page.getByRole('button', { name: 'Cerrar sesión' }).click()
     await page.waitForURL('**/login')
   })
+
+  test('la contraseña se puede mostrar y volver a ocultar', async ({ page }) => {
+    await page.goto('/login')
+    // Se ubica por autocomplete para que el locator siga sirviendo al cambiar el type.
+    const clave = page.locator('input[autocomplete="current-password"]')
+    await expect(clave).toHaveAttribute('type', 'password')
+
+    await page.getByRole('button', { name: 'Mostrar contraseña' }).click()
+    await expect(clave).toHaveAttribute('type', 'text')
+
+    await page.getByRole('button', { name: 'Ocultar contraseña' }).click()
+    await expect(clave).toHaveAttribute('type', 'password')
+  })
 })
 
 test.describe('Seguridad de la cuenta', () => {
@@ -39,7 +52,9 @@ test.describe('Seguridad de la cuenta', () => {
     await page.getByRole('button', { name: /Editar perfil/i }).click()
     await expect(page.getByRole('main').getByText('Rol', { exact: true })).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Rol' })).toHaveValue('Aprendiz')
-    await expect(page.getByRole('textbox', { name: 'Nombre completo' })).toHaveValue('María González')
+    // Nombre y apellido son editables por el propio aprendiz.
+    await expect(page.getByRole('textbox', { name: 'Nombres' })).toHaveValue('María')
+    await expect(page.getByRole('textbox', { name: 'Apellidos' })).toHaveValue('González')
     await page.getByRole('main').getByRole('button', { name: 'Cancelar' }).click()
 
     // Abrir el formulario de seguridad
@@ -77,5 +92,42 @@ test.describe('Seguridad de la cuenta', () => {
     await page.locator('input[type="password"]').fill('nuevaClave123')
     await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
     await page.waitForURL('**/aprendiz/dashboard')
+  })
+
+  test('cambiar el correo exige confirmación y solo entonces se guarda', async ({ page }) => {
+    // Usuario nuevo para no alterar las cuentas del seed que usan los demás specs.
+    const email = `correo.e2e.${Date.now()}@soy.sena.edu.co`
+    await page.goto('/register')
+    await page.getByPlaceholder(/Mar.a Jos/i).fill('Correo E2E')
+    await page.getByPlaceholder(/Gonz.lez Ruiz/i).fill('Prueba')
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+    await page.locator('input[type="password"]').first().fill('clave123')
+    await page.locator('input[type="password"]').nth(1).fill('clave123')
+    await page.getByRole('button', { name: /Crear Cuenta/i }).click()
+    await page.waitForURL('**/confirmacion')
+
+    await page.goto('/login')
+    await page.getByPlaceholder('tu.correo@ejemplo.com').fill(email)
+    await page.locator('input[type="password"]').fill('clave123')
+    await page.getByRole('button', { name: /Iniciar Sesión/i }).click()
+    await page.waitForURL('**/aprendiz/dashboard')
+
+    await page.goto('/aprendiz/perfil')
+    await page.getByRole('button', { name: /Editar perfil/i }).click()
+
+    const nuevo = `correo.nuevo.${Date.now()}@soy.sena.edu.co`
+    const campoCorreo = page.getByLabel(/Correo electr.nico/i)
+    await campoCorreo.fill(nuevo)
+    await page.getByRole('button', { name: /Guardar cambios/i }).click()
+
+    // Se pide confirmación y, si se cancela, el correo no cambia.
+    await expect(page.getByText(/Vas a cambiar tu correo/i)).toBeVisible()
+    await page.getByRole('alertdialog').getByRole('button', { name: /Cancelar/i }).click()
+    await expect(campoCorreo).toHaveValue(nuevo)
+
+    // Al confirmar, se guarda y el perfil muestra el correo nuevo.
+    await page.getByRole('button', { name: /Guardar cambios/i }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: /Sí, cambiar correo/i }).click()
+    await expect(page.getByRole('main').getByText(nuevo).first()).toBeVisible({ timeout: 15000 })
   })
 })

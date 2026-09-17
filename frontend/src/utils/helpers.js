@@ -25,6 +25,23 @@ export function parseFecha(fecha) {
   return new Date(a, m - 1, d)
 }
 
+// Formatea una fecha que viene de la API.
+// - Si es "YYYY-MM-DD" (date-only) se interpreta como día LOCAL por componentes,
+//   evitando el desfase de zona (new Date("2026-09-16") = medianoche UTC).
+// - Si trae hora (ISO), se usa Date y se muestra en la zona del usuario.
+export function fechaDesdeApi(valor) {
+  if (!valor) return ''
+  const texto = String(valor)
+  const soloFecha = /^(\d{4})-(\d{2})-(\d{2})/.exec(texto)
+  if (soloFecha) {
+    const [, y, m, d] = soloFecha
+    return formatearFecha(`${Number(d)}/${Number(m)}/${y}`)
+  }
+  const fecha = new Date(texto)
+  if (Number.isNaN(fecha.getTime())) return texto
+  return formatearFecha(`${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`)
+}
+
 // Código de ficha único con el formato del catálogo: abc-defg (3 + 4 letras).
 export function generarCodigoFicha(existentes = []) {
   const letras = 'abcdefghijklmnopqrstuvwxyz'

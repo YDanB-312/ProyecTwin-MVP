@@ -19,7 +19,7 @@ import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
 import { proyectos, aprendices, fichas, similitudes as similitudesApi } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import { PAGINA_TARJETAS } from '../../../constants/pagination'
 import { MAX_TITULO, MAX_DESCRIPCION, MAX_DESCRIPCION_CORTA } from '../../../utils/validation'
 // Estilos reutilizados de las páginas originales (lista + formulario)
@@ -496,7 +496,7 @@ export default function Propuestas() {
                           </header>
                           <p className={s.cardDesc}>{p.resumen}</p>
                           <footer className={s.cardFooter}>
-                            <span className={s.cardMeta}><CalendarBlank size={14} /> {formatearFecha(p.created_at)}</span>
+                            <span className={s.cardMeta}><CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}</span>
                             {info && (
                               <span title={`${info.pct}% · ${info.count} coincidencia${info.count !== 1 ? 's' : ''}`}>
                                 <GradeBadge score={info.pct} size="sm" />

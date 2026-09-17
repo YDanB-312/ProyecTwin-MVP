@@ -19,7 +19,7 @@ import { ArrowClockwise, Books, ChartBar, CheckCircle, Eye, Plus, Trash, Warning
 import { useApi } from '../../../lib/useApi'
 import { fichas, centros, programas, redes, instructores, proyectos } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
-import { norm, formatearFecha, generarCodigoFicha } from '../../../utils/helpers'
+import { norm, generarCodigoFicha, fechaDesdeApi } from '../../../utils/helpers'
 import { FICHA_ESTADO_VARIANT as ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import c from '../../../components/FormularioBase/FormularioBase.module.css'
@@ -33,14 +33,6 @@ const ESTADO_LABEL = {
   inactivo: 'Inactivo',
   finalizado: 'Finalizado',
   archivado: 'Archivado',
-}
-
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 // Concatena nombre + apellido de un general_user.
@@ -526,7 +518,7 @@ export default function FichasAdmin() {
                         </Badge>
                       ),
                     },
-                    { key: 'created_at', header: 'Creada', render: (f) => fechaCorta(f.created_at) },
+                    { key: 'created_at', header: 'Creada', render: (f) => fechaDesdeApi(f.created_at) },
                     {
                       key: 'acciones',
                       header: 'Acciones',

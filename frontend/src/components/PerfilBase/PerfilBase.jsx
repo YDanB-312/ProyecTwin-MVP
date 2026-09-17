@@ -8,8 +8,9 @@ import FormField from '../FormField/FormField'
 import Alert from '../Alert/Alert'
 import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
+import ConfirmModal from '../ConfirmModal/ConfirmModal'
 import StatCard from '../StatCard/StatCard'
-import { Input } from '../Input/Input'
+import { Input, PasswordInput } from '../Input/Input'
 import Lightbox from '../Lightbox/Lightbox'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
@@ -29,20 +30,6 @@ const ROL_LABEL = {
   aprendiz: 'Aprendiz',
   instructor: 'Instructor',
   admin: 'Administrador',
-}
-
-// Refresca el nombre/correo de la sesión guardada tras editar el perfil.
-function sincronizarSesion(nombre, correo) {
-  try {
-    const enLocal = !!localStorage.getItem('auth_user')
-    const destino = enLocal ? localStorage : sessionStorage
-    const raw = destino.getItem('auth_user')
-    if (!raw) return
-    const sesion = JSON.parse(raw)
-    destino.setItem('auth_user', JSON.stringify({ ...sesion, nombre, correo }))
-  } catch {
-    return
-  }
 }
 
 // Campos escalares que exige PUT /general-users.
@@ -67,7 +54,7 @@ export default function PerfilBase({
   subtitulo = null,
   breadcrumb = null,
 }) {
-  const { cambiarMiContrasena } = useAuth()
+  const { cambiarMiContrasena, sincronizarSesion } = useAuth()
 
   // Perfil real desde la API (apellido, estado, foto_url…); el `user` de
   // sesión solo trae { id, correo, nombre, rol } y sirve de respaldo.
@@ -86,7 +73,7 @@ export default function PerfilBase({
   const [editando, setEditando] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [guardando, setGuardando] = useState(false)
-  const [form, setForm] = useState(() => ({ email: user?.correo || '' }))
+  const [form, setForm] = useState(() => ({ nombre: '', apellido: '', email: user?.correo || '' }))
   const [errors, setErrors] = useState({})
   const fileRef = useRef(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
@@ -95,6 +82,7 @@ export default function PerfilBase({
   const [fotoMsg, setFotoMsg] = useState(null)
   const msgTimer = useRef(null)
   const [cambiandoPass, setCambiandoPass] = useState(false)
+  const [correoPendiente, setCorreoPendiente] = useState(null)
   const [passForm, setPassForm] = useState({ actual: '', nueva: '', confirmar: '' })
   const [passErrors, setPassErrors] = useState({})
   const [passMsg, setPassMsg] = useState(null)
@@ -147,7 +135,7 @@ export default function PerfilBase({
   }
 
   function iniciarEdicion() {
-    setForm({ email: correo })
+    setForm({ nombre: perfil.nombre || '', apellido: perfil.apellido || '', email: correo })
     setErrors({})
     setEditando(true)
   }
@@ -160,25 +148,44 @@ export default function PerfilBase({
   async function guardar(e) {
     e.preventDefault()
     const errs = {}
+    if (!form.nombre.trim()) errs.nombre = 'Ingresa tus nombres.'
+    if (!form.apellido.trim()) errs.apellido = 'Ingresa tus apellidos.'
     if (!esEmailValido(form.email.trim())) {
       errs.email = 'Ingresa un correo electrónico válido.'
     }
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
+    const nuevoCorreo = form.email.trim().toLowerCase()
+    // Cambiar el correo es sensible (es el usuario de acceso): se confirma aparte.
+    if (nuevoCorreo !== String(correo).trim().toLowerCase()) {
+      setCorreoPendiente(nuevoCorreo)
+      return
+    }
+    await guardarCuenta(nuevoCorreo)
+  }
+
+  async function guardarCuenta(nuevoCorreo) {
     setGuardando(true)
     try {
-      const nuevoCorreo = form.email.trim().toLowerCase()
-      // GET + PUT: el backend exige nombre, apellido, correo, rol y estado.
+      const nombreCompleto = `${form.nombre.trim()} ${form.apellido.trim()}`.trim()
       const cuenta = await usuarios.obtener(user.id)
-      await usuarios.actualizar(user.id, payloadCuenta(cuenta, { correo: nuevoCorreo }))
-      sincronizarSesion(nombre, nuevoCorreo)
+      await usuarios.actualizar(user.id, payloadCuenta(cuenta, {
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        correo: nuevoCorreo,
+      }))
+      sincronizarSesion(nombreCompleto, nuevoCorreo)
       await recargarPerfil()
       setEditando(false)
       setGuardado(true)
     } catch (err) {
       const campos = toFieldErrors(err?.data)
-      setErrors({ email: campos.correo || err?.data?.message || 'No se pudo actualizar el perfil.' })
+      setErrors({
+        nombre: campos.nombre,
+        apellido: campos.apellido,
+        email: campos.correo || err?.data?.message || 'No se pudo actualizar el perfil.',
+      })
     } finally {
       setGuardando(false)
     }
@@ -358,11 +365,20 @@ export default function PerfilBase({
                 <FormField label="Rol">
                   <Input type="text" value={rolLabel} readOnly />
                 </FormField>
-                <FormField label="Nombre completo" help="El nombre identifica tus propuestas y equipos; no se puede cambiar.">
+                <FormField label="Nombres" required error={errors.nombre}>
                   <Input
                     type="text"
-                    value={nombre}
-                    readOnly
+                    value={form.nombre}
+                    onChange={(e) => set('nombre', e.target.value)}
+                    placeholder="Ej. María José"
+                  />
+                </FormField>
+                <FormField label="Apellidos" required error={errors.apellido}>
+                  <Input
+                    type="text"
+                    value={form.apellido}
+                    onChange={(e) => set('apellido', e.target.value)}
+                    placeholder="Ej. González Ruiz"
                   />
                 </FormField>
                 <FormField label="Correo electrónico" required error={errors.email}>
@@ -402,24 +418,21 @@ export default function PerfilBase({
         ) : (
           <form className={s.form} onSubmit={guardarPass} noValidate>
             <FormField label="Contraseña actual" required error={passErrors.actual}>
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.actual}
                 onChange={(e) => alCambiarPass('actual', e.target.value)}
                 autoComplete="current-password"
               />
             </FormField>
             <FormField label="Nueva contraseña" required error={passErrors.nueva} help="Mínimo 6 caracteres">
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.nueva}
                 onChange={(e) => alCambiarPass('nueva', e.target.value)}
                 autoComplete="new-password"
               />
             </FormField>
             <FormField label="Confirmar nueva contraseña" required error={passErrors.confirmar}>
-              <Input
-                type="password"
+              <PasswordInput
                 value={passForm.confirmar}
                 onChange={(e) => alCambiarPass('confirmar', e.target.value)}
                 autoComplete="new-password"
@@ -454,6 +467,19 @@ export default function PerfilBase({
           onClose={() => setViendoFoto(false)}
         />
       )}
+
+      <ConfirmModal
+        open={!!correoPendiente}
+        titulo="Cambiar correo electrónico"
+        mensaje={`Vas a cambiar tu correo de "${correo}" a "${correoPendiente}". Con el nuevo correo iniciarás sesión y recibirás notificaciones. ¿Confirmas el cambio?`}
+        textoConfirmar="Sí, cambiar correo"
+        onConfirmar={() => {
+          const nuevo = correoPendiente
+          setCorreoPendiente(null)
+          guardarCuenta(nuevo)
+        }}
+        onCancelar={() => setCorreoPendiente(null)}
+      />
     </div>
   )
 }

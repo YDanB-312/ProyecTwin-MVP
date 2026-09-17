@@ -5,7 +5,7 @@ import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
-import { Input } from '../../../components/Input/Input'
+import { Input, PasswordInput } from '../../../components/Input/Input'
 import s from './Register.module.css'
 import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
@@ -102,8 +102,7 @@ export default function Register() {
 
           <div className={s.grid2}>
             <FormField label="Contraseña" error={errors.password} help="Mínimo 6 caracteres" required>
-              <Input
-                type="password"
+              <PasswordInput
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
                 placeholder="••••••••"
@@ -111,8 +110,7 @@ export default function Register() {
               />
             </FormField>
             <FormField label="Confirmar contraseña" error={errors.confirmar} required>
-              <Input
-                type="password"
+              <PasswordInput
                 value={form.confirmar}
                 onChange={(e) => set('confirmar', e.target.value)}
                 placeholder="••••••••"

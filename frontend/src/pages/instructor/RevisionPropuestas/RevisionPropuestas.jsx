@@ -17,7 +17,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes as similitudesApi, notificaciones, fichas, instructores } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
 import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
@@ -35,14 +35,6 @@ function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
 }
 
-// created_at de Laravel llega en ISO; se muestra como "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
-}
-
 // Máximo porcentaje y conteo de coincidencias de una propuesta.
 function infoSimilitud(lista, projectId) {
   const pares = (lista || []).filter(
@@ -58,6 +50,7 @@ function infoSimilitud(lista, projectId) {
 export default function RevisionPropuestas() {
   const { user } = useAuth()
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroFicha, setFiltroFicha] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [modal, setModal] = useState(null)
   const [msgAprobacion, setMsgAprobacion] = useState(null)
@@ -90,6 +83,10 @@ export default function RevisionPropuestas() {
       .map((f) => Number(f.id))),
     [fichasApi, miFila?.id]
   )
+  const misFichas = useMemo(
+    () => fichasApi.filter((f) => Number(f.instructor?.id) === Number(miFila?.id)),
+    [fichasApi, miFila?.id]
+  )
 
   // Regla de negocio: proyecto propio asignado O de una ficha a cargo.
   const proyectosMios = useMemo(
@@ -99,10 +96,13 @@ export default function RevisionPropuestas() {
     [todosProyectos, miFila?.id, misFichasIds]
   )
 
-  const filtrados = useMemo(
-    () => (filtroEstado === 'todos' ? proyectosMios : proyectosMios.filter((p) => p.estado === filtroEstado)),
-    [proyectosMios, filtroEstado]
-  )
+  const filtrados = useMemo(() => {
+    let lista = proyectosMios
+    if (filtroEstado !== 'todos') lista = lista.filter((p) => p.estado === filtroEstado)
+    if (filtroFicha === 'sin-ficha') lista = lista.filter((p) => !p.id_class_group)
+    else if (filtroFicha !== 'todos') lista = lista.filter((p) => String(p.id_class_group) === String(filtroFicha))
+    return lista
+  }, [proyectosMios, filtroEstado, filtroFicha])
 
   const paginados = filtrados.slice(
     (pagina - 1) * ITEMS_POR_PAGINA,
@@ -205,6 +205,25 @@ export default function RevisionPropuestas() {
               <option value="rechazado">Rechazado</option>
             </Select>
           </label>
+          <label className={s.field}>
+            <span className={s.label}>Ficha</span>
+            <Select
+              value={filtroFicha}
+              onChange={(e) => {
+                setFiltroFicha(e.target.value)
+                setPagina(1)
+                setSelId(null)
+              }}
+            >
+              <option value="todos">Todas</option>
+              {misFichas.map((f) => (
+                <option key={f.id} value={String(f.id)}>
+                  {f.codigo} · {f.nombre}
+                </option>
+              ))}
+              <option value="sin-ficha">Sin ficha</option>
+            </Select>
+          </label>
           <p className={s.info}>
             {filtrados.length} propuesta{filtrados.length !== 1 ? 's' : ''} encontrada
             {filtrados.length !== 1 ? 's' : ''}
@@ -243,7 +262,7 @@ export default function RevisionPropuestas() {
                             <span className={local.nodoTitulo}>{p.titulo}</span>
                             <span className={local.nodoMeta}>
                               <Avatar name={autor} size="sm" />
-                              {autor} · {fechaCorta(p.created_at)}
+                              {autor} · {fechaDesdeApi(p.created_at)}
                             </span>
                           </span>
                           <span className={local.nodoLado}>
@@ -265,7 +284,7 @@ export default function RevisionPropuestas() {
                     aria-label={`Vista previa: ${seleccionada.titulo}`}
                   >
                     <p className={`mono ${local.kicker}`}>
-                      {ESTADO_LABEL[seleccionada.estado] || seleccionada.estado} · {fechaCorta(seleccionada.created_at)}
+                      {ESTADO_LABEL[seleccionada.estado] || seleccionada.estado} · {fechaDesdeApi(seleccionada.created_at)}
                     </p>
                     <h2 className={local.previewTitulo}>{seleccionada.titulo}</h2>
                     <p className={local.previewMeta}>

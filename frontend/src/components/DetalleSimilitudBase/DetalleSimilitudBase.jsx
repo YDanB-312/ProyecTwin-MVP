@@ -11,7 +11,7 @@ import EmptyState from '../EmptyState/EmptyState'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../lib/useApi'
 import { similitudes, fichas } from '../../lib/recursos'
-import { formatearFecha } from '../../utils/helpers'
+import { fechaDesdeApi } from '../../utils/helpers'
 import s from './DetalleSimilitudBase.module.css'
 
 const ESTADO_PROYECTO_VARIANT = (estado) =>
@@ -32,14 +32,6 @@ const RUTA_POR_ROL = {
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// created_at/fecha de Laravel llega en ISO; se muestra como "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 // ¿La propuesta pertenece a las fichas o programas del instructor?
@@ -183,8 +175,8 @@ export default function DetalleSimilitudBase({
       : [{ label: ruta.label, to: ruta.volver }]
 
   const subtitulo = proyecto1 && proyecto2
-    ? `Detectada el ${fechaCorta(similitud.fecha)} · ${proyecto1.titulo} vs. ${proyecto2.titulo}`
-    : `Detectada el ${fechaCorta(similitud.fecha)}`
+    ? `Detectada el ${fechaDesdeApi(similitud.fecha)} · ${proyecto1.titulo} vs. ${proyecto2.titulo}`
+    : `Detectada el ${fechaDesdeApi(similitud.fecha)}`
 
   return (
     <div className={s.wrapper}>
@@ -213,7 +205,7 @@ export default function DetalleSimilitudBase({
                   <User size={14} /> {autorDe(p)}
                 </p>
                 <p className={s.projectMeta}>
-                  <CalendarBlank size={14} /> {fechaCorta(p.created_at)}
+                  <CalendarBlank size={14} /> {fechaDesdeApi(p.created_at)}
                 </p>
                 <p className={s.projectDesc}>{p.resumen}</p>
                 <Badge variant={ESTADO_PROYECTO_VARIANT(p.estado)}>

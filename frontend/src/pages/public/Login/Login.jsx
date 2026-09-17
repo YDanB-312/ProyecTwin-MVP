@@ -5,7 +5,7 @@ import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
-import { Input } from '../../../components/Input/Input'
+import { Input, PasswordInput } from '../../../components/Input/Input'
 import s from './Login.module.css'
 
 import { RUTA_POR_ROL } from '../../../constants/routes'
@@ -76,8 +76,7 @@ export default function Login() {
           </FormField>
 
           <FormField label="Contraseña" required>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

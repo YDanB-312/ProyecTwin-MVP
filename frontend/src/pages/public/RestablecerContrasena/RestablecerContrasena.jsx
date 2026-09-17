@@ -5,7 +5,7 @@ import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
-import { Input } from '../../../components/Input/Input'
+import { Input, PasswordInput } from '../../../components/Input/Input'
 import s from './RestablecerContrasena.module.css'
 import { esEmailValido, esPasswordValida } from '../../../utils/validation'
 
@@ -90,8 +90,7 @@ export default function RestablecerContrasena() {
           </FormField>
 
           <FormField label="Nueva contraseña" help="Mínimo 6 caracteres" required>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -100,8 +99,7 @@ export default function RestablecerContrasena() {
           </FormField>
 
           <FormField label="Confirmar nueva contraseña" required>
-            <Input
-              type="password"
+            <PasswordInput
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               placeholder="••••••••"

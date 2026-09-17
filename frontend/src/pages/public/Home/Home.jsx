@@ -127,9 +127,9 @@ export default function Home() {
 
           <div className={s.terminal}>
             <div className={s.termBar}>
-              <span className={s.termDot} />
-              <span className={s.termDot} />
-              <span className={s.termDot} />
+              <span className={`${s.termDot} ${s.termDot1}`} aria-hidden="true" />
+              <span className={`${s.termDot} ${s.termDot2}`} aria-hidden="true" />
+              <span className={`${s.termDot} ${s.termDot3}`} aria-hidden="true" />
               <span className={`mono ${s.termTitle}`}>proyectwin · demo en vivo</span>
             </div>
             <div className={s.termBody}>
@@ -180,7 +180,7 @@ export default function Home() {
                     <span className={s.caret} aria-hidden="true">▊</span> analizando…
                   </p>
                 ) : (
-                  <div aria-hidden="true">
+                  <div className={s.termResults} aria-hidden="true">
                     {resultado.coincidencias.map((r, i) => (
                       <div key={r.id} className={`${s.termMatch} fx-rise`} style={{ '--fx-i': i }}>
                         <span className={`mono ${s.termPair}`}>{r.titulo}</span>

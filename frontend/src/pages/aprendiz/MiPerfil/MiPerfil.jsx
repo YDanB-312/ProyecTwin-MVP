@@ -34,7 +34,9 @@ export default function MiPerfil() {
     { inicial: [] }
   )
   const { data: misNotificaciones } = useApi(
-    () => notificaciones.listar({ id_usuario: user.id }),
+    // El backend ya acota las notificaciones al usuario autenticado: misma URL
+    // que usa el layout, así se comparte una sola petición.
+    () => notificaciones.listar(),
     [user.id],
     { inicial: [] }
   )

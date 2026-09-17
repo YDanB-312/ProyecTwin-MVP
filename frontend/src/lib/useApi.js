@@ -5,6 +5,7 @@
 // `deps` re-dispara la consulta cuando cambian (ids, filtros…). Mantén valores
 // serializables (números, strings) para que el cambio se detecte bien.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { invalidarCache } from './api'
 
 export function useApi(fn, deps = [], { inicial = null } = {}) {
   const [estado, setEstado] = useState({ data: inicial, cargando: true, error: null })
@@ -24,7 +25,9 @@ export function useApi(fn, deps = [], { inicial = null } = {}) {
     return () => { vivo = false }
   }, [claveDeps])
 
+  // Recarga explícita: descarta la caché para traer datos frescos del servidor.
   const recargar = useCallback(async () => {
+    invalidarCache()
     setEstado((e) => ({ ...e, cargando: true, error: null }))
     try {
       const data = await fnRef.current()

@@ -19,7 +19,7 @@ import { fichas, programas, redes, instructores, centros, proyectos } from '../.
 import { toFieldErrors } from '../../../lib/api'
 import { MAX_NOMBRE, MAX_NUMERO_FICHA } from '../../../utils/validation'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from '../../../components/DetalleFichaBase/DetalleFichaBase.module.css'
 import { Books, ChartBar, CheckCircle, FolderOpen, GraduationCap, IdentificationCard, MagnifyingGlass, PencilLine, Trash, Warning } from 'phosphor-react'
 
@@ -30,14 +30,6 @@ const PROYECTO_ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', re
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 function formDesde(ficha) {
@@ -371,7 +363,7 @@ export default function DetalleFichaAdmin() {
                   <Link to={`/admin/detalle-proyecto/${p.id}`} viewTransition className={s.studentRow}>
                     <span className={s.studentInfo}>
                       <span className={s.studentName}>{p.titulo}</span>
-                      <span className={s.studentEmail}>{nombreCompleto(p.creator) || 'Sin autor'} · {fechaCorta(p.created_at)}</span>
+                      <span className={s.studentEmail}>{nombreCompleto(p.creator) || 'Sin autor'} · {fechaDesdeApi(p.created_at)}</span>
                     </span>
                     <Badge variant={PROJECT_ESTADO_VARIANT[p.estado] || 'neutral'}>
                       {PROYECTO_ESTADO_LABEL[p.estado] || p.estado}

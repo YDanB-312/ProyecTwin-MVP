@@ -11,7 +11,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import ApiState from '../../../components/ApiState/ApiState'
-import { norm, formatearFecha } from '../../../utils/helpers'
+import { norm, fechaDesdeApi } from '../../../utils/helpers'
 import { PROJECT_ESTADO_VARIANT } from '../../../constants/badgeVariants'
 import { useApi } from '../../../lib/useApi'
 import { proyectos, similitudes, centros, programas, fichas } from '../../../lib/recursos'
@@ -25,14 +25,6 @@ const ESTADO_LABEL = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 export default function ProyectosAdmin() {
@@ -234,7 +226,7 @@ export default function ProyectosAdmin() {
                     ),
                   },
                   { key: 'aprendiz', header: 'Aprendiz', render: (p) => nombreCompleto(p.creator) || '—' },
-                  { key: 'created_at', header: 'Fecha', render: (p) => fechaCorta(p.created_at) },
+                  { key: 'created_at', header: 'Fecha', render: (p) => fechaDesdeApi(p.created_at) },
                   {
                     key: 'similitud',
                     header: 'Similitud',

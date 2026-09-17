@@ -13,7 +13,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useApi } from '../../../lib/useApi'
 import { reportes, notificaciones } from '../../../lib/recursos'
-import { formatearFecha } from '../../../utils/helpers'
+import { fechaDesdeApi } from '../../../utils/helpers'
 import s from './DetalleReporte.module.css'
 
 const ESTADO_LABEL = {
@@ -66,14 +66,6 @@ const ESTADOS = ['pendiente', 'en_revision', 'resuelto', 'cerrado', 'rechazado']
 // Concatena nombre + apellido de un general_user.
 function nombreCompleto(usuario) {
   return [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ').trim()
-}
-
-// fecha ISO de Laravel → "d mmm aaaa".
-function fechaCorta(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
-  return formatearFecha(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`)
 }
 
 export default function DetalleReporte() {
@@ -165,7 +157,7 @@ export default function DetalleReporte() {
       <div className={s.page}>
         <PageHeader
           title={reporte.titulo}
-          subtitle={`Reporte #${reporte.id} · Recibido el ${fechaCorta(reporte.fecha)}`}
+          subtitle={`Reporte #${reporte.id} · Recibido el ${fechaDesdeApi(reporte.fecha)}`}
           icon={<Bug />}
           breadcrumb={[
             { label: 'Dashboard', to: '/admin/dashboard', icon: <ChartBar size={14} /> },
@@ -210,11 +202,11 @@ export default function DetalleReporte() {
             </div>
             <div className={s.cell}>
               <dt>Fecha del reporte</dt>
-              <dd>{fechaCorta(reporte.fecha)}</dd>
+              <dd>{fechaDesdeApi(reporte.fecha)}</dd>
             </div>
             <div className={s.cell}>
               <dt>Última actualización</dt>
-              <dd>{fechaCorta(reporte.updated_at || reporte.fecha)}</dd>
+              <dd>{fechaDesdeApi(reporte.updated_at || reporte.fecha)}</dd>
             </div>
           </dl>
 
