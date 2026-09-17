@@ -69,7 +69,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Bogota'),
 
     /*
     |--------------------------------------------------------------------------
@@ -83,6 +83,19 @@ return [
     */
 
     'locale' => 'en',
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Rate Limit (peticiones por minuto)
+    |--------------------------------------------------------------------------
+    |
+    | Limite del throttling de la API, por usuario autenticado (o por IP si no
+    | hay sesion). En produccion se mantiene el default de 60; en local/E2E se
+    | sube por .env porque la suite abre muchas paginas seguidas y lo agotaria.
+    |
+    */
+
+    'api_rate_limit' => (int) env('API_RATE_LIMIT', 60),
 
     /*
     |--------------------------------------------------------------------------

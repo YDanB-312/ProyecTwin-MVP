@@ -8,10 +8,14 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function index()
+    // Lista observaciones. Se puede acotar por proyecto (?id_proyecto=N) y
+    // siempre llegan las más recientes primero.
+    public function index(Request $request)
     {
-        $items = Comment::included()->get();
-        return $items;
+        return Comment::included()
+            ->when($request->query('id_proyecto'), fn ($q, $id) => $q->where('id_proyecto', $id))
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function store(Request $request)

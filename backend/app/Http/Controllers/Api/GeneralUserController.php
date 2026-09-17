@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
+use App\Models\ClassGroup;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -59,8 +60,8 @@ class GeneralUserController extends Controller
             'correo' => 'required|email|unique:general_users,correo,' . $general_user->id,
             'password' => 'nullable|min:6|max:255',
             'foto_url' => 'nullable',
-            'rol' => 'required|in:aprendiz,instructor,admin',
-            'estado' => 'nullable|boolean',
+            'rol' => 'sometimes|required|in:aprendiz,instructor,admin',
+            'estado' => 'sometimes|nullable|boolean',
         ]);
 
         // Cambios de rol o estado exigen admin; nadie se auto-eleva.
@@ -88,7 +89,26 @@ class GeneralUserController extends Controller
 
     public function destroy(GeneralUser $general_user)
     {
-        $general_user->delete();
+        // Un instructor con fichas a cargo no se puede borrar: la FK lo impide
+        // (antes reventaba con 500). Se responde 409 con un motivo claro.
+        $instructor = $general_user->instructor;
+        if ($instructor) {
+            $fichas = ClassGroup::where('id_instructor', $instructor->id)->count();
+            if ($fichas > 0) {
+                return response()->json([
+                    'message' => "No se puede eliminar: tiene {$fichas} ficha(s) a cargo. Reasígnalas primero.",
+                ], 409);
+            }
+        }
+
+        try {
+            $general_user->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'No se puede eliminar: el usuario tiene registros asociados.',
+            ], 409);
+        }
+
         return $general_user;
     }
 }
