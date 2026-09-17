@@ -74,6 +74,13 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::get('instructors', [InstructorController::class, 'index']);
     Route::get('instructors/{instructor}', [InstructorController::class, 'show']);
     Route::get('apprentices', [ApprenticeController::class, 'index']);
+    // Mi ficha: el aprendiz sale de su ficha y se une a otra con el código del
+    // instructor. Va antes de `apprentices/{apprentice}` para no colisionar.
+    Route::middleware('rol:aprendiz')->group(function () {
+        Route::get('apprentices/me/ficha/codigo/{codigo}', [ApprenticeController::class, 'fichaPorCodigo']);
+        Route::post('apprentices/me/ficha', [ApprenticeController::class, 'unirmeAFicha']);
+        Route::delete('apprentices/me/ficha', [ApprenticeController::class, 'salirDeFicha']);
+    });
     Route::get('apprentices/{apprentice}', [ApprenticeController::class, 'show']);
     Route::get('admins', [AdminController::class, 'index']);
     Route::get('admins/{admin}', [AdminController::class, 'show']);

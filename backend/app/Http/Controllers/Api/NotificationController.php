@@ -8,10 +8,23 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Notification::included()->get();
-        return $items;
+        $user = $request->user();
+
+        // Cada usuario solo ve sus propias notificaciones (antes se devolvían
+        // las de todos y el cliente filtraba, lo que exponía datos ajenos).
+        $query = Notification::included()->orderByDesc('id');
+
+        // Un admin puede consultar la bandeja de otro usuario con ?id_usuario=.
+        $idUsuario = $request->query('id_usuario');
+        if ($idUsuario && $user->rol === 'admin') {
+            $query->where('id_usuario', $idUsuario);
+        } else {
+            $query->where('id_usuario', $user->id);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)

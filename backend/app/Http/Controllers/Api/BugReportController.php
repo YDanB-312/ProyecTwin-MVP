@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\BugReport;
+use App\Models\GeneralUser;
+use App\Models\Notification;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -27,6 +29,10 @@ class BugReportController extends Controller
         ]);
 
         $item = BugReport::create($request->all());
+
+        // Avisa a cada administrador activo que entró un reporte nuevo.
+        $this->notificarAdmins($item);
+
         return response()->json($item, 201);
     }
 
@@ -54,5 +60,20 @@ class BugReportController extends Controller
     {
         $bug_report->delete();
         return $bug_report;
+    }
+
+    // Crea una notificación por cada admin activo (el panel filtra por usuario).
+    private function notificarAdmins(BugReport $reporte): void
+    {
+        GeneralUser::where('rol', 'admin')->where('estado', true)->get()->each(function (GeneralUser $admin) use ($reporte) {
+            Notification::create([
+                'titulo' => 'Nuevo reporte de falla: "' . ($reporte->titulo ?: 'Sin título') . '"',
+                'tipo' => 'sistema',
+                'enlace' => 'reporte:' . $reporte->id,
+                'leida' => false,
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $admin->id,
+            ]);
+        });
     }
 }

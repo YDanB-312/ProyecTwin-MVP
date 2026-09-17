@@ -65,9 +65,9 @@ class SimilarityController extends Controller
 
     // ---------------------------------------------------------------- Motor
 
-    // Detecta coincidencias de UNA propuesta contra el corpus vigente de su
-    // mismo programa (pendientes + aprobadas dentro de la ventana) y
-    // sincroniza la tabla `similarities`. Devuelve el total vigente del par.
+    // Detecta coincidencias de UNA propuesta contra el corpus de APROBADAS del
+    // mismo programa (dentro de la ventana) y sincroniza la tabla
+    // `similarities`. Devuelve cuántos pares nuevos quedaron.
     public function detect(Request $request)
     {
         $request->validate(['id_proyecto' => 'required|exists:projects,id']);
@@ -75,25 +75,33 @@ class SimilarityController extends Controller
         $umbral = (float) ($this->config()->umbral ?? 0.2);
         $meses = (int) ($this->config()->meses ?? 12);
 
+        // Una rechazada no participa: se eliminan sus pares y no se compara.
+        if ($propio->estado === 'rechazado') {
+            $this->purgarPares($propio->id);
+            return response()->json(['detectadas' => 0]);
+        }
+
         $corpus = $this->corpus($propio, $meses);
         $pares = SimilitudService::puntaje($propio, $corpus);
 
+        // Ids que quedan vigentes para esta propuesta.
+        $vigentes = [];
         $creadas = 0;
         foreach ($pares as $par) {
-            $vigente = $par['score'] >= $umbral;
+            if ($par['score'] < $umbral) continue;
+            $vigentes[] = $par['project_id'];
             $existente = $this->buscarPar($propio->id, $par['project_id']);
-            if ($vigente) {
-                if ($existente) {
-                    $existente->update(['porcentaje' => $par['porcentaje'], 'detalles' => $par['detalles']]);
-                } else {
-                    $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                    $creadas++;
-                    $this->notificar($propio, $par['project_id'], $par['porcentaje']);
-                }
-            } elseif ($existente) {
-                $existente->delete();
+            if ($existente) {
+                $existente->update(['porcentaje' => $par['porcentaje'], 'detalles' => $par['detalles']]);
+            } else {
+                $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
+                $creadas++;
+                $this->notificar($propio, $par['project_id'], $par['porcentaje']);
             }
         }
+
+        // Limpia pares obsoletos (bajaron del umbral o ya no aplican reglas).
+        $this->purgarParesObsoletos($propio->id, $vigentes);
 
         return response()->json(['detectadas' => $creadas]);
     }
@@ -148,7 +156,7 @@ class SimilarityController extends Controller
         ]);
         $sonda->id = 0;
 
-        $corpus = Project::where('estado', '!=', 'rechazado')
+        $corpus = Project::where('estado', 'aprobado')
             ->where('created_at', '>=', now()->subMonths($meses))
             ->get();
 
@@ -178,7 +186,8 @@ class SimilarityController extends Controller
         return MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
     }
 
-    // Corpus del mismo programa: pendientes/aprobadas dentro de la ventana.
+    // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
+    // la ventana. La propia se incluye solo para que exista en los vectores.
     private function corpus(Project $propio, int $meses): array
     {
         $programaId = optional($propio->classGroup)->id_programa;
@@ -186,7 +195,7 @@ class SimilarityController extends Controller
 
         return Project::with('classGroup')
             ->where('id', '!=', $propio->id)
-            ->where('estado', '!=', 'rechazado')
+            ->where('estado', 'aprobado')
             ->where('created_at', '>=', $desde)
             ->whereHas('classGroup', fn ($q) => $q->where('id_programa', $programaId))
             ->get()
@@ -212,6 +221,8 @@ class SimilarityController extends Controller
         ]);
     }
 
+    // Un par es válido si respeta umbral, mismo programa y ventana, y además
+    // la referencia es una propuesta APROBADA (al menos uno de los dos).
     private function parVigente(Similarity $s, float $umbral, int $meses): bool
     {
         if (($s->porcentaje / 100) < $umbral) return false;
@@ -219,9 +230,28 @@ class SimilarityController extends Controller
         $p2 = Project::with('classGroup')->find($s->id_proyecto_2);
         if (!$p1 || !$p2) return false;
         if ($p1->estado === 'rechazado' || $p2->estado === 'rechazado') return false;
+        if ($p1->estado !== 'aprobado' && $p2->estado !== 'aprobado') return false;
         if (optional($p1->classGroup)->id_programa !== optional($p2->classGroup)->id_programa) return false;
         $desde = now()->subMonths($meses);
         return $p1->created_at >= $desde || $p2->created_at >= $desde;
+    }
+
+    // Elimina todos los pares de una propuesta (p. ej. al rechazarla).
+    private function purgarPares(int $projectId): void
+    {
+        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)->delete();
+    }
+
+    // Elimina los pares de la propuesta que no estén en la lista de vigentes.
+    private function purgarParesObsoletos(int $projectId, array $vigentes): void
+    {
+        $vigentes = array_map('intval', $vigentes);
+        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
+            ->get()
+            ->each(function (Similarity $s) use ($projectId, $vigentes) {
+                $otro = (int) $s->id_proyecto_1 === $projectId ? (int) $s->id_proyecto_2 : (int) $s->id_proyecto_1;
+                if (!in_array($otro, $vigentes, true)) $s->delete();
+            });
     }
 
     // Avisa al creador de la propuesta que se le detectó una coincidencia.
