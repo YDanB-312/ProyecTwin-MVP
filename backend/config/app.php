@@ -99,6 +99,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | URL del frontend
+    |--------------------------------------------------------------------------
+    |
+    | Se usa para armar los enlaces que se envían por correo (restablecer
+    | contraseña). En local apunta a Vite; al desplegar, a la URL pública.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Fallback Locale
     |--------------------------------------------------------------------------
     |

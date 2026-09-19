@@ -38,6 +38,12 @@ class MotorConfigController extends Controller
 
         $item = MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
         $item->update($request->only(['umbral', 'meses']));
+
+        \App\Support\Auditoria::registrar('config_motor', 'motor_configs', $item->id, [
+            'umbral' => (float) $item->umbral,
+            'meses' => (int) $item->meses,
+        ]);
+
         return $item;
     }
 }

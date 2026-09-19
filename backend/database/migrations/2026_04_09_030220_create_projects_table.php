@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('area_aplicacion');
             $table->text('objetivo_general')->nullable();
             $table->json('objetivos_especificos')->nullable();
-            $table->enum('estado', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente');
+            $table->enum('estado', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente')->index();
 
             $table->foreignId('id_creador')->constrained('general_users')->onDelete('cascade');
             $table->foreignId('id_instructor_asignado')->nullable()->constrained('instructors')->onDelete('set null');

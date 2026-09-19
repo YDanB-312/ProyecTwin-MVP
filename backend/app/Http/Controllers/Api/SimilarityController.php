@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Apprentice;
+use App\Models\ApprenticeProject;
+use App\Models\Instructor;
 use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\MotorConfig;
@@ -17,6 +20,8 @@ class SimilarityController extends Controller
     public function index(Request $request)
     {
         return Similarity::included()
+            ->paraUsuario($request->user())
+            ->relatedTo($request->query('related_to'))
             ->search($request->query('search'))
             ->byTrainingCenter($request->query('training_center_id'))
             ->byFicha($request->query('ficha_id'))
@@ -38,9 +43,19 @@ class SimilarityController extends Controller
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return Similarity::included()->findOrFail($id);
+        $item = Similarity::included()->findOrFail($id);
+
+        // Mismo alcance que el listado: nadie ve pares que no le corresponden.
+        $visible = Similarity::where('id', $item->id)
+            ->paraUsuario($request->user())
+            ->exists();
+        if (!$visible) {
+            return response()->json(['message' => 'No tienes acceso a esta similitud.'], 403);
+        }
+
+        return $item;
     }
 
     public function update(Request $request, Similarity $similarity)
@@ -72,6 +87,12 @@ class SimilarityController extends Controller
     {
         $request->validate(['id_proyecto' => 'required|exists:projects,id']);
         $propio = Project::with('classGroup')->findOrFail($request->id_proyecto);
+
+        // Solo el dueño (aprendiz/equipo), su instructor o un admin disparan el motor.
+        if (!$this->puedeDetectar($request->user(), $propio)) {
+            return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
+        }
+
         $umbral = (float) ($this->config()->umbral ?? 0.2);
         $meses = (int) ($this->config()->meses ?? 12);
 
@@ -131,6 +152,13 @@ class SimilarityController extends Controller
             }
         }
 
+        \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
+            'eliminadas' => $eliminadas,
+            'creadas' => $creadas,
+            'umbral' => $umbral,
+            'meses' => $meses,
+        ]);
+
         return response()->json(['eliminadas' => $eliminadas, 'creadas' => $creadas]);
     }
 
@@ -180,6 +208,29 @@ class SimilarityController extends Controller
     }
 
     // ---------------------------------------------------------------- Internos
+
+    // Admin cualquiera; aprendiz su propuesta (creador o equipo); instructor su
+    // ficha o la asignada. Evita que se dispare el motor sobre propuestas ajenas.
+    private function puedeDetectar($user, Project $project): bool
+    {
+        if (!$user) return false;
+        if ($user->rol === 'admin') return true;
+        if ((int) $project->id_creador === (int) $user->id) return true;
+
+        $aprendiz = Apprentice::where('id_usuario', $user->id)->first();
+        if ($aprendiz && ApprenticeProject::where('id_proyecto', $project->id)
+            ->where('id_aprendiz', $aprendiz->id)->exists()) {
+            return true;
+        }
+
+        $instructor = Instructor::where('id_usuario', $user->id)->first();
+        if ($instructor) {
+            return (int) $project->id_instructor_asignado === (int) $instructor->id
+                || (int) optional($project->classGroup)->id_instructor === (int) $instructor->id;
+        }
+
+        return false;
+    }
 
     private function config(): MotorConfig
     {

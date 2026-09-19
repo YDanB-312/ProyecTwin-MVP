@@ -23,11 +23,17 @@ class CommentController extends Controller
         $request->validate([
             'texto' => 'required',
             'id_proyecto' => 'required|exists:projects,id',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'nullable|exists:general_users,id',
             'respuesta_a' => 'nullable|exists:comments,id',
         ]);
 
-        $item = Comment::create($request->all());
+        // La observación siempre se firma con el usuario del token.
+        $item = Comment::create([
+            'texto' => $request->texto,
+            'id_proyecto' => $request->id_proyecto,
+            'id_usuario' => $request->user()->id,
+            'respuesta_a' => $request->respuesta_a,
+        ]);
         return $item;
     }
 
@@ -42,16 +48,32 @@ class CommentController extends Controller
         $request->validate([
             'texto' => 'required',
             'id_proyecto' => 'required|exists:projects,id',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'nullable|exists:general_users,id',
             'respuesta_a' => 'nullable|exists:comments,id',
         ]);
 
-        $comment->update($request->all());
+        // Solo el autor (o un admin) edita la observación.
+        $user = $request->user();
+        if ((int) $comment->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'Solo puedes editar tus propias observaciones.'], 403);
+        }
+
+        $comment->update([
+            'texto' => $request->texto,
+            'id_proyecto' => $request->id_proyecto,
+            'respuesta_a' => $request->respuesta_a,
+        ]);
         return $comment;
     }
 
-    public function destroy(Comment $comment)
+    public function destroy(Request $request, Comment $comment)
     {
+        // Solo el autor (o un admin) elimina la observación.
+        $user = $request->user();
+        if ((int) $comment->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'Solo puedes eliminar tus propias observaciones.'], 403);
+        }
+
         $comment->delete();
         return $comment;
     }

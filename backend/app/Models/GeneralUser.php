@@ -2,24 +2,46 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class GeneralUser extends Model
+class GeneralUser extends Model implements AuthenticatableContract, CanResetPasswordContract
 {
-    use HasFactory, HasApiTokens;
+    use Authenticatable, CanResetPassword, HasFactory, HasApiTokens, Notifiable;
 
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
     protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado'];
 
-    // El hash nunca sale por la API (login/me/listados).
-    protected $hidden = ['password'];
+    // Datos sensibles que nunca salen por la API (login/me/listados).
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = ['estado' => 'boolean'];
+
+    // El correo es el identificador de acceso (no existe columna `email`).
+    public function getEmailForPasswordReset()
+    {
+        return $this->correo;
+    }
+
+    // Las notificaciones por correo se envían al `correo` institucional.
+    public function routeNotificationForMail()
+    {
+        return [$this->correo => trim(($this->nombre ?? '') . ' ' . ($this->apellido ?? ''))];
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 
     protected $allowIncluded = ['apprentice', 'instructor', 'admin', 'projects', 'notifications', 'comments', 'bugReports'];
 

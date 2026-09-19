@@ -20,6 +20,8 @@ return new class extends Migration
             $table->text('foto_url')->nullable();
             $table->enum('rol', ['aprendiz', 'instructor', 'admin']);
             $table->boolean('estado')->default(true);
+            // Necesario para el flujo de restablecer contraseña (broker de Laravel).
+            $table->rememberToken();
             $table->timestamps();
         });
     }

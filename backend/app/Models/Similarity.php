@@ -81,6 +81,48 @@ class Similarity extends Model
         });
     }
 
+    // ---------------------------------------------------------------- Alcance
+
+    // Aísla los pares según el rol. Sin esto, cualquier autenticado recibía
+    // TODAS las similitudes del sistema (incluidas las de proyectos ajenos).
+    public function scopeParaUsuario(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol === 'admin') return $query;
+
+        if ($user->rol === 'instructor') {
+            $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))
+                ->pluck('id');
+            return $query->where(function (Builder $q) use ($fichaIds) {
+                $q->whereHas('project1', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds))
+                  ->orWhereHas('project2', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds));
+            });
+        }
+
+        // Aprendiz: solo pares que tocan alguno de sus proyectos (creador o equipo).
+        return $query->where(function (Builder $q) use ($user) {
+            $propio = fn (Builder $qq) => $qq->where('id_creador', $user->id)
+                ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+            $q->whereHas('project1', $propio)
+              ->orWhereHas('project2', $propio);
+        });
+    }
+
+    // Filtra los pares que tocan uno o varios proyectos (lista separada por comas).
+    public function scopeRelatedTo(Builder $query, $projectIds): Builder
+    {
+        $ids = collect(is_array($projectIds) ? $projectIds : explode(',', (string) $projectIds))
+            ->map(fn ($id) => (int) trim((string) $id))
+            ->filter()
+            ->values();
+
+        if ($ids->isEmpty()) return $query;
+
+        return $query->where(function (Builder $q) use ($ids) {
+            $q->whereIn('id_proyecto_1', $ids)->orWhereIn('id_proyecto_2', $ids);
+        });
+    }
+
     // ---------------------------------------------------------------- Relaciones
     public function project1()
     {

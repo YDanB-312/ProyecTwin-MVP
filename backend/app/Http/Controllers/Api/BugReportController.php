@@ -12,9 +12,15 @@ class BugReportController extends Controller
 {
     private const TIPOS = 'sistema,proyecto,datos,bug_ui,error_datos,rendimiento,seguridad,otro';
 
-    public function index()
+    public function index(Request $request)
     {
-        return BugReport::included()->get();
+        $user = $request->user();
+
+        // El admin ve todos; cada usuario solo sus propios reportes.
+        return BugReport::included()
+            ->when($user->rol !== 'admin', fn ($q) => $q->where('id_usuario', $user->id))
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function store(Request $request)
@@ -25,10 +31,18 @@ class BugReportController extends Controller
             'tipo' => 'required|in:' . self::TIPOS,
             'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
             'fecha' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'nullable|exists:general_users,id',
         ]);
 
-        $item = BugReport::create($request->all());
+        // El reporte siempre se firma con el usuario del token.
+        $item = BugReport::create([
+            'titulo' => $request->titulo,
+            'descripcion' => $request->descripcion,
+            'tipo' => $request->tipo,
+            'estado' => $request->estado ?? 'pendiente',
+            'fecha' => $request->fecha,
+            'id_usuario' => $request->user()->id,
+        ]);
 
         // Avisa a cada administrador activo que entró un reporte nuevo.
         $this->notificarAdmins($item);
@@ -36,13 +50,22 @@ class BugReportController extends Controller
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return BugReport::included()->findOrFail($id);
+        $item = BugReport::included()->findOrFail($id);
+        $user = $request->user();
+        if ((int) $item->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'No tienes acceso a este reporte.'], 403);
+        }
+        return $item;
     }
 
     public function update(Request $request, BugReport $bug_report)
     {
+        if ($request->user()->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede actualizar reportes.'], 403);
+        }
+
         $request->validate([
             'titulo' => 'nullable|max:255',
             'descripcion' => 'required',
@@ -56,8 +79,12 @@ class BugReportController extends Controller
         return $bug_report;
     }
 
-    public function destroy(BugReport $bug_report)
+    public function destroy(Request $request, BugReport $bug_report)
     {
+        if ($request->user()->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede eliminar reportes.'], 403);
+        }
+
         $bug_report->delete();
         return $bug_report;
     }

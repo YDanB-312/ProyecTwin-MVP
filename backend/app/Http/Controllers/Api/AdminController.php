@@ -38,8 +38,13 @@ class AdminController extends Controller
         return $admin;
     }
 
-    public function destroy(Admin $admin)
+    public function destroy(Request $request, Admin $admin)
     {
+        // Autoprotección: no se borra el propio perfil de admin.
+        if ((int) $admin->id_usuario === (int) $request->user()->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propio perfil de administrador.'], 422);
+        }
+
         $admin->delete();
         return $admin;
     }

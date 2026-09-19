@@ -39,13 +39,25 @@ class NotificationController extends Controller
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
+        // Solo instructor/admin avisan a otros; nadie crea avisos para terceros.
+        $user = $request->user();
+        $destino = (int) $request->id_usuario;
+        $permitido = in_array($user->rol, ['admin', 'instructor'], true) || $destino === (int) $user->id;
+        if (!$permitido) {
+            return response()->json(['message' => 'No puedes crear notificaciones para otro usuario.'], 403);
+        }
+
         $item = Notification::create($request->all());
         return $item;
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $item = Notification::included()->findOrFail($id);
+        $user = $request->user();
+        if ((int) $item->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'No tienes acceso a esta notificación.'], 403);
+        }
         return $item;
     }
 
@@ -61,12 +73,22 @@ class NotificationController extends Controller
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
+        // Marcar como leída es del dueño de la bandeja (o de un admin).
+        $user = $request->user();
+        if ((int) $notification->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'No puedes modificar notificaciones de otro usuario.'], 403);
+        }
+
         $notification->update($request->all());
         return $notification;
     }
 
-    public function destroy(Notification $notification)
+    public function destroy(Request $request, Notification $notification)
     {
+        if ($request->user()->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede eliminar notificaciones.'], 403);
+        }
+
         $notification->delete();
         return $notification;
     }

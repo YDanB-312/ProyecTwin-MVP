@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
+use App\Models\Admin;
+use App\Models\ApprenticeProject;
 use App\Models\ClassGroup;
+use App\Models\Project;
+use App\Support\Auditoria;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -44,12 +48,41 @@ class GeneralUserController extends Controller
         $data['password'] = Hash::make($request->password);
         $data['estado'] = $request->has('estado') ? $request->boolean('estado') : true;
         $item = GeneralUser::create($data);
+
+        Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
+            'correo' => $item->correo,
+            'rol' => $item->rol,
+        ]);
+
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        $user = $request->user();
+
+        // El detalle completo es del propio usuario o de un admin.
+        if ((int) $user->id !== (int) $id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'Solo puedes ver tu propia cuenta.'], 403);
+        }
+
         return GeneralUser::included()->findOrFail($id);
+    }
+
+    // Perfil público (vistas entre usuarios: compañero, instructor). Expone solo
+    // datos de contacto básicos; nunca estado ni información de gestión.
+    public function perfil($id)
+    {
+        $user = GeneralUser::findOrFail($id);
+
+        return response()->json([
+            'id' => $user->id,
+            'nombre' => $user->nombre,
+            'apellido' => $user->apellido,
+            'correo' => $user->correo,
+            'foto_url' => $user->foto_url,
+            'rol' => $user->rol,
+        ]);
     }
 
     public function update(Request $request, GeneralUser $general_user)
@@ -64,19 +97,48 @@ class GeneralUserController extends Controller
             'estado' => 'sometimes|nullable|boolean',
         ]);
 
-        // Cambios de rol o estado exigen admin; nadie se auto-eleva.
+        // Autorización: solo tu propia cuenta, o cualquier cuenta si eres admin.
+        // (Antes cualquier autenticado podía editar —y resetear la contraseña— de otro.)
         $yo = $request->user();
+        $esPropiaCuenta = $yo && (int) $yo->id === (int) $general_user->id;
+        $esAdmin = optional($yo)->rol === 'admin';
+        if (!$esPropiaCuenta && !$esAdmin) {
+            return response()->json(['message' => 'No puedes modificar los datos de otro usuario.'], 403);
+        }
+
+        // Cambios de rol o estado exigen admin; nadie se auto-eleva.
         $cambiaRol = $request->has('rol') && $request->rol !== $general_user->rol;
         $cambiaEstado = $request->has('estado') && (bool) $request->estado !== (bool) $general_user->estado;
         if (($cambiaRol || $cambiaEstado) && optional($yo)->rol !== 'admin') {
             return response()->json(['message' => 'Solo un administrador puede cambiar rol o estado.'], 403);
         }
+        // El propio correo (identificador de acceso) solo se cambia con la
+        // contraseña actual: PUT /auth/email. Un admin sí puede corregir el
+        // correo de OTRO usuario desde su detalle.
+        $cambiaCorreo = $request->has('correo') && $request->correo !== $general_user->correo;
+        if ($cambiaCorreo && $esPropiaCuenta) {
+            return response()->json([
+                'message' => 'Usa "Cambiar correo" e ingresa tu contraseña actual para modificar tu correo.',
+            ], 422);
+        }
         // Nadie puede quitarse a sí mismo el rol de admin.
         if ($cambiaRol && $yo && (int) $yo->id === (int) $general_user->id && $general_user->rol === 'admin') {
             return response()->json(['message' => 'No puedes quitarte tu propio rol de administrador.'], 422);
         }
+        // Tampoco se puede suspender/degradar al último administrador activo.
+        $dejaDeSerAdminActivo = $general_user->rol === 'admin' && $general_user->estado
+            && (($cambiaRol && $request->rol !== 'admin') || ($cambiaEstado && !$request->boolean('estado')));
+        if ($dejaDeSerAdminActivo) {
+            $activos = GeneralUser::where('rol', 'admin')->where('estado', true)->count();
+            if ($activos <= 1) {
+                return response()->json([
+                    'message' => 'No puedes dejar el sistema sin administradores activos.',
+                ], 409);
+            }
+        }
 
         $data = $request->all();
+        $huboPassword = !empty($data['password']);
         // Solo re-hashear si viene clave nueva no vacía.
         if (empty($data['password'])) {
             unset($data['password']);
@@ -84,19 +146,81 @@ class GeneralUserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
         $general_user->update($data);
+
+        Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
+            'rol' => $cambiaRol ? $general_user->rol : null,
+            'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
+            'password_reset' => $huboPassword ?: null,
+        ]));
+
+        // Mantiene coherente el perfil de admin al cambiar el rol.
+        if ($cambiaRol) {
+            if ($general_user->rol === 'admin') {
+                Admin::firstOrCreate(['id_usuario' => $general_user->id]);
+            } else {
+                Admin::where('id_usuario', $general_user->id)->delete();
+            }
+        }
+
         return $general_user;
     }
 
-    public function destroy(GeneralUser $general_user)
+    public function destroy(Request $request, GeneralUser $general_user)
     {
+        $yo = $request->user();
+
+        // Autoprotección: nadie borra su propia cuenta.
+        if ($yo && (int) $yo->id === (int) $general_user->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 422);
+        }
+
+        // No se puede dejar el sistema sin administradores activos.
+        if ($general_user->rol === 'admin' && $general_user->estado) {
+            $activos = GeneralUser::where('rol', 'admin')->where('estado', true)->count();
+            if ($activos <= 1) {
+                return response()->json([
+                    'message' => 'No puedes eliminar al último administrador activo.',
+                ], 409);
+            }
+        }
+
+        $instructor = $general_user->instructor;
+
         // Un instructor con fichas a cargo no se puede borrar: la FK lo impide
         // (antes reventaba con 500). Se responde 409 con un motivo claro.
-        $instructor = $general_user->instructor;
         if ($instructor) {
             $fichas = ClassGroup::where('id_instructor', $instructor->id)->count();
             if ($fichas > 0) {
                 return response()->json([
                     'message' => "No se puede eliminar: tiene {$fichas} ficha(s) a cargo. Reasígnalas primero.",
+                ], 409);
+            }
+        }
+
+        // Nadie con historial académico se borra: se suspende la cuenta. Borrar
+        // arrastraría sus propuestas (y con ellas similitudes y equipos).
+        $creadas = Project::where('id_creador', $general_user->id)->count();
+        if ($creadas > 0) {
+            return response()->json([
+                'message' => "No se puede eliminar: es autor de {$creadas} propuesta(s). Suspende la cuenta para conservar el historial.",
+            ], 409);
+        }
+
+        if ($instructor) {
+            $asignadas = Project::where('id_instructor_asignado', $instructor->id)->count();
+            if ($asignadas > 0) {
+                return response()->json([
+                    'message' => "No se puede eliminar: tiene {$asignadas} propuesta(s) asignada(s). Reasígnalas primero.",
+                ], 409);
+            }
+        }
+
+        $aprendiz = $general_user->apprentice;
+        if ($aprendiz) {
+            $enEquipo = ApprenticeProject::where('id_aprendiz', $aprendiz->id)->count();
+            if ($enEquipo > 0) {
+                return response()->json([
+                    'message' => "No se puede eliminar: participa en {$enEquipo} propuesta(s). Suspende la cuenta para conservar el historial.",
                 ], 409);
             }
         }
@@ -108,6 +232,11 @@ class GeneralUserController extends Controller
                 'message' => 'No se puede eliminar: el usuario tiene registros asociados.',
             ], 409);
         }
+
+        Auditoria::registrar('eliminar_usuario', 'general_users', $general_user->id, [
+            'correo' => $general_user->correo,
+            'rol' => $general_user->rol,
+        ]);
 
         return $general_user;
     }
