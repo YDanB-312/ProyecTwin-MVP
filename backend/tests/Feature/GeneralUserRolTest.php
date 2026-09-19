@@ -73,13 +73,29 @@ class GeneralUserRolTest extends TestCase
             ->putJson('/v1/general-users/' . $user->id, [
                 'nombre' => 'Nombre Nuevo',
                 'apellido' => 'Apellido Nuevo',
-                'correo' => 'correo.nuevo.' . uniqid() . '@test.local',
+                'correo' => $user->correo,
             ])
             ->assertOk();
 
         $fresco = $user->fresh();
         $this->assertSame('Nombre Nuevo', $fresco->nombre);
         $this->assertSame('aprendiz', $fresco->rol);
+        $this->assertSame($user->correo, $fresco->correo);
+    }
+
+    public function test_nadie_cambia_su_propio_correo_por_el_update_generico(): void
+    {
+        $user = $this->crearUsuario('aprendiz');
+
+        $this->withToken($this->token($user))
+            ->putJson('/v1/general-users/' . $user->id, [
+                'nombre' => $user->nombre,
+                'apellido' => $user->apellido,
+                'correo' => 'otro.' . uniqid() . '@test.local',
+            ])
+            ->assertStatus(422);
+
+        $this->assertSame($user->correo, $user->fresh()->correo);
     }
 
     public function test_un_admin_si_puede_cambiar_el_rol_de_otro(): void

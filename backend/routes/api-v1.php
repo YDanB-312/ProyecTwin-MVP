@@ -17,11 +17,13 @@ use App\Http\Controllers\Api\ApprenticeProjectController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\MotorConfigController;
+use App\Http\Controllers\Api\AuditLogController;
 
 // ------------------------------------------------------------------ Públicas
-// Login, registro de cuenta y restablecimiento de contraseña no exigen token.
+// Login, registro y recuperación de contraseña por correo no exigen token.
 Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/password-reset', [AuthController::class, 'passwordReset']);
+Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('general-users', [GeneralUserController::class, 'store']);
 
 // Lectura pública (landing/demo): catálogo institucional y config del motor.
@@ -40,9 +42,10 @@ Route::get('public/resumen', [MotorConfigController::class, 'resumen']);
 Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
 
 // ------------------------------------------------------------------ Sesión
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('auth/logout', [AuthController::class, 'logout']);
-    Route::get('auth/me', [AuthController::class, 'me']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::get('auth/me', [AuthController::class, 'me']);
+        Route::put('auth/email', [AuthController::class, 'changeEmail']);
 });
 
 // ------------------------------------------------------------------ Autenticadas
@@ -51,8 +54,13 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     // Configuración del motor de similitudes (la lectura es pública, arriba)
     Route::middleware('rol:admin')->put('config-similitud', [MotorConfigController::class, 'update']);
 
-    // Usuarios
-    Route::get('general-users', [GeneralUserController::class, 'index']);
+    // Bitácora de acciones sensibles (solo admin, inmutable: no hay escritura)
+    Route::middleware('rol:admin')->get('audit-logs', [AuditLogController::class, 'index']);
+
+    // Usuarios: el listado completo es solo para admin; el detalle es del propio
+    // usuario o de un admin; el perfil público lo usan las vistas entre usuarios.
+    Route::middleware('rol:admin')->get('general-users', [GeneralUserController::class, 'index']);
+    Route::get('general-users/{general_user}/perfil', [GeneralUserController::class, 'perfil']);
     Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
     Route::middleware('rol:admin')->delete('general-users/{general_user}', [GeneralUserController::class, 'destroy']);
@@ -116,12 +124,15 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
 
     // Similitudes: el motor se ejecuta del lado servidor
     Route::post('similarities/detect', [SimilarityController::class, 'detect']);
-    Route::middleware('rol:admin')->post('similarities/recalculate', [SimilarityController::class, 'recalculate']);
     Route::get('similarities', [SimilarityController::class, 'index']);
-    Route::post('similarities', [SimilarityController::class, 'store']);
     Route::get('similarities/{similarity}', [SimilarityController::class, 'show']);
-    Route::put('similarities/{similarity}', [SimilarityController::class, 'update']);
-    Route::delete('similarities/{similarity}', [SimilarityController::class, 'destroy']);
+    // Escribir pares es exclusivo del admin (el motor los genera internamente).
+    Route::middleware('rol:admin')->group(function () {
+        Route::post('similarities/recalculate', [SimilarityController::class, 'recalculate']);
+        Route::post('similarities', [SimilarityController::class, 'store']);
+        Route::put('similarities/{similarity}', [SimilarityController::class, 'update']);
+        Route::delete('similarities/{similarity}', [SimilarityController::class, 'destroy']);
+    });
 
     // Notificaciones
     Route::get('notifications', [NotificationController::class, 'index']);

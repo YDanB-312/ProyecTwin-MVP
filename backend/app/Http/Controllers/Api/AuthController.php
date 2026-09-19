@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
+use App\Support\Auditoria;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -46,20 +49,107 @@ class AuthController extends Controller
         return $request->user();
     }
 
-    // Restablecimiento público (flujo "olvidé mi contraseña"): sin token.
-    // Si el correo no existe se responde 422 para que la UI lo informe.
-    public function passwordReset(Request $request)
+    // Cambio de correo del propio usuario: exige la contraseña actual antes de
+    // autorizar (el correo es el identificador de acceso). Al cambiarlo se
+    // revocan las demás sesiones y se conserva la actual.
+    public function changeEmail(Request $request)
     {
         $request->validate([
-            'correo' => 'required|email',
-            'password' => 'required|min:6|max:255',
+            'correo' => [
+                'required', 'email',
+                Rule::unique('general_users', 'correo')->ignore($request->user()->id),
+            ],
+            'password_actual' => 'required|string',
         ]);
 
-        $user = GeneralUser::where('correo', $request->correo)->first();
-        if (!$user) {
-            return response()->json(['message' => 'No encontramos una cuenta registrada con ese correo.'], 422);
+        $user = $request->user();
+
+        if (!Hash::check($request->password_actual, $user->password)) {
+            return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);
         }
-        $user->update(['password' => Hash::make($request->password)]);
-        return response()->json(['message' => 'Contraseña actualizada.']);
+
+        $nuevo = strtolower(trim($request->correo));
+        if ($nuevo === strtolower((string) $user->correo)) {
+            return response()->json(['message' => 'Ese ya es tu correo actual.'], 422);
+        }
+
+        $user->update(['correo' => $nuevo]);
+
+        Auditoria::registrar('cambiar_correo', 'general_users', $user->id, ['correo' => $nuevo]);
+
+        $actual = $user->currentAccessToken();
+        if ($actual) {
+            $user->tokens()->where('id', '!=', $actual->id)->delete();
+        }
+
+        return response()->json(['message' => 'Correo actualizado.', 'correo' => $user->correo]);
+    }
+
+    // Solicita el enlace de restablecimiento (público). Respuesta genérica para
+    // no revelar qué correos existen. En local se devuelve el enlace para poder
+    // probar el flujo sin abrir el correo.
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['correo' => 'required|email']);
+        $correo = strtolower(trim($request->correo));
+
+        $tokenPlano = null;
+        Password::sendResetLink(['correo' => $correo], function ($user, $token) use (&$tokenPlano) {
+            // Al pasar un callback, el broker NO envía la notificación: se envía aquí.
+            $tokenPlano = $token;
+            $user->sendPasswordResetNotification($token);
+        });
+
+        Auditoria::registrar('solicitar_reset', 'general_users', null, ['correo' => $correo]);
+
+        $respuesta = [
+            'message' => 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.',
+        ];
+
+        if (app()->environment('local') && $tokenPlano) {
+            $respuesta['reset_url'] = rtrim((string) config('app.frontend_url'), '/')
+                . '/restablecer-contrasena?' . http_build_query([
+                    'token' => $tokenPlano,
+                    'correo' => $correo,
+                ]);
+        }
+
+        return response()->json($respuesta);
+    }
+
+    // Restablece la contraseña con un token válido (público).
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'correo' => 'required|email',
+            'password' => 'required|min:6|max:255|confirmed',
+        ]);
+
+        $correo = strtolower(trim($request->correo));
+
+        $status = Password::reset(
+            [
+                'correo' => $correo,
+                'token' => $request->token,
+                'password' => $request->password,
+                'password_confirmation' => $request->password_confirmation,
+            ],
+            function ($user, $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+                // Por seguridad, se cierran todas las sesiones tras el cambio.
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            Auditoria::registrar('restablecer_clave', 'general_users', null, ['correo' => $correo]);
+
+            return response()->json(['message' => 'Contraseña restablecida. Ya puedes iniciar sesión.']);
+        }
+
+        return response()->json([
+            'message' => 'El enlace es inválido o venció. Solicita uno nuevo.',
+        ], 422);
     }
 }
