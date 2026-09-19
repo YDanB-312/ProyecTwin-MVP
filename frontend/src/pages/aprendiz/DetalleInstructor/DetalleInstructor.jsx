@@ -35,7 +35,7 @@ export default function DetalleInstructor() {
   const instructorId = paramId ? Number(paramId) : (miFicha?.instructor?.generalUser?.id ?? null)
 
   const { data: instructor, cargando, error, recargar } = useApi(
-    () => (instructorId ? usuarios.obtener(instructorId) : Promise.resolve(null)),
+    () => (instructorId ? usuarios.perfil(instructorId) : Promise.resolve(null)),
     [instructorId],
     { inicial: null }
   )

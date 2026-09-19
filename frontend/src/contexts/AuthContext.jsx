@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
-  apiFetch, apiLogin, apiLogout, apiMe, apiPasswordReset, setAuthToken, haySesion,
+  apiFetch, apiLogin, apiLogout, apiMe, setAuthToken, haySesion,
   EVENTO_SESION_EXPIRADA,
 } from '../lib/api'
 
@@ -84,16 +84,6 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ---------------------------------------------------------------- Contraseñas
-  // Restablecer (sin sesión): el backend actualiza y el usuario vuelve al login.
-  const cambiarContrasena = useCallback(async (correo, nuevaPassword) => {
-    try {
-      await apiPasswordReset(correo.trim().toLowerCase(), nuevaPassword)
-      return true
-    } catch {
-      return false
-    }
-  }, [])
-
   // Cambio autenticado: verifica la actual y actualiza el propio perfil.
   const cambiarMiContrasena = useCallback(async (actual, nueva) => {
     if (!user?.correo) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
@@ -167,7 +157,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, register, cambiarContrasena, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, register, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

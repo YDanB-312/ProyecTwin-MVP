@@ -37,7 +37,7 @@ export default function DetalleCompanero() {
 
   // Perfil consultado y datos académicos: fuente única la API.
   const { data: companero, cargando, error, recargar } = useApi(
-    () => usuarios.obtener(id),
+    () => usuarios.perfil(id),
     [id],
     { inicial: null }
   )

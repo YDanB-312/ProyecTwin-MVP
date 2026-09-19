@@ -11,7 +11,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
 import Alert from '../../../components/Alert/Alert'
 import FormField from '../../../components/FormField/FormField'
-import { Input, Select } from '../../../components/Input/Input'
+import { Input, PasswordInput, Select } from '../../../components/Input/Input'
 import Actions from '../../../components/Actions/Actions'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -57,7 +57,11 @@ export default function DetalleUsuario() {
   const navigate = useNavigate()
   const { user: sesion, sincronizarSesion } = useAuth()
   const [modalEliminar, setModalEliminar] = useState(false)
+  // Cambio del propio correo: exige la contraseña actual del admin.
   const [correoPendiente, setCorreoPendiente] = useState(null)
+  const [correoPass, setCorreoPass] = useState('')
+  const [correoError, setCorreoError] = useState('')
+  const [guardandoCorreo, setGuardandoCorreo] = useState(false)
 
   // Edición
   const [editando, setEditando] = useState(false)
@@ -73,7 +77,7 @@ export default function DetalleUsuario() {
       const [usuario, listaAprendices, listaFichas, listaProyectos, listaSimilitudes] = await Promise.all([
         usuarios.obtener(id),
         aprendices.listar('generalUser,classGroup.program,classGroup.trainingCenter'),
-        fichas.listar('program,trainingCenter', {}),
+        fichas.listar('program,trainingCenter,instructor', {}),
         proyectos.listar({ included: 'creator,classGroup.program,apprentices.generalUser' }),
         similitudes.listar(),
       ])
@@ -130,6 +134,35 @@ export default function DetalleUsuario() {
         || (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
       )
     : []
+
+  // Fichas a cargo (instructores): bloquean el borrado, igual que el backend (409).
+  const fichasACargo = usuario.rol === 'instructor' && usuario.instructor
+    ? listaFichas.filter((f) => Number(f.instructor?.id) === Number(usuario.instructor.id))
+    : []
+
+  // El borrado también se bloquea por historial académico (espejo del backend).
+  const listaProyectos = data.listaProyectos || []
+  const propuestasCreadas = listaProyectos.filter((p) => Number(p.id_creador) === Number(usuario.id))
+  const propuestasAsignadas = usuario.rol === 'instructor' && usuario.instructor
+    ? listaProyectos.filter((p) => Number(p.id_instructor_asignado) === Number(usuario.instructor.id))
+    : []
+  const propuestasEnEquipo = usuario.rol === 'aprendiz'
+    ? listaProyectos.filter(
+        (p) => Number(p.id_creador) !== Number(usuario.id)
+          && (p.apprentices || []).some((a) => Number(a.generalUser?.id) === Number(usuario.id))
+      )
+    : []
+
+  const motivoNoEliminar = propuestasCreadas.length > 0
+    ? `No se puede eliminar: es autor de ${propuestasCreadas.length} propuesta(s). Suspende la cuenta para conservar el historial.`
+    : propuestasAsignadas.length > 0
+      ? `No se puede eliminar: tiene ${propuestasAsignadas.length} propuesta(s) asignada(s). Reasígnalas primero.`
+      : propuestasEnEquipo.length > 0
+        ? `No se puede eliminar: participa en ${propuestasEnEquipo.length} propuesta(s). Suspende la cuenta para conservar el historial.`
+        : fichasACargo.length > 0
+          ? `No se puede eliminar: tiene ${fichasACargo.length} ficha(s) a cargo. Reasígnalas primero.`
+          : ''
+  const noEliminable = motivoNoEliminar !== ''
 
   // Máximo porcentaje y conteo de coincidencias de una propuesta.
   const similitudInfoDe = (projectId) => {
@@ -208,19 +241,44 @@ export default function DetalleUsuario() {
       return
     }
     const nuevoEmail = form.email.trim().toLowerCase()
-    // Si un admin cambia su propio correo (su usuario de acceso), se confirma.
+    // Cambiar el correo propio (usuario de acceso) exige la contraseña actual.
     if (esMiCuenta && nuevoEmail !== usuario.correo) {
       setCorreoPendiente(nuevoEmail)
+      setCorreoPass('')
+      setCorreoError('')
       return
     }
     await guardarCambios(nuevoEmail)
   }
 
+  const confirmarCambioCorreo = async () => {
+    if (!correoPass) {
+      setCorreoError('Ingresa tu contraseña actual.')
+      return
+    }
+    setGuardandoCorreo(true)
+    setCorreoError('')
+    try {
+      await usuarios.cambiarCorreo(correoPendiente, correoPass)
+      sincronizarSesion(null, correoPendiente)
+      setCorreoPendiente(null)
+      setCorreoPass('')
+      await recargar()
+      setEditando(false)
+      setGuardado(true)
+    } catch (err) {
+      setCorreoError(err?.data?.message || 'No fue posible cambiar el correo.')
+    } finally {
+      setGuardandoCorreo(false)
+    }
+  }
+
   const guardarCambios = async (nuevoEmail) => {
     try {
-      // 1) Datos de la cuenta (nombre/apellido/correo/rol/estado son obligatorios en PUT).
-      if (nuevoEmail !== usuario.correo || form.role !== usuario.rol) {
-        await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { correo: nuevoEmail, rol: form.role }))
+      // El correo propio nunca se cambia por aquí: solo con contraseña.
+      const correoAEnviar = esMiCuenta ? usuario.correo : nuevoEmail
+      if (correoAEnviar !== usuario.correo || form.role !== usuario.rol) {
+        await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { correo: correoAEnviar, rol: form.role }))
       }
       // 2) Ficha del aprendiz: solo si ya tiene perfil y cambió la selección.
       if (usuario.rol === 'aprendiz' && perfilAprendiz) {
@@ -237,10 +295,7 @@ export default function DetalleUsuario() {
         }
       }
       await recargar()
-      // Si el admin editó su propio correo, la sesión en pantalla debe reflejarlo.
-      if (esMiCuenta && nuevoEmail !== usuario.correo) {
-        sincronizarSesion(null, nuevoEmail)
-      }      setEditando(false)
+      setEditando(false)
       setGuardado(true)
     } catch (err2) {
       const campos = err2?.data?.errors || {}
@@ -321,14 +376,27 @@ export default function DetalleUsuario() {
             <Button
               type="button"
               variant="dangerGhost"
-              disabled={proyectosDelUsuario.length > 0}
-              title={proyectosDelUsuario.length > 0 ? 'No se puede eliminar: tiene propuestas asociadas' : undefined}
+              disabled={esMiCuenta || noEliminable}
+              title={
+                esMiCuenta
+                  ? 'No puedes eliminar tu propia cuenta'
+                  : noEliminable
+                    ? motivoNoEliminar
+                    : undefined
+              }
               onClick={() => setModalEliminar(true)}
             >
               <Trash size={14} /> Eliminar
             </Button>
           </Actions>
         </div>
+
+        {/* Por qué no se puede eliminar: el backend responde 409 en estos casos. */}
+        {motivoNoEliminar && (
+          <Alert variant="warning">
+            <Warning size={14} /> {motivoNoEliminar}
+          </Alert>
+        )}
 
         {claveTemporal && (
           <Alert>
@@ -463,16 +531,20 @@ export default function DetalleUsuario() {
       <ConfirmModal
         open={!!correoPendiente}
         titulo="Cambiar correo electrónico"
-        mensaje={`Vas a cambiar tu correo de "${usuario.correo}" a "${correoPendiente}". Con el nuevo correo iniciarás sesión y recibirás notificaciones. ¿Confirmas el cambio?`}
-        textoConfirmar="Sí, cambiar correo"
+        mensaje={`Vas a cambiar tu correo de "${usuario.correo}" a "${correoPendiente}". Confirma tu identidad con la contraseña actual.`}
+        textoConfirmar={guardandoCorreo ? 'Guardando…' : 'Cambiar correo'}
         textoCancelar="Cancelar"
-        onConfirmar={() => {
-          const nuevo = correoPendiente
-          setCorreoPendiente(null)
-          guardarCambios(nuevo)
-        }}
+        onConfirmar={confirmarCambioCorreo}
         onCancelar={() => setCorreoPendiente(null)}
-      />
+      >
+        <FormField label="Contraseña actual" required error={correoError}>
+          <PasswordInput
+            value={correoPass}
+            onChange={(e) => { setCorreoPass(e.target.value); setCorreoError('') }}
+            autoComplete="current-password"
+          />
+        </FormField>
+      </ConfirmModal>
     </DashboardLayout>
   )
 }

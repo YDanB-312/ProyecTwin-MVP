@@ -4,7 +4,8 @@ import { useApi } from '../../lib/useApi'
 import { notificaciones as apiNotificaciones } from '../../lib/recursos'
 import {
   House, FolderOpen, Bell, Bug, UserCircle,
-  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix
+  ClipboardText, BookOpen, BookBookmark, UsersThree, MagnifyingGlass, GraduationCap, GearSix,
+  ClockCounterClockwise
 } from 'phosphor-react'
 import GovernmentBar from '../../components/GovernmentBar/GovernmentBar'
 import TopNav from '../../components/TopNav/TopNav'
@@ -39,6 +40,7 @@ const LINKS = {
     { to: '/admin/notificaciones', icon: <Bell size={20} weight="regular" />, label: 'Alertas' },
     { to: '/admin/usuarios', icon: <UsersThree size={20} weight="regular" />, label: 'Usuarios', activeFor: ['/admin/detalle-usuario'] },
     { to: '/admin/fichas', icon: <BookBookmark size={20} weight="regular" />, label: 'Fichas', activeFor: ['/admin/detalle-ficha'] },
+  { to: '/admin/bitacora', icon: <ClockCounterClockwise size={20} weight="regular" />, label: 'Bitácora' },
     { to: '/admin/configuracion', icon: <GearSix size={20} weight="regular" />, label: 'Configuración', activeFor: ['/admin/redes-conocimiento', '/admin/training-centers', '/admin/config-similitud'] },
     { to: '/admin/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
   ],

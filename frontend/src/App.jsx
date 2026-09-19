@@ -50,6 +50,7 @@ const TrainingCentersAdmin = lazy(() => import('./pages/admin/TrainingCentersAdm
 const ConfigSimilitud = lazy(() => import('./pages/admin/ConfigSimilitud'))
 const FichasAdmin = lazy(() => import('./pages/admin/FichasAdmin'))
 const DetalleFichaAdmin = lazy(() => import('./pages/admin/DetalleFichaAdmin'))
+const Bitacora = lazy(() => import('./pages/admin/Bitacora'))
 const Configuracion = lazy(() => import('./pages/admin/Configuracion'))
 const ProyectosAdmin = lazy(() => import('./pages/admin/ProyectosAdmin'))
 const DetalleProyectoAdmin = lazy(() => import('./pages/admin/DetalleProyectoAdmin'))
@@ -116,6 +117,7 @@ export default function App() {
         <Route path="/admin/config-similitud" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><ConfigSimilitud /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Configuracion /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/fichas" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><FichasAdmin /></SafeRoute></ProtectedRoute>} />
+        <Route path="/admin/bitacora" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><Bitacora /></SafeRoute></ProtectedRoute>} />
         <Route path="/admin/detalle-ficha/:id" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><DetalleFichaAdmin /></SafeRoute></ProtectedRoute>} />
 
         <Route path="/admin/proyectos" element={<ProtectedRoute allowedRoles={['admin']}><SafeRoute><ProyectosAdmin /></SafeRoute></ProtectedRoute>} />

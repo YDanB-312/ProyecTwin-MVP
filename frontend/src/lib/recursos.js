@@ -9,10 +9,14 @@ const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []))
 
 // ---------------------------------------------------------------- Usuarios
 export const usuarios = {
-  listar: (filtros = {}) => apiFetch(`/general-users${qs(filtros)}`).then(lista),
-  obtener: (id, included = 'apprentice,instructor,admin') => apiFetch(`/general-users/${id}${qs({ included })}`),
+  listar: (filtros = {}) => apiFetch(`/general-users${qs(filtros)}`).then(lista),  obtener: (id, included = 'apprentice,instructor,admin') => apiFetch(`/general-users/${id}${qs({ included })}`),
+  // Perfil público (vistas entre usuarios: compañero/instructor): solo datos básicos.
+  perfil: (id) => apiFetch(`/general-users/${id}/perfil`),
   crear: (body) => apiFetch('/general-users', { method: 'POST', body }),
   actualizar: (id, body) => apiFetch(`/general-users/${id}`, { method: 'PUT', body }),
+  // Cambio del propio correo: el backend exige la contraseña actual.
+  cambiarCorreo: (correo, passwordActual) =>
+    apiFetch('/auth/email', { method: 'PUT', body: { correo, password_actual: passwordActual } }),
   eliminar: (id) => apiFetch(`/general-users/${id}`, { method: 'DELETE' }),
 }
 
@@ -85,10 +89,14 @@ export const proyectos = {
 }
 
 // ---------------------------------------------------------------- Similitudes
+// Se incluyen los proyectos del par (con su equipo) para resolver títulos y
+// autoría sin depender del listado global de propuestas.
+const INCLUDE_SIMILITUD = 'project1.classGroup.program,project2.classGroup.program,project1.apprentices.generalUser,project2.apprentices.generalUser'
+
 export const similitudes = {
   listar: (filtros = {}) =>
-    apiFetch(`/similarities${qs({ included: 'project1.classGroup.program,project2.classGroup.program', ...filtros })}`).then(lista),
-  obtener: (id) => apiFetch(`/similarities/${id}${qs({ included: 'project1.classGroup.program,project2.classGroup.program' })}`),
+    apiFetch(`/similarities${qs({ included: INCLUDE_SIMILITUD, ...filtros })}`).then(lista),
+  obtener: (id) => apiFetch(`/similarities/${id}${qs({ included: INCLUDE_SIMILITUD })}`),
   detectar: (idProyecto) => apiFetch('/similarities/detect', { method: 'POST', body: { id_proyecto: idProyecto } }),
   recalcular: () => apiFetch('/similarities/recalculate', { method: 'POST', body: {} }),
 }
@@ -129,4 +137,9 @@ export const observaciones = {
   listar: (included = 'user', filtros = {}) => apiFetch(`/comments${qs({ included, ...filtros })}`).then(lista),
   crear: (body) => apiFetch('/comments', { method: 'POST', body }),
   eliminar: (id) => apiFetch(`/comments/${id}`, { method: 'DELETE' }),
+}
+
+// ---------------------------------------------------------------- Bitácora (solo admin, inmutable)
+export const auditoria = {
+  listar: (filtros = {}) => apiFetch(`/audit-logs${qs(filtros)}`).then(lista),
 }

@@ -76,8 +76,15 @@ export default function DetalleSimilitudBase({
     [listaFichas, user?.id]
   )
 
-  // Todas las similitudes: para el bloque "otras coincidencias relacionadas".
-  const { data: todas } = useApi(() => similitudes.listar(), [], { inicial: [] })
+  // "Otras coincidencias relacionadas": solo los pares que tocan el par actual
+  // (`related_to`). El backend además acota por rol: el aprendiz solo recibe
+  // pares de sus proyectos, así que no puede ver similitudes ajenas.
+  const relatedTo = [proyecto1?.id, proyecto2?.id].filter(Boolean).join(',')
+  const { data: todas } = useApi(
+    () => similitudes.listar(relatedTo ? { related_to: relatedTo } : {}),
+    [relatedTo],
+    { inicial: [] }
+  )
   const proyectosPorId = useMemo(() => {
     const map = new Map()
     for (const x of todas || []) {

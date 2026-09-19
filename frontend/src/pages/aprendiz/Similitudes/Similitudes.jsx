@@ -39,7 +39,16 @@ export default function Similitudes() {
     [todosProyectos, user.id]
   )
   const idsPropios = useMemo(() => new Set(misProyectos.map((p) => Number(p.id))), [misProyectos])
-  const mapaProyectos = useMemo(() => new Map(todosProyectos.map((p) => [Number(p.id), p])), [todosProyectos])
+  const mapaProyectos = useMemo(() => {
+    const mapa = new Map(todosProyectos.map((p) => [Number(p.id), p]))
+    // El otro proyecto del par puede estar fuera del alcance (otra ficha); la
+    // similitud ya lo trae incluido, así que también entra al mapa.
+    for (const x of todasSimilitudesApi) {
+      if (x.project1) mapa.set(Number(x.project1.id), x.project1)
+      if (x.project2) mapa.set(Number(x.project2.id), x.project2)
+    }
+    return mapa
+  }, [todosProyectos, todasSimilitudesApi])
 
   const sims = useMemo(
     () =>
@@ -103,17 +112,11 @@ export default function Similitudes() {
                 actionLabel="Ir a mis propuestas"
                 onAction={() => window.location.assign('/aprendiz/propuestas')}
               />
-            ) : todasSimilitudesApi.length === 0 ? (
-              <EmptyState
-                icon={<MagnifyingGlass />}
-                title="Sin coincidencias en el sistema"
-                message="Ninguna propuesta del sistema alcanza el umbral vigente. El motor está listo para cuando lleguen más propuestas."
-              />
             ) : (
               <EmptyState
                 icon={<MagnifyingGlass />}
                 title="Sin similitudes detectadas"
-                message={`Buenas noticias: ninguna de tus propuestas coincide con la base de datos por ahora. Hay ${todasSimilitudesApi.length} coincidencia(s) válidas en el sistema entre otras propuestas.`}
+                message="Buenas noticias: ninguna de tus propuestas coincide con otras por ahora."
               />
             )
           ) : (

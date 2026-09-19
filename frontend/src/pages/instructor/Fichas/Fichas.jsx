@@ -387,6 +387,7 @@ export default function Fichas() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="archivado">Archivado</option>
                 </Select>
               </label>
               <p className={s.info}>
@@ -491,7 +492,7 @@ export default function Fichas() {
         titulo="Eliminar ficha"
         mensaje={
           aEliminar
-            ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Los aprendices asignados quedarán sin ficha. Esta acción no se puede deshacer.`
+                ? `¿Seguro que deseas eliminar la ficha "${aEliminar.nombre}" (${aEliminar.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`
             : ''
         }
         textoConfirmar="Sí, eliminar"
