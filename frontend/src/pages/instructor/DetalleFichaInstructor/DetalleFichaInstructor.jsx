@@ -242,6 +242,7 @@ export default function DetalleFichaInstructor() {
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                   <option value="finalizado">Finalizado</option>
+                  <option value="archivado">Archivado</option>
                 </Select>
               </FormField>
               <Actions form>
@@ -322,7 +323,7 @@ export default function DetalleFichaInstructor() {
       <ConfirmModal
         open={modalEliminar}
         titulo="Eliminar ficha"
-        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Los aprendices quedarán sin ficha. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar la ficha "${ficha.nombre}" (${ficha.codigo})? Solo se permite si no tiene aprendices ni propuestas. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}

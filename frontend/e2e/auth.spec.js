@@ -94,7 +94,7 @@ test.describe('Seguridad de la cuenta', () => {
     await page.waitForURL('**/aprendiz/dashboard')
   })
 
-  test('cambiar el correo exige confirmación y solo entonces se guarda', async ({ page }) => {
+  test('cambiar el correo exige la contraseña actual y solo entonces se guarda', async ({ page }) => {
     // Usuario nuevo para no alterar las cuentas del seed que usan los demás specs.
     const email = `correo.e2e.${Date.now()}@soy.sena.edu.co`
     await page.goto('/register')
@@ -113,21 +113,28 @@ test.describe('Seguridad de la cuenta', () => {
     await page.waitForURL('**/aprendiz/dashboard')
 
     await page.goto('/aprendiz/perfil')
+
+    // El correo ya no se edita en el formulario principal: es de solo lectura.
     await page.getByRole('button', { name: /Editar perfil/i }).click()
+    await expect(page.getByLabel(/Correo electr.nico/i)).toHaveAttribute('readonly', '')
+    await page.getByRole('main').getByRole('button', { name: 'Cancelar' }).click()
 
+    // Flujo aparte: nuevo correo + contraseña actual.
     const nuevo = `correo.nuevo.${Date.now()}@soy.sena.edu.co`
-    const campoCorreo = page.getByLabel(/Correo electr.nico/i)
-    await campoCorreo.fill(nuevo)
-    await page.getByRole('button', { name: /Guardar cambios/i }).click()
+    await page.getByRole('button', { name: /Cambiar correo/i }).click()
+    const modal = page.getByRole('alertdialog')
+    await expect(modal).toBeVisible()
 
-    // Se pide confirmación y, si se cancela, el correo no cambia.
-    await expect(page.getByText(/Vas a cambiar tu correo/i)).toBeVisible()
-    await page.getByRole('alertdialog').getByRole('button', { name: /Cancelar/i }).click()
-    await expect(campoCorreo).toHaveValue(nuevo)
+    await page.getByLabel(/Nuevo correo electr.nico/i).fill(nuevo)
 
-    // Al confirmar, se guarda y el perfil muestra el correo nuevo.
-    await page.getByRole('button', { name: /Guardar cambios/i }).click()
-    await page.getByRole('alertdialog').getByRole('button', { name: /Sí, cambiar correo/i }).click()
+    // Con la contraseña incorrecta no se cambia.
+    await page.getByLabel(/Contraseña actual/i).fill('equivocada')
+    await modal.getByRole('button', { name: /Cambiar correo/i }).click()
+    await expect(page.getByText(/contraseña actual no es correcta/i)).toBeVisible()
+
+    // Con la correcta, se guarda y el perfil muestra el correo nuevo.
+    await page.getByLabel(/Contraseña actual/i).fill('clave123')
+    await modal.getByRole('button', { name: /Cambiar correo/i }).click()
     await expect(page.getByRole('main').getByText(nuevo).first()).toBeVisible({ timeout: 15000 })
   })
 })

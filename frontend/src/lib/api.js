@@ -165,8 +165,18 @@ export function apiMe() {
   return apiFetch('/auth/me')
 }
 
-export function apiPasswordReset(correo, password) {
-  return apiFetch('/auth/password-reset', { method: 'POST', body: { correo, password }, auth: false })
+// Recuperación de contraseña por correo (en local el enlace se escribe en el log;
+// en `local` la respuesta además trae `reset_url` para poder probarlo).
+export function apiForgotPassword(correo) {
+  return apiFetch('/auth/forgot-password', { method: 'POST', body: { correo }, auth: false })
+}
+
+export function apiResetPassword({ correo, token, password, password_confirmation }) {
+  return apiFetch('/auth/reset-password', {
+    method: 'POST',
+    body: { correo, token, password, password_confirmation },
+    auth: false,
+  })
 }
 
 // ---------------------------------------------------------------- Utilidades

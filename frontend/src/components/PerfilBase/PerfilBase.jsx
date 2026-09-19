@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera, CheckCircle, IdentificationCard, LockKey, PencilLine, Trash } from 'phosphor-react'
+import { Camera, CheckCircle, EnvelopeSimple, IdentificationCard, LockKey, PencilLine, Trash } from 'phosphor-react'
 import PageHeader from '../PageHeader/PageHeader'
 import DataPanel from '../DataPanel/DataPanel'
 import Avatar from '../Avatar/Avatar'
@@ -58,9 +58,13 @@ export default function PerfilBase({
 
   // Perfil real desde la API (apellido, estado, foto_url…); el `user` de
   // sesión solo trae { id, correo, nombre, rol } y sirve de respaldo.
+  // En modo solo lectura (perfil ajeno) se usa el perfil público: el detalle
+  // completo es privado (propio o admin).
   const { data: perfilApi, recargar: recargarPerfil } = useApi(
-    () => (user?.id ? usuarios.obtener(user.id) : Promise.resolve(null)),
-    [user?.id]
+    () => (user?.id
+      ? (soloLectura ? usuarios.perfil(user.id) : usuarios.obtener(user.id))
+      : Promise.resolve(null)),
+    [user?.id, soloLectura]
   )
   const perfil = perfilApi || user || {}
   const nombre = [perfil.nombre, perfil.apellido].filter(Boolean).join(' ').trim()
@@ -73,7 +77,7 @@ export default function PerfilBase({
   const [editando, setEditando] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [guardando, setGuardando] = useState(false)
-  const [form, setForm] = useState(() => ({ nombre: '', apellido: '', email: user?.correo || '' }))
+  const [form, setForm] = useState(() => ({ nombre: '', apellido: '' }))
   const [errors, setErrors] = useState({})
   const fileRef = useRef(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
@@ -82,7 +86,11 @@ export default function PerfilBase({
   const [fotoMsg, setFotoMsg] = useState(null)
   const msgTimer = useRef(null)
   const [cambiandoPass, setCambiandoPass] = useState(false)
-  const [correoPendiente, setCorreoPendiente] = useState(null)
+  // Cambio de correo: flujo aparte que exige la contraseña actual.
+  const [cambiandoCorreo, setCambiandoCorreo] = useState(false)
+  const [correoForm, setCorreoForm] = useState({ correo: '', password: '' })
+  const [correoErrors, setCorreoErrors] = useState({})
+  const [guardandoCorreo, setGuardandoCorreo] = useState(false)
   const [passForm, setPassForm] = useState({ actual: '', nueva: '', confirmar: '' })
   const [passErrors, setPassErrors] = useState({})
   const [passMsg, setPassMsg] = useState(null)
@@ -135,7 +143,7 @@ export default function PerfilBase({
   }
 
   function iniciarEdicion() {
-    setForm({ nombre: perfil.nombre || '', apellido: perfil.apellido || '', email: correo })
+    setForm({ nombre: perfil.nombre || '', apellido: perfil.apellido || '' })
     setErrors({})
     setEditando(true)
   }
@@ -150,22 +158,14 @@ export default function PerfilBase({
     const errs = {}
     if (!form.nombre.trim()) errs.nombre = 'Ingresa tus nombres.'
     if (!form.apellido.trim()) errs.apellido = 'Ingresa tus apellidos.'
-    if (!esEmailValido(form.email.trim())) {
-      errs.email = 'Ingresa un correo electrónico válido.'
-    }
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
-    const nuevoCorreo = form.email.trim().toLowerCase()
-    // Cambiar el correo es sensible (es el usuario de acceso): se confirma aparte.
-    if (nuevoCorreo !== String(correo).trim().toLowerCase()) {
-      setCorreoPendiente(nuevoCorreo)
-      return
-    }
-    await guardarCuenta(nuevoCorreo)
+    // El correo NO se toca aquí: tiene su propio flujo con contraseña.
+    await guardarCuenta()
   }
 
-  async function guardarCuenta(nuevoCorreo) {
+  async function guardarCuenta() {
     setGuardando(true)
     try {
       const nombreCompleto = `${form.nombre.trim()} ${form.apellido.trim()}`.trim()
@@ -173,9 +173,8 @@ export default function PerfilBase({
       await usuarios.actualizar(user.id, payloadCuenta(cuenta, {
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
-        correo: nuevoCorreo,
       }))
-      sincronizarSesion(nombreCompleto, nuevoCorreo)
+      sincronizarSesion(nombreCompleto, cuenta.correo)
       await recargarPerfil()
       setEditando(false)
       setGuardado(true)
@@ -184,10 +183,49 @@ export default function PerfilBase({
       setErrors({
         nombre: campos.nombre,
         apellido: campos.apellido,
-        email: campos.correo || err?.data?.message || 'No se pudo actualizar el perfil.',
       })
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // ---------------------------------------------------------------- Correo
+  function abrirCambioCorreo() {
+    setCorreoForm({ correo: '', password: '' })
+    setCorreoErrors({})
+    setCambiandoCorreo(true)
+  }
+
+  function setCorreo(campo, valor) {
+    setCorreoForm((f) => ({ ...f, [campo]: valor }))
+    setCorreoErrors((e) => ({ ...e, [campo]: undefined }))
+  }
+
+  async function guardarCorreo() {
+    const errs = {}
+    if (!esEmailValido(correoForm.correo.trim())) {
+      errs.correo = 'Ingresa un correo electrónico válido.'
+    }
+    if (!correoForm.password) errs.password = 'Ingresa tu contraseña actual.'
+    setCorreoErrors(errs)
+    if (Object.keys(errs).length > 0) return
+
+    setGuardandoCorreo(true)
+    try {
+      const nuevoCorreo = correoForm.correo.trim().toLowerCase()
+      await usuarios.cambiarCorreo(nuevoCorreo, correoForm.password)
+      sincronizarSesion(null, nuevoCorreo)
+      await recargarPerfil()
+      setCambiandoCorreo(false)
+      setGuardado(true)
+    } catch (err) {
+      const campos = toFieldErrors(err?.data)
+      const mensaje = err?.data?.message || 'No fue posible cambiar el correo.'
+      if (/contraseña/i.test(mensaje)) setCorreoErrors({ password: mensaje })
+      else if (campos.correo) setCorreoErrors({ correo: 'Ese correo ya está registrado.' })
+      else setCorreoErrors({ correo: mensaje })
+    } finally {
+      setGuardandoCorreo(false)
     }
   }
 
@@ -381,18 +419,14 @@ export default function PerfilBase({
                     placeholder="Ej. González Ruiz"
                   />
                 </FormField>
-                <FormField label="Correo electrónico" required error={errors.email}>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => set('email', e.target.value)}
-                  />
+                <FormField label="Correo electrónico" help="Para cambiarlo usa «Cambiar correo», en Seguridad.">
+                  <Input type="email" value={correo} readOnly />
                 </FormField>
                 <Actions form>
                   <Button type="submit" disabled={guardando}>
                     {guardando ? 'Guardando...' : 'Guardar cambios'}
                   </Button>
-                  <Button variant="secondary" onClick={cancelar}>
+                  <Button type="button" variant="secondary" onClick={cancelar}>
                     Cancelar
                   </Button>
                 </Actions>
@@ -409,11 +443,16 @@ export default function PerfilBase({
             <p className={s.seguridadTexto}>
               Usa una contraseña única de al menos 6 caracteres para proteger tu cuenta.
               <br />
-              <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña actual? Recupérala por correo</Link>
+              <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña? Recupérala por correo</Link>
             </p>
-            <Button type="button" variant="secondary" onClick={iniciarCambioPass}>
-              <LockKey size={14} /> Cambiar contraseña
-            </Button>
+            <span className={s.seguridadAcciones}>
+              <Button type="button" variant="secondary" onClick={abrirCambioCorreo}>
+                <EnvelopeSimple size={14} /> Cambiar correo
+              </Button>
+              <Button type="button" variant="secondary" onClick={iniciarCambioPass}>
+                <LockKey size={14} /> Cambiar contraseña
+              </Button>
+            </span>
           </div>
         ) : (
           <form className={s.form} onSubmit={guardarPass} noValidate>
@@ -469,17 +508,30 @@ export default function PerfilBase({
       )}
 
       <ConfirmModal
-        open={!!correoPendiente}
+        open={cambiandoCorreo}
         titulo="Cambiar correo electrónico"
-        mensaje={`Vas a cambiar tu correo de "${correo}" a "${correoPendiente}". Con el nuevo correo iniciarás sesión y recibirás notificaciones. ¿Confirmas el cambio?`}
-        textoConfirmar="Sí, cambiar correo"
-        onConfirmar={() => {
-          const nuevo = correoPendiente
-          setCorreoPendiente(null)
-          guardarCuenta(nuevo)
-        }}
-        onCancelar={() => setCorreoPendiente(null)}
-      />
+        mensaje={`Tu correo actual es "${correo}". Para autorizar el cambio confirma tu identidad con la contraseña actual.`}
+        textoConfirmar={guardandoCorreo ? 'Guardando…' : 'Cambiar correo'}
+        onConfirmar={guardarCorreo}
+        onCancelar={() => setCambiandoCorreo(false)}
+      >
+        <FormField label="Nuevo correo electrónico" required error={correoErrors.correo}>
+          <Input
+            type="email"
+            value={correoForm.correo}
+            onChange={(e) => setCorreo('correo', e.target.value)}
+            placeholder="nuevo.correo@ejemplo.com"
+            autoComplete="email"
+          />
+        </FormField>
+        <FormField label="Contraseña actual" required error={correoErrors.password}>
+          <PasswordInput
+            value={correoForm.password}
+            onChange={(e) => setCorreo('password', e.target.value)}
+            autoComplete="current-password"
+          />
+        </FormField>
+      </ConfirmModal>
     </div>
   )
 }

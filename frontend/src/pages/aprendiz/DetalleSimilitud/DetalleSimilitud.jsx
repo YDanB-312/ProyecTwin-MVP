@@ -7,11 +7,9 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
-import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
+import { similitudes as similitudesApi, observaciones as observacionesApi } from '../../../lib/recursos'
 import { formatearFecha } from '../../../utils/helpers'
 import s from '../../../components/DetalleSimilitudBase/DetalleSimilitudBase.module.css'
-
-const INCLUDE_PROYECTOS = 'creator,instructor.generalUser,classGroup.program,classGroup.trainingCenter,apprentices.generalUser'
 
 function nombreUsuario(u) {
   if (!u) return 'Usuario'
@@ -23,16 +21,11 @@ export default function DetalleSimilitud() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // Similitud y proyectos del par: fuente única la API.
+  // Similitud con su par de proyectos incluido: fuente única la API.
   const { data: similitud, cargando, error, recargar } = useApi(
     () => similitudesApi.obtener(id),
     [id],
     { inicial: null }
-  )
-  const { data: todosProyectos } = useApi(
-    () => proyectos.listar({ included: INCLUDE_PROYECTOS }),
-    [],
-    { inicial: [] }
   )
 
   // Solo las observaciones de MI propuesta del par — nunca las de la ajena.
@@ -45,8 +38,8 @@ export default function DetalleSimilitud() {
 
   let miPid = null
   if (similitud && user) {
-    const p1 = todosProyectos.find((p) => Number(p.id) === Number(similitud.id_proyecto_1))
-    const p2 = todosProyectos.find((p) => Number(p.id) === Number(similitud.id_proyecto_2))
+    const p1 = similitud.project1
+    const p2 = similitud.project2
     if (esMia(p1)) miPid = p1.id
     else if (esMia(p2)) miPid = p2.id
   }
