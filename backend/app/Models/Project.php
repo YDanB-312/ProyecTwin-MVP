@@ -75,6 +75,89 @@ class Project extends Model
         return $query->whereHas('classGroup.program', fn (Builder $q) => $q->where('nombre', $programa));
     }
 
+    // Alcance por rol para LISTADOS. Sin esto, cualquier autenticado listaba
+    // TODAS las propuestas (título, resumen, objetivos).
+    public function scopeParaUsuario(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol === 'admin') return $query;
+
+        if ($user->rol === 'instructor') {
+            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+            if (!$instructorId) return $query->whereRaw('1 = 0');
+            return $query->where(function (Builder $q) use ($instructorId) {
+                $q->where('id_instructor_asignado', $instructorId)
+                  ->orWhereHas('classGroup', fn (Builder $qq) => $qq->where('id_instructor', $instructorId));
+            });
+        }
+
+        // Aprendiz: sus propuestas (creador o equipo) + las de su ficha (aula).
+        $fichaIds = Apprentice::where('id_usuario', $user->id)->pluck('id_class_group')->filter();
+        return $query->where(function (Builder $q) use ($user, $fichaIds) {
+            $q->where('id_creador', $user->id)
+              ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+            if ($fichaIds->isNotEmpty()) {
+                $q->orWhereIn('id_class_group', $fichaIds);
+            }
+        });
+    }
+
+    // Propuestas "propias" (para comentarios): el aprendiz NO ve las ajenas de
+    // su ficha; el instructor sí las de sus fichas/asignadas.
+    public function scopeDeAutor(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol === 'admin') return $query;
+
+        if ($user->rol === 'instructor') {
+            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+            if (!$instructorId) return $query->whereRaw('1 = 0');
+            return $query->where(function (Builder $q) use ($instructorId) {
+                $q->where('id_instructor_asignado', $instructorId)
+                  ->orWhereHas('classGroup', fn (Builder $qq) => $qq->where('id_instructor', $instructorId));
+            });
+        }
+
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('id_creador', $user->id)
+              ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+        });
+    }
+
+    // Detalle (show): el instructor puede leer en modo lectura las propuestas de
+    // su mismo programa (así lo permite la UI); el aprendiz, las suyas y su ficha.
+    public function scopeParaDetalle(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol === 'admin') return $query;
+
+        if ($user->rol === 'instructor') {
+            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+            $programaIds = $instructorId
+                ? ClassGroup::where('id_instructor', $instructorId)->pluck('id_programa')->filter()->unique()
+                : collect();
+            if (!$instructorId && $programaIds->isEmpty()) return $query->whereRaw('1 = 0');
+            return $query->where(function (Builder $q) use ($instructorId, $programaIds) {
+                if ($instructorId) {
+                    $q->where('id_instructor_asignado', $instructorId)
+                      ->orWhereHas('classGroup', fn (Builder $qq) => $qq->where('id_instructor', $instructorId));
+                }
+                if ($programaIds->isNotEmpty()) {
+                    $q->orWhereHas('classGroup', fn (Builder $qq) => $qq->whereIn('id_programa', $programaIds));
+                }
+            });
+        }
+
+        $fichaIds = Apprentice::where('id_usuario', $user->id)->pluck('id_class_group')->filter();
+        return $query->where(function (Builder $q) use ($user, $fichaIds) {
+            $q->where('id_creador', $user->id)
+              ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+            if ($fichaIds->isNotEmpty()) {
+                $q->orWhereIn('id_class_group', $fichaIds);
+            }
+        });
+    }
+
     // ---------------------------------------------------------------- Relaciones
     public function creator()
     {

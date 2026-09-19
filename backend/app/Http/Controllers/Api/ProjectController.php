@@ -15,6 +15,7 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         return Project::included()
+            ->paraUsuario($request->user())
             ->search($request->query('search'))
             ->byEstado($request->query('estado'))
             ->byTrainingCenter($request->query('training_center_id'))
@@ -58,8 +59,14 @@ class ProjectController extends Controller
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        // El detalle completo solo si la propuesta está dentro de su alcance.
+        $visible = Project::where('id', $id)->paraDetalle($request->user())->exists();
+        if (!$visible) {
+            return response()->json(['message' => 'No tienes acceso a esta propuesta.'], 403);
+        }
+
         return Project::included()->findOrFail($id);
     }
 

@@ -38,6 +38,16 @@ class Comment extends Model
         return $this->belongsTo(Project::class, 'id_proyecto');
     }
 
+    // Solo se ven las observaciones de propuestas propias (o de las fichas del
+    // instructor). Un compañero de ficha NO ve las observaciones ajenas.
+    public function scopeParaUsuario(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol === 'admin') return $query;
+
+        return $query->whereHas('project', fn (Builder $q) => $q->deAutor($user));
+    }
+
     public function user()
     {
         return $this->belongsTo(GeneralUser::class, 'id_usuario');

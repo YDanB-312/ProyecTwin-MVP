@@ -13,6 +13,7 @@ class CommentController extends Controller
     public function index(Request $request)
     {
         return Comment::included()
+            ->paraUsuario($request->user())
             ->when($request->query('id_proyecto'), fn ($q, $id) => $q->where('id_proyecto', $id))
             ->orderByDesc('id')
             ->get();
@@ -37,10 +38,14 @@ class CommentController extends Controller
         return $item;
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $item = Comment::included()->findOrFail($id);
-        return $item;
+        $visible = Comment::where('id', $id)->paraUsuario($request->user())->exists();
+        if (!$visible) {
+            return response()->json(['message' => 'No tienes acceso a esta observación.'], 403);
+        }
+
+        return Comment::included()->findOrFail($id);
     }
 
     public function update(Request $request, Comment $comment)

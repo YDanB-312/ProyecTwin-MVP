@@ -4,16 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Apprentice;
 use App\Models\ClassGroup;
+use App\Models\Instructor;
 use App\Models\Notification;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ApprenticeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Apprentice::included()->get();
-        return $items;
+        $user = $request->user();
+
+        // Admin ve todos; instructor los de sus fichas; aprendiz los de la suya.
+        if (optional($user)->rol === 'admin') {
+            return Apprentice::included()->get();
+        }
+
+        $fichaIds = collect();
+        if ($user && $user->rol === 'instructor') {
+            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+            $fichaIds = $instructorId
+                ? ClassGroup::where('id_instructor', $instructorId)->pluck('id')
+                : collect();
+        } elseif ($user) {
+            $fichaIds = Apprentice::where('id_usuario', $user->id)->pluck('id_class_group')->filter();
+        }
+
+        return Apprentice::included()->whereIn('id_class_group', $fichaIds)->get();
     }
 
     public function store(Request $request)
