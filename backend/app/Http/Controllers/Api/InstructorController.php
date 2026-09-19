@@ -2,15 +2,30 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Apprentice;
+use App\Models\ClassGroup;
 use App\Models\Instructor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class InstructorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Instructor::included()->get();
+        $user = $request->user();
+
+        // Admin ve todos; instructor su propia fila; aprendiz los de su ficha.
+        if (optional($user)->rol === 'admin') {
+            return Instructor::included()->get();
+        }
+        if ($user && $user->rol === 'instructor') {
+            return Instructor::included()->where('id_usuario', $user->id)->get();
+        }
+
+        $fichaIds = Apprentice::where('id_usuario', optional($user)->id)->pluck('id_class_group')->filter();
+        $instructorIds = ClassGroup::whereIn('id', $fichaIds)->pluck('id_instructor')->filter();
+
+        return Instructor::included()->whereIn('id', $instructorIds)->get();
     }
 
     public function store(Request $request)
