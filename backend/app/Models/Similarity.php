@@ -83,9 +83,65 @@ class Similarity extends Model
 
     // ---------------------------------------------------------------- Alcance
 
-    // Aísla los pares según el rol. Sin esto, cualquier autenticado recibía
-    // TODAS las similitudes del sistema (incluidas las de proyectos ajenos).
+    // Pares cuya contraparte desde `$proyectoId` está aprobada (regla de
+    // perspectiva): sirve para las vistas de UNA propuesta.
+    public function scopeContraparteAprobada(Builder $query, int $proyectoId): Builder
+    {
+        return $query->where(function (Builder $q) use ($proyectoId) {
+            $q->where(function (Builder $x) use ($proyectoId) {
+                $x->where('id_proyecto_1', $proyectoId)
+                  ->whereHas('project2', fn (Builder $p) => $p->where('estado', 'aprobado'));
+            })->orWhere(function (Builder $x) use ($proyectoId) {
+                $x->where('id_proyecto_2', $proyectoId)
+                  ->whereHas('project1', fn (Builder $p) => $p->where('estado', 'aprobado'));
+            });
+        });
+    }
+
+    // Listados. Regla: una propuesta pendiente NUNCA figura como coincidencia
+    // de otra; solo se muestra si la contraparte está aprobada.
     public function scopeParaUsuario(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+
+        $ambasAprobadas = function (Builder $q) {
+            $q->whereHas('project1', fn (Builder $p) => $p->where('estado', 'aprobado'))
+              ->whereHas('project2', fn (Builder $p) => $p->where('estado', 'aprobado'));
+        };
+
+        if ($user->rol === 'admin') {
+            return $query->where($ambasAprobadas);
+        }
+
+        if ($user->rol === 'instructor') {
+            $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))
+                ->pluck('id');
+            return $query->where(function (Builder $q) use ($fichaIds) {
+                $q->whereHas('project1', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds))
+                  ->orWhereHas('project2', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds));
+            })->where($ambasAprobadas);
+        }
+
+        // Aprendiz: la contraparte (el lado ajeno) debe estar aprobada; si ambas
+        // propuestas del par son suyas, se muestra.
+        $mio = fn (Builder $qq) => $qq->where('id_creador', $user->id)
+            ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+        $aprobado = fn (Builder $p) => $p->where('estado', 'aprobado');
+
+        return $query->where(function (Builder $q) use ($mio, $aprobado) {
+            $q->where(function (Builder $x) use ($mio, $aprobado) {
+                $x->whereHas('project1', $mio)->whereHas('project2', $aprobado);
+            })->orWhere(function (Builder $x) use ($mio, $aprobado) {
+                $x->whereHas('project2', $mio)->whereHas('project1', $aprobado);
+            })->orWhere(function (Builder $x) use ($mio) {
+                $x->whereHas('project1', $mio)->whereHas('project2', $mio);
+            });
+        });
+    }
+
+    // Detalle de UNA similitud. Admin cualquiera; instructor las de sus fichas
+    // (para poder abrirlas desde la revisión); aprendiz la regla de listado.
+    public function scopeVisibleDetalle(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
         if ($user->rol === 'admin') return $query;
@@ -99,13 +155,7 @@ class Similarity extends Model
             });
         }
 
-        // Aprendiz: solo pares que tocan alguno de sus proyectos (creador o equipo).
-        return $query->where(function (Builder $q) use ($user) {
-            $propio = fn (Builder $qq) => $qq->where('id_creador', $user->id)
-                ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
-            $q->whereHas('project1', $propio)
-              ->orWhereHas('project2', $propio);
-        });
+        return $query->paraUsuario($user);
     }
 
     // Filtra los pares que tocan uno o varios proyectos (lista separada por comas).

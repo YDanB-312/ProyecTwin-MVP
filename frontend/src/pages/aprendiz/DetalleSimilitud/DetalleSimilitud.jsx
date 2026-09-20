@@ -37,12 +37,17 @@ export default function DetalleSimilitud() {
   )
 
   let miPid = null
+  let contraparte = null
   if (similitud && user) {
     const p1 = similitud.project1
     const p2 = similitud.project2
-    if (esMia(p1)) miPid = p1.id
-    else if (esMia(p2)) miPid = p2.id
+    if (esMia(p1)) { miPid = p1.id; contraparte = p2 }
+    else if (esMia(p2)) { miPid = p2.id; contraparte = p1 }
   }
+
+  // Regla: la coincidencia (el lado ajeno) debe estar aprobada. Una propuesta
+  // pendiente puede ver sus matches con aprobadas, pero nunca al revés.
+  const autorizada = !!miPid && (!contraparte || contraparte.estado === 'aprobado')
 
   const { data: comentariosApi } = useApi(
     () => (miPid ? observacionesApi.listar('user', { id_proyecto: miPid }) : Promise.resolve([])),
@@ -65,7 +70,7 @@ export default function DetalleSimilitud() {
     )
   }
 
-  if (error) {
+  if (error && error.status !== 403) {
     return (
       <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
         <div className={s.wrapper}><ApiState error={error} onReintentar={recargar} /></div>
@@ -73,14 +78,14 @@ export default function DetalleSimilitud() {
     )
   }
 
-  if (similitud && user && miPid == null) {
+  if (error?.status === 403 || (similitud && user && !autorizada)) {
     return (
       <DashboardLayout role="aprendiz" titulo="Detalle de Similitud">
         <div className={s.wrapper}>
           <EmptyState
             icon={<MagnifyingGlass />}
             title="Similitud no autorizada"
-            message="Esta similitud no pertenece a ninguna de tus propuestas."
+            message="Esta similitud no es una coincidencia válida de tus propuestas. Solo se muestran coincidencias con propuestas aprobadas."
             actionLabel="Volver a similitudes"
             onAction={() => navigate('/aprendiz/similitudes')}
           />

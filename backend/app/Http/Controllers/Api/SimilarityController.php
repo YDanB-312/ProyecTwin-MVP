@@ -11,6 +11,7 @@ use App\Models\MotorConfig;
 use App\Models\Notification;
 use App\Services\SimilitudService;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class SimilarityController extends Controller
@@ -19,8 +20,27 @@ class SimilarityController extends Controller
 
     public function index(Request $request)
     {
+        $user = $request->user();
+
+        // Vista de UNA propuesta (revisión, análisis, detalle): pares de esa
+        // propuesta donde la CONTRAPARTE está aprobada (regla de perspectiva).
+        $proyectoId = $request->query('proyecto_id');
+        if ($proyectoId) {
+            $visible = Project::where('id', $proyectoId)->paraDetalle($user)->exists();
+            if (!$visible) {
+                return response()->json(['message' => 'No tienes acceso a esa propuesta.'], 403);
+            }
+
+            return Similarity::included()
+                ->where(function (Builder $q) use ($proyectoId) {
+                    $q->where('id_proyecto_1', $proyectoId)->orWhere('id_proyecto_2', $proyectoId);
+                })
+                ->contraparteAprobada((int) $proyectoId)
+                ->get();
+        }
+
         return Similarity::included()
-            ->paraUsuario($request->user())
+            ->paraUsuario($user)
             ->relatedTo($request->query('related_to'))
             ->search($request->query('search'))
             ->byTrainingCenter($request->query('training_center_id'))
@@ -47,9 +67,9 @@ class SimilarityController extends Controller
     {
         $item = Similarity::included()->findOrFail($id);
 
-        // Mismo alcance que el listado: nadie ve pares que no le corresponden.
+        // Mismo criterio de alcance (perspectiva del rol).
         $visible = Similarity::where('id', $item->id)
-            ->paraUsuario($request->user())
+            ->visibleDetalle($request->user())
             ->exists();
         if (!$visible) {
             return response()->json(['message' => 'No tienes acceso a esta similitud.'], 403);
