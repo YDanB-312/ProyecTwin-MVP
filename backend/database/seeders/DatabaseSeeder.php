@@ -195,6 +195,9 @@ class DatabaseSeeder extends Seeder
             ['id' => 1, 'porcentaje' => 64, 'p1' => 4, 'p2' => 5],
             ['id' => 2, 'porcentaje' => 48, 'p1' => 1, 'p2' => 7],
             ['id' => 3, 'porcentaje' => 40, 'p1' => 3, 'p2' => 5],
+            // Par entre dos propuestas APROBADAS: la referencia del motor son las
+            // aprobadas, así que este es el tipo de coincidencia que ven todos.
+            ['id' => 4, 'porcentaje' => 42, 'p1' => 5, 'p2' => 7],
         ];
         foreach ($pares as $s) {
             Similarity::create([

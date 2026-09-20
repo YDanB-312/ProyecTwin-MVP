@@ -91,7 +91,7 @@ export const proyectos = {
 // ---------------------------------------------------------------- Similitudes
 // Se incluyen los proyectos del par (con su equipo) para resolver títulos y
 // autoría sin depender del listado global de propuestas.
-const INCLUDE_SIMILITUD = 'project1.classGroup.program,project2.classGroup.program,project1.apprentices.generalUser,project2.apprentices.generalUser'
+const INCLUDE_SIMILITUD = 'project1.classGroup.program,project2.classGroup.program,project1.creator,project2.creator,project1.apprentices.generalUser,project2.apprentices.generalUser'
 
 export const similitudes = {
   listar: (filtros = {}) =>
