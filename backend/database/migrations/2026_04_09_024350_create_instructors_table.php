@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->date('fecha_ingreso');
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
+            $table->unique('id_usuario'); // Un perfil por usuario.
             $table->timestamps();
         });
     }

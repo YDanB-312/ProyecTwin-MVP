@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Apprentice;
 use App\Models\ClassGroup;
+use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Notification;
 use App\Http\Controllers\Controller;
@@ -15,9 +16,16 @@ class ApprenticeController extends Controller
     {
         $user = $request->user();
 
-        // Admin ve todos; instructor los de sus fichas; aprendiz los de la suya.
-        if (optional($user)->rol === 'admin') {
+        // Superadmin ve todos; el admin de centro, los de su centro; instructor
+        // los de sus fichas; aprendiz los de la suya.
+        if (optional($user)->esSuperadmin()) {
             return Apprentice::included()->get();
+        }
+        if (optional($user)->esAdminDeCentro()) {
+            $centroId = $user->centroId();
+            return Apprentice::included()
+                ->whereHas('classGroup', fn ($q) => $q->where('training_center_id', $centroId))
+                ->get();
         }
 
         $fichaIds = collect();
@@ -42,6 +50,11 @@ class ApprenticeController extends Controller
             'id_programa' => 'required|exists:training_programs,id',
         ]);
 
+        $usuario = GeneralUser::findOrFail($request->id_usuario);
+        if ($usuario->rol !== 'aprendiz') {
+            return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
+        }
+
         $item = Apprentice::create($request->all());
         return $item;
     }
@@ -60,6 +73,11 @@ class ApprenticeController extends Controller
             'id_usuario' => 'required|exists:general_users,id',
             'id_programa' => 'required|exists:training_programs,id',
         ]);
+
+        $usuario = GeneralUser::findOrFail($request->id_usuario);
+        if ($usuario->rol !== 'aprendiz') {
+            return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
+        }
 
         $apprentice->update($request->all());
         return $apprentice;

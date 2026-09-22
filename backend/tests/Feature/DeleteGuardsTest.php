@@ -59,11 +59,16 @@ class DeleteGuardsTest extends TestCase
 
     private function ficha(?string $codigo = null): ClassGroup
     {
+        // Toda ficha requiere un instructor a cargo.
+        $user = $this->usuario('instructor');
+        $instructor = Instructor::create(['fecha_ingreso' => '2024-01-01', 'id_usuario' => $user->id]);
+
         return ClassGroup::create([
             'codigo' => $codigo ?: 'gd-' . uniqid(),
             'nombre' => 'Ficha guarda',
             'estado' => 'activo',
             'id_programa' => $this->programa()->id,
+            'id_instructor' => $instructor->id,
         ]);
     }
 
@@ -170,8 +175,9 @@ class DeleteGuardsTest extends TestCase
 
     public function test_no_se_puede_suspender_al_ultimo_admin_activo(): void
     {
-        // Deja un solo admin activo en el escenario (se revierte al terminar).
-        GeneralUser::where('rol', 'admin')->update(['estado' => false]);
+        // Deja un solo administrador activo en el escenario, contando también
+        // al superadmin (se revierte al terminar).
+        GeneralUser::whereIn('rol', ['admin', 'superadmin'])->update(['estado' => false]);
         $admin = $this->usuario('admin', true);
 
         $this->como($admin)

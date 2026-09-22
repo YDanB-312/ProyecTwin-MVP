@@ -10,9 +10,17 @@ use Illuminate\Http\Request;
 
 class ClassGroupController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return ClassGroup::included()->get();
+        $query = ClassGroup::included();
+
+        // El admin de centro solo ve las fichas de su centro.
+        $user = $request->user();
+        if ($user && $user->esAdminDeCentro()) {
+            $query->where('training_center_id', $user->centroId());
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
@@ -23,7 +31,7 @@ class ClassGroupController extends Controller
             'nombre' => 'required|max:255',
             'estado' => 'required|in:activo,inactivo,finalizado,archivado',
             'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'nullable|exists:instructors,id',
+            'id_instructor' => 'required|exists:instructors,id',
             'training_center_id' => 'nullable|exists:training_centers,id',
         ]);
 
@@ -35,6 +43,10 @@ class ClassGroupController extends Controller
                 return response()->json(['message' => 'Tu cuenta no tiene perfil de instructor.'], 422);
             }
             $datos['id_instructor'] = $mio->id;
+        }
+        // El admin de centro crea fichas únicamente en su propio centro.
+        if ($request->user()->esAdminDeCentro()) {
+            $datos['training_center_id'] = $request->user()->centroId();
         }
 
         $item = ClassGroup::create($datos);
@@ -58,7 +70,7 @@ class ClassGroupController extends Controller
             'nombre' => 'required|max:255',
             'estado' => 'required|in:activo,inactivo,finalizado,archivado',
             'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'nullable|exists:instructors,id',
+            'id_instructor' => 'required|exists:instructors,id',
             'training_center_id' => 'nullable|exists:training_centers,id',
         ]);
 
@@ -66,6 +78,10 @@ class ClassGroupController extends Controller
         // Un instructor no puede reasignar su propia ficha a otro (eso es del admin).
         if ($request->user()->rol === 'instructor') {
             $datos['id_instructor'] = $class_group->id_instructor;
+        }
+        // El admin de centro no puede mover la ficha a otro centro.
+        if ($request->user()->esAdminDeCentro()) {
+            $datos['training_center_id'] = $class_group->training_center_id;
         }
 
         $estadoAnterior = $class_group->estado;
@@ -112,7 +128,10 @@ class ClassGroupController extends Controller
     {
         $user = $request->user();
         if (!$user) return false;
-        if ($user->rol === 'admin') return true;
+        if ($user->esSuperadmin()) return true;
+        if ($user->rol === 'admin') {
+            return (int) $ficha->training_center_id === (int) $user->centroId();
+        }
         if ($user->rol !== 'instructor') return false;
 
         $instructor = $this->miFilaInstructor($request);
@@ -121,6 +140,10 @@ class ClassGroupController extends Controller
 
     private function miFilaInstructor(Request $request): ?Instructor
     {
-        return Instructor::where('id_usuario', $request->user()->id)->first();
+        // Auto-sanado: si el instructor no tiene perfil, se crea al primer uso.
+        return Instructor::firstOrCreate(
+            ['id_usuario' => $request->user()->id],
+            ['fecha_ingreso' => now()->toDateString()]
+        );
     }
 }

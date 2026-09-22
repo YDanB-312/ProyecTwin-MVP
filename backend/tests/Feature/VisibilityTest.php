@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\Comment;
@@ -9,6 +10,7 @@ use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\Project;
+use App\Models\TrainingCenter;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +24,8 @@ class VisibilityTest extends TestCase
 
     private TrainingProgram $programa1;
     private TrainingProgram $programa2;
+    private TrainingCenter $centro1;
+    private TrainingCenter $centro2;
     private ClassGroup $fichaA;
     private ClassGroup $fichaA2;
     private ClassGroup $fichaB;
@@ -40,18 +44,22 @@ class VisibilityTest extends TestCase
 
         $this->programa1 = $this->programa();
         $this->programa2 = $this->programa();
+        $this->centro1 = TrainingCenter::create(['name' => 'Centro 1 ' . uniqid()]);
+        $this->centro2 = TrainingCenter::create(['name' => 'Centro 2 ' . uniqid()]);
 
         $this->instructorA = $this->usuario('instructor');
         $iA = Instructor::create(['fecha_ingreso' => '2024-01-01', 'id_usuario' => $this->instructorA->id]);
 
-        $this->fichaA = $this->ficha($this->programa1, $iA->id);
-        $this->fichaA2 = $this->ficha($this->programa1, null); // mismo programa, sin instructor
-        $this->fichaB = $this->ficha($this->programa2, null);
+        $this->fichaA = $this->ficha($this->programa1, $iA->id, $this->centro1->id);
+        $this->fichaA2 = $this->ficha($this->programa1, null, $this->centro1->id); // mismo programa y centro
+        $this->fichaB = $this->ficha($this->programa2, null, $this->centro2->id);   // otro programa y centro
 
         $this->aprendizA = $this->usuario('aprendiz');
         $this->aprendizA2 = $this->usuario('aprendiz');
         $this->aprendizB = $this->usuario('aprendiz');
         $this->admin = $this->usuario('admin');
+        // El admin es coordinador del centro 1 (solo ve lo de ese centro).
+        Admin::create(['id_usuario' => $this->admin->id, 'training_center_id' => $this->centro1->id]);
 
         $this->aprendiz($this->aprendizA, $this->fichaA);
         $this->aprendiz($this->aprendizA2, $this->fichaA2);
@@ -85,14 +93,24 @@ class VisibilityTest extends TestCase
         ]);
     }
 
-    private function ficha(TrainingProgram $programa, ?int $instructorId): ClassGroup
+    private function ficha(TrainingProgram $programa, ?int $instructorId = null, ?int $centroId = null): ClassGroup
     {
+        // Toda ficha necesita un instructor: se crea uno propio si no se indica.
+        if ($instructorId === null) {
+            $user = $this->usuario('instructor');
+            $instructorId = Instructor::create([
+                'fecha_ingreso' => '2024-01-01',
+                'id_usuario' => $user->id,
+            ])->id;
+        }
+
         return ClassGroup::create([
             'codigo' => 'vis-' . uniqid(),
             'nombre' => 'Ficha vis',
             'estado' => 'activo',
             'id_programa' => $programa->id,
             'id_instructor' => $instructorId,
+            'training_center_id' => $centroId,
         ]);
     }
 
@@ -182,13 +200,14 @@ class VisibilityTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_el_admin_lista_todas_las_propuestas(): void
+    public function test_el_admin_de_centro_solo_lista_las_propuestas_de_su_centro(): void
     {
         $ids = $this->idsProyectos($this->admin);
 
         $this->assertContains($this->projectA->id, $ids);
         $this->assertContains($this->projectA2->id, $ids);
-        $this->assertContains($this->projectB->id, $ids);
+        // Otra ficha del MISMO programa pero de OTRO centro queda fuera.
+        $this->assertNotContains($this->projectB->id, $ids);
     }
 
     public function test_las_observaciones_solo_son_visibles_para_los_autores(): void
@@ -229,13 +248,13 @@ class VisibilityTest extends TestCase
         $this->assertNotContains($this->aprendizB->id, $ids);
     }
 
-    public function test_el_admin_ve_todos_los_aprendices(): void
+    public function test_el_admin_de_centro_solo_ve_los_aprendices_de_su_centro(): void
     {
         $ids = collect($this->como($this->admin)->getJson('/v1/apprentices')->assertOk()->json())
             ->pluck('id_usuario')->all();
 
         $this->assertContains($this->aprendizA->id, $ids);
-        $this->assertContains($this->aprendizB->id, $ids);
+        $this->assertNotContains($this->aprendizB->id, $ids);
     }
 
     public function test_el_docente_solo_ve_su_propia_fila_de_instructor(): void

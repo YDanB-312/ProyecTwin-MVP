@@ -72,6 +72,16 @@ class SimilarityPerspectiveTest extends TestCase
         ]);
     }
 
+    // Crea un instructor nuevo y devuelve el id de su fila de perfil.
+    private function instructorId(): int
+    {
+        $user = $this->usuario('instructor');
+        return Instructor::create([
+            'fecha_ingreso' => '2024-01-01',
+            'id_usuario' => $user->id,
+        ])->id;
+    }
+
     private function proyecto(string $titulo, GeneralUser $creador, ClassGroup $ficha, string $estado): Project
     {
         $p = Project::create([
@@ -84,13 +94,15 @@ class SimilarityPerspectiveTest extends TestCase
         ]);
 
         // El creador entra al pivote (como hace el alta real).
-        $ap = \App\Models\Apprentice::create([
-            'codigo' => 'AP-' . uniqid(),
-            'id_usuario' => $creador->id,
-            'id_class_group' => $ficha->id,
-            'id_programa' => $ficha->id_programa,
-        ]);
-        \App\Models\ApprenticeProject::create(['id_aprendiz' => $ap->id, 'id_proyecto' => $p->id]);
+        $ap = \App\Models\Apprentice::firstOrCreate(
+            ['id_usuario' => $creador->id],
+            [
+                'codigo' => 'AP-' . uniqid(),
+                'id_class_group' => $ficha->id,
+                'id_programa' => $ficha->id_programa,
+            ]
+        );
+        \App\Models\ApprenticeProject::firstOrCreate(['id_aprendiz' => $ap->id, 'id_proyecto' => $p->id]);
 
         return $p;
     }
@@ -187,6 +199,7 @@ class SimilarityPerspectiveTest extends TestCase
             'nombre' => 'Ficha perspectiva 2',
             'estado' => 'activo',
             'id_programa' => $programa->id,
+            'id_instructor' => $this->instructorId(),
         ]);
 
         $mia1 = $this->proyecto('Mía aprobada', $this->aprobada, $ficha, 'aprobado');
@@ -211,6 +224,7 @@ class SimilarityPerspectiveTest extends TestCase
             'nombre' => 'Ficha ajena',
             'estado' => 'activo',
             'id_programa' => $programa->id,
+            'id_instructor' => $this->instructorId(),
         ]);
         $ajeno = $this->usuario('aprendiz');
         \App\Models\Apprentice::create([

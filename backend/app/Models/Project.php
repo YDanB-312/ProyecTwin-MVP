@@ -75,12 +75,20 @@ class Project extends Model
         return $query->whereHas('classGroup.program', fn (Builder $q) => $q->where('nombre', $programa));
     }
 
+    // Alcance por centro (coordinador): solo lo de SU centro. Un centro null
+    // agrupa las propuestas sin centro (ámbito global/superadmin).
+    public function scopeDelCentro(Builder $query, ?int $centroId): Builder
+    {
+        return $query->whereHas('classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId));
+    }
+
     // Alcance por rol para LISTADOS. Sin esto, cualquier autenticado listaba
     // TODAS las propuestas (título, resumen, objetivos).
     public function scopeParaUsuario(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->rol === 'admin') return $query;
+        if ($user->esSuperadmin()) return $query;
+        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
@@ -107,7 +115,8 @@ class Project extends Model
     public function scopeDeAutor(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->rol === 'admin') return $query;
+        if ($user->esSuperadmin()) return $query;
+        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
@@ -129,7 +138,8 @@ class Project extends Model
     public function scopeParaDetalle(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->rol === 'admin') return $query;
+        if ($user->esSuperadmin()) return $query;
+        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');

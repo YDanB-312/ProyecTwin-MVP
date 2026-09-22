@@ -26,8 +26,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->usuarios();
+        // Catálogos primero: los centros existen antes de asignar el perfil de
+        // cada administrador (FK admins.training_center_id).
         $this->catalogos();
+        $this->usuarios();
         $this->fichas();
         $this->aprendices();
         $this->proyectos();
@@ -60,14 +62,19 @@ class DatabaseSeeder extends Seeder
         GeneralUser::create(['id' => 3, 'nombre' => 'Administrador', 'apellido' => '', 'correo' => 'admin@sena.edu.co', 'password' => Hash::make('admin123'), 'rol' => 'admin', 'estado' => true]);
         GeneralUser::create(['id' => 12, 'nombre' => 'María', 'apellido' => 'Fernanda Torres', 'correo' => 'maria.torres@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'admin', 'estado' => true]);
 
+        // Superadministrador: gobierno global (centros, catálogos, motor por
+        // defecto, administradores y bitácora de toda la institución).
+        GeneralUser::create(['id' => 14, 'nombre' => 'Super', 'apellido' => 'Administrador', 'correo' => 'superadmin@sena.edu.co', 'password' => Hash::make('super123'), 'rol' => 'superadmin', 'estado' => true]);
+
         // Filas de perfil (instructor/admin) y aprendices
         Instructor::create(['id' => 1, 'fecha_ingreso' => '2024-01-15', 'id_usuario' => 2]);
         Instructor::create(['id' => 2, 'fecha_ingreso' => '2024-02-01', 'id_usuario' => 7]);
         Instructor::create(['id' => 3, 'fecha_ingreso' => '2024-02-01', 'id_usuario' => 8]);
         Instructor::create(['id' => 4, 'fecha_ingreso' => '2024-03-01', 'id_usuario' => 13]);
 
-        Admin::create(['id_usuario' => 3]);
-        Admin::create(['id_usuario' => 12]);
+        // Un administrador (coordinador) por centro.
+        Admin::create(['id_usuario' => 3, 'training_center_id' => 1]);
+        Admin::create(['id_usuario' => 12, 'training_center_id' => 2]);
     }
 
     // ---------------------------------------------------------------- Aprendices
