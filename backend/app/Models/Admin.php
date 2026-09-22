@@ -13,9 +13,9 @@ class Admin extends Model
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['id_usuario'];
+    protected $fillable = ['id_usuario', 'training_center_id'];
 
-    protected $allowIncluded = ['generalUser'];
+    protected $allowIncluded = ['generalUser', 'trainingCenter'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -36,5 +36,10 @@ class Admin extends Model
     public function generalUser()
     {
         return $this->belongsTo(GeneralUser::class, 'id_usuario');
+    }
+
+    public function trainingCenter()
+    {
+        return $this->belongsTo(TrainingCenter::class, 'training_center_id');
     }
 }

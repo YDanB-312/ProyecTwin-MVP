@@ -81,6 +81,14 @@ class Similarity extends Model
         });
     }
 
+    // Alcance por centro (coordinador): ambos extremos del par en su centro.
+    public function scopeDelCentro(Builder $query, ?int $centroId): Builder
+    {
+        return $query
+            ->whereHas('project1.classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId))
+            ->whereHas('project2.classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId));
+    }
+
     // ---------------------------------------------------------------- Alcance
 
     // Pares cuya contraparte desde `$proyectoId` está aprobada (regla de
@@ -109,8 +117,12 @@ class Similarity extends Model
               ->whereHas('project2', fn (Builder $p) => $p->where('estado', 'aprobado'));
         };
 
-        if ($user->rol === 'admin') {
+        if ($user->esSuperadmin()) {
             return $query->where($ambasAprobadas);
+        }
+
+        if ($user->rol === 'admin') {
+            return $query->where($ambasAprobadas)->delCentro($user->centroId());
         }
 
         if ($user->rol === 'instructor') {
@@ -144,7 +156,8 @@ class Similarity extends Model
     public function scopeVisibleDetalle(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->rol === 'admin') return $query;
+        if ($user->esSuperadmin()) return $query;
+        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
 
         if ($user->rol === 'instructor') {
             $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))

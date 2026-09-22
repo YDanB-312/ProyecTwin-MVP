@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Apprentice;
 use App\Models\ClassGroup;
+use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,11 +15,23 @@ class InstructorController extends Controller
     {
         $user = $request->user();
 
-        // Admin ve todos; instructor su propia fila; aprendiz los de su ficha.
-        if (optional($user)->rol === 'admin') {
+        // Superadmin ve todos; el admin de centro, los instructores con ficha en
+        // su centro; instructor su propia fila; aprendiz los de su ficha.
+        if (optional($user)->esSuperadmin()) {
             return Instructor::included()->get();
         }
+        if (optional($user)->esAdminDeCentro()) {
+            $centroId = $user->centroId();
+            return Instructor::included()
+                ->whereHas('classGroups', fn ($q) => $q->where('training_center_id', $centroId))
+                ->get();
+        }
         if ($user && $user->rol === 'instructor') {
+            // Auto-sanado: garantiza que el instructor tenga perfil propio.
+            Instructor::firstOrCreate(
+                ['id_usuario' => $user->id],
+                ['fecha_ingreso' => now()->toDateString()]
+            );
             return Instructor::included()->where('id_usuario', $user->id)->get();
         }
 
@@ -35,7 +48,15 @@ class InstructorController extends Controller
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
-        $item = Instructor::create($request->all());
+        $usuario = GeneralUser::findOrFail($request->id_usuario);
+        if ($usuario->rol !== 'instructor') {
+            return response()->json(['message' => 'El usuario no tiene rol de instructor.'], 422);
+        }
+
+        $item = Instructor::firstOrCreate(
+            ['id_usuario' => $request->id_usuario],
+            ['fecha_ingreso' => $request->fecha_ingreso]
+        );
         return response()->json($item, 201);
     }
 
@@ -46,18 +67,24 @@ class InstructorController extends Controller
 
     public function update(Request $request, Instructor $instructor)
     {
-        $request->validate([
-            'fecha_ingreso' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
-        ]);
+        // El dueño del perfil no cambia: solo la fecha de ingreso.
+        $request->validate(['fecha_ingreso' => 'required|date']);
 
-        $instructor->update($request->all());
+        $instructor->update(['fecha_ingreso' => $request->fecha_ingreso]);
         return $instructor;
     }
 
     public function destroy(Instructor $instructor)
     {
-        $instructor->delete();
+        // La FK de class_groups impide borrar un instructor con fichas a cargo:
+        // se responde 409 con motivo en vez de un 500.
+        try {
+            $instructor->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'No se puede eliminar: el instructor tiene fichas a cargo. Reasígnalas primero.',
+            ], 409);
+        }
         return $instructor;
     }
 }

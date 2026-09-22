@@ -15,6 +15,7 @@ return new class extends Migration
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
             $table->foreignId('id_programa')->constrained('training_programs')->onDelete('cascade');
+            $table->unique('id_usuario'); // Un perfil por usuario.
 
             $table->timestamps();
         });

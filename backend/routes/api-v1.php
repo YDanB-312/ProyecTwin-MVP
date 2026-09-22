@@ -51,10 +51,19 @@ Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
 // ------------------------------------------------------------------ Autenticadas
 Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
 
-    // Configuración del motor de similitudes (la lectura es pública, arriba)
-    Route::middleware('rol:admin')->put('config-similitud', [MotorConfigController::class, 'update']);
+    // Config vigente según el rol (el admin de centro ve la de su centro con
+    // herencia). La lectura global pública se sirve en `GET config-similitud`.
+    Route::get('config-similitud/actual', [MotorConfigController::class, 'show']);
 
-    // Bitácora de acciones sensibles (solo admin, inmutable: no hay escritura)
+    // Configuración del motor de similitudes: el superadmin edita el valor por
+    // defecto; el admin de centro, el de su centro.
+    Route::middleware('rol:admin')->group(function () {
+        Route::put('config-similitud', [MotorConfigController::class, 'update']);
+        Route::delete('config-similitud', [MotorConfigController::class, 'reset']);
+    });
+
+    // Bitácora de acciones sensibles (inmutable: no hay escritura). El admin de
+    // centro ve solo las de su centro; el superadmin, todas.
     Route::middleware('rol:admin')->get('audit-logs', [AuditLogController::class, 'index']);
 
     // Usuarios: el listado completo es solo para admin; el detalle es del propio
@@ -65,8 +74,9 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
     Route::middleware('rol:admin')->delete('general-users/{general_user}', [GeneralUserController::class, 'destroy']);
 
-    // Catálogos institucionales: la lectura es pública (arriba); escritura admin
-    Route::middleware('rol:admin')->group(function () {
+    // Catálogos institucionales: la lectura es pública (arriba); escritura solo
+    // superadmin (son compartidos por todos los centros).
+    Route::middleware('rol:superadmin')->group(function () {
         Route::post('knowledge-networks', [KnowledgeNetworkController::class, 'store']);
         Route::put('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'update']);
         Route::delete('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'destroy']);
@@ -90,8 +100,6 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
         Route::delete('apprentices/me/ficha', [ApprenticeController::class, 'salirDeFicha']);
     });
     Route::get('apprentices/{apprentice}', [ApprenticeController::class, 'show']);
-    Route::get('admins', [AdminController::class, 'index']);
-    Route::get('admins/{admin}', [AdminController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
         Route::post('instructors', [InstructorController::class, 'store']);
         Route::put('instructors/{instructor}', [InstructorController::class, 'update']);
@@ -101,6 +109,11 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::middleware('rol:admin')->group(function () {
         Route::delete('instructors/{instructor}', [InstructorController::class, 'destroy']);
         Route::delete('apprentices/{apprentice}', [ApprenticeController::class, 'destroy']);
+    });
+    // Perfiles de administración: gobernanza exclusiva del superadmin.
+    Route::middleware('rol:superadmin')->group(function () {
+        Route::get('admins', [AdminController::class, 'index']);
+        Route::get('admins/{admin}', [AdminController::class, 'show']);
         Route::post('admins', [AdminController::class, 'store']);
         Route::put('admins/{admin}', [AdminController::class, 'update']);
         Route::delete('admins/{admin}', [AdminController::class, 'destroy']);
@@ -126,9 +139,10 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::post('similarities/detect', [SimilarityController::class, 'detect']);
     Route::get('similarities', [SimilarityController::class, 'index']);
     Route::get('similarities/{similarity}', [SimilarityController::class, 'show']);
-    // Escribir pares es exclusivo del admin (el motor los genera internamente).
-    Route::middleware('rol:admin')->group(function () {
-        Route::post('similarities/recalculate', [SimilarityController::class, 'recalculate']);
+    // Recalcular: el admin de centro recalcula su centro; el superadmin, todo.
+    Route::middleware('rol:admin')->post('similarities/recalculate', [SimilarityController::class, 'recalculate']);
+    // Escribir pares a mano es exclusivo del superadmin (el motor los genera).
+    Route::middleware('rol:superadmin')->group(function () {
         Route::post('similarities', [SimilarityController::class, 'store']);
         Route::put('similarities/{similarity}', [SimilarityController::class, 'update']);
         Route::delete('similarities/{similarity}', [SimilarityController::class, 'destroy']);

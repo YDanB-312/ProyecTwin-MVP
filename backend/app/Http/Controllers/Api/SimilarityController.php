@@ -113,8 +113,10 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
         }
 
-        $umbral = (float) ($this->config()->umbral ?? 0.2);
-        $meses = (int) ($this->config()->meses ?? 12);
+        $centroId = (int) optional($propio->classGroup)->training_center_id ?: null;
+        $config = $this->config($centroId);
+        $umbral = (float) ($config->umbral ?? 0.2);
+        $meses = (int) ($config->meses ?? 12);
 
         // Una rechazada no participa: se eliminan sus pares y no se compara.
         if ($propio->estado === 'rechazado') {
@@ -149,19 +151,36 @@ class SimilarityController extends Controller
 
     // Recalibra toda la base con el umbral/ventana vigentes: purga los pares
     // que ya no cumplen y re-ejecuta la detección sobre cada propuesta vigente.
-    public function recalculate()
+    public function recalculate(Request $request)
     {
-        $umbral = (float) ($this->config()->umbral ?? 0.2);
-        $meses = (int) ($this->config()->meses ?? 12);
+        $user = $request->user();
+        // El admin de centro recalcula SOLO su centro; el superadmin, todo.
+        $soloCentro = ($user && $user->esAdminDeCentro()) ? $user->centroId() : null;
 
+        // Purga: cada par se evalúa con el umbral/ventana de SU centro.
         $antes = Similarity::count();
-        Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
-            if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
+        Similarity::with('project1.classGroup')->get()->each(function (Similarity $s) use ($soloCentro) {
+            $centroPar = (int) optional(optional($s->project1)->classGroup)->training_center_id ?: null;
+            if ($soloCentro !== null && (int) $centroPar !== (int) $soloCentro) return;
+            $config = $this->config($centroPar);
+            if (!$this->parVigente($s, (float) ($config->umbral ?? 0.2), (int) ($config->meses ?? 12))) {
+                $s->delete();
+            }
         });
         $eliminadas = $antes - Similarity::count();
 
+        $proyectos = Project::with('classGroup')
+            ->when($soloCentro !== null, fn ($q) => $q->whereHas('classGroup', fn ($c) => $c->where('training_center_id', $soloCentro)))
+            ->where('estado', '!=', 'rechazado')
+            ->get();
+
         $creadas = 0;
-        foreach (Project::with('classGroup')->where('estado', '!=', 'rechazado')->get() as $p) {
+        foreach ($proyectos as $p) {
+            $centroId = (int) optional($p->classGroup)->training_center_id ?: null;
+            $config = $this->config($centroId);
+            $umbral = (float) ($config->umbral ?? 0.2);
+            $meses = (int) ($config->meses ?? 12);
+
             $corpus = $this->corpus($p, $meses);
             foreach (SimilitudService::puntaje($p, $corpus) as $par) {
                 if ($par['score'] < $umbral) continue;
@@ -175,8 +194,7 @@ class SimilarityController extends Controller
         \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
             'eliminadas' => $eliminadas,
             'creadas' => $creadas,
-            'umbral' => $umbral,
-            'meses' => $meses,
+            'centro' => $soloCentro,
         ]);
 
         return response()->json(['eliminadas' => $eliminadas, 'creadas' => $creadas]);
@@ -234,7 +252,11 @@ class SimilarityController extends Controller
     private function puedeDetectar($user, Project $project): bool
     {
         if (!$user) return false;
-        if ($user->rol === 'admin') return true;
+        if ($user->esSuperadmin()) return true;
+        if ($user->rol === 'admin') {
+            // El admin de centro solo dispara el motor sobre su centro.
+            return (int) optional($project->classGroup)->training_center_id === (int) $user->centroId();
+        }
         if ((int) $project->id_creador === (int) $user->id) return true;
 
         $aprendiz = Apprentice::where('id_usuario', $user->id)->first();
@@ -252,9 +274,10 @@ class SimilarityController extends Controller
         return false;
     }
 
-    private function config(): MotorConfig
+    // Config del motor del centro indicado (null = valor por defecto global).
+    private function config(?int $centroId = null): MotorConfig
     {
-        return MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
+        return MotorConfig::paraCentro($centroId);
     }
 
     // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
@@ -262,13 +285,16 @@ class SimilarityController extends Controller
     private function corpus(Project $propio, int $meses): array
     {
         $programaId = optional($propio->classGroup)->id_programa;
+        $centroId = optional($propio->classGroup)->training_center_id;
         $desde = now()->subMonths($meses);
 
         return Project::with('classGroup')
             ->where('id', '!=', $propio->id)
             ->where('estado', 'aprobado')
             ->where('created_at', '>=', $desde)
-            ->whereHas('classGroup', fn ($q) => $q->where('id_programa', $programaId))
+            ->whereHas('classGroup', fn ($q) => $q
+                ->where('id_programa', $programaId)
+                ->where('training_center_id', $centroId))
             ->get()
             ->prepend($propio)   // incluir la propia para que exista en los vectores
             ->all();
@@ -303,6 +329,8 @@ class SimilarityController extends Controller
         if ($p1->estado === 'rechazado' || $p2->estado === 'rechazado') return false;
         if ($p1->estado !== 'aprobado' && $p2->estado !== 'aprobado') return false;
         if (optional($p1->classGroup)->id_programa !== optional($p2->classGroup)->id_programa) return false;
+        // El motor compara dentro del mismo centro.
+        if ((int) optional($p1->classGroup)->training_center_id !== (int) optional($p2->classGroup)->training_center_id) return false;
         $desde = now()->subMonths($meses);
         return $p1->created_at >= $desde || $p2->created_at >= $desde;
     }
@@ -329,8 +357,10 @@ class SimilarityController extends Controller
     private function notificar(Project $propio, int $otroId, int $porcentaje): void
     {
         $otro = Project::find($otroId);
+        $titulo = "Similitud del {$porcentaje}% detectada entre '{$propio->titulo}' y '" . ($otro->titulo ?? 'otra propuesta') . "'";
         Notification::create([
-            'titulo' => "Similitud del {$porcentaje}% detectada entre '{$propio->titulo}' y '" . ($otro->titulo ?? 'otra propuesta') . "'",
+            // La columna `titulo` es corta: se recorta por seguridad.
+            'titulo' => mb_substr($titulo, 0, 250),
             'tipo' => 'similitud',
             'enlace' => 'proyecto:' . $propio->id,
             'leida' => false,

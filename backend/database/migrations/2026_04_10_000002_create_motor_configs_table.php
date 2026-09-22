@@ -14,6 +14,9 @@ return new class extends Migration
             $table->id();
             $table->float('umbral')->default(0.2);
             $table->integer('meses')->default(12);
+            // Una fila por centro. La fila con NULL es el valor por defecto
+            // (global) y la heredan los centros que no han definido el suyo.
+            $table->foreignId('training_center_id')->nullable()->unique()->constrained('training_centers')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -138,4 +138,44 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     {
         return $this->hasMany(BugReport::class, 'id_usuario');
     }
+
+    // ---------------------------------------------------------------- Rol / centro
+
+    public function esSuperadmin(): bool
+    {
+        return $this->rol === 'superadmin';
+    }
+
+    // Admin de centro: cualquiera con rol admin que no sea superadmin.
+    // Su alcance son los datos de su centro (ver centroId()).
+    public function esAdminDeCentro(): bool
+    {
+        return $this->rol === 'admin';
+    }
+
+    // Centro del admin. null = global (superadmin) o admin sin centro asignado.
+    public function centroId(): ?int
+    {
+        $id = optional($this->admin)->training_center_id;
+        return $id !== null ? (int) $id : null;
+    }
+
+    // ¿Pertenece al centro dado? El aprendiz por su ficha, el instructor por
+    // alguna de sus fichas y el admin por su perfil. El superadmin es global.
+    public function perteneceAlCentro(?int $centroId): bool
+    {
+        if ($this->rol === 'aprendiz') {
+            return (int) optional(optional($this->apprentice)->classGroup)->training_center_id === (int) $centroId;
+        }
+        if ($this->rol === 'instructor') {
+            $instructor = $this->instructor;
+            return $instructor
+                ? $instructor->classGroups()->where('training_center_id', $centroId)->exists()
+                : false;
+        }
+        if ($this->rol === 'admin') {
+            return (int) optional($this->admin)->training_center_id === (int) $centroId;
+        }
+        return false;
+    }
 }
