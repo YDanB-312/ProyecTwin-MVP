@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Admin;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
-use App\Models\TrainingCenter;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -45,14 +43,6 @@ class PermisosTest extends TestCase
         return $this->withToken($token);
     }
 
-    private function adminDeCentro(): GeneralUser
-    {
-        $user = $this->usuario('admin');
-        $centro = TrainingCenter::create(['name' => 'Centro ' . uniqid()]);
-        Admin::create(['id_usuario' => $user->id, 'training_center_id' => $centro->id]);
-        return $user;
-    }
-
     private function fichaDe(GeneralUser $instructorUser): ClassGroup
     {
         $instructor = Instructor::create([
@@ -85,14 +75,22 @@ class PermisosTest extends TestCase
         $this->como($aprendiz)
             ->postJson('/v1/class-groups', ['codigo' => 'x', 'nombre' => 'x', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 1])
             ->assertStatus(403);
+        $this->como($aprendiz)
+            ->postJson('/v1/similarities', ['porcentaje' => 10, 'id_proyecto_1' => 1, 'id_proyecto_2' => 2])
+            ->assertStatus(403);
     }
 
-    public function test_el_instructor_no_accede_a_catalogos_ni_admins(): void
+    public function test_el_instructor_no_accede_a_catalogos_ni_usuarios(): void
     {
         $instructor = $this->usuario('instructor');
 
-        $this->como($instructor)->postJson('/v1/training-centers', ['name' => 'Centro ' . uniqid()])->assertStatus(403);
-        $this->como($instructor)->getJson('/v1/admins')->assertStatus(403);
+        $this->como($instructor)->postJson('/v1/knowledge-networks', ['nombre' => 'Red ' . uniqid()])->assertStatus(403);
+        $this->como($instructor)->postJson('/v1/training-programs', [
+            'nombre' => 'Programa ' . uniqid(),
+            'nivel' => 'Tecnologo',
+            'num_trimestres' => 6,
+            'knowledge_network_id' => 1,
+        ])->assertStatus(403);
         $this->como($instructor)->getJson('/v1/general-users')->assertStatus(403);
     }
 
@@ -114,23 +112,21 @@ class PermisosTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_el_coordinador_no_gestiona_centros_ni_admins(): void
+    public function test_el_admin_gestiona_catalogos_usuarios_y_bitacora(): void
     {
-        $admin = $this->adminDeCentro();
+        $admin = $this->usuario('admin');
 
-        $this->como($admin)->postJson('/v1/training-centers', ['name' => 'Centro ' . uniqid()])->assertStatus(403);
-        $this->como($admin)->getJson('/v1/admins')->assertStatus(403);
-        // Sí puede ver su bitácora y sus usuarios.
-        $this->como($admin)->getJson('/v1/audit-logs')->assertOk();
+        $this->como($admin)->postJson('/v1/knowledge-networks', ['nombre' => 'Red ' . uniqid()])->assertStatus(201);
         $this->como($admin)->getJson('/v1/general-users')->assertOk();
+        $this->como($admin)->getJson('/v1/audit-logs')->assertOk();
     }
 
-    public function test_el_superadmin_gestiona_centros_y_admins(): void
+    public function test_el_admin_gestiona_el_motor(): void
     {
-        $superadmin = $this->usuario('superadmin');
+        $admin = $this->usuario('admin');
 
-        $this->como($superadmin)->postJson('/v1/training-centers', ['name' => 'Centro nuevo ' . uniqid()])->assertStatus(201);
-        $this->como($superadmin)->getJson('/v1/admins')->assertOk();
-        $this->como($superadmin)->getJson('/v1/general-users')->assertOk();
+        $this->como($admin)
+            ->putJson('/v1/config-similitud', ['umbral' => 0.3, 'meses' => 12])
+            ->assertOk();
     }
 }

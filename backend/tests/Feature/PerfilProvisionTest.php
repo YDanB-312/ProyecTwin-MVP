@@ -6,7 +6,6 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
-use App\Models\TrainingCenter;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -92,15 +91,12 @@ class PerfilProvisionTest extends TestCase
             'id_usuario' => $instructorUser->id,
             'fecha_ingreso' => now()->toDateString(),
         ]);
-        $centro = TrainingCenter::create(['name' => 'Centro ' . uniqid(), 'city' => 'Popayán']);
-
         ClassGroup::create([
             'codigo' => 'cod-' . uniqid(),
             'nombre' => 'Ficha E2E',
             'estado' => 'activo',
             'id_programa' => $this->programa()->id,
             'id_instructor' => $instructor->id,
-            'training_center_id' => $centro->id,
         ]);
 
         $this->withToken($this->token($admin))

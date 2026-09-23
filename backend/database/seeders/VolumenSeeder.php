@@ -8,7 +8,6 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
-use App\Models\TrainingCenter;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,15 +18,6 @@ class VolumenSeeder extends Seeder
     public function run(): void
     {
         $marca = uniqid();
-
-        // 2 centros nuevos.
-        $centros = [];
-        for ($i = 1; $i <= 2; $i++) {
-            $centros[] = TrainingCenter::create([
-                'name' => "Centro Volumen {$i} {$marca}",
-                'city' => 'Popayán',
-            ]);
-        }
 
         // 5 instructores.
         $instructores = [];
@@ -46,7 +36,7 @@ class VolumenSeeder extends Seeder
             ]);
         }
 
-        // Una ficha por instructor, repartidas entre los centros nuevos.
+        // Una ficha por instructor.
         $fichas = [];
         foreach ($instructores as $idx => $ins) {
             $fichas[] = ClassGroup::create([
@@ -56,7 +46,6 @@ class VolumenSeeder extends Seeder
                 'estado' => 'activo',
                 'id_programa' => 1, // ADSO
                 'id_instructor' => $ins->id,
-                'training_center_id' => $centros[$idx % count($centros)]->id,
             ]);
         }
 

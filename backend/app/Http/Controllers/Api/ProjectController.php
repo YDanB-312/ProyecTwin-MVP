@@ -18,7 +18,6 @@ class ProjectController extends Controller
             ->paraUsuario($request->user())
             ->search($request->query('search'))
             ->byEstado($request->query('estado'))
-            ->byTrainingCenter($request->query('training_center_id'))
             ->byFicha($request->query('ficha_id'))
             ->byPrograma($request->query('programa'))
             ->get();

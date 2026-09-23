@@ -8,7 +8,6 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
-use App\Models\TrainingCenter;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
@@ -110,7 +109,7 @@ class ValidacionesTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_la_ruta_publica_no_permite_crear_admin_sin_superadmin(): void
+    public function test_la_ruta_publica_no_permite_crear_admin_sin_token_admin(): void
     {
         $this->postJson('/v1/general-users', [
             'nombre' => 'Admin',
@@ -192,8 +191,7 @@ class ValidacionesTest extends TestCase
     public function test_motor_fuera_de_rango_falla(): void
     {
         $admin = $this->usuario('admin');
-        $centro = TrainingCenter::create(['name' => 'Centro ' . uniqid()]);
-        Admin::create(['id_usuario' => $admin->id, 'training_center_id' => $centro->id]);
+        Admin::create(['id_usuario' => $admin->id]);
 
         $this->como($admin)
             ->putJson('/v1/config-similitud', ['umbral' => 2, 'meses' => 12])

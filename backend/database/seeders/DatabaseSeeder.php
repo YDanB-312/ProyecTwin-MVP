@@ -15,7 +15,6 @@ use App\Models\MotorConfig;
 use App\Models\Notification;
 use App\Models\Project;
 use App\Models\Similarity;
-use App\Models\TrainingCenter;
 use App\Models\TrainingProgram;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -26,10 +25,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Catálogos primero: los centros existen antes de asignar el perfil de
-        // cada administrador (FK admins.training_center_id).
-        $this->catalogos();
         $this->usuarios();
+        $this->catalogos();
         $this->fichas();
         $this->aprendices();
         $this->proyectos();
@@ -62,19 +59,14 @@ class DatabaseSeeder extends Seeder
         GeneralUser::create(['id' => 3, 'nombre' => 'Administrador', 'apellido' => '', 'correo' => 'admin@sena.edu.co', 'password' => Hash::make('admin123'), 'rol' => 'admin', 'estado' => true]);
         GeneralUser::create(['id' => 12, 'nombre' => 'María', 'apellido' => 'Fernanda Torres', 'correo' => 'maria.torres@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'admin', 'estado' => true]);
 
-        // Superadministrador: gobierno global (centros, catálogos, motor por
-        // defecto, administradores y bitácora de toda la institución).
-        GeneralUser::create(['id' => 14, 'nombre' => 'Super', 'apellido' => 'Administrador', 'correo' => 'superadmin@sena.edu.co', 'password' => Hash::make('super123'), 'rol' => 'superadmin', 'estado' => true]);
-
         // Filas de perfil (instructor/admin) y aprendices
         Instructor::create(['id' => 1, 'fecha_ingreso' => '2024-01-15', 'id_usuario' => 2]);
         Instructor::create(['id' => 2, 'fecha_ingreso' => '2024-02-01', 'id_usuario' => 7]);
         Instructor::create(['id' => 3, 'fecha_ingreso' => '2024-02-01', 'id_usuario' => 8]);
         Instructor::create(['id' => 4, 'fecha_ingreso' => '2024-03-01', 'id_usuario' => 13]);
 
-        // Un administrador (coordinador) por centro.
-        Admin::create(['id_usuario' => 3, 'training_center_id' => 1]);
-        Admin::create(['id_usuario' => 12, 'training_center_id' => 2]);
+        Admin::create(['id_usuario' => 3]);
+        Admin::create(['id_usuario' => 12]);
     }
 
     // ---------------------------------------------------------------- Aprendices
@@ -104,10 +96,6 @@ class DatabaseSeeder extends Seeder
     // ---------------------------------------------------------------- Catálogos
     private function catalogos(): void
     {
-        // Centros de formación
-        TrainingCenter::create(['id' => 1, 'name' => 'Centro de Teleinformática y Producción Industrial', 'city' => 'Popayán']);
-        TrainingCenter::create(['id' => 2, 'name' => 'Centro de Comercio y Servicios', 'city' => 'Popayán']);
-
         // Redes de conocimiento + programas
         $informatica = KnowledgeNetwork::create(['id' => 1, 'nombre' => 'Informática, Diseño y Desarrollo de Software']);
         $artes = KnowledgeNetwork::create(['id' => 2, 'nombre' => 'Artes Gráficas']);
@@ -121,10 +109,10 @@ class DatabaseSeeder extends Seeder
     private function fichas(): void
     {
         $fichas = [
-            ['id' => 1, 'codigo' => 'xkp-mqwr', 'numero' => '2568', 'nombre' => 'Analisis y Desarrollo 2568', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 1, 'training_center_id' => 1],
-            ['id' => 2, 'codigo' => 'bnt-jhsa', 'numero' => '2634', 'nombre' => 'Analisis y Desarrollo 2634', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 2, 'training_center_id' => 1],
-            ['id' => 3, 'codigo' => 'qwe-rtzu', 'numero' => '3102', 'nombre' => 'Produccion Multimedia 3102', 'estado' => 'activo', 'id_programa' => 2, 'id_instructor' => 2, 'training_center_id' => 2],
-            ['id' => 4, 'codigo' => 'mno-pqrs', 'numero' => '2801', 'nombre' => 'Infraestructura Redes 2801', 'estado' => 'inactivo', 'id_programa' => 3, 'id_instructor' => 3, 'training_center_id' => 1],
+            ['id' => 1, 'codigo' => 'xkp-mqwr', 'numero' => '2568', 'nombre' => 'Analisis y Desarrollo 2568', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 1],
+            ['id' => 2, 'codigo' => 'bnt-jhsa', 'numero' => '2634', 'nombre' => 'Analisis y Desarrollo 2634', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 2],
+            ['id' => 3, 'codigo' => 'qwe-rtzu', 'numero' => '3102', 'nombre' => 'Produccion Multimedia 3102', 'estado' => 'activo', 'id_programa' => 2, 'id_instructor' => 2],
+            ['id' => 4, 'codigo' => 'mno-pqrs', 'numero' => '2801', 'nombre' => 'Infraestructura Redes 2801', 'estado' => 'inactivo', 'id_programa' => 3, 'id_instructor' => 3],
         ];
         foreach ($fichas as $f) ClassGroup::create($f);
     }

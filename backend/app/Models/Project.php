@@ -57,12 +57,6 @@ class Project extends Model
         return $query->where('estado', $estado);
     }
 
-    public function scopeByTrainingCenter(Builder $query, $trainingCenterId)
-    {
-        if (empty($trainingCenterId) || $trainingCenterId === 'todos') return $query;
-        return $query->whereHas('classGroup', fn (Builder $q) => $q->where('training_center_id', $trainingCenterId));
-    }
-
     public function scopeByFicha(Builder $query, $fichaId)
     {
         if (empty($fichaId) || $fichaId === 'todos') return $query;
@@ -75,20 +69,12 @@ class Project extends Model
         return $query->whereHas('classGroup.program', fn (Builder $q) => $q->where('nombre', $programa));
     }
 
-    // Alcance por centro (coordinador): solo lo de SU centro. Un centro null
-    // agrupa las propuestas sin centro (ámbito global/superadmin).
-    public function scopeDelCentro(Builder $query, ?int $centroId): Builder
-    {
-        return $query->whereHas('classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId));
-    }
-
     // Alcance por rol para LISTADOS. Sin esto, cualquier autenticado listaba
     // TODAS las propuestas (título, resumen, objetivos).
     public function scopeParaUsuario(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->esSuperadmin()) return $query;
-        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
+        if ($user->rol === 'admin') return $query;
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
@@ -115,8 +101,7 @@ class Project extends Model
     public function scopeDeAutor(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->esSuperadmin()) return $query;
-        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
+        if ($user->rol === 'admin') return $query;
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
@@ -138,8 +123,7 @@ class Project extends Model
     public function scopeParaDetalle(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->esSuperadmin()) return $query;
-        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
+        if ($user->rol === 'admin') return $query;
 
         if ($user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');

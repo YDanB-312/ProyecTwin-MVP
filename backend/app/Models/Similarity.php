@@ -54,15 +54,6 @@ class Similarity extends Model
         });
     }
 
-    public function scopeByTrainingCenter(Builder $query, $trainingCenterId)
-    {
-        if (empty($trainingCenterId) || $trainingCenterId === 'todos') return $query;
-        return $query->where(function (Builder $q) use ($trainingCenterId) {
-            $q->whereHas('project1.classGroup', fn (Builder $qq) => $qq->where('training_center_id', $trainingCenterId))
-              ->orWhereHas('project2.classGroup', fn (Builder $qq) => $qq->where('training_center_id', $trainingCenterId));
-        });
-    }
-
     public function scopeByFicha(Builder $query, $fichaId)
     {
         if (empty($fichaId) || $fichaId === 'todos') return $query;
@@ -79,14 +70,6 @@ class Similarity extends Model
             $q->whereHas('project1.classGroup.program', fn (Builder $qq) => $qq->where('nombre', $programa))
               ->orWhereHas('project2.classGroup.program', fn (Builder $qq) => $qq->where('nombre', $programa));
         });
-    }
-
-    // Alcance por centro (coordinador): ambos extremos del par en su centro.
-    public function scopeDelCentro(Builder $query, ?int $centroId): Builder
-    {
-        return $query
-            ->whereHas('project1.classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId))
-            ->whereHas('project2.classGroup', fn (Builder $q) => $q->where('training_center_id', $centroId));
     }
 
     // ---------------------------------------------------------------- Alcance
@@ -117,12 +100,8 @@ class Similarity extends Model
               ->whereHas('project2', fn (Builder $p) => $p->where('estado', 'aprobado'));
         };
 
-        if ($user->esSuperadmin()) {
-            return $query->where($ambasAprobadas);
-        }
-
         if ($user->rol === 'admin') {
-            return $query->where($ambasAprobadas)->delCentro($user->centroId());
+            return $query->where($ambasAprobadas);
         }
 
         if ($user->rol === 'instructor') {
@@ -156,8 +135,7 @@ class Similarity extends Model
     public function scopeVisibleDetalle(Builder $query, $user): Builder
     {
         if (!$user) return $query->whereRaw('1 = 0');
-        if ($user->esSuperadmin()) return $query;
-        if ($user->rol === 'admin') return $query->delCentro($user->centroId());
+        if ($user->rol === 'admin') return $query;
 
         if ($user->rol === 'instructor') {
             $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))

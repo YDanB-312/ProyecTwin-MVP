@@ -13,9 +13,9 @@ class ClassGroup extends Model
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor', 'training_center_id'];
+    protected $fillable = ['codigo', 'numero', 'nombre', 'estado', 'id_programa', 'id_instructor'];
 
-    protected $allowIncluded = ['program', 'instructor', 'apprentices', 'trainingCenter'];
+    protected $allowIncluded = ['program', 'instructor', 'apprentices'];
 
     public function scopeIncluded(Builder $query)
     {
@@ -46,10 +46,5 @@ class ClassGroup extends Model
     public function apprentices()
     {
         return $this->hasMany(Apprentice::class, 'id_class_group');
-    }
-
-    public function trainingCenter()
-    {
-        return $this->belongsTo(TrainingCenter::class, 'training_center_id');
     }
 }

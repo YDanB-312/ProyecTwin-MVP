@@ -18,7 +18,6 @@ return new class extends Migration
             $table->enum('estado', ['activo', 'inactivo', 'finalizado', 'archivado'])->default('activo');
             $table->foreignId('id_programa')->constrained('training_programs');
             $table->foreignId('id_instructor')->constrained('instructors');
-            $table->foreignId('training_center_id')->nullable()->constrained('training_centers')->nullOnDelete();
             $table->timestamps();
         });
     }

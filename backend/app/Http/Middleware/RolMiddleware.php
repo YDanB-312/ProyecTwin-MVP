@@ -6,8 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 
 // Uso: ->middleware('rol:admin') o ->middleware('rol:admin,instructor').
-// Compara contra GeneralUser.rol (valores: aprendiz, instructor, admin,
-// superadmin). El superadmin es superset: satisface cualquier permiso de admin.
+// Compara contra GeneralUser.rol (valores: aprendiz, instructor, admin).
 class RolMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
@@ -16,12 +15,7 @@ class RolMiddleware
         if (!$user) {
             return response()->json(['message' => 'No autenticado.'], 401);
         }
-        if (empty($roles)) {
-            return $next($request);
-        }
-        $tieneRol = in_array($user->rol, $roles, true)
-            || ($user->rol === 'superadmin' && in_array('admin', $roles, true));
-        if (!$tieneRol) {
+        if (!empty($roles) && !in_array($user->rol, $roles, true)) {
             return response()->json(['message' => 'Sin permiso para esta acción.'], 403);
         }
         return $next($request);
