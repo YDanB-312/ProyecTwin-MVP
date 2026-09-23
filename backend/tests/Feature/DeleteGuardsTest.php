@@ -175,9 +175,8 @@ class DeleteGuardsTest extends TestCase
 
     public function test_no_se_puede_suspender_al_ultimo_admin_activo(): void
     {
-        // Deja un solo administrador activo en el escenario, contando también
-        // al superadmin (se revierte al terminar).
-        GeneralUser::whereIn('rol', ['admin', 'superadmin'])->update(['estado' => false]);
+        // Deja un solo administrador activo en el escenario (se revierte al terminar).
+        GeneralUser::where('rol', 'admin')->update(['estado' => false]);
         $admin = $this->usuario('admin', true);
 
         $this->como($admin)

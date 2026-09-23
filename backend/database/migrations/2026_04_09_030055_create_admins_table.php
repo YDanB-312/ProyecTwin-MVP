@@ -12,9 +12,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
             $table->unique('id_usuario'); // Un perfil por usuario.
-            // Centro a cargo del coordinador. Nullable: el superadmin es global.
-            // Unique: un solo admin por centro (MySQL admite varios NULL).
-            $table->foreignId('training_center_id')->nullable()->unique()->constrained('training_centers')->nullOnDelete();
             $table->timestamps();
         });
     }

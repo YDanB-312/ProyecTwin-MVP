@@ -16,16 +16,9 @@ class ApprenticeController extends Controller
     {
         $user = $request->user();
 
-        // Superadmin ve todos; el admin de centro, los de su centro; instructor
-        // los de sus fichas; aprendiz los de la suya.
-        if (optional($user)->esSuperadmin()) {
+        // Admin ve todos; instructor los de sus fichas; aprendiz los de la suya.
+        if (optional($user)->rol === 'admin') {
             return Apprentice::included()->get();
-        }
-        if (optional($user)->esAdminDeCentro()) {
-            $centroId = $user->centroId();
-            return Apprentice::included()
-                ->whereHas('classGroup', fn ($q) => $q->where('training_center_id', $centroId))
-                ->get();
         }
 
         $fichaIds = collect();
@@ -193,7 +186,7 @@ class ApprenticeController extends Controller
         $codigo = strtolower(trim((string) $codigo));
         if ($codigo === '') return null;
 
-        return ClassGroup::with('program', 'instructor.generalUser', 'trainingCenter')
+        return ClassGroup::with('program', 'instructor.generalUser')
             ->whereRaw('LOWER(codigo) = ?', [$codigo])
             ->first();
     }

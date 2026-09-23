@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('password');
             // text: admite data URL (foto subida desde el navegador) o URL externa.
             $table->text('foto_url')->nullable();
-            $table->enum('rol', ['aprendiz', 'instructor', 'admin', 'superadmin']);
+            $table->enum('rol', ['aprendiz', 'instructor', 'admin']);
             $table->boolean('estado')->default(true);
             // Necesario para el flujo de restablecer contraseña (broker de Laravel).
             $table->rememberToken();

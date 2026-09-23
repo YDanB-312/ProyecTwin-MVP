@@ -16,22 +16,11 @@ class BugReportController extends Controller
     {
         $user = $request->user();
 
-        // El superadmin ve todos; el admin de centro, los de su centro; cada
-        // usuario solo sus propios reportes.
-        $query = BugReport::included()->orderByDesc('id');
-
-        if (optional($user)->esSuperadmin()) {
-            return $query->get();
-        }
-        if (optional($user)->esAdminDeCentro()) {
-            $centroId = $user->centroId();
-            return $query->whereHas('generalUser', function ($q) use ($centroId) {
-                $q->whereHas('apprentice.classGroup', fn ($x) => $x->where('training_center_id', $centroId))
-                  ->orWhereHas('instructor.classGroups', fn ($x) => $x->where('training_center_id', $centroId));
-            })->get();
-        }
-
-        return $query->where('id_usuario', $user->id)->get();
+        // El admin ve todos; cada usuario solo sus propios reportes.
+        return BugReport::included()
+            ->when(optional($user)->rol !== 'admin', fn ($q) => $q->where('id_usuario', $user->id))
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function store(Request $request)
@@ -65,10 +54,7 @@ class BugReportController extends Controller
     {
         $item = BugReport::included()->findOrFail($id);
         $user = $request->user();
-        $esSuperadmin = optional($user)->esSuperadmin();
-        $esAdminCentro = optional($user)->esAdminDeCentro() && $item->generalUser
-            && $item->generalUser->perteneceAlCentro($user->centroId());
-        if ((int) $item->id_usuario !== (int) $user->id && !$esSuperadmin && !$esAdminCentro) {
+        if ((int) $item->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
             return response()->json(['message' => 'No tienes acceso a este reporte.'], 403);
         }
         return $item;
@@ -76,7 +62,7 @@ class BugReportController extends Controller
 
     public function update(Request $request, BugReport $bug_report)
     {
-        if (!$this->puedeGestionar($request, $bug_report)) {
+        if ($request->user()->rol !== 'admin') {
             return response()->json(['message' => 'Solo un administrador puede actualizar reportes.'], 403);
         }
 
@@ -95,7 +81,7 @@ class BugReportController extends Controller
 
     public function destroy(Request $request, BugReport $bug_report)
     {
-        if (!$this->puedeGestionar($request, $bug_report)) {
+        if ($request->user()->rol !== 'admin') {
             return response()->json(['message' => 'Solo un administrador puede eliminar reportes.'], 403);
         }
 
@@ -103,37 +89,18 @@ class BugReportController extends Controller
         return $bug_report;
     }
 
-    // Superadmin cualquiera; admin de centro solo los de su centro.
-    private function puedeGestionar(Request $request, BugReport $reporte): bool
-    {
-        $user = $request->user();
-        if (!$user) return false;
-        if ($user->esSuperadmin()) return true;
-        if (!$user->esAdminDeCentro()) return false;
-
-        return $reporte->generalUser && $reporte->generalUser->perteneceAlCentro($user->centroId());
-    }
-
-    // Crea una notificación por cada admin activo que corresponda: el superadmin
-    // siempre; el admin de centro solo si el reporte viene de su centro.
+    // Crea una notificación por cada admin activo (el panel filtra por usuario).
     private function notificarAdmins(BugReport $reporte): void
     {
-        $reporte->loadMissing('generalUser');
-        $autor = $reporte->generalUser;
-
-        GeneralUser::whereIn('rol', ['admin', 'superadmin'])->where('estado', true)->get()
-            ->each(function (GeneralUser $admin) use ($reporte, $autor) {
-                if ($admin->esAdminDeCentro() && !($autor && $autor->perteneceAlCentro($admin->centroId()))) {
-                    return;
-                }
-                Notification::create([
-                    'titulo' => 'Nuevo reporte de falla: "' . ($reporte->titulo ?: 'Sin título') . '"',
-                    'tipo' => 'sistema',
-                    'enlace' => 'reporte:' . $reporte->id,
-                    'leida' => false,
-                    'fecha' => now()->toDateString(),
-                    'id_usuario' => $admin->id,
-                ]);
-            });
+        GeneralUser::where('rol', 'admin')->where('estado', true)->get()->each(function (GeneralUser $admin) use ($reporte) {
+            Notification::create([
+                'titulo' => 'Nuevo reporte de falla: "' . ($reporte->titulo ?: 'Sin título') . '"',
+                'tipo' => 'sistema',
+                'enlace' => 'reporte:' . $reporte->id,
+                'leida' => false,
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $admin->id,
+            ]);
+        });
     }
 }

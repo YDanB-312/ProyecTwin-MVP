@@ -15,16 +15,9 @@ class InstructorController extends Controller
     {
         $user = $request->user();
 
-        // Superadmin ve todos; el admin de centro, los instructores con ficha en
-        // su centro; instructor su propia fila; aprendiz los de su ficha.
-        if (optional($user)->esSuperadmin()) {
+        // Admin ve todos; instructor su propia fila; aprendiz los de su ficha.
+        if (optional($user)->rol === 'admin') {
             return Instructor::included()->get();
-        }
-        if (optional($user)->esAdminDeCentro()) {
-            $centroId = $user->centroId();
-            return Instructor::included()
-                ->whereHas('classGroups', fn ($q) => $q->where('training_center_id', $centroId))
-                ->get();
         }
         if ($user && $user->rol === 'instructor') {
             // Auto-sanado: garantiza que el instructor tenga perfil propio.
