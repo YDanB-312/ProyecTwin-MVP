@@ -10,6 +10,7 @@ use App\Models\ClassGroup;
 use App\Models\Instructor;
 use App\Models\Project;
 use App\Support\Auditoria;
+use App\Support\BorradoCascada;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -142,6 +143,18 @@ class GeneralUserController extends Controller
             }
         }
 
+        // Un instructor con fichas a cargo no puede dejar de ser instructor: las
+        // fichas quedarían sin responsable. Se exige reasignarlas primero.
+        if ($cambiaRol && $general_user->rol === 'instructor' && $request->rol !== 'instructor') {
+            $instructor = Instructor::where('id_usuario', $general_user->id)->first();
+            $fichas = $instructor ? ClassGroup::where('id_instructor', $instructor->id)->count() : 0;
+            if ($fichas > 0) {
+                return response()->json([
+                    'message' => "No se puede cambiar el rol: tiene {$fichas} ficha(s) a cargo. Reasígnalas primero.",
+                ], 409);
+            }
+        }
+
         $data = $request->all();
         $huboPassword = !empty($data['password']);
         // Solo re-hashear si viene clave nueva no vacía.
@@ -186,58 +199,20 @@ class GeneralUserController extends Controller
             }
         }
 
+        // Admin sin restricciones: se borra el usuario y todo lo dependiente en
+        // cascada (el impacto se advierte en la confirmación del cliente).
         $instructor = $general_user->instructor;
+        $impacto = [
+            'propuestas' => Project::where('id_creador', $general_user->id)->count(),
+            'fichas_a_cargo' => $instructor ? ClassGroup::where('id_instructor', $instructor->id)->count() : 0,
+        ];
 
-        // Un instructor con fichas a cargo no se puede borrar: la FK lo impide
-        // (antes reventaba con 500). Se responde 409 con un motivo claro.
-        if ($instructor) {
-            $fichas = ClassGroup::where('id_instructor', $instructor->id)->count();
-            if ($fichas > 0) {
-                return response()->json([
-                    'message' => "No se puede eliminar: tiene {$fichas} ficha(s) a cargo. Reasígnalas primero.",
-                ], 409);
-            }
-        }
-
-        // Nadie con historial académico se borra: se suspende la cuenta. Borrar
-        // arrastraría sus propuestas (y con ellas similitudes y equipos).
-        $creadas = Project::where('id_creador', $general_user->id)->count();
-        if ($creadas > 0) {
-            return response()->json([
-                'message' => "No se puede eliminar: es autor de {$creadas} propuesta(s). Suspende la cuenta para conservar el historial.",
-            ], 409);
-        }
-
-        if ($instructor) {
-            $asignadas = Project::where('id_instructor_asignado', $instructor->id)->count();
-            if ($asignadas > 0) {
-                return response()->json([
-                    'message' => "No se puede eliminar: tiene {$asignadas} propuesta(s) asignada(s). Reasígnalas primero.",
-                ], 409);
-            }
-        }
-
-        $aprendiz = $general_user->apprentice;
-        if ($aprendiz) {
-            $enEquipo = ApprenticeProject::where('id_aprendiz', $aprendiz->id)->count();
-            if ($enEquipo > 0) {
-                return response()->json([
-                    'message' => "No se puede eliminar: participa en {$enEquipo} propuesta(s). Suspende la cuenta para conservar el historial.",
-                ], 409);
-            }
-        }
-
-        try {
-            $general_user->delete();
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'message' => 'No se puede eliminar: el usuario tiene registros asociados.',
-            ], 409);
-        }
+        BorradoCascada::usuario($general_user);
 
         Auditoria::registrar('eliminar_usuario', 'general_users', $general_user->id, [
             'correo' => $general_user->correo,
             'rol' => $general_user->rol,
+            'impacto' => $impacto,
         ]);
 
         return $general_user;
@@ -278,6 +253,10 @@ class GeneralUserController extends Controller
         if ($usuario->rol !== 'aprendiz') {
             $aprendiz = Apprentice::where('id_usuario', $usuario->id)->first();
             if ($aprendiz) {
+                // Deja de ser aprendiz: sale del roster de su ficha (la fila se
+                // conserva para el historial de sus propuestas). Sin ficha no hay
+                // programa vigente.
+                $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
                 $enEquipo = ApprenticeProject::where('id_aprendiz', $aprendiz->id)->exists();
                 $esAutor = Project::where('id_creador', $usuario->id)->exists();
                 if (!$enEquipo && !$esAutor) {

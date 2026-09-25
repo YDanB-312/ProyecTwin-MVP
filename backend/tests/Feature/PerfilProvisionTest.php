@@ -83,7 +83,7 @@ class PerfilProvisionTest extends TestCase
         $this->assertDatabaseHas('instructors', ['id_usuario' => $user->id]);
     }
 
-    public function test_borrar_instructor_con_fichas_responde_409(): void
+    public function test_borrar_instructor_con_fichas_borra_en_cascada(): void
     {
         $admin = $this->usuario('admin');
         $instructorUser = $this->usuario('instructor');
@@ -91,7 +91,7 @@ class PerfilProvisionTest extends TestCase
             'id_usuario' => $instructorUser->id,
             'fecha_ingreso' => now()->toDateString(),
         ]);
-        ClassGroup::create([
+        $ficha = ClassGroup::create([
             'codigo' => 'cod-' . uniqid(),
             'nombre' => 'Ficha E2E',
             'estado' => 'activo',
@@ -99,8 +99,12 @@ class PerfilProvisionTest extends TestCase
             'id_instructor' => $instructor->id,
         ]);
 
+        // Admin sin restricciones: borra el instructor y su ficha en cascada.
         $this->withToken($this->token($admin))
             ->deleteJson('/v1/instructors/' . $instructor->id)
-            ->assertStatus(409);
+            ->assertOk();
+
+        $this->assertDatabaseMissing('instructors', ['id' => $instructor->id]);
+        $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
     }
 }

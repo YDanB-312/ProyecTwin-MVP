@@ -16,9 +16,13 @@ class ApprenticeController extends Controller
     {
         $user = $request->user();
 
+        // Solo cuentan como integrantes quienes tienen rol aprendiz (una cuenta
+        // que cambió de rol conserva su fila histórica pero sale del roster).
+        $soloAprendices = fn ($q) => $q->whereHas('generalUser', fn ($u) => $u->where('rol', 'aprendiz'));
+
         // Admin ve todos; instructor los de sus fichas; aprendiz los de la suya.
         if (optional($user)->rol === 'admin') {
-            return Apprentice::included()->get();
+            return Apprentice::included()->where($soloAprendices)->get();
         }
 
         $fichaIds = collect();
@@ -31,16 +35,17 @@ class ApprenticeController extends Controller
             $fichaIds = Apprentice::where('id_usuario', $user->id)->pluck('id_class_group')->filter();
         }
 
-        return Apprentice::included()->whereIn('id_class_group', $fichaIds)->get();
+        return Apprentice::included()->whereIn('id_class_group', $fichaIds)->where($soloAprendices)->get();
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'codigo' => 'required|max:255',
+            'codigo' => 'required|max:255|unique:apprentices,codigo',
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
-            'id_programa' => 'required|exists:training_programs,id',
+            // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
+            'id_programa' => 'nullable|exists:training_programs,id',
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);
@@ -48,7 +53,13 @@ class ApprenticeController extends Controller
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
-        $item = Apprentice::create($request->all());
+        $data = $request->all();
+        // Invariante: el programa del aprendiz es el de su ficha.
+        if ($request->filled('id_class_group')) {
+            $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
+        }
+
+        $item = Apprentice::create($data);
         return $item;
     }
 
@@ -61,10 +72,11 @@ class ApprenticeController extends Controller
     public function update(Request $request, Apprentice $apprentice)
     {
         $request->validate([
-            'codigo' => 'required|max:255',
+            'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
-            'id_programa' => 'required|exists:training_programs,id',
+            // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
+            'id_programa' => 'nullable|exists:training_programs,id',
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);
@@ -72,12 +84,20 @@ class ApprenticeController extends Controller
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
-        $apprentice->update($request->all());
+        $data = $request->all();
+        // Invariante: el programa del aprendiz es el de su ficha.
+        if ($request->filled('id_class_group')) {
+            $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
+        }
+
+        $apprentice->update($data);
         return $apprentice;
     }
 
     public function destroy(Apprentice $apprentice)
     {
+        // Admin sin restricciones: borra el perfil (la FK arrastra sus pivotes de
+        // equipo). Las propuestas del usuario se conservan (son de la cuenta).
         $apprentice->delete();
         return $apprentice;
     }
@@ -160,7 +180,8 @@ class ApprenticeController extends Controller
         }
 
         $ficha = ClassGroup::with('instructor')->find($aprendiz->id_class_group);
-        $aprendiz->update(['id_class_group' => null]);
+        // Opción A: sin ficha tampoco hay programa (el programa se deriva).
+        $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
 
         if ($ficha) {
             $this->notificarInstructor(

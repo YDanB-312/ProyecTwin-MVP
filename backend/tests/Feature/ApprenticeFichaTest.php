@@ -124,9 +124,9 @@ class ApprenticeFichaTest extends TestCase
         $this->assertDatabaseMissing('apprentices', ['id_usuario' => $user->id]);
     }
 
-    public function test_una_ficha_inactiva_no_acepta_nuevos_integrantes(): void
+    public function test_una_ficha_finalizada_no_acepta_nuevos_integrantes(): void
     {
-        $ficha = $this->ficha('inactivo', 'tst-inac');
+        $ficha = $this->ficha('finalizado', 'tst-fina');
         $user = $this->usuarioAprendiz();
 
         $this->withToken($this->token($user))

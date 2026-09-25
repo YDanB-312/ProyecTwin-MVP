@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
+use App\Models\ClassGroup;
+use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Notification;
 use App\Models\Project;
@@ -39,11 +41,38 @@ class ProjectController extends Controller
         ]);
 
         $usuario = $request->user();
+        $rol = optional($usuario)->rol;
         $datos = $request->all();
-        // El creador es siempre quien envía la propuesta (un admin sí puede
-        // registrarla a nombre de otro).
-        if (optional($usuario)->rol !== 'admin' || empty($datos['id_creador'])) {
+
+        if ($rol === 'aprendiz') {
+            // La propuesta vive en la ficha ACTUAL del aprendiz (activa) y con
+            // el instructor de esa ficha: no se confía en el request.
+            $aprendiz = Apprentice::where('id_usuario', $usuario->id)->first();
+            if (!$aprendiz || !$aprendiz->id_class_group) {
+                return response()->json(['message' => 'Únete a una ficha para registrar propuestas.'], 422);
+            }
+            $ficha = ClassGroup::find($aprendiz->id_class_group);
+            if (!$ficha || $ficha->estado !== 'activo') {
+                return response()->json(['message' => 'Tu ficha no está activa para recibir propuestas.'], 422);
+            }
+            $datos['id_class_group'] = $ficha->id;
+            $datos['id_instructor_asignado'] = $ficha->id_instructor;
             $datos['id_creador'] = $usuario->id;
+        } elseif ($rol === 'admin') {
+            // Un admin puede registrarla a nombre de otro, pero el autor debe
+            // ser un aprendiz (integridad de dominio).
+            if (!empty($datos['id_creador'])) {
+                $creador = GeneralUser::find($datos['id_creador']);
+                if (!$creador || $creador->rol !== 'aprendiz') {
+                    return response()->json(['message' => 'La propuesta debe pertenecer a un aprendiz.'], 422);
+                }
+            } else {
+                $datos['id_creador'] = $usuario->id;
+            }
+        } else {
+            // Solo aprendices (o un admin a nombre de uno) pueden ser autores:
+            // una propuesta sin autor aprendiz rompe el dominio del motor.
+            return response()->json(['message' => 'Solo un aprendiz puede registrar propuestas.'], 403);
         }
 
         $item = Project::create($datos);
@@ -93,6 +122,12 @@ class ProjectController extends Controller
             if (!$this->esPropiaDelAprendiz($project, $usuario)) {
                 return response()->json(['message' => 'No puedes editar una propuesta que no es tuya.'], 403);
             }
+            // Solo lectura si ya no perteneces a la ficha (o está finalizada).
+            if (!$project->puedeEscribir($usuario)) {
+                return response()->json([
+                    'message' => 'Solo lectura: ya no perteneces a la ficha de esta propuesta.',
+                ], 403);
+            }
         } elseif ($rol === 'instructor') {
             if (!$this->esInstructorDeLaPropuesta($project, $usuario)) {
                 return response()->json(['message' => 'No puedes editar una propuesta fuera de tus fichas.'], 403);
@@ -103,10 +138,32 @@ class ProjectController extends Controller
 
         $datos = $request->all();
 
+        // La propuesta no cambia de ficha ni de creador por esta vía
+        // (trazabilidad histórica); se conservan los valores actuales.
+        unset($datos['id_class_group'], $datos['id_creador']);
+        $datos['id_creador'] = $project->id_creador;
+        // El instructor asignado solo lo reasigna un admin (evita que el aprendiz
+        // o el equipo "secuestren" la asignación).
+        if ($rol !== 'admin') {
+            unset($datos['id_instructor_asignado']);
+        }
+
         // El aprendiz no aprueba/rechaza: al reenviar una rechazada vuelve a
         // pendiente para una nueva revisión del instructor.
         if ($rol === 'aprendiz') {
             $datos['estado'] = 'pendiente';
+        }
+
+        // Contenido de una propuesta APROBADA editado por staff → nueva revisión.
+        if ($rol !== 'aprendiz' && $project->estado === 'aprobado') {
+            $campos = ['titulo', 'resumen', 'palabras_clave', 'area_aplicacion', 'objetivo_general', 'objetivos_especificos'];
+            foreach ($campos as $c) {
+                if (!$request->has($c)) continue;
+                if (json_encode($request->input($c)) !== json_encode($project->{$c})) {
+                    $datos['estado'] = 'pendiente';
+                    break;
+                }
+            }
         }
 
         $estadoAnterior = $project->estado;
@@ -129,14 +186,18 @@ class ProjectController extends Controller
         $usuario = $request->user();
         $rol = optional($usuario)->rol;
 
-        // Solo el dueño aprendiz o un admin (el instructor no borra propuestas).
+        // Solo el CREADOR aprendiz (dentro de su ficha activa) o un admin.
         $permitido = $rol === 'admin'
-            || ($rol === 'aprendiz' && $this->esPropiaDelAprendiz($project, $usuario));
+            || ($rol === 'aprendiz'
+                && (int) $project->id_creador === (int) $usuario->id
+                && $project->puedeEscribir($usuario));
         if (!$permitido) {
             return response()->json(['message' => 'No puedes eliminar esta propuesta.'], 403);
         }
 
         $project->delete();
+        // Evita notificaciones con enlace a una propuesta ya inexistente.
+        Notification::where('enlace', 'proyecto:' . $project->id)->delete();
         return $project;
     }
 

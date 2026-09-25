@@ -85,6 +85,28 @@ class AuthController extends Controller
         return response()->json(['message' => 'Correo actualizado.', 'correo' => $user->correo]);
     }
 
+    // Cambio de contraseña del propio usuario autenticado: valida la actual y
+    // actualiza sin emitir un token nuevo (no rompe la sesión ni "Recordarme").
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'password_actual' => 'required|string',
+            'password' => 'required|min:6|max:255|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->password_actual, $user->password)) {
+            return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        Auditoria::registrar('cambiar_clave', 'general_users', $user->id);
+
+        return response()->json(['message' => 'Contraseña actualizada.']);
+    }
+
     // Solicita el enlace de restablecimiento (público). Respuesta genérica para
     // no revelar qué correos existen. En local se devuelve el enlace para poder
     // probar el flujo sin abrir el correo.

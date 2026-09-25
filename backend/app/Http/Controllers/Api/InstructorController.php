@@ -69,15 +69,13 @@ class InstructorController extends Controller
 
     public function destroy(Instructor $instructor)
     {
-        // La FK de class_groups impide borrar un instructor con fichas a cargo:
-        // se responde 409 con motivo en vez de un 500.
-        try {
+        // Admin sin restricciones: borra sus fichas (con su cascada) y luego el
+        // perfil de instructor.
+        $fichas = ClassGroup::where('id_instructor', $instructor->id)->get();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($instructor, $fichas) {
+            $fichas->each(fn ($f) => \App\Support\BorradoCascada::ficha($f));
             $instructor->delete();
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'message' => 'No se puede eliminar: el instructor tiene fichas a cargo. Reasígnalas primero.',
-            ], 409);
-        }
+        });
         return $instructor;
     }
 }

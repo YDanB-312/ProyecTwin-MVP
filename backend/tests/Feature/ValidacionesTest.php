@@ -161,9 +161,9 @@ class ValidacionesTest extends TestCase
             ->assertStatus(404);
     }
 
-    public function test_unirse_a_ficha_inactiva_falla(): void
+    public function test_unirse_a_ficha_finalizada_falla(): void
     {
-        $ficha = $this->ficha('inactivo');
+        $ficha = $this->ficha('finalizado');
 
         $this->como($this->usuario('aprendiz'))
             ->postJson('/v1/apprentices/me/ficha', ['codigo' => $ficha->codigo])

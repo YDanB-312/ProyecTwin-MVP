@@ -13,8 +13,9 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
-// Guardas de borrado: no se destruye historial académico; se suspende/archiva.
-// Y autoprotección del admin: sin dejar el sistema sin administradores.
+// Admin sin restricciones: puede borrar entidades con dependientes (cascada
+// transaccional). Solo se conservan dos salvaguardas de sistema: nadie borra su
+// propia cuenta y no se puede dejar el sistema sin administradores activos.
 class DeleteGuardsTest extends TestCase
 {
     use DatabaseTransactions;
@@ -57,87 +58,65 @@ class DeleteGuardsTest extends TestCase
         ]);
     }
 
-    private function ficha(?string $codigo = null): ClassGroup
+    private function ficha(?TrainingProgram $programa = null): ClassGroup
     {
-        // Toda ficha requiere un instructor a cargo.
         $user = $this->usuario('instructor');
         $instructor = Instructor::create(['fecha_ingreso' => '2024-01-01', 'id_usuario' => $user->id]);
 
         return ClassGroup::create([
-            'codigo' => $codigo ?: 'gd-' . uniqid(),
+            'codigo' => 'gd-' . uniqid(),
             'nombre' => 'Ficha guarda',
             'estado' => 'activo',
-            'id_programa' => $this->programa()->id,
+            'id_programa' => ($programa ?: $this->programa())->id,
             'id_instructor' => $instructor->id,
         ]);
     }
 
-    public function test_una_ficha_con_aprendices_no_se_borra(): void
+    private function proyecto(GeneralUser $creador, ?ClassGroup $ficha = null): Project
+    {
+        return Project::create([
+            'titulo' => 'Propuesta guarda',
+            'resumen' => 'Resumen de la propuesta de prueba.',
+            'area_aplicacion' => 'Tecnología',
+            'estado' => 'pendiente',
+            'id_creador' => $creador->id,
+            'id_class_group' => $ficha?->id,
+        ]);
+    }
+
+    public function test_admin_borra_una_ficha_con_aprendices_y_propuestas_en_cascada(): void
     {
         $admin = $this->usuario('admin');
         $ficha = $this->ficha();
-        Apprentice::create([
+        $aprendizUser = $this->usuario('aprendiz');
+        $aprendiz = Apprentice::create([
             'codigo' => 'AP-' . uniqid(),
-            'id_usuario' => $this->usuario('aprendiz')->id,
+            'id_usuario' => $aprendizUser->id,
             'id_class_group' => $ficha->id,
             'id_programa' => $ficha->id_programa,
         ]);
+        $proyecto = $this->proyecto($aprendizUser, $ficha);
 
-        $this->como($admin)
-            ->deleteJson('/v1/class-groups/' . $ficha->id)
-            ->assertStatus(409);
-
-        $this->assertDatabaseHas('class_groups', ['id' => $ficha->id]);
-    }
-
-    public function test_una_ficha_con_propuestas_no_se_borra(): void
-    {
-        $admin = $this->usuario('admin');
-        $ficha = $this->ficha();
-        Project::create([
-            'titulo' => 'Propuesta en ficha',
-            'resumen' => 'Resumen',
-            'area_aplicacion' => 'Tecnología',
-            'id_creador' => $admin->id,
-            'id_class_group' => $ficha->id,
-        ]);
-
-        $this->como($admin)
-            ->deleteJson('/v1/class-groups/' . $ficha->id)
-            ->assertStatus(409);
-    }
-
-    public function test_una_ficha_vacia_si_se_borra(): void
-    {
-        $admin = $this->usuario('admin');
-        $ficha = $this->ficha();
-
-        $this->como($admin)
-            ->deleteJson('/v1/class-groups/' . $ficha->id)
-            ->assertOk();
+        $this->como($admin)->deleteJson('/v1/class-groups/' . $ficha->id)->assertOk();
 
         $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
+        $this->assertDatabaseMissing('apprentices', ['id' => $aprendiz->id]);
+        $this->assertDatabaseMissing('projects', ['id' => $proyecto->id]);
     }
 
-    public function test_un_usuario_con_propuestas_creadas_no_se_borra(): void
+    public function test_admin_borra_un_usuario_con_propuestas_en_cascada(): void
     {
         $admin = $this->usuario('admin');
         $autor = $this->usuario('aprendiz');
-        Project::create([
-            'titulo' => 'Su propuesta',
-            'resumen' => 'Resumen',
-            'area_aplicacion' => 'Tecnología',
-            'id_creador' => $autor->id,
-        ]);
+        $proyecto = $this->proyecto($autor);
 
-        $this->como($admin)
-            ->deleteJson('/v1/general-users/' . $autor->id)
-            ->assertStatus(409);
+        $this->como($admin)->deleteJson('/v1/general-users/' . $autor->id)->assertOk();
 
-        $this->assertDatabaseHas('general_users', ['id' => $autor->id]);
+        $this->assertDatabaseMissing('general_users', ['id' => $autor->id]);
+        $this->assertDatabaseMissing('projects', ['id' => $proyecto->id]);
     }
 
-    public function test_un_instructor_con_fichas_no_se_borra(): void
+    public function test_admin_borra_un_instructor_con_fichas_en_cascada(): void
     {
         $admin = $this->usuario('admin');
         $instructorUser = $this->usuario('instructor');
@@ -145,20 +124,18 @@ class DeleteGuardsTest extends TestCase
         $ficha = $this->ficha();
         $ficha->update(['id_instructor' => $instructor->id]);
 
-        $this->como($admin)
-            ->deleteJson('/v1/general-users/' . $instructorUser->id)
-            ->assertStatus(409);
+        $this->como($admin)->deleteJson('/v1/general-users/' . $instructorUser->id)->assertOk();
+
+        $this->assertDatabaseMissing('general_users', ['id' => $instructorUser->id]);
+        $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
     }
 
-    public function test_un_usuario_sin_historial_si_se_borra(): void
+    public function test_admin_borra_un_usuario_sin_historial(): void
     {
         $admin = $this->usuario('admin');
         $nuevo = $this->usuario('aprendiz');
 
-        $this->como($admin)
-            ->deleteJson('/v1/general-users/' . $nuevo->id)
-            ->assertOk();
-
+        $this->como($admin)->deleteJson('/v1/general-users/' . $nuevo->id)->assertOk();
         $this->assertDatabaseMissing('general_users', ['id' => $nuevo->id]);
     }
 
@@ -166,10 +143,7 @@ class DeleteGuardsTest extends TestCase
     {
         $admin = $this->usuario('admin');
 
-        $this->como($admin)
-            ->deleteJson('/v1/general-users/' . $admin->id)
-            ->assertStatus(422);
-
+        $this->como($admin)->deleteJson('/v1/general-users/' . $admin->id)->assertStatus(422);
         $this->assertDatabaseHas('general_users', ['id' => $admin->id]);
     }
 
@@ -179,14 +153,12 @@ class DeleteGuardsTest extends TestCase
         GeneralUser::where('rol', 'admin')->update(['estado' => false]);
         $admin = $this->usuario('admin', true);
 
-        $this->como($admin)
-            ->putJson('/v1/general-users/' . $admin->id, [
-                'nombre' => $admin->nombre,
-                'apellido' => $admin->apellido,
-                'correo' => $admin->correo,
-                'estado' => false,
-            ])
-            ->assertStatus(409);
+        $this->como($admin)->putJson('/v1/general-users/' . $admin->id, [
+            'nombre' => $admin->nombre,
+            'apellido' => $admin->apellido,
+            'correo' => $admin->correo,
+            'estado' => false,
+        ])->assertStatus(409);
 
         $this->assertTrue($admin->fresh()->estado);
     }

@@ -49,12 +49,41 @@ class AuthorizationTest extends TestCase
 
     private function proyectoDe(GeneralUser $creador, string $estado = 'pendiente'): Project
     {
+        // Toda propuesta vive en una ficha ACTIVA y con su creador dentro
+        // (regla Classroom: se participa solo dentro de la ficha).
+        $instructor = Instructor::create([
+            'fecha_ingreso' => '2024-01-01',
+            'id_usuario' => $this->usuario('instructor')->id,
+        ]);
+        $red = KnowledgeNetwork::create(['nombre' => 'Red ' . uniqid()]);
+        $programa = TrainingProgram::create([
+            'nombre' => 'Programa ' . uniqid(),
+            'nivel' => 'Tecnologo',
+            'num_trimestres' => 6,
+            'knowledge_network_id' => $red->id,
+        ]);
+        $ficha = ClassGroup::create([
+            'codigo' => 'au-' . uniqid(),
+            'nombre' => 'Ficha authz',
+            'estado' => 'activo',
+            'id_programa' => $programa->id,
+            'id_instructor' => $instructor->id,
+        ]);
+
+        Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $creador->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
+
         return Project::create([
             'titulo' => 'Propuesta ' . uniqid(),
             'resumen' => 'Resumen de prueba',
             'area_aplicacion' => 'Tecnología',
             'estado' => $estado,
             'id_creador' => $creador->id,
+            'id_class_group' => $ficha->id,
         ]);
     }
 
@@ -248,6 +277,7 @@ class AuthorizationTest extends TestCase
     public function test_el_equipo_solo_lo_gestiona_el_dueno_o_su_instructor(): void
     {
         $dueno = $this->usuario('aprendiz');
+        $miembro = $this->usuario('aprendiz');
         $ajeno = $this->usuario('aprendiz');
         $proyecto = $this->proyectoDe($dueno);
 
@@ -258,20 +288,22 @@ class AuthorizationTest extends TestCase
             'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
-        $aprendiz = Apprentice::create([
+        // El pivote es de un MIEMBRO (no del creador): al creador no se le puede
+        // quitar de su propia propuesta (eso lo cubre EquipoTest).
+        $aprendizMiembro = Apprentice::create([
             'codigo' => 'AP-' . uniqid(),
-            'id_usuario' => $dueno->id,
+            'id_usuario' => $miembro->id,
             'id_programa' => $programa->id,
         ]);
         $pivote = ApprenticeProject::create([
-            'id_aprendiz' => $aprendiz->id,
+            'id_aprendiz' => $aprendizMiembro->id,
             'id_proyecto' => $proyecto->id,
         ]);
 
         // Un tercero no puede gestionar el equipo de una propuesta ajena.
         $this->como($ajeno)->deleteJson('/v1/apprentice-projects/' . $pivote->id)->assertStatus(403);
 
-        // El dueño de la propuesta sí.
+        // El dueño de la propuesta sí puede retirar a un miembro.
         $this->como($dueno)->deleteJson('/v1/apprentice-projects/' . $pivote->id)->assertOk();
     }
 

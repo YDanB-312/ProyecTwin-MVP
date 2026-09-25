@@ -46,7 +46,20 @@ class TrainingProgramController extends Controller
 
     public function destroy(TrainingProgram $training_program)
     {
-        $training_program->delete();
+        // Admin sin restricciones: borra el programa y sus dependientes en
+        // cascada (fichas con propuestas/aprendices).
+        $impacto = [
+            'fichas' => \App\Models\ClassGroup::where('id_programa', $training_program->id)->count(),
+            'aprendices' => \App\Models\Apprentice::where('id_programa', $training_program->id)->count(),
+        ];
+
+        \App\Support\BorradoCascada::programa($training_program);
+
+        \App\Support\Auditoria::registrar('eliminar_programa', 'training_programs', $training_program->id, [
+            'nombre' => $training_program->nombre,
+            'impacto' => $impacto,
+        ]);
+
         return $training_program;
     }
 }

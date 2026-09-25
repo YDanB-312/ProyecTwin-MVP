@@ -10,11 +10,13 @@ return new class extends Migration
     {
         Schema::create('apprentices', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo');
+            $table->string('codigo')->unique(); // Código de aprendiz único.
             $table->foreignId('id_class_group')->nullable()->constrained('class_groups')->onDelete('cascade');
 
             $table->foreignId('id_usuario')->constrained('general_users')->onDelete('cascade');
-            $table->foreignId('id_programa')->constrained('training_programs')->onDelete('cascade');
+            // El programa se deriva de la ficha: sin ficha puede ser nulo. La FK
+            // es restrict para no arrastrar aprendices al borrar un programa.
+            $table->foreignId('id_programa')->nullable()->constrained('training_programs')->restrictOnDelete();
             $table->unique('id_usuario'); // Un perfil por usuario.
 
             $table->timestamps();

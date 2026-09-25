@@ -112,7 +112,7 @@ class DatabaseSeeder extends Seeder
             ['id' => 1, 'codigo' => 'xkp-mqwr', 'numero' => '2568', 'nombre' => 'Analisis y Desarrollo 2568', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 1],
             ['id' => 2, 'codigo' => 'bnt-jhsa', 'numero' => '2634', 'nombre' => 'Analisis y Desarrollo 2634', 'estado' => 'activo', 'id_programa' => 1, 'id_instructor' => 2],
             ['id' => 3, 'codigo' => 'qwe-rtzu', 'numero' => '3102', 'nombre' => 'Produccion Multimedia 3102', 'estado' => 'activo', 'id_programa' => 2, 'id_instructor' => 2],
-            ['id' => 4, 'codigo' => 'mno-pqrs', 'numero' => '2801', 'nombre' => 'Infraestructura Redes 2801', 'estado' => 'inactivo', 'id_programa' => 3, 'id_instructor' => 3],
+            ['id' => 4, 'codigo' => 'mno-pqrs', 'numero' => '2801', 'nombre' => 'Infraestructura Redes 2801', 'estado' => 'finalizado', 'id_programa' => 3, 'id_instructor' => 3],
         ];
         foreach ($fichas as $f) ClassGroup::create($f);
     }
