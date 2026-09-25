@@ -86,6 +86,8 @@ class BugReportController extends Controller
         }
 
         $bug_report->delete();
+        // Evita notificaciones con enlace a un reporte ya inexistente.
+        Notification::where('enlace', 'reporte:' . $bug_report->id)->delete();
         return $bug_report;
     }
 

@@ -15,6 +15,20 @@ class Similarity extends Model
 
     protected $fillable = ['porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2'];
 
+    // Un par siempre se guarda con el id menor primero: evita duplicados
+    // invertidos (que la unique no frenaría) y hace determinista `buscarPar`.
+    protected static function booted(): void
+    {
+        static::saving(function (Similarity $s) {
+            $a = $s->id_proyecto_1;
+            $b = $s->id_proyecto_2;
+            if ($a && $b && (int) $a > (int) $b) {
+                $s->id_proyecto_1 = $b;
+                $s->id_proyecto_2 = $a;
+            }
+        });
+    }
+
     // Normaliza cualquier fecha ISO/datetime a la columna `date`.
     public function setFechaAttribute($valor): void
     {

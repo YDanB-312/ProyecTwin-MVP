@@ -42,6 +42,7 @@ Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::put('auth/email', [AuthController::class, 'changeEmail']);
+        Route::put('auth/password', [AuthController::class, 'changePassword']);
 });
 
 // ------------------------------------------------------------------ Autenticadas
@@ -140,7 +141,6 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::get('apprentice-projects', [ApprenticeProjectController::class, 'index']);
     Route::post('apprentice-projects', [ApprenticeProjectController::class, 'store']);
     Route::get('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'show']);
-    Route::put('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'update']);
     Route::delete('apprentice-projects/{apprentice_project}', [ApprenticeProjectController::class, 'destroy']);
 
     // Observaciones (hilos de comentarios)

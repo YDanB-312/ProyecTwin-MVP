@@ -152,6 +152,35 @@ class Project extends Model
         });
     }
 
+    // Regla Classroom: se PARTICIPA (comentar/editar/gestionar equipo) solo
+    // dentro de la ficha ACTIVA de la propuesta. Fuera de la ficha (o con la
+    // ficha finalizada) es SOLO LECTURA. Instructor de la ficha/asignado y admin
+    // siempre pueden.
+    public function puedeEscribir($user): bool
+    {
+        if (!$user) return false;
+        if ($user->rol === 'admin') return true;
+
+        if ($user->rol === 'instructor') {
+            $instructor = Instructor::where('id_usuario', $user->id)->first();
+            if (!$instructor) return false;
+            return (int) $this->id_instructor_asignado === (int) $instructor->id
+                || (int) optional($this->classGroup)->id_instructor === (int) $instructor->id;
+        }
+
+        $ficha = $this->classGroup;
+        if (!$ficha || $ficha->estado !== 'activo') return false;
+
+        $aprendiz = Apprentice::where('id_usuario', $user->id)->first();
+        if (!$aprendiz || (int) $aprendiz->id_class_group !== (int) $ficha->id) return false;
+
+        if ((int) $this->id_creador === (int) $user->id) return true;
+
+        return ApprenticeProject::where('id_proyecto', $this->id)
+            ->where('id_aprendiz', $aprendiz->id)
+            ->exists();
+    }
+
     // ---------------------------------------------------------------- Relaciones
     public function creator()
     {

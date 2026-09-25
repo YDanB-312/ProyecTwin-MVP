@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Apprentice;
-use App\Models\ApprenticeProject;
-use App\Models\Instructor;
 use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\MotorConfig;
@@ -230,27 +227,11 @@ class SimilarityController extends Controller
 
     // ---------------------------------------------------------------- Internos
 
-    // Admin cualquiera; aprendiz su propuesta (creador o equipo); instructor su
-    // ficha o la asignada. Evita que se dispare el motor sobre propuestas ajenas.
+    // Misma regla que la escritura: admin siempre; aprendiz solo dentro de su
+    // ficha activa (creador o equipo); instructor de la ficha o asignado.
     private function puedeDetectar($user, Project $project): bool
     {
-        if (!$user) return false;
-        if ($user->rol === 'admin') return true;
-        if ((int) $project->id_creador === (int) $user->id) return true;
-
-        $aprendiz = Apprentice::where('id_usuario', $user->id)->first();
-        if ($aprendiz && ApprenticeProject::where('id_proyecto', $project->id)
-            ->where('id_aprendiz', $aprendiz->id)->exists()) {
-            return true;
-        }
-
-        $instructor = Instructor::where('id_usuario', $user->id)->first();
-        if ($instructor) {
-            return (int) $project->id_instructor_asignado === (int) $instructor->id
-                || (int) optional($project->classGroup)->id_instructor === (int) $instructor->id;
-        }
-
-        return false;
+        return $project->puedeEscribir($user);
     }
 
     // Config global del motor (fila única).

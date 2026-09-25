@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\Instructor;
 use App\Models\Project;
@@ -10,9 +11,25 @@ use Illuminate\Http\Request;
 
 class ClassGroupController extends Controller
 {
-    public function index()
+    // Alcance por rol: admin todas; instructor SOLO las que creó/gestiona;
+    // aprendiz SOLO su ficha actual. Evita exponer los códigos de todas las
+    // fichas (el código es la credencial para unirse).
+    public function index(Request $request)
     {
-        return ClassGroup::included()->get();
+        $user = $request->user();
+        $query = ClassGroup::included();
+
+        if (optional($user)->rol === 'admin') {
+            return $query->get();
+        }
+
+        if ($user && $user->rol === 'instructor') {
+            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+            return $instructorId ? $query->where('id_instructor', $instructorId)->get() : collect();
+        }
+
+        $fichaId = Apprentice::where('id_usuario', optional($user)->id)->value('id_class_group');
+        return $fichaId ? $query->where('id', $fichaId)->get() : collect();
     }
 
     public function store(Request $request)
@@ -21,7 +38,7 @@ class ClassGroupController extends Controller
             'codigo' => 'required|max:255|unique:class_groups,codigo',
             'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo,finalizado,archivado',
+            'estado' => 'required|in:activo,finalizado',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
         ]);
@@ -55,7 +72,7 @@ class ClassGroupController extends Controller
             'codigo' => 'required|max:255|unique:class_groups,codigo,' . $class_group->id,
             'numero' => 'nullable|max:255',
             'nombre' => 'required|max:255',
-            'estado' => 'required|in:activo,inactivo,finalizado,archivado',
+            'estado' => 'required|in:activo,finalizado',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
         ]);
@@ -66,11 +83,20 @@ class ClassGroupController extends Controller
             $datos['id_instructor'] = $class_group->id_instructor;
         }
 
+        $programaAnterior = $class_group->id_programa;
         $estadoAnterior = $class_group->estado;
         $class_group->update($datos);
 
-        if ($estadoAnterior !== 'archivado' && $class_group->estado === 'archivado') {
-            \App\Support\Auditoria::registrar('archivar_ficha', 'class_groups', $class_group->id, [
+        // Si cambió el programa de la ficha, se sincroniza el programa de sus
+        // aprendices y se recalcula el corpus (los pares exigen mismo programa).
+        if ((int) $programaAnterior !== (int) $class_group->id_programa) {
+            \App\Models\Apprentice::where('id_class_group', $class_group->id)
+                ->update(['id_programa' => $class_group->id_programa]);
+            app(\App\Http\Controllers\Api\SimilarityController::class)->recalculate();
+        }
+
+        if ($estadoAnterior !== 'finalizado' && $class_group->estado === 'finalizado') {
+            \App\Support\Auditoria::registrar('finalizar_ficha', 'class_groups', $class_group->id, [
                 'codigo' => $class_group->codigo,
             ]);
         }
@@ -84,22 +110,19 @@ class ClassGroupController extends Controller
             return response()->json(['message' => 'No puedes eliminar una ficha que no está a tu cargo.'], 403);
         }
 
-        // Borrar una ficha elimina sus aprendices (cascade) y deja las propuestas
-        // sin ficha. Si tiene historial, se archiva en vez de borrarla.
-        $aprendices = $class_group->apprentices()->count();
-        $propuestas = Project::where('id_class_group', $class_group->id)->count();
+        // Admin sin restricciones: borra la ficha y sus dependientes en cascada
+        // (propuestas con similitudes/observaciones/equipo y aprendices).
+        $impacto = [
+            'aprendices' => $class_group->apprentices()->count(),
+            'propuestas' => Project::where('id_class_group', $class_group->id)->count(),
+        ];
 
-        if ($aprendices > 0 || $propuestas > 0) {
-            return response()->json([
-                'message' => "No se puede eliminar: tiene {$aprendices} aprendiz(ces) y {$propuestas} propuesta(s). Archívala para conservar el historial.",
-            ], 409);
-        }
-
-        $class_group->delete();
+        \App\Support\BorradoCascada::ficha($class_group);
 
         \App\Support\Auditoria::registrar('eliminar_ficha', 'class_groups', $class_group->id, [
             'codigo' => $class_group->codigo,
             'nombre' => $class_group->nombre,
+            'impacto' => $impacto,
         ]);
 
         return $class_group;

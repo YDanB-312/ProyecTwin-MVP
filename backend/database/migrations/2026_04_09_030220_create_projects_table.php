@@ -23,7 +23,9 @@ return new class extends Migration
 
             $table->foreignId('id_creador')->constrained('general_users')->onDelete('cascade');
             $table->foreignId('id_instructor_asignado')->nullable()->constrained('instructors')->onDelete('set null');
-            $table->foreignId('id_class_group')->nullable()->constrained('class_groups')->nullOnDelete();
+            // La propuesta pertenece históricamente a la ficha donde nació:
+            // no se puede borrar la ficha si tiene propuestas (restrict).
+            $table->foreignId('id_class_group')->nullable()->constrained('class_groups')->restrictOnDelete();
 
             $table->timestamps();
         });

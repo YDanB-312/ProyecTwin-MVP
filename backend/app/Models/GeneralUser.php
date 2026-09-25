@@ -93,8 +93,11 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     public function scopeByPrograma(Builder $query, ?string $programa)
     {
         if (empty($programa) || $programa === 'todos') return $query;
-        return $query->whereHas('apprentice.program', fn (Builder $q) => $q->where('nombre', $programa))
-            ->orWhereHas('apprentice.classGroup.program', fn (Builder $q) => $q->where('nombre', $programa));
+        // El OR va agrupado: si no, rompería el AND con los demás filtros.
+        return $query->where(function (Builder $q) use ($programa) {
+            $q->whereHas('apprentice.program', fn (Builder $qq) => $qq->where('nombre', $programa))
+              ->orWhereHas('apprentice.classGroup.program', fn (Builder $qq) => $qq->where('nombre', $programa));
+        });
     }
 
     // ---------------------------------------------------------------- Relaciones

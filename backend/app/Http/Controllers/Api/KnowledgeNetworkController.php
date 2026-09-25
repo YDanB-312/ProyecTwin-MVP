@@ -42,14 +42,16 @@ class KnowledgeNetworkController extends Controller
 
     public function destroy(KnowledgeNetwork $knowledge_network)
     {
-        // Bloquear si tiene programas asociados
-        if ($knowledge_network->trainingPrograms()->exists()) {
-            return response()->json([
-                'message' => 'No se puede eliminar: hay programas asociados a esta red. Reasigna o elimina esos programas primero.',
-            ], 409);
-        }
+        // Admin sin restricciones: borra la red y sus programas en cascada.
+        $impacto = ['programas' => $knowledge_network->trainingPrograms()->count()];
 
-        $knowledge_network->delete();
+        \App\Support\BorradoCascada::red($knowledge_network);
+
+        \App\Support\Auditoria::registrar('eliminar_red', 'knowledge_networks', $knowledge_network->id, [
+            'nombre' => $knowledge_network->nombre,
+            'impacto' => $impacto,
+        ]);
+
         return response()->json($knowledge_network);
     }
 }

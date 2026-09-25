@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Comment;
+use App\Models\Project;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -27,6 +28,24 @@ class CommentController extends Controller
             'id_usuario' => 'nullable|exists:general_users,id',
             'respuesta_a' => 'nullable|exists:comments,id',
         ]);
+
+        // Comentar exige poder ESCRIBIR: dentro de la ficha ACTIVA (o ser el
+        // instructor/admin). Fuera de la ficha o con la ficha finalizada → solo
+        // lectura.
+        $proyecto = Project::findOrFail($request->id_proyecto);
+        if (!$proyecto->puedeEscribir($request->user())) {
+            return response()->json([
+                'message' => 'Solo lectura: ya no puedes comentar esta propuesta.',
+            ], 403);
+        }
+
+        // La respuesta debe pertenecer al MISMO proyecto: no se cruzan hilos.
+        if ($request->filled('respuesta_a')) {
+            $padre = Comment::findOrFail($request->respuesta_a);
+            if ((int) $padre->id_proyecto !== (int) $request->id_proyecto) {
+                return response()->json(['message' => 'La respuesta pertenece a otra observación.'], 422);
+            }
+        }
 
         // La observación siempre se firma con el usuario del token.
         $item = Comment::create([
@@ -63,10 +82,10 @@ class CommentController extends Controller
             return response()->json(['message' => 'Solo puedes editar tus propias observaciones.'], 403);
         }
 
+        // Solo cambia el texto: la observación no se mueve de proyecto ni de hilo
+        // (trazabilidad del hilo de revisión).
         $comment->update([
             'texto' => $request->texto,
-            'id_proyecto' => $request->id_proyecto,
-            'respuesta_a' => $request->respuesta_a,
         ]);
         return $comment;
     }

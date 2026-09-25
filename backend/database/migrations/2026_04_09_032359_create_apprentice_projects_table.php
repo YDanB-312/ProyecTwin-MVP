@@ -13,6 +13,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_aprendiz')->constrained('apprentices')->onDelete('cascade');
             $table->foreignId('id_proyecto')->constrained('projects')->onDelete('cascade');
+            // Un aprendiz participa una sola vez en cada propuesta.
+            $table->unique(['id_aprendiz', 'id_proyecto']);
             $table->timestamps();
         });
     }

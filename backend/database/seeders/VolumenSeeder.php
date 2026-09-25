@@ -84,7 +84,10 @@ class VolumenSeeder extends Seeder
             }
         }
 
-        // 12 reportes de falla.
+        // 12 reportes de falla. El autor se asigna de forma determinista
+        // (round-robin por id) para que el seed sea reproducible.
+        $autores = GeneralUser::where('rol', 'aprendiz')->orderBy('id')->pluck('id')->all();
+        $totalAutores = max(count($autores), 1);
         for ($i = 1; $i <= 12; $i++) {
             BugReport::create([
                 'titulo' => "Reporte volumen {$i} {$marca}",
@@ -92,7 +95,7 @@ class VolumenSeeder extends Seeder
                 'tipo' => 'sistema',
                 'estado' => 'pendiente',
                 'fecha' => now()->subDays($i)->toDateString(),
-                'id_usuario' => GeneralUser::where('rol', 'aprendiz')->inRandomOrder()->value('id') ?? 1,
+                'id_usuario' => $autores[($i - 1) % $totalAutores] ?? 1,
             ]);
         }
     }
