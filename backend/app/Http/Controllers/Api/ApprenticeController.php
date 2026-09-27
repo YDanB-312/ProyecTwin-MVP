@@ -9,6 +9,7 @@ use App\Models\Instructor;
 use App\Models\Notification;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ApprenticeController extends Controller
 {
@@ -140,33 +141,38 @@ class ApprenticeController extends Controller
             ? ClassGroup::with('instructor')->find($aprendiz->id_class_group)
             : null;
 
-        if ($aprendiz) {
-            $aprendiz->update([
-                'id_class_group' => $ficha->id,
-                'id_programa' => $ficha->id_programa,
-            ]);
-        } else {
-            // Un aprendiz recién registrado no tiene fila todavía: se crea aquí.
-            $aprendiz = Apprentice::create([
-                'codigo' => $this->codigoDisponible(),
-                'id_usuario' => $user->id,
-                'id_class_group' => $ficha->id,
-                'id_programa' => $ficha->id_programa,
-            ]);
-        }
+        // Unión atómica: cambio de ficha + notificaciones (todo o nada).
+        $aprendiz = DB::transaction(function () use ($aprendiz, $ficha, $fichaAnterior, $user) {
+            if ($aprendiz) {
+                $aprendiz->update([
+                    'id_class_group' => $ficha->id,
+                    'id_programa' => $ficha->id_programa,
+                ]);
+            } else {
+                // Un aprendiz recién registrado no tiene fila todavía: se crea aquí.
+                $aprendiz = Apprentice::create([
+                    'codigo' => $this->codigoDisponible(),
+                    'id_usuario' => $user->id,
+                    'id_class_group' => $ficha->id,
+                    'id_programa' => $ficha->id_programa,
+                ]);
+            }
 
-        $this->notificarInstructor(
-            $ficha,
-            'El aprendiz ' . $this->nombreDe($user) . ' se unió a la ficha "' . $ficha->nombre . '".',
-            'ficha:' . $ficha->id
-        );
-        if ($fichaAnterior) {
             $this->notificarInstructor(
-                $fichaAnterior,
-                'El aprendiz ' . $this->nombreDe($user) . ' salió de la ficha "' . $fichaAnterior->nombre . '".',
-                'ficha:' . $fichaAnterior->id
+                $ficha,
+                'El aprendiz ' . $this->nombreDe($user) . ' se unió a la ficha "' . $ficha->nombre . '".',
+                'ficha:' . $ficha->id
             );
-        }
+            if ($fichaAnterior) {
+                $this->notificarInstructor(
+                    $fichaAnterior,
+                    'El aprendiz ' . $this->nombreDe($user) . ' salió de la ficha "' . $fichaAnterior->nombre . '".',
+                    'ficha:' . $fichaAnterior->id
+                );
+            }
+
+            return $aprendiz;
+        });
 
         return $aprendiz->fresh()->load('classGroup.program', 'classGroup.instructor.generalUser');
     }
@@ -180,16 +186,23 @@ class ApprenticeController extends Controller
         }
 
         $ficha = ClassGroup::with('instructor')->find($aprendiz->id_class_group);
-        // Opción A: sin ficha tampoco hay programa (el programa se deriva).
-        $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
+        $nombre = $this->nombreDe($request->user());
 
-        if ($ficha) {
-            $this->notificarInstructor(
-                $ficha,
-                'El aprendiz ' . $this->nombreDe($request->user()) . ' salió de la ficha "' . $ficha->nombre . '".',
-                'ficha:' . $ficha->id
-            );
-        }
+        // Salida atómica: cambio + notificación (todo o nada).
+        $aprendiz = DB::transaction(function () use ($aprendiz, $ficha, $nombre) {
+            // Opción A: sin ficha tampoco hay programa (el programa se deriva).
+            $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
+
+            if ($ficha) {
+                $this->notificarInstructor(
+                    $ficha,
+                    'El aprendiz ' . $nombre . ' salió de la ficha "' . $ficha->nombre . '".',
+                    'ficha:' . $ficha->id
+                );
+            }
+
+            return $aprendiz;
+        });
 
         return $aprendiz->fresh();
     }

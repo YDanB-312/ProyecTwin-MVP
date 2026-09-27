@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\Project;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -75,14 +76,16 @@ class ProjectController extends Controller
             return response()->json(['message' => 'Solo un aprendiz puede registrar propuestas.'], 403);
         }
 
-        $item = Project::create($datos);
-
-        // El creador forma parte del equipo: se registra en el pivote para que
-        // los conteos y el listado de integrantes sean consistentes.
-        $this->asegurarCreadorEnEquipo($item);
-
-        // Avisa al instructor a cargo que hay una propuesta pendiente de revisión.
-        $this->notificarInstructor($item);
+        // Alta atómica: propuesta + equipo + notificación (todo o nada).
+        $item = DB::transaction(function () use ($datos) {
+            $item = Project::create($datos);
+            // El creador forma parte del equipo: se registra en el pivote para que
+            // los conteos y el listado de integrantes sean consistentes.
+            $this->asegurarCreadorEnEquipo($item);
+            // Avisa al instructor a cargo que hay una propuesta pendiente de revisión.
+            $this->notificarInstructor($item);
+            return $item;
+        });
 
         return response()->json($item, 201);
     }
