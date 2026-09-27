@@ -13,6 +13,7 @@ use App\Support\Auditoria;
 use App\Support\BorradoCascada;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class GeneralUserController extends Controller
@@ -50,16 +51,22 @@ class GeneralUserController extends Controller
         $data = $request->all();
         $data['password'] = Hash::make($request->password);
         $data['estado'] = $request->has('estado') ? $request->boolean('estado') : true;
-        $item = GeneralUser::create($data);
 
-        // El perfil (instructor/admin) nace junto con la cuenta para que el
-        // usuario pueda operar de inmediato (estilo "docente crea la clase").
-        $this->sincronizarPerfiles($item);
+        // Alta atómica: cuenta + perfil + auditoría (todo o nada).
+        $item = DB::transaction(function () use ($data) {
+            $item = GeneralUser::create($data);
 
-        Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
-            'correo' => $item->correo,
-            'rol' => $item->rol,
-        ]);
+            // El perfil (instructor/admin) nace junto con la cuenta para que el
+            // usuario pueda operar de inmediato (estilo "docente crea la clase").
+            $this->sincronizarPerfiles($item);
+
+            Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
+                'correo' => $item->correo,
+                'rol' => $item->rol,
+            ]);
+
+            return $item;
+        });
 
         return response()->json($item, 201);
     }
@@ -163,19 +170,23 @@ class GeneralUserController extends Controller
         } else {
             $data['password'] = Hash::make($data['password']);
         }
-        $general_user->update($data);
 
-        Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
-            'rol' => $cambiaRol ? $general_user->rol : null,
-            'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
-            'password_reset' => $huboPassword ?: null,
-        ]));
+        // Actualización atómica: cuenta + perfiles + auditoría (todo o nada).
+        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $huboPassword) {
+            $general_user->update($data);
 
-        // Mantiene coherentes los perfiles (admin/instructor/aprendiz) al cambio de rol.
-        if ($cambiaRol) {
-            $this->sincronizarPerfiles($general_user);
-            $this->limpiarPerfilesObsoletos($general_user);
-        }
+            Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
+                'rol' => $cambiaRol ? $general_user->rol : null,
+                'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
+                'password_reset' => $huboPassword ?: null,
+            ]));
+
+            // Mantiene coherentes los perfiles (admin/instructor/aprendiz) al cambio de rol.
+            if ($cambiaRol) {
+                $this->sincronizarPerfiles($general_user);
+                $this->limpiarPerfilesObsoletos($general_user);
+            }
+        });
 
         return $general_user;
     }

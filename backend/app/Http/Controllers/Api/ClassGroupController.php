@@ -8,6 +8,7 @@ use App\Models\Instructor;
 use App\Models\Project;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ClassGroupController extends Controller
 {
@@ -85,21 +86,25 @@ class ClassGroupController extends Controller
 
         $programaAnterior = $class_group->id_programa;
         $estadoAnterior = $class_group->estado;
-        $class_group->update($datos);
 
-        // Si cambió el programa de la ficha, se sincroniza el programa de sus
-        // aprendices y se recalcula el corpus (los pares exigen mismo programa).
-        if ((int) $programaAnterior !== (int) $class_group->id_programa) {
-            \App\Models\Apprentice::where('id_class_group', $class_group->id)
-                ->update(['id_programa' => $class_group->id_programa]);
-            app(\App\Http\Controllers\Api\SimilarityController::class)->recalculate();
-        }
+        // Cambio de ficha atómico: ficha + aprendices + recálculo (todo o nada).
+        DB::transaction(function () use ($class_group, $datos, $programaAnterior, $estadoAnterior) {
+            $class_group->update($datos);
 
-        if ($estadoAnterior !== 'finalizado' && $class_group->estado === 'finalizado') {
-            \App\Support\Auditoria::registrar('finalizar_ficha', 'class_groups', $class_group->id, [
-                'codigo' => $class_group->codigo,
-            ]);
-        }
+            // Si cambió el programa de la ficha, se sincroniza el programa de sus
+            // aprendices y se recalcula el corpus (los pares exigen mismo programa).
+            if ((int) $programaAnterior !== (int) $class_group->id_programa) {
+                \App\Models\Apprentice::where('id_class_group', $class_group->id)
+                    ->update(['id_programa' => $class_group->id_programa]);
+                app(\App\Http\Controllers\Api\SimilarityController::class)->recalculate();
+            }
+
+            if ($estadoAnterior !== 'finalizado' && $class_group->estado === 'finalizado') {
+                \App\Support\Auditoria::registrar('finalizar_ficha', 'class_groups', $class_group->id, [
+                    'codigo' => $class_group->codigo,
+                ]);
+            }
+        });
 
         return $class_group;
     }

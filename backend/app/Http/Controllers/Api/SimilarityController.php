@@ -10,6 +10,7 @@ use App\Services\SimilitudService;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SimilarityController extends Controller
 {
@@ -113,33 +114,38 @@ class SimilarityController extends Controller
         $umbral = (float) ($config->umbral ?? 0.2);
         $meses = (int) ($config->meses ?? 12);
 
-        // Una rechazada no participa: se eliminan sus pares y no se compara.
-        if ($propio->estado === 'rechazado') {
-            $this->purgarPares($propio->id);
-            return response()->json(['detectadas' => 0]);
-        }
-
-        $corpus = $this->corpus($propio, $meses);
-        $pares = SimilitudService::puntaje($propio, $corpus);
-
-        // Ids que quedan vigentes para esta propuesta.
-        $vigentes = [];
-        $creadas = 0;
-        foreach ($pares as $par) {
-            if ($par['score'] < $umbral) continue;
-            $vigentes[] = $par['project_id'];
-            $existente = $this->buscarPar($propio->id, $par['project_id']);
-            if ($existente) {
-                $existente->update(['porcentaje' => $par['porcentaje'], 'detalles' => $par['detalles']]);
-            } else {
-                $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                $creadas++;
-                $this->notificar($propio, $par['project_id'], $par['porcentaje']);
+        // Detección atómica: pares + notificaciones (todo o nada).
+        $creadas = DB::transaction(function () use ($propio, $umbral, $meses) {
+            // Una rechazada no participa: se eliminan sus pares y no se compara.
+            if ($propio->estado === 'rechazado') {
+                $this->purgarPares($propio->id);
+                return 0;
             }
-        }
 
-        // Limpia pares obsoletos (bajaron del umbral o ya no aplican reglas).
-        $this->purgarParesObsoletos($propio->id, $vigentes);
+            $corpus = $this->corpus($propio, $meses);
+            $pares = SimilitudService::puntaje($propio, $corpus);
+
+            // Ids que quedan vigentes para esta propuesta.
+            $vigentes = [];
+            $creadas = 0;
+            foreach ($pares as $par) {
+                if ($par['score'] < $umbral) continue;
+                $vigentes[] = $par['project_id'];
+                $existente = $this->buscarPar($propio->id, $par['project_id']);
+                if ($existente) {
+                    $existente->update(['porcentaje' => $par['porcentaje'], 'detalles' => $par['detalles']]);
+                } else {
+                    $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
+                    $creadas++;
+                    $this->notificar($propio, $par['project_id'], $par['porcentaje']);
+                }
+            }
+
+            // Limpia pares obsoletos (bajaron del umbral o ya no aplican reglas).
+            $this->purgarParesObsoletos($propio->id, $vigentes);
+
+            return $creadas;
+        });
 
         return response()->json(['detectadas' => $creadas]);
     }
@@ -152,30 +158,35 @@ class SimilarityController extends Controller
         $umbral = (float) ($config->umbral ?? 0.2);
         $meses = (int) ($config->meses ?? 12);
 
-        $antes = Similarity::count();
-        Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
-            if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
-        });
-        $eliminadas = $antes - Similarity::count();
+        // Recalibración atómica: purga + creación + notificaciones (todo o nada).
+        [$eliminadas, $creadas] = DB::transaction(function () use ($umbral, $meses) {
+            $antes = Similarity::count();
+            Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
+                if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
+            });
+            $eliminadas = $antes - Similarity::count();
 
-        $creadas = 0;
-        foreach (Project::with('classGroup')->where('estado', '!=', 'rechazado')->get() as $p) {
-            $corpus = $this->corpus($p, $meses);
-            foreach (SimilitudService::puntaje($p, $corpus) as $par) {
-                if ($par['score'] < $umbral) continue;
-                if ($this->buscarPar($p->id, $par['project_id'])) continue;
-                $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                $creadas++;
-                $this->notificar($p, $par['project_id'], $par['porcentaje']);
+            $creadas = 0;
+            foreach (Project::with('classGroup')->where('estado', '!=', 'rechazado')->get() as $p) {
+                $corpus = $this->corpus($p, $meses);
+                foreach (SimilitudService::puntaje($p, $corpus) as $par) {
+                    if ($par['score'] < $umbral) continue;
+                    if ($this->buscarPar($p->id, $par['project_id'])) continue;
+                    $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
+                    $creadas++;
+                    $this->notificar($p, $par['project_id'], $par['porcentaje']);
+                }
             }
-        }
 
-        \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
-            'eliminadas' => $eliminadas,
-            'creadas' => $creadas,
-            'umbral' => $umbral,
-            'meses' => $meses,
-        ]);
+            \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
+                'eliminadas' => $eliminadas,
+                'creadas' => $creadas,
+                'umbral' => $umbral,
+                'meses' => $meses,
+            ]);
+
+            return [$eliminadas, $creadas];
+        });
 
         return response()->json(['eliminadas' => $eliminadas, 'creadas' => $creadas]);
     }
