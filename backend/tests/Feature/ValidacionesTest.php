@@ -210,4 +210,24 @@ class ValidacionesTest extends TestCase
             ->postJson('/v1/projects', [])
             ->assertStatus(422);
     }
+
+    // ---------------------------------------------------------------- Perfil
+
+    public function test_actualizar_solo_la_foto_no_exige_apellido(): void
+    {
+        // Admin sin apellido (como el seed): guardar SOLO la foto no debe fallar.
+        $admin = GeneralUser::create([
+            'nombre' => 'Admin',
+            'apellido' => '',
+            'correo' => 'foto.' . uniqid() . '@test.local',
+            'password' => Hash::make('123456'),
+            'rol' => 'admin',
+            'estado' => true,
+        ]);
+
+        $this->como($admin)
+            ->putJson('/v1/general-users/' . $admin->id, ['foto_url' => 'data:image/png;base64,AAAA'])
+            ->assertOk()
+            ->assertJsonPath('foto_url', 'data:image/png;base64,AAAA');
+    }
 }

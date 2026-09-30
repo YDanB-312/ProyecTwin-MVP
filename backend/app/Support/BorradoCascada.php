@@ -10,6 +10,7 @@ use App\Models\KnowledgeNetwork;
 use App\Models\Notification;
 use App\Models\Project;
 use App\Models\TrainingProgram;
+use App\Services\NotificacionesService;
 use Illuminate\Support\Facades\DB;
 
 // Borrado en cascada para el administrador (sin restricciones): elimina la
@@ -23,9 +24,18 @@ class BorradoCascada
     public static function ficha(ClassGroup $ficha): void
     {
         DB::transaction(function () use ($ficha) {
+            // Aprendices de la ficha: su fila cae por cascade, la cuenta no.
+            // Se les avisa que quedaron sin ficha.
+            $idUsuarios = Apprentice::where('id_class_group', $ficha->id)->pluck('id_usuario');
+            $titulo = 'Tu ficha "' . $ficha->nombre . '" fue eliminada. Quedaste sin ficha.';
+
             Project::where('id_class_group', $ficha->id)->get()->each->delete();
             Notification::where('enlace', 'ficha:' . $ficha->id)->delete();
             $ficha->delete();
+
+            foreach ($idUsuarios as $idUsuario) {
+                app(NotificacionesService::class)->crear($idUsuario, $titulo, 'sistema');
+            }
         });
     }
 

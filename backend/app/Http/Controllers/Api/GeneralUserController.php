@@ -101,10 +101,12 @@ class GeneralUserController extends Controller
 
     public function update(Request $request, GeneralUser $general_user)
     {
+        // Actualización parcial: los campos solo se validan si vienen. Así se
+        // puede guardar SOLO la foto (foto_url) sin exigir el resto.
         $request->validate([
-            'nombre' => 'required|max:255',
-            'apellido' => 'required|max:255',
-            'correo' => 'required|email|unique:general_users,correo,' . $general_user->id,
+            'nombre' => 'sometimes|required|max:255',
+            'apellido' => 'sometimes|required|max:255',
+            'correo' => 'sometimes|required|email|unique:general_users,correo,' . $general_user->id,
             'password' => 'nullable|min:6|max:255',
             'foto_url' => 'nullable',
             'rol' => 'sometimes|required|in:aprendiz,instructor,admin',

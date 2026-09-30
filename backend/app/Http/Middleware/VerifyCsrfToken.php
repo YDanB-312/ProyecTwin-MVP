@@ -12,6 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Endpoints públicos (demo de la landing): no dependen de sesión ni
+        // de CSRF; así funcionan aunque el frontend no haya obtenido la cookie.
+        'v1/public/*',
     ];
 }

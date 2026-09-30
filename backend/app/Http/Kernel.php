@@ -26,6 +26,10 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            // Habilita la autenticación por sesión (cookie httpOnly) para el SPA
+            // del mismo origen; los clientes con Bearer (móvil/tests) no se ven
+            // afectados porque solo aplica a peticiones "stateful".
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
