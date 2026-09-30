@@ -7,6 +7,7 @@ use App\Models\Similarity;
 use App\Models\MotorConfig;
 use App\Models\Notification;
 use App\Services\SimilitudService;
+use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -111,7 +112,7 @@ class SimilarityController extends Controller
         }
 
         $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.2);
+        $umbral = (float) ($config->umbral ?? 0.30);
         $meses = (int) ($config->meses ?? 12);
 
         // Detección atómica: pares + notificaciones (todo o nada).
@@ -137,7 +138,7 @@ class SimilarityController extends Controller
                 } else {
                     $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
                     $creadas++;
-                    $this->notificar($propio, $par['project_id'], $par['porcentaje']);
+                    app(NotificacionesService::class)->similitud($propio, $par['project_id'], $par['porcentaje']);
                 }
             }
 
@@ -155,7 +156,7 @@ class SimilarityController extends Controller
     public function recalculate()
     {
         $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.2);
+        $umbral = (float) ($config->umbral ?? 0.30);
         $meses = (int) ($config->meses ?? 12);
 
         // Recalibración atómica: purga + creación + notificaciones (todo o nada).
@@ -174,7 +175,7 @@ class SimilarityController extends Controller
                     if ($this->buscarPar($p->id, $par['project_id'])) continue;
                     $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
                     $creadas++;
-                    $this->notificar($p, $par['project_id'], $par['porcentaje']);
+                    app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
                 }
             }
 
@@ -201,7 +202,7 @@ class SimilarityController extends Controller
         $request->validate(['texto' => 'required|string|min:3|max:300']);
 
         $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.2);
+        $umbral = (float) ($config->umbral ?? 0.30);
         $meses = (int) ($config->meses ?? 12);
 
         // Proyecto "sonda" virtual (id centinela 0; el corpus usa ids >= 1).
@@ -248,7 +249,7 @@ class SimilarityController extends Controller
     // Config global del motor (fila única).
     private function config(): MotorConfig
     {
-        return MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
+        return MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
     }
 
     // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
@@ -319,19 +320,4 @@ class SimilarityController extends Controller
             });
     }
 
-    // Avisa al creador de la propuesta que se le detectó una coincidencia.
-    private function notificar(Project $propio, int $otroId, int $porcentaje): void
-    {
-        $otro = Project::find($otroId);
-        $titulo = "Similitud del {$porcentaje}% detectada entre '{$propio->titulo}' y '" . ($otro->titulo ?? 'otra propuesta') . "'";
-        Notification::create([
-            // La columna `titulo` es corta: se recorta por seguridad.
-            'titulo' => mb_substr($titulo, 0, 250),
-            'tipo' => 'similitud',
-            'enlace' => 'proyecto:' . $propio->id,
-            'leida' => false,
-            'fecha' => now()->toDateString(),
-            'id_usuario' => $propio->id_creador,
-        ]);
-    }
 }

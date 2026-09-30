@@ -23,18 +23,71 @@ use Illuminate\Support\Facades\Hash;
 // tiene mock, así que todo lo que consumen las vistas nace aquí.
 class DatabaseSeeder extends Seeder
 {
+    // Ids de las propuestas "parecidas" (para las reacciones: revisiones, avisos…).
+    private array $idsSimilares = [];
+
     public function run(): void
     {
+        // --- Datos ---
         $this->usuarios();
         $this->catalogos();
         $this->fichas();
         $this->aprendices();
         $this->proyectos();
-        $this->similitudes();
-        $this->notificaciones();
-        $this->reportes();
+        $this->propuestasSimilares();
         $this->observaciones();
-        MotorConfig::create(['umbral' => 0.2, 'meses' => 12]);
+        $this->reportes();
+        $this->fichaMovimiento();
+        MotorConfig::create(['umbral' => 0.30, 'meses' => 12]);
+
+        // --- Causa → efecto: cada acción dispara sus reacciones ---
+        $this->reacciones();
+    }
+
+    // Reacciones del sistema (notificaciones + bitácora), como en el uso real.
+    private function reacciones(): void
+    {
+        $notif = app(\App\Services\NotificacionesService::class);
+
+        // 1) Crear propuesta → avisa a su instructor.
+        foreach (Project::where('estado', 'pendiente')->get() as $p) {
+            $notif->revisionPropuesta($p);
+        }
+
+        // 2) Analizar → el motor detecta coincidencias y avisa a los creadores.
+        app(\App\Similarity\Recomputador::class)->recalcular(true);
+
+        // 3) La copia rechazada (C) había sido detectada antes de rechazarse.
+        if (!empty($this->idsSimilares['C'])) {
+            $c = Project::find($this->idsSimilares['C']);
+            if ($c) $notif->similitud($c, 7, 100);
+        }
+
+        // 4) El instructor revisó: B aprobada, C rechazada → bitácora.
+        $this->auditarRevision($this->idsSimilares['B'] ?? null, 'pendiente', 'aprobado');
+        $this->auditarRevision($this->idsSimilares['C'] ?? null, 'pendiente', 'rechazado');
+
+        // 5) Reporte de falla → avisa a los admins.
+        BugReport::orderBy('id')->get()->each(fn ($r) => $notif->reporteFalla($r));
+
+        // 6) El admin ajustó el motor → bitácora.
+        $cfg = MotorConfig::first();
+        \App\Support\Auditoria::registrar('config_motor', 'motor_configs', $cfg?->id, [
+            'umbral' => (float) optional($cfg)->umbral,
+            'meses' => (int) optional($cfg)->meses,
+        ]);
+    }
+
+    private function auditarRevision(?int $id, string $de, string $a): void
+    {
+        if (!$id) return;
+        $p = Project::find($id);
+        if (!$p) return;
+        \App\Support\Auditoria::registrar('revisar_propuesta', 'projects', $id, [
+            'de' => $de,
+            'a' => $a,
+            'titulo' => $p->titulo,
+        ]);
     }
 
     // ---------------------------------------------------------------- Usuarios
@@ -182,48 +235,107 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    // ---------------------------------------------------------------- Similitudes
-    private function similitudes(): void
+    // ------------------------------------------------- Propuestas parecidas (motor)
+    // Propuestas pensadas para que el MOTOR detecte coincidencias reales: dos
+    // copias casi idénticas de aprobadas, una paráfrasis y dos originales.
+    // (Las similitudes NO se escriben aquí: las calcula el motor al final.)
+    private function propuestasSimilares(): void
     {
-        // Pares intra-programa (el motor los recalcula si se cambia el umbral).
-        $pares = [
-            ['id' => 1, 'porcentaje' => 64, 'p1' => 4, 'p2' => 5],
-            ['id' => 2, 'porcentaje' => 48, 'p1' => 1, 'p2' => 7],
-            ['id' => 3, 'porcentaje' => 40, 'p1' => 3, 'p2' => 5],
-            // Par entre dos propuestas APROBADAS: la referencia del motor son las
-            // aprobadas, así que este es el tipo de coincidencia que ven todos.
-            ['id' => 4, 'porcentaje' => 42, 'p1' => 5, 'p2' => 7],
+        $base5 = Project::find(5); // aprobada (inventarios)
+        $base7 = Project::find(7); // aprobada (transparencia)
+
+        $nuevas = [
+            // Copia casi idéntica de la 5 (mismo texto).
+            ['titulo' => $base5->titulo, 'resumen' => $base5->resumen, 'claves' => $base5->palabras_clave,
+             'area' => $base5->area_aplicacion, 'general' => $base5->objetivo_general, 'especificos' => $base5->objetivos_especificos,
+             'estado' => 'pendiente', 'creador' => 4, 'instr' => 1, 'ficha' => 1, 'equipo' => [4, 5]],
+            // Paráfrasis de la 5 (mismas ideas, otras palabras).
+            ['titulo' => 'Plataforma de Existencias del Almacén',
+             'resumen' => 'Herramienta para la administración de las existencias y la comercialización del almacén, con catálogo de productos, alertas de stock e informes de trazabilidad.',
+             'claves' => 'existencias, stock, almacén, administración, informes, comercialización, catálogo',
+             'area' => 'Logística y Operaciones',
+             'general' => 'Administrar las existencias y las ventas del almacén con informes de trazabilidad y alertas de stock.',
+             'especificos' => ['Anotar entradas y salidas de mercancía.', 'Configurar avisos de stock mínimo.', 'Generar informes de trazabilidad por lote.'],
+             'estado' => 'aprobado', 'creador' => 5, 'instr' => 1, 'ficha' => 1, 'equipo' => [5]],
+            // Copia casi idéntica de la 7 (mismo texto).
+            ['titulo' => $base7->titulo, 'resumen' => $base7->resumen, 'claves' => $base7->palabras_clave,
+             'area' => $base7->area_aplicacion, 'general' => $base7->objetivo_general, 'especificos' => $base7->objetivos_especificos,
+             'estado' => 'rechazado', 'creador' => 11, 'instr' => 2, 'ficha' => 2, 'equipo' => [11, 6]],
+            // Original 1 (sin parecido).
+            ['titulo' => 'Gestión de Citas Odontológicas',
+             'resumen' => 'Aplicación web para agendar y administrar citas odontológicas, con recordatorios a los pacientes y control de la agenda de los odontólogos.',
+             'claves' => 'citas, odontología, pacientes, agenda, salud',
+             'area' => 'Salud',
+             'general' => 'Facilitar la programación de citas odontológicas y reducir las inasistencias.',
+             'especificos' => ['Registrar pacientes y tratamientos.', 'Agendar y recordar citas.', 'Reportar la ocupación de la agenda.'],
+             'estado' => 'pendiente', 'creador' => 1, 'instr' => 1, 'ficha' => 1, 'equipo' => [1, 4, 5]],
+            // Original 2 (sin parecido).
+            ['titulo' => 'Control de Gastos Personales',
+             'resumen' => 'Aplicación para registrar ingresos y gastos personales, clasificar las transacciones y visualizar el estado de las finanzas con gráficos.',
+             'claves' => 'gastos, presupuesto, finanzas, ahorro, ingresos',
+             'area' => 'Finanzas',
+             'general' => 'Ayudar a las personas a controlar su presupuesto y sus gastos.',
+             'especificos' => ['Registrar ingresos y gastos.', 'Clasificar por categoría.', 'Visualizar reportes mensuales.'],
+             'estado' => 'pendiente', 'creador' => 6, 'instr' => 2, 'ficha' => 2, 'equipo' => [6, 11]],
         ];
-        foreach ($pares as $s) {
-            Similarity::create([
-                'id' => $s['id'],
-                'porcentaje' => $s['porcentaje'],
-                'fecha' => now()->toDateString(),
-                'id_proyecto_1' => $s['p1'],
-                'id_proyecto_2' => $s['p2'],
+
+        $aprendizPorUsuario = Apprentice::pluck('id', 'id_usuario');
+        $creados = [];
+
+        foreach ($nuevas as $p) {
+            $proy = Project::create([
+                'titulo' => $p['titulo'],
+                'resumen' => $p['resumen'],
+                'palabras_clave' => $p['claves'],
+                'area_aplicacion' => $p['area'],
+                'objetivo_general' => $p['general'],
+                'objetivos_especificos' => $p['especificos'],
+                'estado' => $p['estado'],
+                'id_creador' => $p['creador'],
+                'id_instructor_asignado' => $p['instr'],
+                'id_class_group' => $p['ficha'],
             ]);
+            $creados[] = $proy->id;
+            foreach ($p['equipo'] as $usuario) {
+                $idAprendiz = $aprendizPorUsuario[$usuario] ?? null;
+                if ($idAprendiz) {
+                    ApprenticeProject::create(['id_aprendiz' => $idAprendiz, 'id_proyecto' => $proy->id]);
+                }
+            }
         }
+
+        // A = copia pendiente (activa), B = paráfrasis aprobada, C = copia rechazada.
+        $this->idsSimilares = [
+            'A' => $creados[0] ?? null,
+            'B' => $creados[1] ?? null,
+            'C' => $creados[2] ?? null,
+        ];
     }
 
-    // ---------------------------------------------------------------- Notificaciones
-    private function notificaciones(): void
+    // ------------------------------------------------- Ficha: unión de un aprendiz
+    // Reacciona como el sistema real: registra la unión y avisa al instructor.
+    private function fichaMovimiento(): void
     {
-        // `enlace` codifica el destino: 'proyecto:<id>' o 'reporte:<id>'.
-        $notifs = [
-            ['id' => 1, 'titulo' => "Similitud del 45% detectada en tu proyecto 'Plataforma de Ventas Online'", 'tipo' => 'similitud', 'enlace' => 'proyecto:4', 'leida' => false, 'id_usuario' => 1],
-            ['id' => 2, 'titulo' => "Tu proyecto 'Plataforma de Ventas Online' ha sido recibido y está pendiente de revisión", 'tipo' => 'revision', 'enlace' => 'proyecto:4', 'leida' => false, 'id_usuario' => 1],
-            ['id' => 3, 'titulo' => "Tu proyecto 'Sistema de Gestión de Inventarios' ha sido Aprobado", 'tipo' => 'revision', 'enlace' => 'proyecto:5', 'leida' => true, 'id_usuario' => 1],
-            ['id' => 4, 'titulo' => 'Bienvenido a ProyecTwin', 'tipo' => 'mensaje', 'enlace' => null, 'leida' => true, 'id_usuario' => 1],
-            ['id' => 5, 'titulo' => 'Hay 3 propuestas pendientes de revisión', 'tipo' => 'sistema', 'enlace' => null, 'leida' => false, 'id_usuario' => 2],
-            ['id' => 6, 'titulo' => "Similitud detectada entre 'Sistema IoT para Agricultura' y 'Portal de Transparencia SENA'", 'tipo' => 'similitud', 'enlace' => 'proyecto:1', 'leida' => false, 'id_usuario' => 2],
-            ['id' => 7, 'titulo' => 'Bienvenido a ProyecTwin', 'tipo' => 'mensaje', 'enlace' => null, 'leida' => true, 'id_usuario' => 2],
-            ['id' => 8, 'titulo' => "Nuevo reporte de falla: 'Pantalla blanca en Dashboard'", 'tipo' => 'sistema', 'enlace' => 'reporte:1', 'leida' => false, 'id_usuario' => 3],
-            ['id' => 9, 'titulo' => 'Hay 2 reportes de falla en revisión', 'tipo' => 'sistema', 'enlace' => 'reporte:3', 'leida' => false, 'id_usuario' => 3],
-            ['id' => 10, 'titulo' => 'Bienvenido a ProyecTwin', 'tipo' => 'mensaje', 'enlace' => null, 'leida' => true, 'id_usuario' => 3],
-        ];
-        foreach ($notifs as $n) {
-            Notification::create($n + ['fecha' => now()->subDays(5)->toDateString()]);
-        }
+        $u = GeneralUser::create([
+            'nombre' => 'Andrés',
+            'apellido' => 'Cifuentes',
+            'correo' => 'andres.cifuentes@soy.sena.edu.co',
+            'password' => Hash::make('123456'),
+            'rol' => 'aprendiz',
+            'estado' => true,
+        ]);
+        Apprentice::create([
+            'codigo' => 'AP-100',
+            'id_usuario' => $u->id,
+            'id_class_group' => 1,
+            'id_programa' => 1,
+        ]);
+
+        app(\App\Services\NotificacionesService::class)->fichaMovimientoInstructor(
+            ClassGroup::with('instructor')->find(1),
+            'El aprendiz ' . $u->nombre . ' ' . $u->apellido . ' se unió a la ficha "Analisis y Desarrollo 2568".',
+            'ficha:1'
+        );
     }
 
     // ---------------------------------------------------------------- Reportes de falla
@@ -277,5 +389,19 @@ class DatabaseSeeder extends Seeder
             'id_usuario' => 2,
             'respuesta_a' => null,
         ]);
+
+        // Rechazo de la copia (C): el instructor deja la observación del porqué.
+        if (!empty($this->idsSimilares['C'])) {
+            $c = Project::find($this->idsSimilares['C']);
+            $idInstructor = $c ? optional(Instructor::find($c->id_instructor_asignado))->id_usuario : null;
+            if ($idInstructor) {
+                Comment::create([
+                    'texto' => 'Propuesta rechazada: el motor detectó una alta similitud con una propuesta ya aprobada. Se recomienda replantear el enfoque y diferenciar los objetivos.',
+                    'id_proyecto' => $this->idsSimilares['C'],
+                    'id_usuario' => $idInstructor,
+                    'respuesta_a' => null,
+                ]);
+            }
+        }
     }
 }

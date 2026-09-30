@@ -13,14 +13,14 @@ class MotorConfigController extends Controller
     // Configuración del motor (fila única global). La lectura es pública.
     public function show()
     {
-        return MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
+        return MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
     }
 
     // Resumen público para la landing: configuración del motor + conteos
     // agregados (sin datos personales).
     public function resumen()
     {
-        $item = MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
+        $item = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
         return response()->json([
             'umbral' => $item->umbral,
             'meses' => $item->meses,
@@ -36,7 +36,7 @@ class MotorConfigController extends Controller
             'meses' => 'required|integer|min:1|max:60',
         ]);
 
-        $item = MotorConfig::firstOrCreate([], ['umbral' => 0.2, 'meses' => 12]);
+        $item = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
         $item->update($request->only(['umbral', 'meses']));
 
         \App\Support\Auditoria::registrar('config_motor', 'motor_configs', $item->id, [

@@ -9,7 +9,10 @@ use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Notification;
 use App\Models\Project;
+use App\Models\Similarity;
+use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -83,7 +86,7 @@ class ProjectController extends Controller
             // los conteos y el listado de integrantes sean consistentes.
             $this->asegurarCreadorEnEquipo($item);
             // Avisa al instructor a cargo que hay una propuesta pendiente de revisión.
-            $this->notificarInstructor($item);
+            app(NotificacionesService::class)->revisionPropuesta($item);
             return $item;
         });
 
@@ -92,8 +95,20 @@ class ProjectController extends Controller
 
     public function show(Request $request, $id)
     {
+        $user = $request->user();
+
         // El detalle completo solo si la propuesta está dentro de su alcance.
-        $visible = Project::where('id', $id)->paraDetalle($request->user())->exists();
+        $visible = Project::where('id', $id)->paraDetalle($user)->exists();
+
+        // Un aprendiz puede abrir (solo lectura) la CONTRAPARTE de una similitud
+        // que puede ver, aunque sea de otra ficha: necesita saber cuál es la
+        // propuesta con la que se le compara.
+        if (!$visible && $user && $user->rol === 'aprendiz') {
+            $visible = Similarity::where(function (Builder $q) use ($id) {
+                $q->where('id_proyecto_1', $id)->orWhere('id_proyecto_2', $id);
+            })->visibleDetalle($user)->exists();
+        }
+
         if (!$visible) {
             return response()->json(['message' => 'No tienes acceso a esta propuesta.'], 403);
         }
@@ -242,25 +257,4 @@ class ProjectController extends Controller
         ]);
     }
 
-    // Notifica al instructor asignado (o al de la ficha) sobre la propuesta nueva.
-    private function notificarInstructor(Project $project): void
-    {
-        $idUsuario = null;
-        if ($project->id_instructor_asignado) {
-            $idUsuario = optional(Instructor::find($project->id_instructor_asignado))->id_usuario;
-        }
-        if (!$idUsuario && $project->id_class_group) {
-            $idUsuario = optional(optional(\App\Models\ClassGroup::find($project->id_class_group))->instructor)->id_usuario;
-        }
-        if (!$idUsuario) return;
-
-        Notification::create([
-            'titulo' => 'Nueva propuesta pendiente de revisión: "' . $project->titulo . '"',
-            'tipo' => 'revision',
-            'enlace' => 'proyecto:' . $project->id,
-            'leida' => false,
-            'fecha' => now()->toDateString(),
-            'id_usuario' => $idUsuario,
-        ]);
-    }
 }

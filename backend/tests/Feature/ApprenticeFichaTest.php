@@ -241,4 +241,54 @@ class ApprenticeFichaTest extends TestCase
             ->where('tipo', 'sistema')
             ->count());
     }
+
+    public function test_el_staff_al_sacar_al_aprendiz_lo_notifica(): void
+    {
+        $ficha = $this->ficha();
+        $user = $this->usuarioAprendiz();
+        $aprendiz = Apprentice::create([
+            'codigo' => 'AP-901',
+            'id_usuario' => $user->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
+
+        // El instructor de la ficha lo deja sin ficha (PUT del roster).
+        $this->withToken($this->token($ficha->instructor->generalUser))
+            ->putJson('/v1/apprentices/' . $aprendiz->id, [
+                'codigo' => $aprendiz->codigo,
+                'id_usuario' => $user->id,
+                'id_class_group' => null,
+            ])
+            ->assertOk();
+
+        $this->assertNull($aprendiz->fresh()->id_class_group);
+        $this->assertDatabaseHas('notifications', [
+            'id_usuario' => $user->id,
+            'tipo' => 'sistema',
+        ]);
+    }
+
+    public function test_borrar_la_ficha_con_datos_avisa_a_sus_aprendices(): void
+    {
+        $ficha = $this->ficha();
+        $user = $this->usuarioAprendiz();
+        Apprentice::create([
+            'codigo' => 'AP-902',
+            'id_usuario' => $user->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
+
+        // El instructor dueño puede borrar la ficha aunque tenga datos.
+        $this->withToken($this->token($ficha->instructor->generalUser))
+            ->deleteJson('/v1/class-groups/' . $ficha->id)
+            ->assertOk();
+
+        $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
+        $this->assertDatabaseHas('notifications', [
+            'id_usuario' => $user->id,
+            'tipo' => 'sistema',
+        ]);
+    }
 }

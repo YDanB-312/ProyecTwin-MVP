@@ -17,6 +17,7 @@ class AuthController extends Controller
         $request->validate([
             'correo' => 'required|email',
             'password' => 'required',
+            'recordarme' => 'nullable|boolean',
         ]);
 
         $user = GeneralUser::where('correo', $request->correo)->first();
@@ -27,6 +28,14 @@ class AuthController extends Controller
 
         if (!$user->estado) {
             return response()->json(['message' => 'Cuenta suspendida. Contacta al administrador.'], 403);
+        }
+
+        // Sesión por cookie (SPA del mismo origen). Solo si la petición es
+        // "stateful"; en móvil/tests no hay sesión y se usa el token Bearer.
+        // "Recordarme" usa el remember_token (sesión persistente).
+        if ($request->hasSession()) {
+            auth('web')->login($user, $request->boolean('recordarme'));
+            $request->session()->regenerate();
         }
 
         $token = $user->createToken('proyectwin')->plainTextToken;
@@ -40,7 +49,20 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Token Bearer (móvil) si lo hay. Con sesión (cookie), Sanctum devuelve
+        // un TransientToken que no se puede borrar (no hay token que revocar).
+        $token = $request->user()?->currentAccessToken();
+        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+            $token->delete();
+        }
+
+        // Sesión por cookie (SPA): cierra sesión e invalida el remember cookie.
+        if ($request->hasSession()) {
+            auth('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         return response()->json(['message' => 'Sesión cerrada.']);
     }
 
@@ -78,7 +100,7 @@ class AuthController extends Controller
         Auditoria::registrar('cambiar_correo', 'general_users', $user->id, ['correo' => $nuevo]);
 
         $actual = $user->currentAccessToken();
-        if ($actual) {
+        if ($actual instanceof \Laravel\Sanctum\PersonalAccessToken) {
             $user->tokens()->where('id', '!=', $actual->id)->delete();
         }
 

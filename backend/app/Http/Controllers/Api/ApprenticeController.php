@@ -7,6 +7,7 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Notification;
+use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +92,15 @@ class ApprenticeController extends Controller
             $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
         }
 
+        $fichaAnterior = $apprentice->id_class_group;
         $apprentice->update($data);
+        $apprentice->refresh();
+
+        // Si el staff lo sacó o lo movió de ficha, se avisa al aprendiz.
+        if ($fichaAnterior && (int) $apprentice->id_class_group !== (int) $fichaAnterior) {
+            $this->notificarAprendizDeFicha($apprentice, (int) $fichaAnterior);
+        }
+
         return $apprentice;
     }
 
@@ -241,19 +250,22 @@ class ApprenticeController extends Controller
         return trim(($user->nombre ?? '') . ' ' . ($user->apellido ?? '')) ?: ($user->correo ?? 'Un aprendiz');
     }
 
+    // Avisa al aprendiz de que lo sacaron o movieron de ficha (lo hizo el staff).
+    private function notificarAprendizDeFicha(Apprentice $aprendiz, int $fichaAnteriorId): void
+    {
+        $nombreAnterior = optional(ClassGroup::find($fichaAnteriorId))->nombre ?? 'su ficha';
+        $nombreNueva = optional(ClassGroup::find($aprendiz->id_class_group))->nombre;
+
+        $titulo = $nombreNueva
+            ? 'Te movieron de la ficha "' . $nombreAnterior . '" a "' . $nombreNueva . '".'
+            : 'Te sacaron de la ficha "' . $nombreAnterior . '".';
+
+        app(NotificacionesService::class)->crear($aprendiz->id_usuario, $titulo, 'sistema');
+    }
+
     // Avisa al instructor de la ficha (si tiene uno) de un movimiento.
     private function notificarInstructor(?ClassGroup $ficha, string $titulo, string $enlace): void
     {
-        $idUsuario = optional($ficha?->instructor)->id_usuario;
-        if (!$idUsuario) return;
-
-        Notification::create([
-            'titulo' => $titulo,
-            'tipo' => 'sistema',
-            'enlace' => $enlace,
-            'leida' => false,
-            'fecha' => now()->toDateString(),
-            'id_usuario' => $idUsuario,
-        ]);
+        app(NotificacionesService::class)->fichaMovimientoInstructor($ficha, $titulo, $enlace);
     }
 }
