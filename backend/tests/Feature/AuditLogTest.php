@@ -47,8 +47,9 @@ class AuditLogTest extends TestCase
         $this->como($admin)->postJson('/v1/general-users', [
             'nombre' => 'Nuevo',
             'apellido' => 'Usuario',
+            'tipo_documento' => 'CC',
+            'numero_documento' => (string) random_int(1000000, 9999999),
             'correo' => 'nuevo.' . uniqid() . '@test.local',
-            'password' => '123456',
             'rol' => 'aprendiz',
         ])->assertCreated();
 

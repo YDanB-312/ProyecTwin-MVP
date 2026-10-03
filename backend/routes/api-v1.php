@@ -18,11 +18,11 @@ use App\Http\Controllers\Api\MotorConfigController;
 use App\Http\Controllers\Api\AuditLogController;
 
 // ------------------------------------------------------------------ Públicas
-// Login, registro y recuperación de contraseña por correo no exigen token.
+// Login y recuperación de contraseña por correo no exigen token. La creación
+// de usuarios es exclusiva del administrador (grupo autenticado, abajo).
 Route::post('auth/login', [AuthController::class, 'login']);
 Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
-Route::post('general-users', [GeneralUserController::class, 'store']);
 
 // Lectura pública (landing/demo): catálogo institucional y config del motor.
 // Solo GET; la escritura sigue restringida a admin dentro del grupo autenticado.
@@ -46,7 +46,7 @@ Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
 });
 
 // ------------------------------------------------------------------ Autenticadas
-Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
+Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioContrasenaObligatorio::class])->group(function () {
 
     // Configuración del motor de similitudes (la lectura es pública, arriba).
     Route::middleware('rol:admin')->put('config-similitud', [MotorConfigController::class, 'update']);
@@ -54,12 +54,12 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     // Bitácora de acciones sensibles (inmutable: no hay escritura).
     Route::middleware('rol:admin')->get('audit-logs', [AuditLogController::class, 'index']);
 
-    // Usuarios: el listado completo es solo para admin; el detalle es del propio
-    // usuario o de un admin; el perfil público lo usan las vistas entre usuarios.
+    // Usuarios: el listado completo y el alta son solo para admin; el detalle es
+    // del propio usuario o de un admin; el perfil público lo usan las vistas.
     Route::middleware('rol:admin')->get('general-users', [GeneralUserController::class, 'index']);
-    // Verificación de cuentas autoregistradas (aprendiz/instructor) y su documento.
-    Route::middleware('rol:admin')->put('general-users/{general_user}/verificacion', [GeneralUserController::class, 'verificar']);
-    Route::middleware('rol:admin')->get('general-users/{general_user}/soporte', [GeneralUserController::class, 'soporte']);
+    Route::middleware('rol:admin')->post('general-users', [GeneralUserController::class, 'store']);
+    // Credenciales iniciales en PDF: selección de usuarios o toda una ficha.
+    Route::middleware('rol:admin')->post('general-users/credenciales', [GeneralUserController::class, 'credenciales']);
     Route::get('general-users/{general_user}/perfil', [GeneralUserController::class, 'perfil']);
     Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
@@ -100,6 +100,7 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
 
     // Fichas: lectura autenticada; escritura admin/instructor
     Route::get('class-groups', [ClassGroupController::class, 'index']);
+    Route::middleware('rol:admin')->get('class-groups/{class_group}/credenciales', [ClassGroupController::class, 'credenciales']);
     Route::get('class-groups/{class_group}', [ClassGroupController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
         Route::post('class-groups', [ClassGroupController::class, 'store']);

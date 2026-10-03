@@ -10,9 +10,7 @@ use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 // Reglas de validación (códigos 422/404) de los flujos principales.
@@ -20,16 +18,16 @@ class ValidacionesTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function usuario(string $rol): GeneralUser
+    private function usuario(string $rol, array $extra = []): GeneralUser
     {
-        return GeneralUser::create([
+        return GeneralUser::create(array_merge([
             'nombre' => ucfirst($rol),
             'apellido' => 'Val',
             'correo' => $rol . '.' . uniqid() . '@test.local',
             'password' => Hash::make('123456'),
             'rol' => $rol,
             'estado' => true,
-        ]);
+        ], $extra));
     }
 
     private function token(GeneralUser $user): string
@@ -77,69 +75,57 @@ class ValidacionesTest extends TestCase
 
     // ---------------------------------------------------------------- Usuarios
 
+    // Alta del administrador: el username y la contraseña temporal se generan.
+    private function altaUsuario(array $extra = [])
+    {
+        $admin = $this->usuario('admin');
+
+        return $this->como($admin)->postJson('/v1/general-users', array_merge([
+            'nombre' => 'Nuevo',
+            'apellido' => 'Usuario',
+            'tipo_documento' => 'CC',
+            'numero_documento' => (string) random_int(1000000, 9999999),
+            'correo' => 'nuevo.' . uniqid() . '@correo.com',
+            'rol' => 'aprendiz',
+        ], $extra));
+    }
+
     public function test_crear_usuario_con_correo_duplicado_falla(): void
     {
-        Storage::fake('local');
         $existente = $this->usuario('aprendiz');
 
-        $this->post('/v1/general-users', [
-            'nombre' => 'Otro',
-            'apellido' => 'Usuario',
-            'correo' => $existente->correo,
-            'password' => '123456',
-            'rol' => 'aprendiz',
-            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
-        ], ['Accept' => 'application/json'])->assertStatus(422);
+        $this->altaUsuario(['correo' => $existente->correo])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('correo');
     }
 
     public function test_crear_usuario_con_rol_invalido_falla(): void
     {
-        Storage::fake('local');
-
-        $this->post('/v1/general-users', [
-            'nombre' => 'Rol',
-            'apellido' => 'Malo',
-            'correo' => 'rol.malo.' . uniqid() . '@test.local',
-            'password' => '123456',
-            'rol' => 'hacker',
-            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
-        ], ['Accept' => 'application/json'])->assertStatus(422);
+        $this->altaUsuario(['rol' => 'hacker'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('rol');
     }
 
-    public function test_crear_usuario_con_password_corta_falla(): void
+    public function test_crear_usuario_con_documento_duplicado_falla(): void
     {
-        Storage::fake('local');
+        $existente = $this->usuario('aprendiz', ['numero_documento' => '900123456']);
 
-        $this->post('/v1/general-users', [
-            'nombre' => 'Clave',
-            'apellido' => 'Corta',
-            'correo' => 'clave.corta.' . uniqid() . '@test.local',
-            'password' => '123',
-            'rol' => 'aprendiz',
-            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
-        ], ['Accept' => 'application/json'])->assertStatus(422);
+        $this->altaUsuario(['numero_documento' => $existente->numero_documento])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('numero_documento');
     }
 
-    public function test_el_registro_publico_exige_documento_pdf(): void
+    public function test_el_alta_de_usuarios_exige_sesion_de_administrador(): void
     {
+        // Ya no hay registro público: sin sesión, la ruta responde 401.
         $this->postJson('/v1/general-users', [
             'nombre' => 'Sin',
-            'apellido' => 'Documento',
-            'correo' => 'sin.doc.' . uniqid() . '@test.local',
-            'password' => '123456',
+            'apellido' => 'Sesion',
+            'tipo_documento' => 'CC',
+            'numero_documento' => '900999999',
+            'correo' => 'sin.sesion.' . uniqid() . '@correo.com',
             'rol' => 'aprendiz',
-        ])->assertStatus(422)->assertJsonValidationErrors('soporte');
-    }
-
-    public function test_la_ruta_publica_no_permite_crear_admin_sin_token_admin(): void
-    {
-        $this->postJson('/v1/general-users', [
-            'nombre' => 'Admin',
-            'apellido' => 'Pirata',
-            'correo' => 'admin.pirata.' . uniqid() . '@test.local',
-            'password' => '123456',
-            'rol' => 'admin',
-        ])->assertStatus(403);
+        ])->assertStatus(401);
     }
 
     // ---------------------------------------------------------------- Fichas

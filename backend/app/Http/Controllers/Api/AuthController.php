@@ -15,12 +15,17 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'correo' => 'required|email',
+            // El acceso oficial es por username; se acepta `correo` por
+            // compatibilidad con clientes/tests anteriores.
+            'username' => 'required_without:correo|nullable|string',
+            'correo' => 'required_without:username|nullable|email',
             'password' => 'required',
             'recordarme' => 'nullable|boolean',
         ]);
 
-        $user = GeneralUser::where('correo', $request->correo)->first();
+        $user = $request->filled('username')
+            ? GeneralUser::where('username', strtolower(trim($request->username)))->first()
+            : GeneralUser::where('correo', strtolower(trim($request->correo)))->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Credenciales incorrectas. Verifica tus datos.'], 422);
@@ -28,16 +33,6 @@ class AuthController extends Controller
 
         if (!$user->estado) {
             return response()->json(['message' => 'Cuenta suspendida. Contacta al administrador.'], 403);
-        }
-
-        // Sin verificación no hay acceso: el admin debe aprobar el registro
-        // (aprendiz o instructor) tras revisar el documento de soporte.
-        if ($user->rol !== 'admin' && !$user->estaVerificado()) {
-            $mensaje = $user->estado_verificacion === 'rechazado'
-                ? 'Tu solicitud fue rechazada.' . ($user->motivo_rechazo ? ' Motivo: ' . $user->motivo_rechazo : '')
-                : 'Tu cuenta está pendiente de verificación. Un administrador debe aprobarla.';
-
-            return response()->json(['message' => $mensaje], 403);
         }
 
         // Sesión por cookie (SPA del mismo origen). Solo si la petición es
@@ -132,7 +127,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update([
+            'password' => Hash::make($request->password),
+            // La contraseña definitiva reemplaza a la temporal: se limpia la
+            // copia exportable y se libera el primer ingreso.
+            'must_change_password' => false,
+            'password_temporal' => null,
+        ]);
 
         Auditoria::registrar('cambiar_clave', 'general_users', $user->id);
 
@@ -190,7 +191,12 @@ class AuthController extends Controller
                 'password_confirmation' => $request->password_confirmation,
             ],
             function ($user, $password) {
-                $user->forceFill(['password' => Hash::make($password)])->save();
+                // La clave definitiva reemplaza a la temporal (si existía).
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'must_change_password' => false,
+                    'password_temporal' => null,
+                ])->save();
                 // Por seguridad, se cierran todas las sesiones tras el cambio.
                 $user->tokens()->delete();
             }
