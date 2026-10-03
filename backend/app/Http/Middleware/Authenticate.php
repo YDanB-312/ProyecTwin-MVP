@@ -12,6 +12,8 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        return $request->expectsJson() ? null : route('login');
+        // Backend solo-API: no existe ruta web `login`; devolver null hace que
+        // Laravel responda 401 JSON en vez de lanzar RouteNotFoundException.
+        return null;
     }
 }

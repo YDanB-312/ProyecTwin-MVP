@@ -16,12 +16,23 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\MotorConfigController;
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\PadronController;
+use App\Http\Controllers\Api\StatsController;
 
 // ------------------------------------------------------------------ Públicas
 // Login, registro y recuperación de contraseña por correo no exigen token.
-Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+// Los endpoints de identidad llevan throttle propio (anti fuerza bruta).
+Route::post('auth/login', [AuthController::class, 'login'])
+    ->middleware('throttle:' . config('identidad.throttle.login') . ',1');
+Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:' . config('identidad.throttle.recuperacion') . ',1');
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:' . config('identidad.throttle.recuperacion') . ',1');
+// Registro institucional: validar padrón → crear cuenta → activar con código.
+Route::post('auth/validar-padron', [AuthController::class, 'validarPadron'])
+    ->middleware('throttle:' . config('identidad.throttle.activacion') . ',1');
+Route::post('auth/activar', [AuthController::class, 'activar'])
+    ->middleware('throttle:' . config('identidad.throttle.activacion') . ',1');
 Route::post('general-users', [GeneralUserController::class, 'store']);
 
 // Lectura pública (landing/demo): catálogo institucional y config del motor.
@@ -38,15 +49,23 @@ Route::get('public/resumen', [MotorConfigController::class, 'resumen']);
 Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
 
 // ------------------------------------------------------------------ Sesión
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('auth/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Logout siempre disponible: una cuenta suspendida debe poder cerrar sesión.
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+
+    Route::middleware('cuenta.activa')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::put('auth/email', [AuthController::class, 'changeEmail']);
         Route::put('auth/password', [AuthController::class, 'changePassword']);
+    });
 });
 
 // ------------------------------------------------------------------ Autenticadas
-Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
+// `password.cambiada` exige cambiar la clave temporal antes de usar el resto.
+Route::middleware(['auth:sanctum', 'cuenta.activa', 'password.cambiada'])->group(function () {
+
+    // Conteos agregados por rol (tableros sin descargar colecciones completas).
+    Route::get('stats/resumen', [StatsController::class, 'resumen']);
 
     // Configuración del motor de similitudes (la lectura es pública, arriba).
     Route::middleware('rol:admin')->put('config-similitud', [MotorConfigController::class, 'update']);
@@ -62,10 +81,22 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
     Route::middleware('rol:admin')->delete('general-users/{general_user}', [GeneralUserController::class, 'destroy']);
 
+    // Padrón institucional: el admin carga y administra las identidades, y
+    // entrega/regenera los códigos de las cuentas pendientes de activación.
+    Route::middleware('rol:admin')->group(function () {
+        Route::get('padron', [PadronController::class, 'index']);
+        Route::get('padron/codigos', [PadronController::class, 'codigos']);
+        Route::post('padron', [PadronController::class, 'store']);
+        Route::delete('padron/{padron_usuario}', [PadronController::class, 'destroy']);
+        Route::post('padron/{general_user}/codigo', [PadronController::class, 'regenerarCodigo']);
+    });
+
     // Catálogos institucionales: la lectura es pública (arriba); escritura admin.
     Route::middleware('rol:admin')->group(function () {
         Route::post('knowledge-networks', [KnowledgeNetworkController::class, 'store']);
         Route::put('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'update']);
+        // Guardado por lote de la red + sus programas (una transacción).
+        Route::put('knowledge-networks/{knowledge_network}/programas', [KnowledgeNetworkController::class, 'sincronizar']);
         Route::delete('knowledge-networks/{knowledge_network}', [KnowledgeNetworkController::class, 'destroy']);
         Route::post('training-programs', [TrainingProgramController::class, 'store']);
         Route::put('training-programs/{training_program}', [TrainingProgramController::class, 'update']);
@@ -76,13 +107,6 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     Route::get('instructors', [InstructorController::class, 'index']);
     Route::get('instructors/{instructor}', [InstructorController::class, 'show']);
     Route::get('apprentices', [ApprenticeController::class, 'index']);
-    // Mi ficha: el aprendiz sale de su ficha y se une a otra con el código del
-    // instructor. Va antes de `apprentices/{apprentice}` para no colisionar.
-    Route::middleware('rol:aprendiz')->group(function () {
-        Route::get('apprentices/me/ficha/codigo/{codigo}', [ApprenticeController::class, 'fichaPorCodigo']);
-        Route::post('apprentices/me/ficha', [ApprenticeController::class, 'unirmeAFicha']);
-        Route::delete('apprentices/me/ficha', [ApprenticeController::class, 'salirDeFicha']);
-    });
     Route::get('apprentices/{apprentice}', [ApprenticeController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
         Route::post('instructors', [InstructorController::class, 'store']);

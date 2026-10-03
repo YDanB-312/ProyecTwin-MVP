@@ -115,22 +115,4 @@ class AtomicidadTest extends TestCase
         $this->assertSame(0, ApprenticeProject::where('id_aprendiz', $aprendiz->id)->count());
     }
 
-    public function test_unirse_a_ficha_es_atomico(): void
-    {
-        $fichaOrigen = $this->ficha();
-        $fichaDestino = $this->ficha();
-        $aprendiz = $this->aprendizEn($fichaOrigen);
-        $this->forzarFalloDeNotificacion();
-
-        try {
-            $this->como($aprendiz->generalUser)
-                ->postJson('/v1/apprentices/me/ficha', ['codigo' => $fichaDestino->codigo])
-                ->assertStatus(500);
-        } finally {
-            Event::forget(self::EVENTO_FALLO);
-        }
-
-        // El aprendiz siguió en su ficha original (no hubo cambio parcial).
-        $this->assertSame($fichaOrigen->id, (int) $aprendiz->fresh()->id_class_group);
-    }
 }

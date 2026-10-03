@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Notification;
+use App\Support\Pagina;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class NotificationController extends Controller
             $query->where('id_usuario', $user->id);
         }
 
-        return $query->get();
+        return Pagina::aplicar($query, $request, 20);
     }
 
     public function store(Request $request)

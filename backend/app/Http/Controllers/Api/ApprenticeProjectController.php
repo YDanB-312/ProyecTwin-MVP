@@ -17,8 +17,14 @@ class ApprenticeProjectController extends Controller
     {
         $user = $request->user();
 
+        // Filtro directo por propuesta (evita descargar toda la tabla).
+        $query = ApprenticeProject::included();
+        if ($request->filled('id_proyecto')) {
+            $query->where('id_proyecto', (int) $request->query('id_proyecto'));
+        }
+
         if (optional($user)->rol === 'admin') {
-            return ApprenticeProject::included()->get();
+            return $query->get();
         }
 
         if ($user && $user->rol === 'instructor') {
@@ -27,13 +33,13 @@ class ApprenticeProjectController extends Controller
             $ids = Project::where('id_instructor_asignado', $instructorId)
                 ->orWhereHas('classGroup', fn ($q) => $q->where('id_instructor', $instructorId))
                 ->pluck('id');
-            return ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+            return $query->whereIn('id_proyecto', $ids)->get();
         }
 
         $ids = Project::where('id_creador', optional($user)->id)
             ->orWhereHas('apprentices', fn ($q) => $q->where('id_usuario', optional($user)->id))
             ->pluck('id');
-        return ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+        return $query->whereIn('id_proyecto', $ids)->get();
     }
 
     public function store(Request $request)

@@ -284,24 +284,6 @@ class LogicaNegocioTest extends TestCase
 
     // ---------------------------------------------------------------- Ficha / programa
 
-    public function test_unirse_a_ficha_actualiza_el_programa_del_aprendiz(): void
-    {
-        $ficha = $this->ficha($this->programa());
-        $aprendiz = $this->usuario('aprendiz');
-        Apprentice::create([
-            'codigo' => 'AP-' . uniqid(),
-            'id_usuario' => $aprendiz->id,
-            'id_class_group' => null,
-            'id_programa' => $this->programa()->id,
-        ]);
-
-        $this->como($aprendiz)
-            ->postJson('/v1/apprentices/me/ficha', ['codigo' => $ficha->codigo])
-            ->assertOk();
-
-        $this->assertSame($ficha->id_programa, (int) Apprentice::where('id_usuario', $aprendiz->id)->value('id_programa'));
-    }
-
     public function test_cambiar_programa_de_ficha_sincroniza_a_los_aprendices(): void
     {
         $programaA = $this->programa();
