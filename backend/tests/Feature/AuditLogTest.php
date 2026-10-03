@@ -48,7 +48,7 @@ class AuditLogTest extends TestCase
             'nombre' => 'Nuevo',
             'apellido' => 'Usuario',
             'correo' => 'nuevo.' . uniqid() . '@test.local',
-            'password' => 'clave12345',
+            'password' => '123456',
             'rol' => 'aprendiz',
         ])->assertCreated();
 

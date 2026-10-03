@@ -8,14 +8,9 @@ use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
 use App\Models\ClassGroup;
 use App\Models\Instructor;
-use App\Models\PadronUsuario;
 use App\Models\Project;
-use App\Rules\FotoUrl;
 use App\Support\Auditoria;
 use App\Support\BorradoCascada;
-use App\Support\CodigoActivacion;
-use App\Support\CodigoAprendiz;
-use App\Support\Pagina;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,136 +20,55 @@ class GeneralUserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = GeneralUser::included()
+        return GeneralUser::included()
             ->search($request->query('search'))
             ->byRol($request->query('role'))
             ->byEstado($request->query('estado'))
             ->byFicha($request->query('ficha_id'))
-            ->byPrograma($request->query('programa'));
-
-        // Con `?page=` responde paginado; sin él, la lista completa.
-        return Pagina::aplicar($query, $request, 15);
+            ->byPrograma($request->query('programa'))
+            ->get();
     }
 
     public function store(Request $request)
-    {
-        // Alta directa del administrador (clave temporal, sin padrón) o registro
-        // público validado contra el padrón institucional.
-        $yo = $request->user() ?? auth('sanctum')->user();
-
-        return optional($yo)->rol === 'admin'
-            ? $this->storeComoAdmin($request)
-            : $this->storeDesdePadron($request);
-    }
-
-    // El admin sí puede crear cuentas de cualquier rol; nacen con clave temporal
-    // (debe_cambiar_password) y sin pasar por el padrón.
-    private function storeComoAdmin(Request $request)
     {
         $request->validate([
             'nombre' => 'required|max:255',
             'apellido' => 'required|max:255',
             'correo' => 'required|email|unique:general_users,correo',
-            'password' => 'required|min:8|max:255',
-            'foto_url' => ['nullable', new FotoUrl()],
+            'password' => 'required|min:6|max:255',
+            'foto_url' => 'nullable',
             'rol' => 'required|in:aprendiz,instructor,admin',
             'estado' => 'nullable|boolean',
         ]);
 
-        $data = $request->except(['tipo_documento', 'numero_documento']);
-        $data['correo'] = strtolower(trim($request->correo));
+        // Registro público: solo aprendiz/instructor. Crear cuentas admin exige
+        // token de administrador (la ruta es pública: se resuelve explícito).
+        $yo = $request->user() ?? auth('sanctum')->user();
+        if ($request->rol === 'admin' && optional($yo)->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede crear cuentas admin.'], 403);
+        }
+
+        $data = $request->all();
         $data['password'] = Hash::make($request->password);
         $data['estado'] = $request->has('estado') ? $request->boolean('estado') : true;
-        $data['debe_cambiar_password'] = true;
 
         // Alta atómica: cuenta + perfil + auditoría (todo o nada).
         $item = DB::transaction(function () use ($data) {
             $item = GeneralUser::create($data);
+
+            // El perfil (instructor/admin) nace junto con la cuenta para que el
+            // usuario pueda operar de inmediato (estilo "docente crea la clase").
             $this->sincronizarPerfiles($item);
 
             Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
                 'correo' => $item->correo,
                 'rol' => $item->rol,
-                'origen' => 'admin',
             ]);
 
             return $item;
         });
 
         return response()->json($item, 201);
-    }
-
-    // Registro público: la persona debe existir en el padrón; el rol y la ficha
-    // se copian del padrón (nunca del request) y la cuenta nace sin activar.
-    private function storeDesdePadron(Request $request)
-    {
-        $request->validate([
-            'tipo_documento' => 'required|in:CC,TI,CE,PA',
-            'numero_documento' => 'required|string|max:11',
-            'correo' => 'required|email|unique:general_users,correo',
-            'password' => 'required|min:8|max:255|confirmed',
-        ]);
-
-        $correo = strtolower(trim($request->correo));
-
-        $padron = PadronUsuario::where('tipo_documento', $request->tipo_documento)
-            ->where('numero_documento', trim($request->numero_documento))
-            ->whereRaw('LOWER(correo) = ?', [$correo])
-            ->first();
-
-        if (!$padron) {
-            return response()->json([
-                'message' => 'Tus datos no coinciden con la matrícula del SENA. Verifica el documento y el correo institucional.',
-            ], 422);
-        }
-        if (!$padron->activo) {
-            return response()->json(['message' => 'Tu registro no está activo en el padrón. Contacta al administrador.'], 422);
-        }
-        if ($padron->id_usuario) {
-            return response()->json([
-                'message' => 'Ese documento ya tiene una cuenta registrada. Inicia sesión o recupera tu contraseña.',
-            ], 422);
-        }
-
-        // Alta atómica: cuenta + vínculo al padrón + perfil + código (todo o nada).
-        [$item, $codigo] = DB::transaction(function () use ($request, $padron, $correo) {
-            $item = GeneralUser::create([
-                'nombre' => $padron->nombre,
-                'apellido' => $padron->apellido,
-                'correo' => $correo,
-                'password' => Hash::make($request->password),
-                'rol' => $padron->rol,
-                'estado' => false,
-                'debe_cambiar_password' => false,
-            ]);
-
-            $padron->update(['id_usuario' => $item->id]);
-            $this->sincronizarPerfiles($item, $padron);
-
-            $codigo = CodigoActivacion::generar($item->id);
-
-            Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
-                'correo' => $item->correo,
-                'rol' => $item->rol,
-                'origen' => 'padron',
-            ]);
-
-            return [$item, $codigo];
-        });
-
-        $respuesta = [
-            'user' => $item,
-            'activacion_requerida' => true,
-            'correo' => $item->correo,
-            'message' => 'Cuenta creada. Actívala con el código de verificación.',
-        ];
-
-        // En local/demo el código se muestra en pantalla; en producción viaja por correo.
-        if (config('identidad.activacion.exponer_codigo')) {
-            $respuesta['codigo'] = $codigo;
-        }
-
-        return response()->json($respuesta, 201);
     }
 
     public function show(Request $request, $id)
@@ -170,54 +84,19 @@ class GeneralUserController extends Controller
     }
 
     // Perfil público (vistas entre usuarios: compañero, instructor). Expone solo
-    // datos de contacto básicos; el correo solo si hay vínculo real (ficha).
-    public function perfil(Request $request, $id)
+    // datos de contacto básicos; nunca estado ni información de gestión.
+    public function perfil($id)
     {
         $user = GeneralUser::findOrFail($id);
-        $yo = $request->user();
-
-        $puedeVerCorreo = (int) optional($yo)->id === (int) $user->id
-            || optional($yo)->rol === 'admin'
-            || $this->comparteFicha($yo, $user);
 
         return response()->json([
             'id' => $user->id,
             'nombre' => $user->nombre,
             'apellido' => $user->apellido,
-            'correo' => $puedeVerCorreo ? $user->correo : null,
+            'correo' => $user->correo,
             'foto_url' => $user->foto_url,
             'rol' => $user->rol,
         ]);
-    }
-
-    // ¿El solicitante tiene vínculo de ficha con la persona consultada?
-    private function comparteFicha(?GeneralUser $yo, GeneralUser $objetivo): bool
-    {
-        if (!$yo) return false;
-
-        $fichaYo = Apprentice::where('id_usuario', $yo->id)->value('id_class_group');
-        $fichaObjetivo = Apprentice::where('id_usuario', $objetivo->id)->value('id_class_group');
-
-        // Compañeros de la misma ficha.
-        if ($fichaYo && $fichaObjetivo && (int) $fichaYo === (int) $fichaObjetivo) {
-            return true;
-        }
-
-        // Aprendiz → instructor de su ficha.
-        $instructorObjetivo = Instructor::where('id_usuario', $objetivo->id)->value('id');
-        if ($fichaYo && $instructorObjetivo
-            && ClassGroup::where('id', $fichaYo)->where('id_instructor', $instructorObjetivo)->exists()) {
-            return true;
-        }
-
-        // Instructor → aprendiz de sus fichas.
-        $instructorYo = Instructor::where('id_usuario', $yo->id)->value('id');
-        if ($instructorYo && $fichaObjetivo
-            && ClassGroup::where('id', $fichaObjetivo)->where('id_instructor', $instructorYo)->exists()) {
-            return true;
-        }
-
-        return false;
     }
 
     public function update(Request $request, GeneralUser $general_user)
@@ -229,7 +108,7 @@ class GeneralUserController extends Controller
             'apellido' => 'sometimes|required|max:255',
             'correo' => 'sometimes|required|email|unique:general_users,correo,' . $general_user->id,
             'password' => 'nullable|min:6|max:255',
-            'foto_url' => ['nullable', new FotoUrl()],
+            'foto_url' => 'nullable',
             'rol' => 'sometimes|required|in:aprendiz,instructor,admin',
             'estado' => 'sometimes|nullable|boolean',
         ]);
@@ -298,11 +177,6 @@ class GeneralUserController extends Controller
         DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $huboPassword) {
             $general_user->update($data);
 
-            // Suspender una cuenta cierra todas sus sesiones/tokens de inmediato.
-            if ($cambiaEstado && !$general_user->estado) {
-                $general_user->tokens()->delete();
-            }
-
             Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
                 'rol' => $cambiaRol ? $general_user->rol : null,
                 'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
@@ -359,9 +233,9 @@ class GeneralUserController extends Controller
 
     // ---------------------------------------------------------------- Perfiles
 
-    // Crea el perfil que corresponde al rol. El aprendiz matriculado nace en la
-    // ficha de su padrón (si la tiene); sin padrón, su fila se crea al unirse.
-    private function sincronizarPerfiles(GeneralUser $usuario, ?PadronUsuario $padron = null): void
+    // Crea el perfil que corresponde al rol. El de aprendiz no se crea aquí
+    // porque `apprentices.id_programa` es obligatorio: nace al unirse a una ficha.
+    private function sincronizarPerfiles(GeneralUser $usuario): void
     {
         if ($usuario->rol === 'instructor') {
             Instructor::firstOrCreate(
@@ -371,17 +245,6 @@ class GeneralUserController extends Controller
         }
         if ($usuario->rol === 'admin') {
             Admin::firstOrCreate(['id_usuario' => $usuario->id]);
-        }
-        if ($usuario->rol === 'aprendiz' && $padron && $padron->id_class_group) {
-            Apprentice::firstOrCreate(
-                ['id_usuario' => $usuario->id],
-                [
-                    'codigo' => CodigoAprendiz::disponible(),
-                    'id_class_group' => $padron->id_class_group,
-                    'id_programa' => $padron->id_programa
-                        ?? optional(ClassGroup::find($padron->id_class_group))->id_programa,
-                ]
-            );
         }
     }
 

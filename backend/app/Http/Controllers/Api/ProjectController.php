@@ -11,9 +11,6 @@ use App\Models\Notification;
 use App\Models\Project;
 use App\Models\Similarity;
 use App\Services\NotificacionesService;
-use App\Support\Pagina;
-use App\Http\Requests\StoreProjectRequest;
-use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -23,19 +20,30 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Project::included()
+        return Project::included()
             ->paraUsuario($request->user())
             ->search($request->query('search'))
             ->byEstado($request->query('estado'))
             ->byFicha($request->query('ficha_id'))
-            ->byPrograma($request->query('programa'));
-
-        // Con `?page=` responde paginado; sin él, la lista completa.
-        return Pagina::aplicar($query, $request, 15);
+            ->byPrograma($request->query('programa'))
+            ->get();
     }
 
-    public function store(StoreProjectRequest $request)
+    public function store(Request $request)
     {
+        $request->validate([
+            'titulo' => 'required|max:255',
+            'resumen' => 'required',
+            'palabras_clave' => 'nullable|max:255',
+            'area_aplicacion' => 'required|max:255',
+            'objetivo_general' => 'nullable',
+            'objetivos_especificos' => 'nullable|array',
+            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
+            'id_creador' => 'nullable|exists:general_users,id',
+            'id_instructor_asignado' => 'nullable|exists:instructors,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
+        ]);
+
         $usuario = $request->user();
         $rol = optional($usuario)->rol;
         $datos = $request->all();
@@ -82,14 +90,6 @@ class ProjectController extends Controller
             return $item;
         });
 
-        // El motor corre en el servidor al radicar (el cliente deja de ser la
-        // fuente): si falla, la propuesta igual queda registrada.
-        try {
-            app(SimilarityController::class)->detectarProyecto($item);
-        } catch (\Throwable $e) {
-            // El análisis puede recalcularse después.
-        }
-
         return response()->json($item, 201);
     }
 
@@ -116,8 +116,21 @@ class ProjectController extends Controller
         return Project::included()->findOrFail($id);
     }
 
-    public function update(UpdateProjectRequest $request, Project $project)
+    public function update(Request $request, Project $project)
     {
+        $request->validate([
+            'titulo' => 'required|max:255',
+            'resumen' => 'required',
+            'palabras_clave' => 'nullable|max:255',
+            'area_aplicacion' => 'required|max:255',
+            'objetivo_general' => 'nullable',
+            'objetivos_especificos' => 'nullable|array',
+            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
+            'id_creador' => 'required|exists:general_users,id',
+            'id_instructor_asignado' => 'nullable|exists:instructors,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
+        ]);
+
         $usuario = $request->user();
         $rol = optional($usuario)->rol;
 
@@ -181,18 +194,6 @@ class ProjectController extends Controller
                 'a' => $project->estado,
                 'titulo' => $project->titulo,
             ]);
-
-            // La reacción al creador la genera el servidor (el cliente ya no la crea).
-            app(NotificacionesService::class)->revisionResuelta($project, $project->estado);
-        }
-
-        // Al aprobar, el motor corre en el servidor (nuevos pares contra el corpus).
-        if ($rol !== 'aprendiz' && $estadoAnterior !== 'aprobado' && $project->estado === 'aprobado') {
-            try {
-                app(SimilarityController::class)->detectarProyecto($project);
-            } catch (\Throwable $e) {
-                // El análisis puede recalcularse después; no impide aprobar.
-            }
         }
 
         return $project;
@@ -200,8 +201,15 @@ class ProjectController extends Controller
 
     public function destroy(Request $request, Project $project)
     {
-        // Autorización vía Policy (misma regla: creador aprendiz en ficha activa o admin).
-        if (!\Illuminate\Support\Facades\Gate::allows('delete', $project)) {
+        $usuario = $request->user();
+        $rol = optional($usuario)->rol;
+
+        // Solo el CREADOR aprendiz (dentro de su ficha activa) o un admin.
+        $permitido = $rol === 'admin'
+            || ($rol === 'aprendiz'
+                && (int) $project->id_creador === (int) $usuario->id
+                && $project->puedeEscribir($usuario));
+        if (!$permitido) {
             return response()->json(['message' => 'No puedes eliminar esta propuesta.'], 403);
         }
 

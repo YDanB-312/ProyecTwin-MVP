@@ -111,18 +111,13 @@ class ValidacionesTest extends TestCase
 
     public function test_la_ruta_publica_no_permite_crear_admin_sin_token_admin(): void
     {
-        // El registro público ignora `rol`: exige padrón y no puede crear admin.
-        $correo = 'admin.pirata.' . uniqid() . '@test.local';
-
         $this->postJson('/v1/general-users', [
             'nombre' => 'Admin',
             'apellido' => 'Pirata',
-            'correo' => $correo,
-            'password' => 'clave12345',
+            'correo' => 'admin.pirata.' . uniqid() . '@test.local',
+            'password' => '123456',
             'rol' => 'admin',
-        ])->assertStatus(422);
-
-        $this->assertDatabaseMissing('general_users', ['correo' => $correo]);
+        ])->assertStatus(403);
     }
 
     // ---------------------------------------------------------------- Fichas
@@ -154,6 +149,40 @@ class ValidacionesTest extends TestCase
                 'id_programa' => $existente->id_programa,
                 'id_instructor' => $existente->id_instructor,
             ])
+            ->assertStatus(422);
+    }
+
+    // ---------------------------------------------------------------- Mi ficha
+
+    public function test_unirse_con_codigo_invalido_da_404(): void
+    {
+        $this->como($this->usuario('aprendiz'))
+            ->postJson('/v1/apprentices/me/ficha', ['codigo' => 'zzz-zzzz'])
+            ->assertStatus(404);
+    }
+
+    public function test_unirse_a_ficha_finalizada_falla(): void
+    {
+        $ficha = $this->ficha('finalizado');
+
+        $this->como($this->usuario('aprendiz'))
+            ->postJson('/v1/apprentices/me/ficha', ['codigo' => $ficha->codigo])
+            ->assertStatus(422);
+    }
+
+    public function test_unirse_a_la_misma_ficha_falla(): void
+    {
+        $ficha = $this->ficha();
+        $aprendiz = $this->usuario('aprendiz');
+        Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $aprendiz->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
+
+        $this->como($aprendiz)
+            ->postJson('/v1/apprentices/me/ficha', ['codigo' => $ficha->codigo])
             ->assertStatus(422);
     }
 

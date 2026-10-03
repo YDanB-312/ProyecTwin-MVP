@@ -42,7 +42,7 @@ class ApprenticeController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $request->validate([
             'codigo' => 'required|max:255|unique:apprentices,codigo',
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
@@ -55,34 +55,25 @@ class ApprenticeController extends Controller
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
-        // Invariante: el programa del aprendiz es el de su ficha (sin ficha, nulo).
-        $data['id_programa'] = null;
+        $data = $request->all();
+        // Invariante: el programa del aprendiz es el de su ficha.
         if ($request->filled('id_class_group')) {
-            $ficha = ClassGroup::findOrFail($request->id_class_group);
-            $data['id_programa'] = $ficha->id_programa;
-
-            // Un instructor solo registra aprendices en sus propias fichas.
-            if ($request->user()->rol === 'instructor') {
-                $mio = Instructor::where('id_usuario', $request->user()->id)->value('id');
-                if (!$mio || (int) $ficha->id_instructor !== (int) $mio) {
-                    return response()->json(['message' => 'Solo puedes registrar aprendices en tus propias fichas.'], 403);
-                }
-            }
+            $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
         }
 
         $item = Apprentice::create($data);
         return $item;
     }
 
-    public function show(Request $request, Apprentice $apprentice)
+    public function show($id)
     {
-        $this->autorizarLectura($request, $apprentice);
-        return Apprentice::included()->findOrFail($apprentice->id);
+        $item = Apprentice::included()->findOrFail($id);
+        return $item;
     }
 
     public function update(Request $request, Apprentice $apprentice)
     {
-        $data = $request->validate([
+        $request->validate([
             'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => 'required|exists:general_users,id',
@@ -90,36 +81,16 @@ class ApprenticeController extends Controller
             'id_programa' => 'nullable|exists:training_programs,id',
         ]);
 
-        $user = $request->user();
-
-        // Un instructor solo gestiona aprendices de sus fichas (origen y
-        // destino) y no puede reasignar la cuenta (eso es del admin).
-        if (optional($user)->rol === 'instructor') {
-            $mio = Instructor::where('id_usuario', $user->id)->value('id');
-            $origen = ($mio && $apprentice->id_class_group)
-                ? ClassGroup::where('id', $apprentice->id_class_group)->where('id_instructor', $mio)->exists()
-                : false;
-            $destino = $request->filled('id_class_group')
-                ? ClassGroup::where('id', $request->id_class_group)->where('id_instructor', $mio)->exists()
-                : true;
-
-            if (!$origen || !$destino) {
-                return response()->json(['message' => 'Solo puedes gestionar aprendices de tus propias fichas.'], 403);
-            }
-            if ((int) $request->id_usuario !== (int) $apprentice->id_usuario) {
-                return response()->json(['message' => 'Solo un administrador puede reasignar la cuenta de un aprendiz.'], 403);
-            }
-        }
-
         $usuario = GeneralUser::findOrFail($request->id_usuario);
         if ($usuario->rol !== 'aprendiz') {
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
-        // Invariante: el programa del aprendiz es el de su ficha (sin ficha, nulo).
-        $data['id_programa'] = $request->filled('id_class_group')
-            ? ClassGroup::findOrFail($request->id_class_group)->id_programa
-            : null;
+        $data = $request->all();
+        // Invariante: el programa del aprendiz es el de su ficha.
+        if ($request->filled('id_class_group')) {
+            $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
+        }
 
         $fichaAnterior = $apprentice->id_class_group;
         $apprentice->update($data);
@@ -141,27 +112,142 @@ class ApprenticeController extends Controller
         return $apprentice;
     }
 
-    // ---------------------------------------------------------------- Internos
+    // ------------------------------------------------ Mi ficha (aprendiz)
 
-    // Lectura de un aprendiz: admin cualquiera; instructor los de sus fichas;
-    // aprendiz su propia fila o un compañero de su ficha.
-    private function autorizarLectura(Request $request, Apprentice $item): void
+    // Previsualiza una ficha por código antes de unirse. Devuelve el estado
+    // para que la interfaz explique si no acepta nuevos integrantes.
+    public function fichaPorCodigo(string $codigo)
     {
-        $user = $request->user();
-        if (optional($user)->rol === 'admin') return;
+        $ficha = $this->buscarPorCodigo($codigo);
+        if (!$ficha) {
+            return response()->json(['message' => 'No encontramos una ficha con ese código.'], 404);
+        }
+        return $ficha->loadCount('apprentices');
+    }
 
-        if (optional($user)->rol === 'instructor') {
-            $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
-            $ok = $instructorId && $item->id_class_group
-                && ClassGroup::where('id', $item->id_class_group)
-                    ->where('id_instructor', $instructorId)->exists();
-            abort_if(!$ok, 403, 'No puedes ver un aprendiz de otra ficha.');
-            return;
+    // Une al aprendiz autenticado a la ficha del código recibido. Antes puede
+    // salir de su ficha actual (la interfaz lo hace en dos pasos); si aún así
+    // llega con ficha, el cambio también notifica al instructor anterior.
+    public function unirmeAFicha(Request $request)
+    {
+        $request->validate(['codigo' => 'required|string|max:255']);
+        $user = $request->user();
+
+        $ficha = $this->buscarPorCodigo($request->codigo);
+        if (!$ficha) {
+            return response()->json(['message' => 'No encontramos una ficha con ese código.'], 404);
+        }
+        if ($ficha->estado !== 'activo') {
+            return response()->json(['message' => 'Esa ficha no acepta nuevos integrantes.'], 422);
         }
 
-        $fichaId = Apprentice::where('id_usuario', optional($user)->id)->value('id_class_group');
-        $ok = $fichaId && (int) $item->id_class_group === (int) $fichaId;
-        abort_if(!$ok, 403, 'No puedes ver a un aprendiz de otra ficha.');
+        $aprendiz = $this->miAprendiz($request);
+        if ($aprendiz && (int) $aprendiz->id_class_group === (int) $ficha->id) {
+            return response()->json(['message' => 'Ya perteneces a esta ficha.'], 422);
+        }
+
+        $fichaAnterior = ($aprendiz && $aprendiz->id_class_group)
+            ? ClassGroup::with('instructor')->find($aprendiz->id_class_group)
+            : null;
+
+        // Unión atómica: cambio de ficha + notificaciones (todo o nada).
+        $aprendiz = DB::transaction(function () use ($aprendiz, $ficha, $fichaAnterior, $user) {
+            if ($aprendiz) {
+                $aprendiz->update([
+                    'id_class_group' => $ficha->id,
+                    'id_programa' => $ficha->id_programa,
+                ]);
+            } else {
+                // Un aprendiz recién registrado no tiene fila todavía: se crea aquí.
+                $aprendiz = Apprentice::create([
+                    'codigo' => $this->codigoDisponible(),
+                    'id_usuario' => $user->id,
+                    'id_class_group' => $ficha->id,
+                    'id_programa' => $ficha->id_programa,
+                ]);
+            }
+
+            $this->notificarInstructor(
+                $ficha,
+                'El aprendiz ' . $this->nombreDe($user) . ' se unió a la ficha "' . $ficha->nombre . '".',
+                'ficha:' . $ficha->id
+            );
+            if ($fichaAnterior) {
+                $this->notificarInstructor(
+                    $fichaAnterior,
+                    'El aprendiz ' . $this->nombreDe($user) . ' salió de la ficha "' . $fichaAnterior->nombre . '".',
+                    'ficha:' . $fichaAnterior->id
+                );
+            }
+
+            return $aprendiz;
+        });
+
+        return $aprendiz->fresh()->load('classGroup.program', 'classGroup.instructor.generalUser');
+    }
+
+    // Deja al aprendiz autenticado sin ficha. La fila y su código se conservan.
+    public function salirDeFicha(Request $request)
+    {
+        $aprendiz = $this->miAprendiz($request);
+        if (!$aprendiz || !$aprendiz->id_class_group) {
+            return response()->json(['message' => 'No perteneces a ninguna ficha.'], 422);
+        }
+
+        $ficha = ClassGroup::with('instructor')->find($aprendiz->id_class_group);
+        $nombre = $this->nombreDe($request->user());
+
+        // Salida atómica: cambio + notificación (todo o nada).
+        $aprendiz = DB::transaction(function () use ($aprendiz, $ficha, $nombre) {
+            // Opción A: sin ficha tampoco hay programa (el programa se deriva).
+            $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
+
+            if ($ficha) {
+                $this->notificarInstructor(
+                    $ficha,
+                    'El aprendiz ' . $nombre . ' salió de la ficha "' . $ficha->nombre . '".',
+                    'ficha:' . $ficha->id
+                );
+            }
+
+            return $aprendiz;
+        });
+
+        return $aprendiz->fresh();
+    }
+
+    // ---------------------------------------------------------------- Internos
+
+    private function miAprendiz(Request $request): ?Apprentice
+    {
+        return Apprentice::where('id_usuario', $request->user()->id)->first();
+    }
+
+    // Busca por código sin importar mayúsculas/espacios.
+    private function buscarPorCodigo(?string $codigo): ?ClassGroup
+    {
+        $codigo = strtolower(trim((string) $codigo));
+        if ($codigo === '') return null;
+
+        return ClassGroup::with('program', 'instructor.generalUser')
+            ->whereRaw('LOWER(codigo) = ?', [$codigo])
+            ->first();
+    }
+
+    private function codigoDisponible(): string
+    {
+        $n = (int) Apprentice::max('id') + 1;
+        do {
+            $codigo = 'AP-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+            $n++;
+        } while (Apprentice::where('codigo', $codigo)->exists());
+
+        return $codigo;
+    }
+
+    private function nombreDe($user): string
+    {
+        return trim(($user->nombre ?? '') . ' ' . ($user->apellido ?? '')) ?: ($user->correo ?? 'Un aprendiz');
     }
 
     // Avisa al aprendiz de que lo sacaron o movieron de ficha (lo hizo el staff).
@@ -175,5 +261,11 @@ class ApprenticeController extends Controller
             : 'Te sacaron de la ficha "' . $nombreAnterior . '".';
 
         app(NotificacionesService::class)->crear($aprendiz->id_usuario, $titulo, 'sistema');
+    }
+
+    // Avisa al instructor de la ficha (si tiene uno) de un movimiento.
+    private function notificarInstructor(?ClassGroup $ficha, string $titulo, string $enlace): void
+    {
+        app(NotificacionesService::class)->fichaMovimientoInstructor($ficha, $titulo, $enlace);
     }
 }

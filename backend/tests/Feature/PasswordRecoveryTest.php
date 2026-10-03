@@ -43,15 +43,11 @@ class PasswordRecoveryTest extends TestCase
     {
         Notification::fake();
 
-        // La tabla puede traer filas de otras corridas (la BD de test no está
-        // aislada): lo que importa es que ESTA solicitud no cree ninguna.
-        $antes = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->count();
-
         $this->postJson('/v1/auth/forgot-password', ['correo' => 'nadie@test.local'])
             ->assertOk()
             ->assertJsonPath('message', 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.');
 
-        $this->assertSame($antes, \Illuminate\Support\Facades\DB::table('password_reset_tokens')->count());
+        $this->assertDatabaseCount('password_reset_tokens', 0);
     }
 
     public function test_reset_con_token_valido_cambia_la_contrasena_y_lo_consume(): void

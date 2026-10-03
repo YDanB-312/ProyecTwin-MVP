@@ -56,7 +56,7 @@ class PerfilProvisionTest extends TestCase
             'nombre' => 'Nuevo',
             'apellido' => 'Docente',
             'correo' => 'docente.' . uniqid() . '@test.local',
-            'password' => 'clave12345',
+            'password' => '123456',
             'rol' => 'instructor',
         ])->assertCreated();
 
