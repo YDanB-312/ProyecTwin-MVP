@@ -19,7 +19,7 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado', 'debe_cambiar_password'];
+    protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado'];
 
     // Datos sensibles que nunca salen por la API (login/me/listados).
     protected $hidden = ['password', 'remember_token'];
@@ -87,9 +87,6 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     public function scopeByFicha(Builder $query, $fichaId)
     {
         if (empty($fichaId) || $fichaId === 'todos') return $query;
-        if ($fichaId === 'sin') {
-            return $query->whereDoesntHave('apprentice', fn (Builder $q) => $q->whereNotNull('id_class_group'));
-        }
         return $query->whereHas('apprentice', fn (Builder $q) => $q->where('id_class_group', $fichaId));
     }
 

@@ -6,39 +6,44 @@ use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\Instructor;
 use App\Models\Project;
-use App\Support\Pagina;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ClassGroupRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class ClassGroupController extends Controller
 {
     // Alcance por rol: admin todas; instructor SOLO las que creó/gestiona;
-    // aprendiz SOLO su ficha actual.
+    // aprendiz SOLO su ficha actual. Evita exponer los códigos de todas las
+    // fichas (el código es la credencial para unirse).
     public function index(Request $request)
     {
         $user = $request->user();
         $query = ClassGroup::included();
 
         if (optional($user)->rol === 'admin') {
-            return Pagina::aplicar($query, $request, 15);
+            return $query->get();
         }
 
         if ($user && $user->rol === 'instructor') {
             $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
-            if (!$instructorId) return collect();
-            return Pagina::aplicar($query->where('id_instructor', $instructorId), $request, 15);
+            return $instructorId ? $query->where('id_instructor', $instructorId)->get() : collect();
         }
 
         $fichaId = Apprentice::where('id_usuario', optional($user)->id)->value('id_class_group');
-        if (!$fichaId) return collect();
-        return Pagina::aplicar($query->where('id', $fichaId), $request, 15);
+        return $fichaId ? $query->where('id', $fichaId)->get() : collect();
     }
 
-    public function store(ClassGroupRequest $request)
+    public function store(Request $request)
     {
+        $request->validate([
+            'codigo' => 'required|max:255|unique:class_groups,codigo',
+            'numero' => 'nullable|max:255',
+            'nombre' => 'required|max:255',
+            'estado' => 'required|in:activo,finalizado',
+            'id_programa' => 'required|exists:training_programs,id',
+            'id_instructor' => 'required|exists:instructors,id',
+        ]);
+
         $datos = $request->all();
         // Un instructor solo crea fichas a su nombre (el admin asigna a quien sea).
         if ($request->user()->rol === 'instructor') {
@@ -53,34 +58,25 @@ class ClassGroupController extends Controller
         return response()->json($item, 201);
     }
 
-    public function show(Request $request, ClassGroup $class_group)
+    public function show($id)
     {
-        $user = $request->user();
-
-        // Mismo alcance que index(): admin todas; instructor las suyas; aprendiz
-        // solo su ficha actual (el código es credencial y no debe filtrarse).
-        if (optional($user)->rol === 'instructor') {
-            $instructor = $this->miFilaInstructor($request);
-            if (!$instructor || (int) $class_group->id_instructor !== (int) $instructor->id) {
-                return response()->json(['message' => 'No puedes ver una ficha que no está a tu cargo.'], 403);
-            }
-        } elseif ($user && $user->rol === 'aprendiz') {
-            $fichaId = Apprentice::where('id_usuario', $user->id)->value('id_class_group');
-            if ((int) $fichaId !== (int) $class_group->id) {
-                return response()->json(['message' => 'No puedes ver una ficha que no es la tuya.'], 403);
-            }
-        } elseif (optional($user)->rol !== 'admin') {
-            return response()->json(['message' => 'Sin permiso para esta acción.'], 403);
-        }
-
-        return ClassGroup::included()->findOrFail($class_group->id);
+        return ClassGroup::included()->findOrFail($id);
     }
 
-    public function update(ClassGroupRequest $request, ClassGroup $class_group)
+    public function update(Request $request, ClassGroup $class_group)
     {
-        if (!Gate::allows('manage', $class_group)) {
+        if (!$this->puedeGestionar($request, $class_group)) {
             return response()->json(['message' => 'No puedes editar una ficha que no está a tu cargo.'], 403);
         }
+
+        $request->validate([
+            'codigo' => 'required|max:255|unique:class_groups,codigo,' . $class_group->id,
+            'numero' => 'nullable|max:255',
+            'nombre' => 'required|max:255',
+            'estado' => 'required|in:activo,finalizado',
+            'id_programa' => 'required|exists:training_programs,id',
+            'id_instructor' => 'required|exists:instructors,id',
+        ]);
 
         $datos = $request->all();
         // Un instructor no puede reasignar su propia ficha a otro (eso es del admin).
@@ -100,8 +96,7 @@ class ClassGroupController extends Controller
             if ((int) $programaAnterior !== (int) $class_group->id_programa) {
                 \App\Models\Apprentice::where('id_class_group', $class_group->id)
                     ->update(['id_programa' => $class_group->id_programa]);
-                // Mismo servicio que el comando y el endpoint de recálculo.
-                app(\App\Similarity\Recomputador::class)->recalcular();
+                app(\App\Http\Controllers\Api\SimilarityController::class)->recalculate();
             }
 
             if ($estadoAnterior !== 'finalizado' && $class_group->estado === 'finalizado') {
@@ -116,7 +111,7 @@ class ClassGroupController extends Controller
 
     public function destroy(Request $request, ClassGroup $class_group)
     {
-        if (!Gate::allows('manage', $class_group)) {
+        if (!$this->puedeGestionar($request, $class_group)) {
             return response()->json(['message' => 'No puedes eliminar una ficha que no está a tu cargo.'], 403);
         }
 
@@ -136,6 +131,18 @@ class ClassGroupController extends Controller
         ]);
 
         return $class_group;
+    }
+
+    // Admin cualquiera; instructor solo sus fichas.
+    private function puedeGestionar(Request $request, ClassGroup $ficha): bool
+    {
+        $user = $request->user();
+        if (!$user) return false;
+        if ($user->rol === 'admin') return true;
+        if ($user->rol !== 'instructor') return false;
+
+        $instructor = $this->miFilaInstructor($request);
+        return $instructor && (int) $ficha->id_instructor === (int) $instructor->id;
     }
 
     private function miFilaInstructor(Request $request): ?Instructor

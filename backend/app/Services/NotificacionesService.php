@@ -45,20 +45,6 @@ class NotificacionesService
         $this->crear($idUsuario, 'Nueva propuesta pendiente de revisión: "' . $project->titulo . '"', 'revision', 'proyecto:' . $project->id);
     }
 
-    // Revisión resuelta → avisa al creador (aprobada/rechazada).
-    public function revisionResuelta(Project $project, string $estado): void
-    {
-        if (!in_array($estado, ['aprobado', 'rechazado'], true)) return;
-
-        $etiqueta = $estado === 'aprobado' ? 'Aprobada' : 'Rechazada';
-        $this->crear(
-            $project->id_creador,
-            "Tu propuesta \"{$project->titulo}\" fue {$etiqueta}.",
-            'revision',
-            'proyecto:' . $project->id
-        );
-    }
-
     // Similitud detectada → avisa al creador de la propuesta.
     public function similitud(Project $propio, int $otroId, int $porcentaje): void
     {
@@ -66,6 +52,12 @@ class NotificacionesService
         $titulo = "Similitud del {$porcentaje}% detectada entre '{$propio->titulo}' y '" . ($otro->titulo ?? 'otra propuesta') . "'";
 
         $this->crear($propio->id_creador, $titulo, 'similitud', 'proyecto:' . $propio->id);
+    }
+
+    // Movimiento de ficha → avisa al instructor de esa ficha (si tiene uno).
+    public function fichaMovimientoInstructor(?ClassGroup $ficha, string $titulo, ?string $enlace = null): void
+    {
+        $this->crear(optional($ficha?->instructor)->id_usuario, $titulo, 'sistema', $enlace);
     }
 
     // Nuevo reporte de falla → avisa a cada admin activo.

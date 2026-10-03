@@ -46,8 +46,7 @@ return [
     |
     */
 
-    // 24 h por defecto (ver SANCTUM_EXPIRATION). null = sin expiración.
-    'expiration' => env('SANCTUM_EXPIRATION') !== null ? (int) env('SANCTUM_EXPIRATION') : 1440,
+    'expiration' => null,
 
     /*
     |--------------------------------------------------------------------------
