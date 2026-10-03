@@ -56,17 +56,18 @@ class PerfilProvisionTest extends TestCase
         $respuesta = $this->withToken($this->token($admin))->postJson('/v1/general-users', [
             'nombre' => 'Nuevo',
             'apellido' => 'Docente',
+            'tipo_documento' => 'CC',
+            'numero_documento' => (string) random_int(1000000, 9999999),
             'correo' => 'docente.' . uniqid() . '@test.local',
-            'password' => '123456',
             'rol' => 'instructor',
         ])->assertCreated();
 
         $this->assertDatabaseHas('general_users', [
-            'id' => $respuesta->json('id'),
+            'id' => $respuesta->json('usuario.id'),
             'rol' => 'instructor',
-            'estado_verificacion' => 'verificado',
+            'must_change_password' => true,
         ]);
-        $this->assertDatabaseHas('instructors', ['id_usuario' => $respuesta->json('id')]);
+        $this->assertDatabaseHas('instructors', ['id_usuario' => $respuesta->json('usuario.id')]);
     }
 
     public function test_un_instructor_sin_perfil_no_se_crea_al_consultarlo(): void
@@ -76,7 +77,7 @@ class PerfilProvisionTest extends TestCase
 
         $this->withToken($this->token($user))->getJson('/v1/instructors')->assertOk();
 
-        // La verificación se resuelve en el registro; la API no auto-crea perfiles.
+        // La API no auto-crea perfiles: el alta del admin los provisiona.
         $this->assertDatabaseMissing('instructors', ['id_usuario' => $user->id]);
     }
 

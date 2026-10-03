@@ -20,34 +20,34 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     public static $snakeAttributes = false;
 
     protected $fillable = [
-        'nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado',
-        'estado_verificacion', 'motivo_rechazo', 'soporte_path',
+        'nombre', 'apellido', 'tipo_documento', 'numero_documento', 'correo',
+        'username', 'password', 'must_change_password', 'password_temporal',
+        'foto_url', 'rol', 'estado',
     ];
 
-    // Datos sensibles que nunca salen por la API (login/me/listados). La ruta
-    // del documento no se serializa: se consulta por el endpoint de admin.
-    protected $hidden = ['password', 'remember_token', 'soporte_path'];
+    // Datos sensibles que nunca salen por la API (login/me/listados). La
+    // contraseña temporal se descifra solo al exportar credenciales.
+    protected $hidden = ['password', 'remember_token', 'password_temporal'];
 
-    protected $casts = ['estado' => 'boolean'];
-
-    // Se expone solo un booleano: ¿tiene documento de soporte adjunto?
-    protected $appends = ['tiene_soporte'];
-
-    public function getTieneSoporteAttribute(): bool
-    {
-        return !empty($this->soporte_path);
-    }
-
-    // ¿El admin ya verificó esta cuenta? Sin verificar no hay acceso al sistema.
-    public function estaVerificado(): bool
-    {
-        return $this->estado_verificacion === 'verificado';
-    }
+    protected $casts = ['estado' => 'boolean', 'must_change_password' => 'boolean'];
 
     // El correo es el identificador de acceso (no existe columna `email`).
     public function getEmailForPasswordReset()
     {
         return $this->correo;
+    }
+
+    // Toda cuenta nace con username (seed, altas del admin, pruebas).
+    protected static function booted(): void
+    {
+        static::creating(function (GeneralUser $user) {
+            if (empty($user->username)) {
+                $user->username = \App\Support\Credenciales::username(
+                    (string) $user->nombre,
+                    (string) $user->apellido
+                );
+            }
+        });
     }
 
     // Las notificaciones por correo se envían al `correo` institucional.
@@ -85,7 +85,11 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         if (empty($term)) return $query;
         $t = "%{$term}%";
         return $query->where(function (Builder $q) use ($t) {
-            $q->where('nombre', 'like', $t)->orWhere('correo', 'like', $t);
+            $q->where('nombre', 'like', $t)
+              ->orWhere('apellido', 'like', $t)
+              ->orWhere('username', 'like', $t)
+              ->orWhere('numero_documento', 'like', $t)
+              ->orWhere('correo', 'like', $t);
         });
     }
 
@@ -105,6 +109,9 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     public function scopeByFicha(Builder $query, $fichaId)
     {
         if (empty($fichaId) || $fichaId === 'todos') return $query;
+        if ($fichaId === 'sin') {
+            return $query->whereDoesntHave('apprentice', fn (Builder $q) => $q->whereNotNull('id_class_group'));
+        }
         return $query->whereHas('apprentice', fn (Builder $q) => $q->where('id_class_group', $fichaId));
     }
 

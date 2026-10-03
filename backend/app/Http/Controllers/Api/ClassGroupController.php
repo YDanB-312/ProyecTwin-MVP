@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Apprentice;
 use App\Models\ClassGroup;
+use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
+use App\Support\CredencialesPdf;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,15 +39,12 @@ class ClassGroupController extends Controller
     {
         $user = $request->user();
 
-        // Solo un instructor verificado crea fichas (el admin puede cualquiera).
+        // Solo un instructor con perfil crea fichas (el admin puede cualquiera).
         $mio = null;
         if (optional($user)->rol === 'instructor') {
             $mio = $this->miFilaInstructor($request);
             if (!$mio) {
                 return response()->json(['message' => 'Tu cuenta no tiene perfil de instructor.'], 422);
-            }
-            if (!$user->estaVerificado()) {
-                return response()->json(['message' => 'Tu cuenta de instructor está pendiente de verificación.'], 403);
             }
         }
 
@@ -55,9 +54,12 @@ class ClassGroupController extends Controller
             'estado' => 'required|in:activo,finalizado',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
+            'aprendices' => 'nullable|array',
+            'aprendices.*' => 'integer|exists:general_users,id',
         ]);
 
         $datos = $request->all();
+        unset($datos['aprendices']);
         // El código de unión lo genera el servidor: el cliente no lo elige.
         $datos['codigo'] = $this->codigoDisponible();
         // Un instructor solo crea fichas a su nombre (el admin asigna a quien sea).
@@ -65,13 +67,44 @@ class ClassGroupController extends Controller
             $datos['id_instructor'] = $mio->id;
         }
 
-        $item = ClassGroup::create($datos);
+        // Alta atómica: ficha + aprendices seleccionados.
+        $item = DB::transaction(function () use ($datos, $request) {
+            $item = ClassGroup::create($datos);
+            $this->sincronizarAprendices($item, $request->input('aprendices', []));
+            return $item;
+        });
+
         return response()->json($item, 201);
     }
 
     public function show($id)
     {
         return ClassGroup::included()->findOrFail($id);
+    }
+
+    // Exporta en PDF las credenciales iniciales de la ficha (aprendices +
+    // instructor responsable). Solo admin; queda en la bitácora.
+    public function credenciales(ClassGroup $class_group)
+    {
+        $ids = Apprentice::where('id_class_group', $class_group->id)->pluck('id_usuario')->all();
+        if ($class_group->instructor) {
+            $ids[] = $class_group->instructor->id_usuario;
+        }
+
+        $usuarios = GeneralUser::with('apprentice.classGroup.program', 'instructor.classGroups.program')
+            ->whereIn('id', $ids)
+            ->orderBy('nombre')
+            ->get();
+
+        \App\Support\Auditoria::registrar('exportar_credenciales', 'class_groups', $class_group->id, [
+            'usuarios' => $usuarios->count(),
+            'temporales' => $usuarios->where('must_change_password', true)->count(),
+        ]);
+
+        return CredencialesPdf::generar($usuarios, [
+            'ficha' => $class_group->numero,
+            'programa' => optional($class_group->program)->nombre,
+        ]);
     }
 
     public function update(Request $request, ClassGroup $class_group)
@@ -91,10 +124,13 @@ class ClassGroupController extends Controller
             'estado' => 'required|in:activo,finalizado,anulada',
             'id_programa' => 'required|exists:training_programs,id',
             'id_instructor' => 'required|exists:instructors,id',
+            'aprendices' => 'nullable|array',
+            'aprendices.*' => 'integer|exists:general_users,id',
         ]);
 
         $datos = $request->all();
         unset($datos['codigo']); // El código de unión es inmutable.
+        unset($datos['aprendices']); // Se sincronizan aparte (relación aprendiz-ficha).
         // Un instructor no puede reasignar su propia ficha a otro (eso es del admin).
         if ($request->user()->rol === 'instructor') {
             $datos['id_instructor'] = $class_group->id_instructor;
@@ -118,8 +154,13 @@ class ClassGroupController extends Controller
         }
 
         // Cambio de ficha atómico: ficha + aprendices + recálculo (todo o nada).
-        DB::transaction(function () use ($class_group, $datos, $programaAnterior, $estadoAnterior, $numeroAnterior, $nombreAnterior, $instructorAnterior, $cambiaInstructor, $seAnula) {
+        DB::transaction(function () use ($class_group, $datos, $request, $programaAnterior, $estadoAnterior, $numeroAnterior, $nombreAnterior, $instructorAnterior, $cambiaInstructor, $seAnula) {
             $class_group->update($datos);
+
+            // Aprendices seleccionados en el formulario (si vino el campo).
+            if ($request->has('aprendices')) {
+                $this->sincronizarAprendices($class_group, $request->input('aprendices', []));
+            }
 
             // Si cambió el programa de la ficha, se sincroniza el programa de sus
             // aprendices y se recalcula el corpus (los pares exigen mismo programa).
@@ -210,7 +251,7 @@ class ClassGroupController extends Controller
         return response()->json(['accion' => 'eliminada', 'ficha' => $class_group]);
     }
 
-    // Admin cualquiera; instructor verificado solo sus fichas.
+    // Admin cualquiera; instructor solo sus fichas.
     private function puedeGestionar(Request $request, ClassGroup $ficha): bool
     {
         $user = $request->user();
@@ -219,9 +260,7 @@ class ClassGroupController extends Controller
         if ($user->rol !== 'instructor') return false;
 
         $instructor = $this->miFilaInstructor($request);
-        return $instructor
-            && $user->estaVerificado()
-            && (int) $ficha->id_instructor === (int) $instructor->id;
+        return $instructor && (int) $ficha->id_instructor === (int) $instructor->id;
     }
 
     // Perfil de instructor del usuario autenticado (null si no existe). No se
@@ -242,6 +281,55 @@ class ClassGroupController extends Controller
                 $codigo .= $letras[random_int(0, 25)];
             }
         } while (ClassGroup::where('codigo', $codigo)->exists());
+
+        return $codigo;
+    }
+
+    // Sincroniza la pertenencia de los aprendices a la ficha: los seleccionados
+    // quedan en la ficha (se crea su fila si no existía) y los no seleccionados
+    // salen conservando su historial (fila con ficha/programa en null).
+    private function sincronizarAprendices(ClassGroup $ficha, array $ids): void
+    {
+        $seleccionados = collect($ids)->map(fn ($id) => (int) $id)->filter()->unique()->values();
+
+        // Retira a quienes ya no están en la selección.
+        Apprentice::where('id_class_group', $ficha->id)
+            ->when($seleccionados->isNotEmpty(), fn ($q) => $q->whereNotIn('id_usuario', $seleccionados))
+            ->update(['id_class_group' => null, 'id_programa' => null]);
+
+        // Agrega/actualiza a los seleccionados (solo usuarios con rol aprendiz).
+        foreach ($seleccionados as $idUsuario) {
+            $usuario = \App\Models\GeneralUser::find($idUsuario);
+            if (!$usuario || $usuario->rol !== 'aprendiz') continue;
+
+            $aprendiz = Apprentice::firstOrCreate(
+                ['id_usuario' => $usuario->id],
+                [
+                    'codigo' => $this->codigoAprendizDisponible(),
+                    'id_class_group' => $ficha->id,
+                    'id_programa' => $ficha->id_programa,
+                ]
+            );
+            $aprendiz->update([
+                'id_class_group' => $ficha->id,
+                'id_programa' => $ficha->id_programa,
+            ]);
+        }
+
+        if ($seleccionados->isNotEmpty()) {
+            \App\Support\Auditoria::registrar('asignar_aprendices', 'class_groups', $ficha->id, [
+                'aprendices' => $seleccionados->count(),
+            ]);
+        }
+    }
+
+    private function codigoAprendizDisponible(): string
+    {
+        $n = (int) Apprentice::max('id') + 1;
+        do {
+            $codigo = 'AP-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+            $n++;
+        } while (Apprentice::where('codigo', $codigo)->exists());
 
         return $codigo;
     }
