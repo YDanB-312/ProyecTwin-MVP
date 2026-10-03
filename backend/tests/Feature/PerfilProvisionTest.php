@@ -11,8 +11,9 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
-// Provisión de perfiles: una cuenta de instructor nace con su perfil (o se
-// sana al usarla), y borrar un instructor con fichas responde 409.
+// Provisión de perfiles: una cuenta de instructor nace con su perfil (verificado
+// si la crea un admin), la API no auto-crea perfiles al consultar, y borrar un
+// instructor con fichas lo hace en cascada.
 class PerfilProvisionTest extends TestCase
 {
     use DatabaseTransactions;
@@ -60,17 +61,23 @@ class PerfilProvisionTest extends TestCase
             'rol' => 'instructor',
         ])->assertCreated();
 
+        $this->assertDatabaseHas('general_users', [
+            'id' => $respuesta->json('id'),
+            'rol' => 'instructor',
+            'estado_verificacion' => 'verificado',
+        ]);
         $this->assertDatabaseHas('instructors', ['id_usuario' => $respuesta->json('id')]);
     }
 
-    public function test_un_instructor_sin_perfil_se_sana_al_consultarlo(): void
+    public function test_un_instructor_sin_perfil_no_se_crea_al_consultarlo(): void
     {
         $user = $this->usuario('instructor');
         $this->assertDatabaseMissing('instructors', ['id_usuario' => $user->id]);
 
         $this->withToken($this->token($user))->getJson('/v1/instructors')->assertOk();
 
-        $this->assertDatabaseHas('instructors', ['id_usuario' => $user->id]);
+        // La verificación se resuelve en el registro; la API no auto-crea perfiles.
+        $this->assertDatabaseMissing('instructors', ['id_usuario' => $user->id]);
     }
 
     public function test_el_comando_de_backfill_crea_perfiles_faltantes(): void

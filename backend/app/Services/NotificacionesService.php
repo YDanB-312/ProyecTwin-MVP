@@ -60,6 +60,42 @@ class NotificacionesService
         $this->crear(optional($ficha?->instructor)->id_usuario, $titulo, 'sistema', $enlace);
     }
 
+    // Nuevo autoregistro (aprendiz/instructor) → avisa a los admins activos
+    // para que revisen el documento y aprueben/rechacen la cuenta.
+    public function usuarioPendiente(GeneralUser $usuario): void
+    {
+        $nombre = trim(($usuario->nombre ?? '') . ' ' . ($usuario->apellido ?? '')) ?: ($usuario->correo ?? 'Un usuario');
+        $rol = $usuario->rol === 'instructor' ? 'instructor' : 'aprendiz';
+
+        GeneralUser::where('rol', 'admin')->where('estado', true)->get()->each(
+            fn (GeneralUser $admin) => $this->crear(
+                $admin->id,
+                'Nuevo ' . $rol . ' pendiente de verificación: ' . $nombre,
+                'sistema',
+                'usuario:' . $usuario->id
+            )
+        );
+    }
+
+    // Verificación resuelta → avisa al usuario (aprendiz o instructor).
+    public function verificacionResuelta(GeneralUser $usuario, bool $aprobado, ?string $motivo = null): void
+    {
+        $titulo = $aprobado
+            ? 'Tu cuenta fue verificada. Ya puedes ingresar a ProyecTwin.'
+            : 'Tu solicitud fue rechazada.' . ($motivo ? ' Motivo: ' . $motivo : '');
+
+        $this->crear($usuario->id, $titulo, 'sistema', 'perfil');
+    }
+
+    // Soporte resuelto → avisa al solicitante que el admin respondió.
+    public function soporteResuelto(BugReport $reporte): void
+    {
+        $atendida = $reporte->estado !== 'rechazado';
+        $titulo = 'Tu solicitud de soporte #' . $reporte->id . ' fue ' . ($atendida ? 'atendida' : 'rechazada') . '.';
+
+        $this->crear($reporte->id_usuario, $titulo, 'sistema', 'reporte:' . $reporte->id);
+    }
+
     // Nuevo reporte de falla → avisa a cada admin activo.
     public function reporteFalla(BugReport $reporte): void
     {

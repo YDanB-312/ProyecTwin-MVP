@@ -11,6 +11,8 @@ use App\Models\Instructor;
 use App\Models\Project;
 use App\Support\Auditoria;
 use App\Support\BorradoCascada;
+use App\Notifications\VerificacionResuelta;
+use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +33,16 @@ class GeneralUserController extends Controller
 
     public function store(Request $request)
     {
+        // Registro público: solo aprendiz/instructor. Crear cuentas admin exige
+        // token de administrador (la ruta es pública: se resuelve explícito).
+        $yo = $request->user() ?? auth('sanctum')->user();
+        if ($request->rol === 'admin' && optional($yo)->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede crear cuentas admin.'], 403);
+        }
+        // El alta hecha por un admin ya nace verificada; el autorregistro queda
+        // pendiente y sin acceso hasta que un admin revise el documento.
+        $creadoPorAdmin = optional($yo)->rol === 'admin';
+
         $request->validate([
             'nombre' => 'required|max:255',
             'apellido' => 'required|max:255',
@@ -39,30 +51,37 @@ class GeneralUserController extends Controller
             'foto_url' => 'nullable',
             'rol' => 'required|in:aprendiz,instructor,admin',
             'estado' => 'nullable|boolean',
+            // El autorregistro adjunta el PDF que soporta el rol (aprendiz o
+            // instructor); el alta del admin no lo exige.
+            'soporte' => ($creadoPorAdmin ? 'nullable' : 'required') . '|file|mimes:pdf|max:10240',
         ]);
 
-        // Registro público: solo aprendiz/instructor. Crear cuentas admin exige
-        // token de administrador (la ruta es pública: se resuelve explícito).
-        $yo = $request->user() ?? auth('sanctum')->user();
-        if ($request->rol === 'admin' && optional($yo)->rol !== 'admin') {
-            return response()->json(['message' => 'Solo un administrador puede crear cuentas admin.'], 403);
-        }
-
         $data = $request->all();
+        unset($data['soporte']);
         $data['password'] = Hash::make($request->password);
         $data['estado'] = $request->has('estado') ? $request->boolean('estado') : true;
+        $data['estado_verificacion'] = $creadoPorAdmin ? 'verificado' : 'pendiente';
+        // El PDF se guarda en disco local privado; en la BD solo queda la ruta.
+        $data['soporte_path'] = $request->hasFile('soporte')
+            ? $request->file('soporte')->store('verificaciones')
+            : null;
 
-        // Alta atómica: cuenta + perfil + auditoría (todo o nada).
-        $item = DB::transaction(function () use ($data) {
+        // Alta atómica: cuenta + perfil + aviso + auditoría (todo o nada).
+        $item = DB::transaction(function () use ($data, $creadoPorAdmin) {
             $item = GeneralUser::create($data);
 
-            // El perfil (instructor/admin) nace junto con la cuenta para que el
-            // usuario pueda operar de inmediato (estilo "docente crea la clase").
+            // El perfil (instructor/admin) nace junto con la cuenta.
             $this->sincronizarPerfiles($item);
+
+            // Autoregistro → los admins deben revisar la solicitud.
+            if (!$creadoPorAdmin && $item->rol !== 'admin') {
+                app(NotificacionesService::class)->usuarioPendiente($item);
+            }
 
             Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
                 'correo' => $item->correo,
                 'rol' => $item->rol,
+                'soporte' => (bool) $item->soporte_path,
             ]);
 
             return $item;
@@ -173,13 +192,23 @@ class GeneralUserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
+        // Cambio de rol hecho por un admin: la cuenta queda verificada de una.
+        if ($cambiaRol) {
+            $data['estado_verificacion'] = 'verificado';
+            $data['motivo_rechazo'] = null;
+        }
+
+        $cambiaNombre = $request->filled('nombre') && $request->nombre !== $general_user->nombre;
+
         // Actualización atómica: cuenta + perfiles + auditoría (todo o nada).
-        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $huboPassword) {
+        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre, $huboPassword) {
             $general_user->update($data);
 
             Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
                 'rol' => $cambiaRol ? $general_user->rol : null,
                 'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
+                'correo' => $cambiaCorreo ? $general_user->correo : null,
+                'nombre' => $cambiaNombre ? $general_user->nombre : null,
                 'password_reset' => $huboPassword ?: null,
             ]));
 
@@ -229,6 +258,67 @@ class GeneralUserController extends Controller
         ]);
 
         return $general_user;
+    }
+
+    // ---------------------------------------------------------------- Verificación
+
+    // Resuelve la verificación de una cuenta autoregistrada (solo admin):
+    // aprobar habilita el acceso; rechazar exige motivo. Deja rastro en la
+    // bitácora y avisa por notificación interna y por correo.
+    public function verificar(Request $request, GeneralUser $general_user)
+    {
+        if ($general_user->rol === 'admin') {
+            return response()->json(['message' => 'Los administradores no requieren verificación.'], 422);
+        }
+
+        $request->validate([
+            'accion' => 'required|in:verificar,rechazar',
+            'motivo' => 'required_if:accion,rechazar|nullable|string|max:500',
+        ]);
+
+        $antes = $general_user->estado_verificacion;
+        $aprobado = $request->accion === 'verificar';
+
+        $general_user->update([
+            'estado_verificacion' => $aprobado ? 'verificado' : 'rechazado',
+            'motivo_rechazo' => $aprobado ? null : $request->motivo,
+        ]);
+
+        Auditoria::registrar('verificar_usuario', 'general_users', $general_user->id, [
+            'de' => $antes,
+            'a' => $general_user->estado_verificacion,
+            'rol' => $general_user->rol,
+            'motivo' => $aprobado ? null : $request->motivo,
+            'soporte' => (bool) $general_user->soporte_path,
+        ]);
+
+        // Aviso interno (campanita) al usuario.
+        app(NotificacionesService::class)->verificacionResuelta($general_user, $aprobado, $request->motivo);
+
+        // Correo de resolución. Si el envío falla, la decisión ya quedó guardada.
+        try {
+            $general_user->notify(new VerificacionResuelta($aprobado, $request->motivo));
+        } catch (\Throwable $e) {
+            // Silencio deliberado: el correo no debe romper la verificación.
+        }
+
+        return $general_user->fresh();
+    }
+
+    // Sirve el PDF de soporte (solo admin). Vive en disco local privado: nunca
+    // hay URL pública del documento.
+    public function soporte(Request $request, GeneralUser $general_user)
+    {
+        if (optional($request->user())->rol !== 'admin') {
+            return response()->json(['message' => 'Solo un administrador puede ver el documento.'], 403);
+        }
+
+        $disco = \Illuminate\Support\Facades\Storage::disk('local');
+        if (!$general_user->soporte_path || !$disco->exists($general_user->soporte_path)) {
+            return response()->json(['message' => 'Esta cuenta no tiene documento de soporte.'], 404);
+        }
+
+        return response()->file($disco->path($general_user->soporte_path));
     }
 
     // ---------------------------------------------------------------- Perfiles

@@ -20,11 +20,7 @@ class InstructorController extends Controller
             return Instructor::included()->get();
         }
         if ($user && $user->rol === 'instructor') {
-            // Auto-sanado: garantiza que el instructor tenga perfil propio.
-            Instructor::firstOrCreate(
-                ['id_usuario' => $user->id],
-                ['fecha_ingreso' => now()->toDateString()]
-            );
+            // Sin auto-creación: la verificación se resuelve en el registro.
             return Instructor::included()->where('id_usuario', $user->id)->get();
         }
 

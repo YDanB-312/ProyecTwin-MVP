@@ -150,6 +150,10 @@ class ProjectController extends Controller
             if (!$this->esInstructorDeLaPropuesta($project, $usuario)) {
                 return response()->json(['message' => 'No puedes editar una propuesta fuera de tus fichas.'], 403);
             }
+            // Un instructor sin verificar no puede intervenir propuestas.
+            if (!$usuario->estaVerificado()) {
+                return response()->json(['message' => 'Tu cuenta de instructor está pendiente de verificación.'], 403);
+            }
         } elseif ($rol !== 'admin') {
             return response()->json(['message' => 'Sin permiso para editar propuestas.'], 403);
         }

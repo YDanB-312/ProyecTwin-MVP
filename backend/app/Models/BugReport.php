@@ -13,7 +13,10 @@ class BugReport extends Model
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['titulo', 'descripcion', 'tipo', 'estado', 'fecha', 'id_usuario'];
+    protected $fillable = [
+        'titulo', 'numero_ficha', 'motivo', 'descripcion', 'tipo', 'estado',
+        'respuesta', 'fecha', 'id_usuario',
+    ];
 
     // Normaliza cualquier fecha ISO/datetime a la columna `date`.
     public function setFechaAttribute($valor): void

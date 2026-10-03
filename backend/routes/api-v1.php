@@ -57,6 +57,9 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     // Usuarios: el listado completo es solo para admin; el detalle es del propio
     // usuario o de un admin; el perfil público lo usan las vistas entre usuarios.
     Route::middleware('rol:admin')->get('general-users', [GeneralUserController::class, 'index']);
+    // Verificación de cuentas autoregistradas (aprendiz/instructor) y su documento.
+    Route::middleware('rol:admin')->put('general-users/{general_user}/verificacion', [GeneralUserController::class, 'verificar']);
+    Route::middleware('rol:admin')->get('general-users/{general_user}/soporte', [GeneralUserController::class, 'soporte']);
     Route::get('general-users/{general_user}/perfil', [GeneralUserController::class, 'perfil']);
     Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
@@ -85,12 +88,12 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
     });
     Route::get('apprentices/{apprentice}', [ApprenticeController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
-        Route::post('instructors', [InstructorController::class, 'store']);
         Route::put('instructors/{instructor}', [InstructorController::class, 'update']);
         Route::post('apprentices', [ApprenticeController::class, 'store']);
         Route::put('apprentices/{apprentice}', [ApprenticeController::class, 'update']);
     });
     Route::middleware('rol:admin')->group(function () {
+        Route::post('instructors', [InstructorController::class, 'store']);
         Route::delete('instructors/{instructor}', [InstructorController::class, 'destroy']);
         Route::delete('apprentices/{apprentice}', [ApprenticeController::class, 'destroy']);
     });

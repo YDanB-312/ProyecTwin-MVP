@@ -6,6 +6,7 @@ use App\Models\BugReport;
 use App\Models\GeneralUser;
 use App\Models\Notification;
 use App\Services\NotificacionesService;
+use App\Support\Auditoria;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,8 @@ class BugReportController extends Controller
     {
         $request->validate([
             'titulo' => 'nullable|max:255',
+            'numero_ficha' => 'nullable|max:30',
+            'motivo' => 'nullable|max:120',
             'descripcion' => 'required',
             'tipo' => 'required|in:' . self::TIPOS,
             'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
@@ -35,9 +38,18 @@ class BugReportController extends Controller
             'id_usuario' => 'nullable|exists:general_users,id',
         ]);
 
-        // El reporte siempre se firma con el usuario del token.
+        // Soporte por conflicto de ficha: si no llega título, se genera con el
+        // número involucrado para que la bandeja del admin lo identifique.
+        $titulo = $request->titulo;
+        if (!$titulo && $request->numero_ficha) {
+            $titulo = 'Conflicto con la ficha ' . $request->numero_ficha;
+        }
+
+        // La solicitud siempre se firma con el usuario del token.
         $item = BugReport::create([
-            'titulo' => $request->titulo,
+            'titulo' => $titulo,
+            'numero_ficha' => $request->numero_ficha,
+            'motivo' => $request->motivo,
             'descripcion' => $request->descripcion,
             'tipo' => $request->tipo,
             'estado' => $request->estado ?? 'pendiente',
@@ -45,7 +57,7 @@ class BugReportController extends Controller
             'id_usuario' => $request->user()->id,
         ]);
 
-        // Avisa a cada administrador activo que entró un reporte nuevo.
+        // Avisa a cada administrador activo que entró una solicitud nueva.
         $this->notificarAdmins($item);
 
         return response()->json($item, 201);
@@ -69,14 +81,35 @@ class BugReportController extends Controller
 
         $request->validate([
             'titulo' => 'nullable|max:255',
+            'numero_ficha' => 'nullable|max:30',
+            'motivo' => 'nullable|max:120',
             'descripcion' => 'required',
             'tipo' => 'required|in:' . self::TIPOS,
             'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
+            'respuesta' => 'nullable|string|max:2000',
             'fecha' => 'required|date',
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
+        $estadoAnterior = $bug_report->estado;
         $bug_report->update($request->all());
+
+        // Cierre de la solicitud (resuelta/rechazada): bitácora + aviso al
+        // solicitante. Solo cuenta la primera transición hacia el cierre.
+        $seCierra = in_array($bug_report->estado, ['resuelto', 'rechazado'], true)
+            && !in_array($estadoAnterior, ['resuelto', 'rechazado'], true);
+
+        if ($seCierra) {
+            Auditoria::registrar('resolver_soporte', 'bug_reports', $bug_report->id, [
+                'de' => $estadoAnterior,
+                'a' => $bug_report->estado,
+                'respuesta' => $bug_report->respuesta,
+                'numero_ficha' => $bug_report->numero_ficha,
+            ]);
+
+            app(NotificacionesService::class)->soporteResuelto($bug_report);
+        }
+
         return $bug_report;
     }
 

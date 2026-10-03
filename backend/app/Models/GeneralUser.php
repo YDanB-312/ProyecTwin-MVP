@@ -19,12 +19,30 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado'];
+    protected $fillable = [
+        'nombre', 'apellido', 'correo', 'password', 'foto_url', 'rol', 'estado',
+        'estado_verificacion', 'motivo_rechazo', 'soporte_path',
+    ];
 
-    // Datos sensibles que nunca salen por la API (login/me/listados).
-    protected $hidden = ['password', 'remember_token'];
+    // Datos sensibles que nunca salen por la API (login/me/listados). La ruta
+    // del documento no se serializa: se consulta por el endpoint de admin.
+    protected $hidden = ['password', 'remember_token', 'soporte_path'];
 
     protected $casts = ['estado' => 'boolean'];
+
+    // Se expone solo un booleano: ¿tiene documento de soporte adjunto?
+    protected $appends = ['tiene_soporte'];
+
+    public function getTieneSoporteAttribute(): bool
+    {
+        return !empty($this->soporte_path);
+    }
+
+    // ¿El admin ya verificó esta cuenta? Sin verificar no hay acceso al sistema.
+    public function estaVerificado(): bool
+    {
+        return $this->estado_verificacion === 'verificado';
+    }
 
     // El correo es el identificador de acceso (no existe columna `email`).
     public function getEmailForPasswordReset()
