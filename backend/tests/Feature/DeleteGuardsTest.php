@@ -84,7 +84,7 @@ class DeleteGuardsTest extends TestCase
         ]);
     }
 
-    public function test_admin_borra_una_ficha_con_aprendices_y_propuestas_en_cascada(): void
+    public function test_admin_borra_una_ficha_con_datos_la_anula_sin_perder_historial(): void
     {
         $admin = $this->usuario('admin');
         $ficha = $this->ficha();
@@ -99,9 +99,10 @@ class DeleteGuardsTest extends TestCase
 
         $this->como($admin)->deleteJson('/v1/class-groups/' . $ficha->id)->assertOk();
 
-        $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
-        $this->assertDatabaseMissing('apprentices', ['id' => $aprendiz->id]);
-        $this->assertDatabaseMissing('projects', ['id' => $proyecto->id]);
+        // La ficha con historial no se borra: se anula y se conserva todo.
+        $this->assertDatabaseHas('class_groups', ['id' => $ficha->id, 'estado' => 'anulada']);
+        $this->assertDatabaseHas('apprentices', ['id' => $aprendiz->id]);
+        $this->assertDatabaseHas('projects', ['id' => $proyecto->id]);
     }
 
     public function test_admin_borra_un_usuario_con_propuestas_en_cascada(): void

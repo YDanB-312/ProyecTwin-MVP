@@ -10,7 +10,9 @@ use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 // Reglas de validación (códigos 422/404) de los flujos principales.
@@ -65,6 +67,7 @@ class ValidacionesTest extends TestCase
 
         return ClassGroup::create([
             'codigo' => 'val-' . uniqid(),
+            'numero' => (string) random_int(100000, 999999),
             'nombre' => 'Ficha validación',
             'estado' => $estado,
             'id_programa' => $this->programa()->id,
@@ -76,37 +79,56 @@ class ValidacionesTest extends TestCase
 
     public function test_crear_usuario_con_correo_duplicado_falla(): void
     {
+        Storage::fake('local');
         $existente = $this->usuario('aprendiz');
 
-        $this->postJson('/v1/general-users', [
+        $this->post('/v1/general-users', [
             'nombre' => 'Otro',
             'apellido' => 'Usuario',
             'correo' => $existente->correo,
             'password' => '123456',
             'rol' => 'aprendiz',
-        ])->assertStatus(422);
+            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
+        ], ['Accept' => 'application/json'])->assertStatus(422);
     }
 
     public function test_crear_usuario_con_rol_invalido_falla(): void
     {
-        $this->postJson('/v1/general-users', [
+        Storage::fake('local');
+
+        $this->post('/v1/general-users', [
             'nombre' => 'Rol',
             'apellido' => 'Malo',
             'correo' => 'rol.malo.' . uniqid() . '@test.local',
             'password' => '123456',
             'rol' => 'hacker',
-        ])->assertStatus(422);
+            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
+        ], ['Accept' => 'application/json'])->assertStatus(422);
     }
 
     public function test_crear_usuario_con_password_corta_falla(): void
     {
-        $this->postJson('/v1/general-users', [
+        Storage::fake('local');
+
+        $this->post('/v1/general-users', [
             'nombre' => 'Clave',
             'apellido' => 'Corta',
             'correo' => 'clave.corta.' . uniqid() . '@test.local',
             'password' => '123',
             'rol' => 'aprendiz',
-        ])->assertStatus(422);
+            'soporte' => UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf'),
+        ], ['Accept' => 'application/json'])->assertStatus(422);
+    }
+
+    public function test_el_registro_publico_exige_documento_pdf(): void
+    {
+        $this->postJson('/v1/general-users', [
+            'nombre' => 'Sin',
+            'apellido' => 'Documento',
+            'correo' => 'sin.doc.' . uniqid() . '@test.local',
+            'password' => '123456',
+            'rol' => 'aprendiz',
+        ])->assertStatus(422)->assertJsonValidationErrors('soporte');
     }
 
     public function test_la_ruta_publica_no_permite_crear_admin_sin_token_admin(): void
@@ -136,14 +158,14 @@ class ValidacionesTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_crear_ficha_con_codigo_duplicado_falla(): void
+    public function test_crear_ficha_con_numero_duplicado_falla(): void
     {
         $admin = $this->usuario('admin');
         $existente = $this->ficha();
 
         $this->como($admin)
             ->postJson('/v1/class-groups', [
-                'codigo' => $existente->codigo,
+                'numero' => $existente->numero,
                 'nombre' => 'Duplicada',
                 'estado' => 'activo',
                 'id_programa' => $existente->id_programa,

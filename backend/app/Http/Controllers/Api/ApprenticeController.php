@@ -133,6 +133,11 @@ class ApprenticeController extends Controller
         $request->validate(['codigo' => 'required|string|max:255']);
         $user = $request->user();
 
+        // Sin verificación no hay acceso: defensa además del bloqueo de login.
+        if (!$user->estaVerificado()) {
+            return response()->json(['message' => 'Tu cuenta está pendiente de verificación. Un administrador debe aprobarla.'], 403);
+        }
+
         $ficha = $this->buscarPorCodigo($request->codigo);
         if (!$ficha) {
             return response()->json(['message' => 'No encontramos una ficha con ese código.'], 404);

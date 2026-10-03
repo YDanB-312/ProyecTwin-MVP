@@ -313,6 +313,7 @@ class LogicaNegocioTest extends TestCase
         $this->como($admin)
             ->putJson('/v1/class-groups/' . $ficha->id, [
                 'codigo' => $ficha->codigo,
+                'numero' => '9802',
                 'nombre' => $ficha->nombre,
                 'estado' => 'activo',
                 'id_programa' => $programaB->id,

@@ -354,6 +354,7 @@ class AuthorizationTest extends TestCase
         $this->como($user)
             ->putJson('/v1/class-groups/' . $ficha->id, [
                 'codigo' => $ficha->codigo,
+                'numero' => '9801',
                 'nombre' => 'Mi ficha actualizada',
                 'estado' => 'activo',
                 'id_programa' => $programa->id,

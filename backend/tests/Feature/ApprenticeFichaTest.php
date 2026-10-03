@@ -53,7 +53,7 @@ class ApprenticeFichaTest extends TestCase
     {
         return ClassGroup::create([
             'codigo' => $codigo,
-            'numero' => '9999',
+            'numero' => (string) random_int(100000, 999999),
             'nombre' => 'Ficha E2E ' . $codigo,
             'estado' => $estado,
             'id_programa' => $this->programa($this->red())->id,
@@ -269,7 +269,7 @@ class ApprenticeFichaTest extends TestCase
         ]);
     }
 
-    public function test_borrar_la_ficha_con_datos_avisa_a_sus_aprendices(): void
+    public function test_borrar_la_ficha_con_datos_la_anula_y_libera_el_numero(): void
     {
         $ficha = $this->ficha();
         $user = $this->usuarioAprendiz();
@@ -280,15 +280,16 @@ class ApprenticeFichaTest extends TestCase
             'id_programa' => $ficha->id_programa,
         ]);
 
-        // El instructor dueño puede borrar la ficha aunque tenga datos.
+        // Con historial asociado no se borra: se anula y el número queda libre.
         $this->withToken($this->token($ficha->instructor->generalUser))
             ->deleteJson('/v1/class-groups/' . $ficha->id)
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('accion', 'anulada');
 
-        $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
-        $this->assertDatabaseHas('notifications', [
-            'id_usuario' => $user->id,
-            'tipo' => 'sistema',
+        $this->assertDatabaseHas('class_groups', [
+            'id' => $ficha->id,
+            'estado' => 'anulada',
+            'numero' => null,
         ]);
     }
 }

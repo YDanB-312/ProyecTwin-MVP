@@ -30,6 +30,16 @@ class AuthController extends Controller
             return response()->json(['message' => 'Cuenta suspendida. Contacta al administrador.'], 403);
         }
 
+        // Sin verificación no hay acceso: el admin debe aprobar el registro
+        // (aprendiz o instructor) tras revisar el documento de soporte.
+        if ($user->rol !== 'admin' && !$user->estaVerificado()) {
+            $mensaje = $user->estado_verificacion === 'rechazado'
+                ? 'Tu solicitud fue rechazada.' . ($user->motivo_rechazo ? ' Motivo: ' . $user->motivo_rechazo : '')
+                : 'Tu cuenta está pendiente de verificación. Un administrador debe aprobarla.';
+
+            return response()->json(['message' => $mensaje], 403);
+        }
+
         // Sesión por cookie (SPA del mismo origen). Solo si la petición es
         // "stateful"; en móvil/tests no hay sesión y se usa el token Bearer.
         // "Recordarme" usa el remember_token (sesión persistente).
