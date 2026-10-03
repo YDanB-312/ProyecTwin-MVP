@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
+use App\Models\PadronUsuario;
 use App\Support\Auditoria;
+use App\Support\CodigoActivacion;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,19 +17,33 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'correo' => 'required|email',
+            'correo' => 'nullable|email',
+            'identificador' => 'nullable|string|max:255',
             'password' => 'required',
             'recordarme' => 'nullable|boolean',
         ]);
 
-        $user = GeneralUser::where('correo', $request->correo)->first();
+        if (!$request->filled('correo') && !$request->filled('identificador')) {
+            return response()->json(['message' => 'Ingresa tu correo o número de documento.'], 422);
+        }
+
+        $user = $this->buscarPorIdentificador($request);
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Credenciales incorrectas. Verifica tus datos.'], 422);
         }
 
         if (!$user->estado) {
-            return response()->json(['message' => 'Cuenta suspendida. Contacta al administrador.'], 403);
+            // Distingue "pendiente de activar" de "suspendida" para guiar a la persona.
+            $pendiente = CodigoActivacion::vigente($user->id);
+
+            return response()->json([
+                'message' => $pendiente
+                    ? 'Tu cuenta está pendiente de activación. Ingresa el código que te entregamos.'
+                    : 'Cuenta suspendida. Contacta al administrador.',
+                'pendiente_activacion' => (bool) $pendiente,
+                'correo' => $user->correo,
+            ], 403);
         }
 
         // Sesión por cookie (SPA del mismo origen). Solo si la petición es
@@ -44,7 +60,99 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $token,
             'rol' => $user->rol,
+            'debe_cambiar_password' => (bool) $user->debe_cambiar_password,
         ]);
+    }
+
+    // Valida la identidad contra el padrón institucional (como el "Validar" de
+    // SOFIA Plus). Respuesta genérica para no enumerar documentos.
+    public function validarPadron(Request $request)
+    {
+        $request->validate([
+            'tipo_documento' => 'required|in:CC,TI,CE,PA',
+            'numero_documento' => 'required|string|max:11',
+            'correo' => 'required|email',
+        ]);
+
+        $padron = PadronUsuario::where('tipo_documento', $request->tipo_documento)
+            ->where('numero_documento', trim($request->numero_documento))
+            ->whereRaw('LOWER(correo) = ?', [strtolower(trim($request->correo))])
+            ->first();
+
+        if (!$padron) {
+            return response()->json([
+                'message' => 'Tus datos no coinciden con la matrícula del SENA. Verifica el documento y el correo institucional.',
+            ], 422);
+        }
+        if (!$padron->activo) {
+            return response()->json(['message' => 'Tu registro no está activo en el padrón. Contacta al administrador.'], 422);
+        }
+        if ($padron->id_usuario) {
+            return response()->json([
+                'message' => 'Ese documento ya tiene una cuenta registrada. Inicia sesión o recupera tu contraseña.',
+                'ya_registrado' => true,
+            ], 422);
+        }
+
+        return response()->json([
+            'coincide' => true,
+            'nombre' => $padron->nombre,
+            'apellido' => $padron->apellido,
+            'rol' => $padron->rol,
+            'tipo_documento' => $padron->tipo_documento,
+            'numero_documento' => $padron->numero_documento,
+            'correo' => $padron->correo,
+        ]);
+    }
+
+    // Activa una cuenta pendiente con el código de un solo uso.
+    public function activar(Request $request)
+    {
+        $request->validate([
+            'correo' => 'required|email',
+            'codigo' => 'required|digits:6',
+        ]);
+
+        $user = GeneralUser::whereRaw('LOWER(correo) = ?', [strtolower(trim($request->correo))])->first();
+        if (!$user) {
+            return response()->json(['message' => 'El código es inválido o venció. Solicita uno nuevo.'], 422);
+        }
+
+        if ($user->estado) {
+            return response()->json(['message' => 'La cuenta ya está activa. Inicia sesión.']);
+        }
+
+        if (!CodigoActivacion::validar($user->id, $request->codigo)) {
+            return response()->json(['message' => 'El código es inválido o venció. Solicita uno nuevo.'], 422);
+        }
+
+        $user->update(['estado' => true]);
+        Auditoria::registrar('activar_cuenta', 'general_users', $user->id, ['correo' => $user->correo]);
+
+        return response()->json(['message' => 'Cuenta activada. Ya puedes iniciar sesión.']);
+    }
+
+    // Acepta correo o número de documento como identificador de ingreso.
+    private function buscarPorIdentificador(Request $request): ?GeneralUser
+    {
+        if ($request->filled('correo')) {
+            return GeneralUser::whereRaw('LOWER(correo) = ?', [strtolower(trim($request->correo))])->first();
+        }
+
+        $identificador = trim((string) $request->identificador);
+        if ($identificador === '') return null;
+
+        if (str_contains($identificador, '@')) {
+            return GeneralUser::whereRaw('LOWER(correo) = ?', [strtolower($identificador)])->first();
+        }
+
+        // Documento: se resuelve a través del padrón (única fuente de identidad).
+        $padron = PadronUsuario::where('numero_documento', $identificador)
+            ->whereNotNull('id_usuario')
+            ->latest('id')
+            ->first();
+
+        return $padron ? GeneralUser::find($padron->id_usuario) : null;
     }
 
     public function logout(Request $request)
@@ -113,7 +221,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'password_actual' => 'required|string',
-            'password' => 'required|min:6|max:255|confirmed',
+            'password' => 'required|min:8|max:255|confirmed',
         ]);
 
         $user = $request->user();
@@ -122,7 +230,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        // Al cambiar la clave se limpia la marca de "clave temporal".
+        $user->update(['password' => Hash::make($request->password), 'debe_cambiar_password' => false]);
 
         Auditoria::registrar('cambiar_clave', 'general_users', $user->id);
 

@@ -13,6 +13,7 @@ use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\MotorConfig;
 use App\Models\Notification;
+use App\Models\PadronUsuario;
 use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\TrainingProgram;
@@ -33,11 +34,11 @@ class DatabaseSeeder extends Seeder
         $this->catalogos();
         $this->fichas();
         $this->aprendices();
+        $this->padron();
         $this->proyectos();
         $this->propuestasSimilares();
         $this->observaciones();
         $this->reportes();
-        $this->fichaMovimiento();
         MotorConfig::create(['umbral' => 0.30, 'meses' => 12]);
 
         // --- Causa → efecto: cada acción dispara sus reacciones ---
@@ -142,6 +143,47 @@ class DatabaseSeeder extends Seeder
                 'id_class_group' => $a['ficha'],
                 'id_usuario' => $a['usuario'],
                 'id_programa' => $a['programa'],
+            ]);
+        }
+    }
+
+    // ---------------------------------------------------------------- Padrón
+    // Identidades institucionales: el registro público solo crea cuentas para
+    // las personas cargadas aquí. Las cuentas demo ya vienen "reclamadas".
+    private function padron(): void
+    {
+        $filas = [
+            // Aprendices
+            ['tipo' => 'CC', 'numero' => '1012345678', 'nombre' => 'María', 'apellido' => 'González', 'correo' => 'maria.gonzalez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 1, 'programa' => 1, 'ficha' => 1],
+            ['tipo' => 'TI', 'numero' => '1098765432', 'nombre' => 'Ana', 'apellido' => 'Martínez', 'correo' => 'ana.martinez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 4, 'programa' => 1, 'ficha' => 1],
+            ['tipo' => 'CC', 'numero' => '1023456789', 'nombre' => 'Juan', 'apellido' => 'Pérez', 'correo' => 'juan.perez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 5, 'programa' => 1, 'ficha' => 1],
+            ['tipo' => 'CC', 'numero' => '1034567890', 'nombre' => 'Laura', 'apellido' => 'Gómez', 'correo' => 'laura.gomez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 6, 'programa' => 1, 'ficha' => 2],
+            ['tipo' => 'CC', 'numero' => '1045678901', 'nombre' => 'Laura', 'apellido' => 'Sánchez Pérez', 'correo' => 'laura.sanchez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 9, 'programa' => 2, 'ficha' => 3],
+            ['tipo' => 'CC', 'numero' => '1056789012', 'nombre' => 'Diego', 'apellido' => 'Ramírez Castro', 'correo' => 'diego.ramirez@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 10, 'programa' => 3, 'ficha' => 4],
+            ['tipo' => 'CC', 'numero' => '1067890123', 'nombre' => 'Patricia', 'apellido' => 'Morales Vega', 'correo' => 'patricia.morales@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => 11, 'programa' => 1, 'ficha' => 2],
+            // Instructores y admin
+            ['tipo' => 'CC', 'numero' => '79654321', 'nombre' => 'Carlos', 'apellido' => 'Ruiz', 'correo' => 'carlos.ruiz@sena.edu.co', 'rol' => 'instructor', 'usuario' => 2, 'programa' => null, 'ficha' => null],
+            ['tipo' => 'CC', 'numero' => '80765432', 'nombre' => 'Carlos', 'apellido' => 'Rodríguez Díaz', 'correo' => 'carlos.rodriguez@sena.edu.co', 'rol' => 'instructor', 'usuario' => 7, 'programa' => null, 'ficha' => null],
+            ['tipo' => 'CC', 'numero' => '71876543', 'nombre' => 'Andrés', 'apellido' => 'Martínez López', 'correo' => 'andres.martinez@sena.edu.co', 'rol' => 'instructor', 'usuario' => 8, 'programa' => null, 'ficha' => null],
+            ['tipo' => 'CC', 'numero' => '72987654', 'nombre' => 'Luis', 'apellido' => 'Fernando García', 'correo' => 'luis.garcia@sena.edu.co', 'rol' => 'instructor', 'usuario' => 13, 'programa' => null, 'ficha' => null],
+            ['tipo' => 'CC', 'numero' => '19543210', 'nombre' => 'Administrador', 'apellido' => 'SENA', 'correo' => 'admin@sena.edu.co', 'rol' => 'admin', 'usuario' => 3, 'programa' => null, 'ficha' => null],
+            ['tipo' => 'CC', 'numero' => '52654321', 'nombre' => 'María', 'apellido' => 'Fernanda Torres', 'correo' => 'maria.torres@sena.edu.co', 'rol' => 'admin', 'usuario' => 12, 'programa' => null, 'ficha' => null],
+            // Identidad sin reclamar: demuestra registro + activación por código.
+            ['tipo' => 'CC', 'numero' => '1099887766', 'nombre' => 'Camila', 'apellido' => 'Rojas Peña', 'correo' => 'camila.rojas@soy.sena.edu.co', 'rol' => 'aprendiz', 'usuario' => null, 'programa' => 1, 'ficha' => 1],
+        ];
+
+        foreach ($filas as $f) {
+            PadronUsuario::create([
+                'tipo_documento' => $f['tipo'],
+                'numero_documento' => $f['numero'],
+                'nombre' => $f['nombre'],
+                'apellido' => $f['apellido'],
+                'correo' => $f['correo'],
+                'rol' => $f['rol'],
+                'id_programa' => $f['programa'],
+                'id_class_group' => $f['ficha'],
+                'id_usuario' => $f['usuario'],
+                'activo' => true,
             ]);
         }
     }
@@ -310,32 +352,6 @@ class DatabaseSeeder extends Seeder
             'B' => $creados[1] ?? null,
             'C' => $creados[2] ?? null,
         ];
-    }
-
-    // ------------------------------------------------- Ficha: unión de un aprendiz
-    // Reacciona como el sistema real: registra la unión y avisa al instructor.
-    private function fichaMovimiento(): void
-    {
-        $u = GeneralUser::create([
-            'nombre' => 'Andrés',
-            'apellido' => 'Cifuentes',
-            'correo' => 'andres.cifuentes@soy.sena.edu.co',
-            'password' => Hash::make('123456'),
-            'rol' => 'aprendiz',
-            'estado' => true,
-        ]);
-        Apprentice::create([
-            'codigo' => 'AP-100',
-            'id_usuario' => $u->id,
-            'id_class_group' => 1,
-            'id_programa' => 1,
-        ]);
-
-        app(\App\Services\NotificacionesService::class)->fichaMovimientoInstructor(
-            ClassGroup::with('instructor')->find(1),
-            'El aprendiz ' . $u->nombre . ' ' . $u->apellido . ' se unió a la ficha "Analisis y Desarrollo 2568".',
-            'ficha:1'
-        );
     }
 
     // ---------------------------------------------------------------- Reportes de falla

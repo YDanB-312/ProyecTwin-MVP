@@ -6,6 +6,7 @@ use App\Models\BugReport;
 use App\Models\GeneralUser;
 use App\Models\Notification;
 use App\Services\NotificacionesService;
+use App\Support\Pagina;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -18,10 +19,11 @@ class BugReportController extends Controller
         $user = $request->user();
 
         // El admin ve todos; cada usuario solo sus propios reportes.
-        return BugReport::included()
+        $query = BugReport::included()
             ->when(optional($user)->rol !== 'admin', fn ($q) => $q->where('id_usuario', $user->id))
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+
+        return Pagina::aplicar($query, $request, 20);
     }
 
     public function store(Request $request)

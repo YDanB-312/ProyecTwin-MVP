@@ -53,14 +53,40 @@ class InstructorController extends Controller
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, Instructor $instructor)
     {
-        return Instructor::included()->findOrFail($id);
+        $user = $request->user();
+
+        // Admin cualquiera; instructor su propia fila; aprendiz solo instructores
+        // de su ficha (mismo alcance que index()).
+        if (optional($user)->rol === 'admin') {
+            return Instructor::included()->findOrFail($instructor->id);
+        }
+        if (optional($user)->rol === 'instructor') {
+            if ((int) $instructor->id_usuario !== (int) $user->id) {
+                return response()->json(['message' => 'No puedes ver el perfil de otro instructor.'], 403);
+            }
+            return Instructor::included()->findOrFail($instructor->id);
+        }
+
+        $fichaIds = Apprentice::where('id_usuario', optional($user)->id)->pluck('id_class_group')->filter();
+        $ok = ClassGroup::whereIn('id', $fichaIds)->where('id_instructor', $instructor->id)->exists();
+        if (!$ok) {
+            return response()->json(['message' => 'No puedes ver el perfil de ese instructor.'], 403);
+        }
+
+        return Instructor::included()->findOrFail($instructor->id);
     }
 
     public function update(Request $request, Instructor $instructor)
     {
-        // El dueño del perfil no cambia: solo la fecha de ingreso.
+        // El dueño del perfil no cambia: solo la fecha de ingreso. Un instructor
+        // solo edita su propia fila; el admin, cualquiera.
+        $user = $request->user();
+        if (optional($user)->rol === 'instructor' && (int) $instructor->id_usuario !== (int) $user->id) {
+            return response()->json(['message' => 'Solo puedes editar tu propio perfil de instructor.'], 403);
+        }
+
         $request->validate(['fecha_ingreso' => 'required|date']);
 
         $instructor->update(['fecha_ingreso' => $request->fecha_ingreso]);

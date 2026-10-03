@@ -171,24 +171,6 @@ class IntegridadDatosTest extends TestCase
 
     // ---------------------------------------------------------------- Programa
 
-    public function test_salir_de_la_ficha_limpia_el_programa(): void
-    {
-        $ficha = $this->ficha($this->programa());
-        $user = $this->usuario('aprendiz');
-        $aprendiz = Apprentice::create([
-            'codigo' => 'AP-' . uniqid(),
-            'id_usuario' => $user->id,
-            'id_class_group' => $ficha->id,
-            'id_programa' => $ficha->id_programa,
-        ]);
-
-        $this->como($user)->deleteJson('/v1/apprentices/me/ficha')->assertOk();
-
-        $fresco = $aprendiz->fresh();
-        $this->assertNull($fresco->id_class_group);
-        $this->assertNull($fresco->id_programa);
-    }
-
     public function test_no_se_borra_un_programa_con_aprendices_a_nivel_bd(): void
     {
         $programa = $this->programa();

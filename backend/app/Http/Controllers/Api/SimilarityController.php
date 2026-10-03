@@ -8,6 +8,7 @@ use App\Models\MotorConfig;
 use App\Models\Notification;
 use App\Services\SimilitudService;
 use App\Services\NotificacionesService;
+use App\Support\Pagina;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -38,13 +39,14 @@ class SimilarityController extends Controller
                 ->get();
         }
 
-        return Similarity::included()
+        $query = Similarity::included()
             ->paraUsuario($user)
             ->relatedTo($request->query('related_to'))
             ->search($request->query('search'))
             ->byFicha($request->query('ficha_id'))
-            ->byPrograma($request->query('programa'))
-            ->get();
+            ->byPrograma($request->query('programa'));
+
+        return Pagina::aplicar($query, $request, 20);
     }
 
     public function store(Request $request)
@@ -111,12 +113,19 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
         }
 
+        return response()->json(['detectadas' => $this->detectarProyecto($propio)]);
+    }
+
+    // Detección de UNA propuesta contra el corpus de aprobadas. Reutilizable por
+    // el flujo de radicación/aprobación (servidor) y por el endpoint manual.
+    public function detectarProyecto(Project $propio): int
+    {
         $config = $this->config();
         $umbral = (float) ($config->umbral ?? 0.30);
         $meses = (int) ($config->meses ?? 12);
 
         // Detección atómica: pares + notificaciones (todo o nada).
-        $creadas = DB::transaction(function () use ($propio, $umbral, $meses) {
+        return DB::transaction(function () use ($propio, $umbral, $meses) {
             // Una rechazada no participa: se eliminan sus pares y no se compara.
             if ($propio->estado === 'rechazado') {
                 $this->purgarPares($propio->id);
@@ -147,49 +156,23 @@ class SimilarityController extends Controller
 
             return $creadas;
         });
-
-        return response()->json(['detectadas' => $creadas]);
     }
 
-    // Recalibra toda la base con el umbral/ventana vigentes: purga los pares
-    // que ya no cumplen y re-ejecuta la detección sobre cada propuesta vigente.
+    // Recalibra toda la base con el umbral/ventana vigentes. Fuente única: el
+    // mismo servicio que usa el comando `similitud:recalcular` (sin duplicar la
+    // lógica ni divergir del CLI).
     public function recalculate()
     {
-        $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.30);
-        $meses = (int) ($config->meses ?? 12);
-
         // Recalibración atómica: purga + creación + notificaciones (todo o nada).
-        [$eliminadas, $creadas] = DB::transaction(function () use ($umbral, $meses) {
-            $antes = Similarity::count();
-            Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
-                if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
-            });
-            $eliminadas = $antes - Similarity::count();
+        $res = DB::transaction(fn () => app(\App\Similarity\Recomputador::class)->recalcular(true));
 
-            $creadas = 0;
-            foreach (Project::with('classGroup')->where('estado', '!=', 'rechazado')->get() as $p) {
-                $corpus = $this->corpus($p, $meses);
-                foreach (SimilitudService::puntaje($p, $corpus) as $par) {
-                    if ($par['score'] < $umbral) continue;
-                    if ($this->buscarPar($p->id, $par['project_id'])) continue;
-                    $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                    $creadas++;
-                    app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
-                }
-            }
+        \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
+            'eliminadas' => $res['eliminadas'],
+            'creadas' => $res['creadas'],
+            'total' => $res['total'],
+        ]);
 
-            \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
-                'eliminadas' => $eliminadas,
-                'creadas' => $creadas,
-                'umbral' => $umbral,
-                'meses' => $meses,
-            ]);
-
-            return [$eliminadas, $creadas];
-        });
-
-        return response()->json(['eliminadas' => $eliminadas, 'creadas' => $creadas]);
+        return response()->json($res);
     }
 
     // ---------------------------------------------------------------- Demo pública
