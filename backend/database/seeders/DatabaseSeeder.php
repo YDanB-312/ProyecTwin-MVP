@@ -26,6 +26,12 @@ class DatabaseSeeder extends Seeder
     // Ids de las propuestas "parecidas" (para las reacciones: revisiones, avisos…).
     private array $idsSimilares = [];
 
+    // Ids de los proyectos de escenarios (borrador, ciclo de reenvío, intervención).
+    private array $idsEscenarios = [];
+
+    // Usuario creado con el flujo real de alta (evita doble auditoría crear_usuario).
+    private ?int $idUsuarioMovimiento = null;
+
     public function run(): void
     {
         // --- Datos ---
@@ -43,6 +49,8 @@ class DatabaseSeeder extends Seeder
         // --- Causa → efecto: cada acción dispara sus reacciones ---
         $this->reacciones();
         $this->historiales();
+        $this->escenarios();
+        $this->auditorias();
     }
 
     // Reacciones del sistema (notificaciones + bitácora), como en el uso real.
@@ -50,8 +58,12 @@ class DatabaseSeeder extends Seeder
     {
         $notif = app(\App\Services\NotificacionesService::class);
 
-        // 1) Crear propuesta → avisa a su instructor.
-        foreach (Project::where('estado', 'pendiente')->get() as $p) {
+        // 1) Crear propuesta → avisa a su instructor (el ciclo de reenvío tiene
+        //    su propio aviso: propuestaReenviada).
+        $excluir = array_values(array_filter([$this->idsEscenarios['ciclo'] ?? null]));
+        foreach (Project::where('estado', 'pendiente')
+            ->when($excluir, fn ($q) => $q->whereNotIn('id', $excluir))
+            ->get() as $p) {
             $notif->revisionPropuesta($p);
         }
 
@@ -80,9 +92,10 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // 4) El instructor revisó: B aprobada, C rechazada → bitácora.
-        $this->auditarRevision($this->idsSimilares['B'] ?? null, 'pendiente', 'aprobado');
-        $this->auditarRevision($this->idsSimilares['C'] ?? null, 'pendiente', 'rechazado');
+        // 4) El instructor revisó: todas las resueltas quedan en bitácora.
+        foreach (Project::whereIn('estado', ['aprobado', 'rechazado'])->orderBy('id')->get() as $p) {
+            $this->auditarRevision($p->id, 'pendiente', $p->estado);
+        }
 
         // 5) Reportes de falla: los abiertos avisan a los admins; los ya
         //    resueltos/rechazados avisan a su autor (como en el uso real).
@@ -139,27 +152,154 @@ class DatabaseSeeder extends Seeder
         }
     }
 
+    // Escenarios que el flujo real produce en varios pasos: reenvío tras
+    // rechazo (con su versión histórica de similitud) e intervención admin.
+    private function escenarios(): void
+    {
+        $notif = app(\App\Services\NotificacionesService::class);
+        $motor = app(\App\Similarity\Recomputador::class);
+
+        // 1) Ciclo rechazo → corrección → reenvío.
+        $ciclo = Project::find($this->idsEscenarios['ciclo'] ?? null);
+        if ($ciclo) {
+            $instructor = optional(Instructor::find($ciclo->id_instructor_asignado))->id_usuario;
+
+            $observacion = 'Propuesta rechazada: replantea el enfoque para diferenciarla de la propuesta aprobada.';
+            $ciclo->update(['estado' => 'rechazado']);
+            $motor->archivar($ciclo);
+            Comment::create([
+                'texto' => $observacion,
+                'id_proyecto' => $ciclo->id,
+                'id_usuario' => $instructor,
+                'respuesta_a' => null,
+            ]);
+            \App\Support\Auditoria::registrar('revisar_propuesta', 'projects', $ciclo->id, [
+                'de' => 'pendiente', 'a' => 'rechazado', 'titulo' => $ciclo->titulo,
+            ]);
+            \App\Support\HistorialProyecto::registrar($ciclo, 'rechazada', ['observacion' => $observacion], $instructor);
+
+            // Corrección y reenvío: nueva detección sobre el contenido nuevo.
+            $ciclo->update([
+                'titulo' => 'Sistema de Gestión de Inventarios con trazabilidad',
+                'resumen' => 'Herramienta para controlar inventarios y ventas del almacén con trazabilidad por lote y alertas de stock.',
+                'estado' => 'pendiente',
+            ]);
+
+            // Mismo algoritmo que ProjectController::huellaContenido(): si cambia
+            // allí, actualizar aquí. Deja la huella del contenido reenviado.
+            $huella = sha1(json_encode([
+                $ciclo->titulo,
+                $ciclo->resumen,
+                $ciclo->palabras_clave,
+                $ciclo->area_aplicacion,
+                $ciclo->objetivo_general,
+                $ciclo->objetivos_especificos,
+            ]));
+            $ciclo->update(['huella_envio' => $huella]);
+
+            \App\Support\HistorialProyecto::registrar($ciclo, 'actualizada', [], $ciclo->id_creador);
+            $motor->detectar($ciclo);
+            \App\Support\HistorialProyecto::registrar($ciclo, 'reenviada', [], $ciclo->id_creador);
+            $notif->propuestaReenviada($ciclo);
+            \App\Support\Auditoria::registrar('enviar_propuesta', 'projects', $ciclo->id, [
+                'titulo' => $ciclo->titulo,
+            ]);
+        }
+
+        // 2) Intervención administrativa sobre una aprobada (regla F8).
+        $intervenido = Project::find($this->idsEscenarios['intervencion'] ?? null);
+        if ($intervenido) {
+            $admin = GeneralUser::where('rol', 'admin')->orderBy('id')->value('id');
+            $intervenido->update(['estado' => 'pendiente']);
+            \App\Support\Auditoria::registrar('revisar_propuesta', 'projects', $intervenido->id, [
+                'de' => 'aprobado', 'a' => 'pendiente', 'titulo' => $intervenido->titulo,
+                'intervencion_admin' => true,
+            ]);
+            \App\Support\HistorialProyecto::registrar($intervenido, 'devuelta_revision', ['intervencion_admin' => true], $admin);
+        }
+    }
+
+    // Auditorías representativas de los datos demo (eventos ya existentes).
+    private function auditorias(): void
+    {
+        foreach (GeneralUser::orderBy('id')->get() as $u) {
+            // El alta de este usuario la auditó AltaUsuario (flujo real).
+            if ($u->id === $this->idUsuarioMovimiento) continue;
+
+            \App\Support\Auditoria::registrar('crear_usuario', 'general_users', $u->id, [
+                'correo' => $u->correo,
+                'username' => $u->username,
+                'documento' => trim(($u->tipo_documento ?? '') . ' ' . ($u->numero_documento ?? '')),
+                'rol' => $u->rol,
+            ]);
+        }
+
+        foreach (ClassGroup::orderBy('id')->get() as $f) {
+            \App\Support\Auditoria::registrar('crear_ficha', 'class_groups', $f->id, [
+                'codigo' => $f->codigo,
+                'numero' => $f->numero,
+                'id_instructor' => $f->id_instructor,
+            ]);
+        }
+
+        foreach (Project::where('estado', '!=', 'borrador')->orderBy('id')->get() as $p) {
+            \App\Support\Auditoria::registrar('enviar_propuesta', 'projects', $p->id, [
+                'titulo' => $p->titulo,
+            ]);
+        }
+    }
+
     // ---------------------------------------------------------------- Usuarios
     private function usuarios(): void
     {
-        // Aprendices
-        GeneralUser::create(['id' => 1, 'nombre' => 'María', 'apellido' => 'González', 'correo' => 'maria.gonzalez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 4, 'nombre' => 'Ana', 'apellido' => 'Martínez', 'correo' => 'ana.martinez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 5, 'nombre' => 'Juan', 'apellido' => 'Pérez', 'correo' => 'juan.perez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 6, 'nombre' => 'Laura', 'apellido' => 'Gómez', 'correo' => 'laura.gomez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 9, 'nombre' => 'Laura', 'apellido' => 'Sánchez Pérez', 'correo' => 'laura.sanchez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 10, 'nombre' => 'Diego', 'apellido' => 'Ramírez Castro', 'correo' => 'diego.ramirez@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
-        GeneralUser::create(['id' => 11, 'nombre' => 'Patricia', 'apellido' => 'Morales Vega', 'correo' => 'patricia.morales@soy.sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'aprendiz', 'estado' => true]);
+        // Usernames demo explícitos: no se regeneran (compatibilidad E2E/README).
+        $demo = [
+            ['id' => 1, 'nombre' => 'María', 'apellido' => 'González', 'correo' => 'maria.gonzalez@soy.sena.edu.co', 'username' => 'mgonzalez', 'rol' => 'aprendiz'],
+            ['id' => 4, 'nombre' => 'Ana', 'apellido' => 'Martínez', 'correo' => 'ana.martinez@soy.sena.edu.co', 'username' => 'amartinez', 'rol' => 'aprendiz'],
+            ['id' => 5, 'nombre' => 'Juan', 'apellido' => 'Pérez', 'correo' => 'juan.perez@soy.sena.edu.co', 'username' => 'jperez', 'rol' => 'aprendiz'],
+            ['id' => 6, 'nombre' => 'Laura', 'apellido' => 'Gómez', 'correo' => 'laura.gomez@soy.sena.edu.co', 'username' => 'lgomez', 'rol' => 'aprendiz'],
+            ['id' => 9, 'nombre' => 'Laura', 'apellido' => 'Sánchez Pérez', 'correo' => 'laura.sanchez@soy.sena.edu.co', 'username' => 'lsanchez', 'rol' => 'aprendiz'],
+            ['id' => 10, 'nombre' => 'Diego', 'apellido' => 'Ramírez Castro', 'correo' => 'diego.ramirez@soy.sena.edu.co', 'username' => 'dramirez', 'rol' => 'aprendiz'],
+            ['id' => 11, 'nombre' => 'Patricia', 'apellido' => 'Morales Vega', 'correo' => 'patricia.morales@soy.sena.edu.co', 'username' => 'pmorales', 'rol' => 'aprendiz'],
+            ['id' => 2, 'nombre' => 'Carlos', 'apellido' => 'Ruiz', 'correo' => 'carlos.ruiz@sena.edu.co', 'username' => 'cruiz', 'rol' => 'instructor'],
+            ['id' => 7, 'nombre' => 'Carlos', 'apellido' => 'Rodríguez Díaz', 'correo' => 'carlos.rodriguez@sena.edu.co', 'username' => 'crodriguez', 'rol' => 'instructor'],
+            ['id' => 8, 'nombre' => 'Andrés', 'apellido' => 'Martínez López', 'correo' => 'andres.martinez@sena.edu.co', 'username' => 'amartinez1', 'rol' => 'instructor'],
+            ['id' => 13, 'nombre' => 'Luis Fernando', 'apellido' => 'García', 'correo' => 'luis.garcia@sena.edu.co', 'username' => 'lfernando', 'rol' => 'instructor'],
+            ['id' => 3, 'nombre' => 'Administrador', 'apellido' => '', 'correo' => 'admin@sena.edu.co', 'username' => 'a', 'rol' => 'admin'],
+            ['id' => 12, 'nombre' => 'María Fernanda', 'apellido' => 'Torres', 'correo' => 'maria.torres@sena.edu.co', 'username' => 'mfernanda', 'rol' => 'admin'],
+        ];
 
-        // Instructores
-        GeneralUser::create(['id' => 2, 'nombre' => 'Carlos', 'apellido' => 'Ruiz', 'correo' => 'carlos.ruiz@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
-        GeneralUser::create(['id' => 7, 'nombre' => 'Carlos', 'apellido' => 'Rodríguez Díaz', 'correo' => 'carlos.rodriguez@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
-        GeneralUser::create(['id' => 8, 'nombre' => 'Andrés', 'apellido' => 'Martínez López', 'correo' => 'andres.martinez@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
-        GeneralUser::create(['id' => 13, 'nombre' => 'Luis', 'apellido' => 'Fernando García', 'correo' => 'luis.garcia@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'instructor', 'estado' => true]);
+        foreach ($demo as $u) {
+            GeneralUser::create([
+                'id' => $u['id'],
+                'nombre' => $u['nombre'],
+                'apellido' => $u['apellido'],
+                'correo' => $u['correo'],
+                'tipo_documento' => 'CC',
+                'numero_documento' => (string) (1000000000 + $u['id']),
+                'username' => $u['username'],
+                'password' => Hash::make($u['id'] === 3 ? 'admin123' : '123456'),
+                'rol' => $u['rol'],
+                'estado' => true,
+            ]);
+        }
 
-        // Administradores
-        GeneralUser::create(['id' => 3, 'nombre' => 'Administrador', 'apellido' => '', 'correo' => 'admin@sena.edu.co', 'password' => Hash::make('admin123'), 'rol' => 'admin', 'estado' => true]);
-        GeneralUser::create(['id' => 12, 'nombre' => 'María', 'apellido' => 'Fernanda Torres', 'correo' => 'maria.torres@sena.edu.co', 'password' => Hash::make('123456'), 'rol' => 'admin', 'estado' => true]);
+        // Usuario demo con credencial temporal: primer ingreso obligatorio.
+        // El username se genera con el flujo real (usernameSeguro).
+        GeneralUser::create([
+            'id' => 14,
+            'nombre' => 'Demo',
+            'apellido' => 'Temporal',
+            'correo' => 'demo.temporal@soy.sena.edu.co',
+            'tipo_documento' => 'CC',
+            'numero_documento' => '1000000014',
+            'username' => \App\Support\Credenciales::usernameSeguro('Demo', 'Temporal'),
+            'password' => Hash::make('K7P4-X2M8'),
+            'must_change_password' => true,
+            'password_temporal' => \Illuminate\Support\Facades\Crypt::encryptString('K7P4-X2M8'),
+            'rol' => 'aprendiz',
+            'estado' => true,
+        ]);
 
         // Filas de perfil (instructor/admin) y aprendices
         Instructor::create(['id' => 1, 'fecha_ingreso' => '2024-01-15', 'id_usuario' => 2]);
@@ -167,8 +307,9 @@ class DatabaseSeeder extends Seeder
         Instructor::create(['id' => 3, 'fecha_ingreso' => '2024-02-01', 'id_usuario' => 8]);
         Instructor::create(['id' => 4, 'fecha_ingreso' => '2024-03-01', 'id_usuario' => 13]);
 
-        Admin::create(['id_usuario' => 3]);
-        Admin::create(['id_usuario' => 12]);
+        // Perfiles de administrador (mismo patrón que sincronizarPerfiles()).
+        Admin::firstOrCreate(['id_usuario' => 3]);
+        Admin::firstOrCreate(['id_usuario' => 12]);
     }
 
     // ---------------------------------------------------------------- Aprendices
@@ -183,6 +324,7 @@ class DatabaseSeeder extends Seeder
             ['id' => 5, 'codigo' => 'AP-009', 'usuario' => 9, 'ficha' => 3, 'programa' => 2],
             ['id' => 6, 'codigo' => 'AP-010', 'usuario' => 10, 'ficha' => 4, 'programa' => 3],
             ['id' => 7, 'codigo' => 'AP-011', 'usuario' => 11, 'ficha' => 2, 'programa' => 1],
+            ['id' => 8, 'codigo' => 'AP-014', 'usuario' => 14, 'ficha' => 1, 'programa' => 1],
         ];
         foreach ($aprendices as $a) {
             Apprentice::create([
@@ -326,6 +468,26 @@ class DatabaseSeeder extends Seeder
              'general' => 'Ayudar a las personas a controlar su presupuesto y sus gastos.',
              'especificos' => ['Registrar ingresos y gastos.', 'Clasificar por categoría.', 'Visualizar reportes mensuales.'],
              'estado' => 'pendiente', 'creador' => 6, 'instr' => 2, 'ficha' => 2, 'equipo' => [6, 11]],
+            // Borrador (aún sin enviar).
+            ['titulo' => 'Sistema de Reservas de Laboratorios',
+             'resumen' => 'Aplicación para reservar laboratorios y equipos con disponibilidad en tiempo real.',
+             'claves' => 'reservas, laboratorios, disponibilidad',
+             'area' => 'Tecnología e Informática',
+             'general' => 'Organizar la reserva de laboratorios y equipos de formación.',
+             'especificos' => ['Registrar disponibilidad de laboratorios.', 'Gestionar solicitudes de reserva.'],
+             'estado' => 'borrador', 'creador' => 4, 'instr' => 1, 'ficha' => 1, 'equipo' => [4]],
+            // Ciclo rechazo → corrección → reenvío (copia de la 5).
+            ['titulo' => $base5->titulo, 'resumen' => $base5->resumen, 'claves' => $base5->palabras_clave,
+             'area' => $base5->area_aplicacion, 'general' => $base5->objetivo_general, 'especificos' => $base5->objetivos_especificos,
+             'estado' => 'pendiente', 'creador' => 6, 'instr' => 2, 'ficha' => 2, 'equipo' => [6]],
+            // Intervención administrativa (original aprobada).
+            ['titulo' => 'Control de Inventario de Equipos Biomédicos',
+             'resumen' => 'Sistema para registrar, mantener y auditar el inventario de equipos biomédicos de una clínica.',
+             'claves' => 'inventario, equipos, biomédicos, mantenimiento',
+             'area' => 'Salud',
+             'general' => 'Controlar el ciclo de vida de los equipos biomédicos.',
+             'especificos' => ['Registrar equipos y mantenimientos.', 'Auditar el inventario por sede.'],
+             'estado' => 'aprobado', 'creador' => 9, 'instr' => 2, 'ficha' => 3, 'equipo' => [9]],
         ];
 
         $aprendizPorUsuario = Apprentice::pluck('id', 'id_usuario');
@@ -359,25 +521,44 @@ class DatabaseSeeder extends Seeder
             'B' => $creados[1] ?? null,
             'C' => $creados[2] ?? null,
         ];
+
+        // Escenarios de demostración (ids tras los anteriores).
+        $this->idsEscenarios = [
+            'borrador' => $creados[5] ?? null,
+            'ciclo' => $creados[6] ?? null,
+            'intervencion' => $creados[7] ?? null,
+        ];
     }
 
     // ------------------------------------------------- Ficha: unión de un aprendiz
     // Reacciona como el sistema real: registra la unión y avisa al instructor.
     private function fichaMovimiento(): void
     {
-        $u = GeneralUser::create([
+        // Alta con el flujo real: username seguro + credencial temporal.
+        // Sin envío de correo: el Seeder no depende del mailer.
+        $alta = app(\App\Services\AltaUsuario::class)->crear([
             'nombre' => 'Andrés',
             'apellido' => 'Cifuentes',
             'correo' => 'andres.cifuentes@soy.sena.edu.co',
-            'password' => Hash::make('123456'),
+            'tipo_documento' => 'CC',
+            'numero_documento' => '1000000015',
             'rol' => 'aprendiz',
-            'estado' => true,
-        ]);
+        ], false);
+        $u = $alta['usuario'];
+        $this->idUsuarioMovimiento = $u->id;
+
         Apprentice::create([
             'codigo' => 'AP-100',
             'id_usuario' => $u->id,
             'id_class_group' => 1,
             'id_programa' => 1,
+        ]);
+
+        // La asociación a la ficha queda auditada como en el flujo real.
+        \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', 1, [
+            'usuario' => $u->id,
+            'creada' => true,
+            'credenciales_enviadas' => $alta['enviadas'],
         ]);
 
         app(\App\Services\NotificacionesService::class)->fichaMovimientoInstructor(

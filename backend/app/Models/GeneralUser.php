@@ -48,7 +48,7 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     {
         static::creating(function (GeneralUser $user) {
             if (empty($user->username)) {
-                $user->username = \App\Support\Credenciales::username(
+                $user->username = \App\Support\Credenciales::usernameSeguro(
                     (string) $user->nombre,
                     (string) $user->apellido
                 );

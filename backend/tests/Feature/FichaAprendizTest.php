@@ -112,7 +112,7 @@ class FichaAprendizTest extends TestCase
 
         $this->assertTrue($respuesta->json('creada'));
         $this->assertTrue($respuesta->json('credenciales_enviadas'));
-        $this->assertSame('cmartinez', $respuesta->json('credenciales.username'));
+        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $respuesta->json('credenciales.username'));
 
         $user = GeneralUser::findOrFail($respuesta->json('usuario.id'));
         $this->assertTrue($user->must_change_password);

@@ -161,6 +161,24 @@ class SimilitudesVigentesTest extends TestCase
         $this->assertNotContains($par->id, collect($vigentes)->pluck('id')->all());
     }
 
+    public function test_el_dueno_de_la_aprobada_abre_la_evidencia_historica(): void
+    {
+        [$instructorUser, $maria, $ana] = $this->escenario();
+
+        $idMaria = $this->crearYEnviar($maria, 'Inventarios María');
+        $this->como($instructorUser)->putJson('/v1/projects/' . $idMaria, ['estado' => 'aprobado'])->assertOk();
+
+        $idAna = $this->crearYEnviar($ana, 'Inventarios Ana');
+        $par = $this->parDe($idAna);
+
+        // La contraparte se rechaza: el par queda como evidencia histórica.
+        $this->como($instructorUser)->putJson('/v1/projects/' . $idAna, ['estado' => 'rechazado'])->assertOk();
+        $this->assertFalse((bool) $par->fresh()->vigente);
+
+        // El dueño del proyecto aprobado puede abrir el detalle histórico.
+        $this->como($maria)->getJson('/v1/similarities/' . $par->id)->assertOk();
+    }
+
     public function test_reenviar_genera_nueva_deteccion_y_conserva_la_anterior(): void
     {
         [$instructorUser, $maria, $ana] = $this->escenario();
