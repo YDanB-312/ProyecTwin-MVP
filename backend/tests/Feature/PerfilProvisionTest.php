@@ -44,7 +44,6 @@ class PerfilProvisionTest extends TestCase
         return TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
     }

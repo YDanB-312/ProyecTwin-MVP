@@ -53,7 +53,6 @@ class PermisosTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
 
@@ -88,7 +87,6 @@ class PermisosTest extends TestCase
         $this->como($instructor)->postJson('/v1/training-programs', [
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => 1,
         ])->assertStatus(403);
         $this->como($instructor)->getJson('/v1/general-users')->assertStatus(403);

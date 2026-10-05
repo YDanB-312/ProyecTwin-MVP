@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Apprentice;
+use App\Models\ClassGroup;
+use App\Models\GeneralUser;
+use App\Models\Instructor;
 use App\Models\Notification;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -33,16 +37,19 @@ class NotificationController extends Controller
             'titulo' => 'required|max:255',
             'descripcion' => 'nullable',
             'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
-            'enlace' => 'nullable|max:255',
+            'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
             'leida' => 'nullable|boolean',
             'fecha' => 'required|date',
             'id_usuario' => 'required|exists:general_users,id',
         ]);
 
-        // Solo instructor/admin avisan a otros; nadie crea avisos para terceros.
+        // Admin avisa a cualquiera; el instructor solo a aprendices de sus
+        // fichas; nadie más crea avisos para terceros.
         $user = $request->user();
         $destino = (int) $request->id_usuario;
-        $permitido = in_array($user->rol, ['admin', 'instructor'], true) || $destino === (int) $user->id;
+        $permitido = $user->rol === 'admin'
+            || $destino === (int) $user->id
+            || ($user->rol === 'instructor' && $this->destinoEnAlcance($user, $destino));
         if (!$permitido) {
             return response()->json(['message' => 'No puedes crear notificaciones para otro usuario.'], 403);
         }
@@ -64,13 +71,13 @@ class NotificationController extends Controller
     public function update(Request $request, Notification $notification)
     {
         $request->validate([
-            'titulo' => 'required|max:255',
+            'titulo' => 'sometimes|required|max:255',
             'descripcion' => 'nullable',
-            'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
-            'enlace' => 'nullable|max:255',
+            'tipo' => 'sometimes|required|in:similitud,observacion,revision,mensaje,sistema',
+            'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
             'leida' => 'nullable|boolean',
-            'fecha' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
+            'fecha' => 'sometimes|required|date',
+            'id_usuario' => 'sometimes|required|exists:general_users,id',
         ]);
 
         // Marcar como leída es del dueño de la bandeja (o de un admin).
@@ -79,9 +86,12 @@ class NotificationController extends Controller
             return response()->json(['message' => 'No puedes modificar notificaciones de otro usuario.'], 403);
         }
 
-        // El destinatario no se reasigna por esta vía (solo se marca/edita la
-        // notificación propia): evita enviar avisos a terceros.
-        $notification->update($request->except('id_usuario'));
+        // El dueño solo marca leída; el admin puede corregir el resto. El
+        // destinatario no se reasigna por esta vía.
+        $datos = $user->rol === 'admin'
+            ? $request->except('id_usuario')
+            : $request->only(['leida']);
+        $notification->update($datos);
         return $notification;
     }
 
@@ -93,5 +103,19 @@ class NotificationController extends Controller
 
         $notification->delete();
         return $notification;
+    }
+
+    // El instructor solo avisa a aprendices de sus fichas.
+    private function destinoEnAlcance(GeneralUser $instructorUser, int $idDestino): bool
+    {
+        $instructor = Instructor::where('id_usuario', $instructorUser->id)->first();
+        if (!$instructor) return false;
+
+        $aprendiz = Apprentice::where('id_usuario', $idDestino)->first();
+        if (!$aprendiz || !$aprendiz->id_class_group) return false;
+
+        return ClassGroup::where('id', $aprendiz->id_class_group)
+            ->where('id_instructor', $instructor->id)
+            ->exists();
     }
 }

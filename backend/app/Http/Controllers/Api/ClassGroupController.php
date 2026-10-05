@@ -67,6 +67,15 @@ class ClassGroupController extends Controller
             $datos['id_instructor'] = $mio->id;
         }
 
+        // Un instructor no puede llevarse aprendices de fichas ajenas.
+        $fuera = $this->aprendizDeOtraFicha($request, $request->input('aprendices', []));
+        if ($fuera) {
+            return response()->json([
+                'message' => 'El aprendiz ' . $fuera->nombre . ' ' . $fuera->apellido
+                    . ' pertenece a otra ficha. Solo un administrador puede trasladarlo.',
+            ], 422);
+        }
+
         // Alta atómica: ficha + aprendices seleccionados + auditoría.
         $item = DB::transaction(function () use ($datos, $request) {
             $item = ClassGroup::create($datos);
@@ -138,6 +147,21 @@ class ClassGroupController extends Controller
                 return response()->json(['message' => 'Solo se pueden asociar usuarios con rol aprendiz.'], 422);
             }
 
+            // No se traslada a un aprendiz de una ficha ajena (admin exento).
+            $aprendizExistente = Apprentice::where('id_usuario', $usuario->id)->first();
+            if ($aprendizExistente && $aprendizExistente->id_class_group
+                && (int) $aprendizExistente->id_class_group !== (int) $class_group->id
+                && optional($request->user())->rol !== 'admin') {
+                $origen = ClassGroup::find($aprendizExistente->id_class_group);
+                $miInstructor = Instructor::where('id_usuario', $request->user()->id)->first();
+                $esSuya = $origen && $miInstructor && (int) $origen->id_instructor === (int) $miInstructor->id;
+                if (!$esSuya) {
+                    return response()->json([
+                        'message' => 'El aprendiz pertenece a otra ficha. Solo un administrador puede trasladarlo.',
+                    ], 422);
+                }
+            }
+
             $aprendiz = $this->asociarAprendiz($class_group, $usuario);
             \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', $class_group->id, [
                 'usuario' => $usuario->id,
@@ -152,33 +176,38 @@ class ClassGroupController extends Controller
             ]);
         }
 
-        // Usuario nuevo: cuenta + credenciales + asociación (la cuenta se
-        // conserva aunque el correo falle; el admin puede reenviar).
-        $alta = app(\App\Services\AltaUsuario::class)->crear([
-            'nombre' => $request->nombre,
-            'apellido' => $request->apellido,
-            'tipo_documento' => $request->tipo_documento,
-            'numero_documento' => $request->numero_documento,
-            'correo' => $request->correo,
-            'rol' => 'aprendiz',
-        ]);
-        $aprendiz = $this->asociarAprendiz($class_group, $alta['usuario']);
+        // Usuario nuevo: cuenta + credenciales + asociación atómicas (todo o
+        // nada). El correo se envía después de confirmar la transacción.
+        [$alta, $aprendiz] = DB::transaction(function () use ($request, $class_group) {
+            $alta = app(\App\Services\AltaUsuario::class)->crear([
+                'nombre' => $request->nombre,
+                'apellido' => $request->apellido,
+                'tipo_documento' => $request->tipo_documento,
+                'numero_documento' => $request->numero_documento,
+                'correo' => $request->correo,
+                'rol' => 'aprendiz',
+            ], false);
+
+            return [$alta, $this->asociarAprendiz($class_group, $alta['usuario'])];
+        });
+
+        $enviadas = app(\App\Services\CredencialesCorreo::class)->enviar($alta['usuario'], $alta['temporal']);
 
         \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', $class_group->id, [
             'usuario' => $alta['usuario']->id,
             'creada' => true,
-            'credenciales_enviadas' => $alta['enviadas'],
+            'credenciales_enviadas' => $enviadas,
         ]);
 
         return response()->json([
-            'usuario' => $alta['usuario'],
+            'usuario' => $alta['usuario']->fresh(),
             'aprendiz' => $aprendiz,
             'creada' => true,
-            'credenciales_enviadas' => $alta['enviadas'],
+            'credenciales_enviadas' => $enviadas,
             'credenciales' => [
                 'username' => $alta['usuario']->username,
                 'password_temporal' => $alta['temporal'],
-                'enviadas' => $alta['enviadas'],
+                'enviadas' => $enviadas,
             ],
         ], 201);
     }
@@ -235,6 +264,23 @@ class ClassGroupController extends Controller
         // Un instructor no puede reasignar su propia ficha a otro (eso es del admin).
         if ($request->user()->rol === 'instructor') {
             $datos['id_instructor'] = $class_group->id_instructor;
+        }
+
+        // Ficha finalizada: el roster queda en solo lectura (admin exento).
+        if ($class_group->estado === 'finalizado' && $request->has('aprendices')
+            && optional($request->user())->rol !== 'admin') {
+            return response()->json([
+                'message' => 'La ficha está finalizada: su roster no se puede modificar.',
+            ], 422);
+        }
+
+        // Un instructor no puede llevarse aprendices de fichas ajenas.
+        $fuera = $this->aprendizDeOtraFicha($request, $request->input('aprendices', []));
+        if ($fuera) {
+            return response()->json([
+                'message' => 'El aprendiz ' . $fuera->nombre . ' ' . $fuera->apellido
+                    . ' pertenece a otra ficha. Solo un administrador puede trasladarlo.',
+            ], 422);
         }
 
         $programaAnterior = $class_group->id_programa;
@@ -384,6 +430,32 @@ class ClassGroupController extends Controller
         } while (ClassGroup::where('codigo', $codigo)->exists());
 
         return $codigo;
+    }
+
+    // Aprendiz seleccionado que pertenece a una ficha ajena (bloquea a
+    // instructores; el admin puede trasladar). Ignora ids inválidos como el
+    // flujo actual (solo se asocian usuarios con rol aprendiz).
+    private function aprendizDeOtraFicha(Request $request, array $ids): ?GeneralUser
+    {
+        $user = $request->user();
+        if (!$user || $user->rol === 'admin') return null;
+        $miInstructor = $user->rol === 'instructor'
+            ? Instructor::where('id_usuario', $user->id)->first()
+            : null;
+
+        foreach (collect($ids)->map(fn ($id) => (int) $id)->filter()->unique() as $idUsuario) {
+            $usuario = GeneralUser::find($idUsuario);
+            if (!$usuario || $usuario->rol !== 'aprendiz') continue;
+
+            $aprendiz = Apprentice::where('id_usuario', $usuario->id)->first();
+            if (!$aprendiz || !$aprendiz->id_class_group) continue;
+
+            $origen = ClassGroup::find($aprendiz->id_class_group);
+            $esSuya = $origen && $miInstructor && (int) $origen->id_instructor === (int) $miInstructor->id;
+            if (!$esSuya) return $usuario;
+        }
+
+        return null;
     }
 
     // Sincroniza la pertenencia de los aprendices a la ficha: los seleccionados

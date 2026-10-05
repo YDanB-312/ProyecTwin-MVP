@@ -30,7 +30,6 @@ class ApprenticeFichaTest extends TestCase
         return TrainingProgram::create([
             'nombre' => 'Programa E2E ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
     }

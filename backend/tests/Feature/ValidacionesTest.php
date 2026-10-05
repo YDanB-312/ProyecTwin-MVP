@@ -51,7 +51,6 @@ class ValidacionesTest extends TestCase
         return TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
     }
@@ -231,7 +230,6 @@ class ValidacionesTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         $ficha = ClassGroup::create([

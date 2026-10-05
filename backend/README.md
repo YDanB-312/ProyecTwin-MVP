@@ -1,66 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ProyecTwin MVP — Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST del MVP ProyecTwin (SENA): propuestas de proyecto, detección de
+similitudes, revisión por instructores, historial, auditoría, notificaciones,
+fichas, equipos y credenciales institucionales.
 
-## About Laravel
+- **Stack:** Laravel 10 · PHP 8.1+ · MySQL · Sanctum (cookie httpOnly para el SPA, Bearer para móvil/tests).
+- **Frontend:** `../frontend` (React + Vite).
+- **Prefijo de API:** `/v1` (`routes/api-v1.php`).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requisitos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.1+ con extensiones habituales de Laravel.
+- Composer.
+- MySQL 5.7+/MariaDB con una base `proyectwin_mvp`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Instalación
 
-## Learning Laravel
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Ajusta `.env` si hace falta (`DB_DATABASE=proyectwin_mvp`, `FRONTEND_URL`,
+`SANCTUM_STATEFUL_DOMAINS`).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+php artisan migrate:fresh --seed
+php artisan serve
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+La API queda en `http://127.0.0.1:8000/v1`.
 
-## Laravel Sponsors
+## Datos de demostración (Seeder)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+`DatabaseSeeder` crea el escenario completo (usuarios, fichas, programas,
+proyectos en todos los estados, similitudes vigentes e históricas, historial,
+auditoría y notificaciones). Credenciales demo:
 
-### Premium Partners
+| Rol | Username | Contraseña |
+|---|---|---|
+| Aprendiz | `mgonzalez` | `123456` |
+| Instructor | `cruiz` | `123456` |
+| Admin | `a` | `admin123` |
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+Otros usuarios demo (aprendices/instructores/admin) también usan `123456`.
+Los usuarios creados por el flujo real reciben contraseña temporal y
+`must_change_password=true`.
 
-## Contributing
+## Pruebas
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan test          # Feature/Unit (MySQL de .env)
+```
 
-## Code of Conduct
+E2E (Playwright) se ejecuta desde `../frontend`:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+cd ../frontend && npm run test:e2e
+```
 
-## Security Vulnerabilities
+## Reglas relevantes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- **Estados de propuesta:** `borrador → pendiente → aprobado|rechazado`. El
+  aprendiz edita en borrador, en revisión y rechazado; aprobado queda bloqueado
+  (el admin conserva la intervención excepcional).
+- **Motor de similitudes:** corre al **enviar/reenviar** y al editar en revisión;
+  no al crear ni al aprobar. Tras una intervención admin se archiva la detección
+  anterior y se analiza el contenido nuevo. Los pares históricos se conservan
+  (`vigente=false`) y nunca se borran al rechazar/reenviar.
+- **Ventana temporal (intencional):** el corpus compara contra aprobadas dentro
+  de la ventana de `meses`; un par vigente se conserva si cualquiera de los dos
+  proyectos está en ventana. Los antiguos se reanalizan al recalibrar desde
+  Configuración del motor.
+- **Credenciales:** login por `username`; contraseña temporal cifrada solo para
+  exportar el PDF; el cambio obligatorio bloquea el resto de la API.
+- **Autorización:** `rol:admin|instructor|aprendiz` + alcance por ficha
+  (`puedeEscribir`), scoping en controladores y `Similarity::visibleDetalle`.
+- **Bitácora vs historial:** `audit_logs` (administración/seguridad, inmutable)
+  y `project_histories` (evolución funcional de la propuesta).
 
-## License
+## Comandos útiles
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan similitud:recalcular     # recalibra pares con el umbral vigente
+php artisan similitud:calibrar       # sugiere umbral por programa
+php artisan perfiles:docentes        # crea perfiles de instructor faltantes
+```

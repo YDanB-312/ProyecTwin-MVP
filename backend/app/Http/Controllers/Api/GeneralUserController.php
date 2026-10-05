@@ -23,6 +23,13 @@ use Illuminate\Support\Facades\Hash;
 
 class GeneralUserController extends Controller
 {
+    // Campos institucionales/credenciales que solo revela la administración
+    // (el modelo los oculta por defecto para el resto de la API).
+    private const CAMPOS_CREDENCIALES = [
+        'tipo_documento', 'numero_documento', 'username',
+        'must_change_password', 'credenciales_enviadas_en', 'credenciales_error',
+    ];
+
     public function index(Request $request)
     {
         $query = GeneralUser::included()
@@ -35,10 +42,12 @@ class GeneralUserController extends Controller
         // Paginación opt-in para el panel de administración (miles de filas).
         if ($request->boolean('paginado')) {
             $porPagina = min((int) $request->query('por_pagina', 10), 100);
-            return $query->orderBy('id')->paginate($porPagina);
+            $pagina = $query->orderBy('id')->paginate($porPagina);
+            $pagina->getCollection()->each->makeVisible(self::CAMPOS_CREDENCIALES);
+            return $pagina;
         }
 
-        return $query->orderBy('id')->get();
+        return $query->orderBy('id')->get()->each->makeVisible(self::CAMPOS_CREDENCIALES);
     }
 
     // Alta exclusiva del administrador (no hay registro público): las
@@ -60,7 +69,7 @@ class GeneralUserController extends Controller
         $alta = app(AltaUsuario::class)->crear($request->all());
 
         return response()->json([
-            'usuario' => $alta['usuario'],
+            'usuario' => $alta['usuario']->makeVisible(self::CAMPOS_CREDENCIALES),
             'credenciales' => [
                 'username' => $alta['usuario']->username,
                 'password_temporal' => $alta['temporal'],
@@ -99,7 +108,7 @@ class GeneralUserController extends Controller
             return response()->json(['message' => 'No se pudo enviar el correo. Intenta de nuevo.'], 502);
         }
 
-        return $general_user->fresh();
+        return $general_user->fresh()->makeVisible(self::CAMPOS_CREDENCIALES);
     }
 
     // Restablecimiento del admin: la temporal la genera el servidor (misma
@@ -126,7 +135,7 @@ class GeneralUserController extends Controller
         ]);
 
         return response()->json([
-            'usuario' => $general_user->fresh(),
+            'usuario' => $general_user->fresh()->makeVisible(self::CAMPOS_CREDENCIALES),
             'credenciales' => [
                 'username' => $general_user->username,
                 'password_temporal' => $temporal,
@@ -144,14 +153,21 @@ class GeneralUserController extends Controller
             return response()->json(['message' => 'Solo puedes ver tu propia cuenta.'], 403);
         }
 
-        return GeneralUser::included()->findOrFail($id);
+        return GeneralUser::included()->findOrFail($id)->makeVisible(self::CAMPOS_CREDENCIALES);
     }
 
     // Perfil público (vistas entre usuarios: compañero, instructor). Expone solo
-    // datos de contacto básicos; nunca estado ni información de gestión.
-    public function perfil($id)
+    // datos de contacto básicos; nunca estado ni información de gestión. El
+    // alcance es por relación académica (misma ficha / instructor de la ficha /
+    // aprendiz de las fichas propias); el admin ve cualquiera.
+    public function perfil(Request $request, $id)
     {
+        $yo = $request->user();
         $user = GeneralUser::findOrFail($id);
+
+        if (!$this->puedeVerPerfil($yo, $user)) {
+            return response()->json(['message' => 'No tienes acceso a este perfil.'], 403);
+        }
 
         return response()->json([
             'id' => $user->id,
@@ -328,6 +344,39 @@ class GeneralUserController extends Controller
     }
 
     // ---------------------------------------------------------------- Perfiles
+
+    // Alcance del perfil público según la relación académica.
+    private function puedeVerPerfil(GeneralUser $yo, GeneralUser $objetivo): bool
+    {
+        if ($yo->rol === 'admin' || (int) $yo->id === (int) $objetivo->id) return true;
+
+        $miAprendiz = Apprentice::where('id_usuario', $yo->id)->first();
+        $suAprendiz = Apprentice::where('id_usuario', $objetivo->id)->first();
+        $miInstructor = Instructor::where('id_usuario', $yo->id)->first();
+        $suInstructor = Instructor::where('id_usuario', $objetivo->id)->first();
+
+        // Compañeros de la misma ficha.
+        if ($miAprendiz && $suAprendiz
+            && $miAprendiz->id_class_group && $suAprendiz->id_class_group
+            && (int) $miAprendiz->id_class_group === (int) $suAprendiz->id_class_group) {
+            return true;
+        }
+
+        // Aprendiz → instructor responsable de su ficha.
+        if ($miAprendiz && $miAprendiz->id_class_group && $suInstructor) {
+            $ficha = ClassGroup::find($miAprendiz->id_class_group);
+            if ($ficha && (int) $ficha->id_instructor === (int) $suInstructor->id) return true;
+        }
+
+        // Instructor → aprendiz de sus fichas.
+        if ($miInstructor && $suAprendiz && $suAprendiz->id_class_group) {
+            return ClassGroup::where('id', $suAprendiz->id_class_group)
+                ->where('id_instructor', $miInstructor->id)
+                ->exists();
+        }
+
+        return false;
+    }
 
     // Crea el perfil que corresponde al rol. El de aprendiz no se crea aquí
     // porque `apprentices.id_programa` es obligatorio: nace al unirse a una ficha.

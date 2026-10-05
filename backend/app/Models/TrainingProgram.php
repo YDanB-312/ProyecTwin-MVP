@@ -14,7 +14,7 @@ class TrainingProgram extends Model
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['nombre', 'nivel', 'num_trimestres', 'knowledge_network_id'];
+    protected $fillable = ['nombre', 'nivel', 'knowledge_network_id'];
 
     // Solo lo que el frontend necesita: las rutas públicas de catálogos no
     // deben poder cargar aprendices ni fichas (PII y códigos de unión).

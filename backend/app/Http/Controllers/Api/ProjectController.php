@@ -11,11 +11,9 @@ use App\Models\Instructor;
 use App\Models\Notification;
 use App\Models\Project;
 use App\Models\ProjectHistory;
-use App\Models\Similarity;
 use App\Services\NotificacionesService;
 use App\Similarity\Recomputador;
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -110,6 +108,10 @@ class ProjectController extends Controller
     // Envío explícito del borrador (o reenvío tras un rechazo): valida la
     // propuesta completa, ejecuta el motor de similitud en el servidor y avisa
     // al instructor. El frontend ya no dispara el análisis.
+    //
+    // Regla del motor (intencional): corre al enviar/reenviar y al editar en
+    // revisión; NO al crear ni al aprobar. Tras una intervención admin que
+    // devuelve a revisión, el contenido se archiva y se re-detecta.
     public function enviar(Request $request, Project $project)
     {
         $usuario = $request->user();
@@ -190,17 +192,9 @@ class ProjectController extends Controller
     {
         $user = $request->user();
 
-        // El detalle completo solo si la propuesta está dentro de su alcance.
-        $visible = Project::where('id', $id)->paraDetalle($user)->exists();
-
-        // Un aprendiz puede abrir (solo lectura) la CONTRAPARTE de una similitud
-        // que puede ver, aunque sea de otra ficha: necesita saber cuál es la
-        // propuesta con la que se le compara.
-        if (!$visible && $user && $user->rol === 'aprendiz') {
-            $visible = Similarity::where(function (Builder $q) use ($id) {
-                $q->where('id_proyecto_1', $id)->orWhere('id_proyecto_2', $id);
-            })->visibleDetalle($user)->exists();
-        }
+        // Vista: propia/de la ficha o contraparte de una similitud autorizada
+        // (solo lectura). La gestión sigue siendo del propietario/equipo/admin.
+        $visible = Project::where('id', $id)->visiblePara($user)->exists();
 
         if (!$visible) {
             return response()->json(['message' => 'No tienes acceso a esta propuesta.'], 403);
@@ -355,6 +349,14 @@ class ProjectController extends Controller
                 // histórica (dejan de estar vigentes).
                 if ($project->estado === 'rechazado') {
                     app(Recomputador::class)->archivar($project);
+                }
+
+                // Intervención admin: la detección del contenido aprobado queda
+                // como evidencia histórica y el motor analiza el contenido nuevo.
+                if ($intervencionAdmin) {
+                    $motor = app(Recomputador::class);
+                    $motor->archivar($project);
+                    $motor->detectar($project, false);
                 }
 
                 // Avisa al creador de la decisión (el rechazo incluye la observación).

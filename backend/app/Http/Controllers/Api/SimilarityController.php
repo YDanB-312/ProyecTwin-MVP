@@ -23,10 +23,16 @@ class SimilarityController extends Controller
         // propuesta donde la CONTRAPARTE está aprobada (regla de perspectiva).
         $proyectoId = $request->query('proyecto_id');
         if ($proyectoId) {
-            $visible = Project::where('id', $proyectoId)->paraDetalle($user)->exists();
+            // Vista: propia/de la ficha o contraparte de una similitud autorizada
+            // (la gestión sigue siendo de propietario/equipo/admin).
+            $visible = Project::where('id', $proyectoId)->visiblePara($user)->exists();
             if (!$visible) {
                 return response()->json(['message' => 'No tienes acceso a esa propuesta.'], 403);
             }
+
+            // Si es solo contraparte (no propia), se limita a los pares que tocan
+            // una propuesta del usuario: no se exponen otras coincidencias ajenas.
+            $esPropia = Project::where('id', $proyectoId)->deAutor($user)->exists();
 
             $query = Similarity::included()
                 ->where(function (Builder $q) use ($proyectoId) {
@@ -40,7 +46,11 @@ class SimilarityController extends Controller
                 return $query->historicos()->visibleDetalle($user)->orderByDesc('id')->get();
             }
 
-            return $query->vigentes()->contraparteAprobada((int) $proyectoId)->get();
+            $consulta = $query->vigentes()->contraparteAprobada((int) $proyectoId);
+            if (!$esPropia) {
+                $consulta = $consulta->visibleDetalle($user);
+            }
+            return $consulta->get();
         }
 
         return Similarity::included()
@@ -56,12 +66,16 @@ class SimilarityController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'porcentaje' => 'required|numeric',
+            'porcentaje' => 'required|numeric|min:0|max:100',
             'detalles' => 'nullable|array',
             'fecha' => 'nullable|date',
             'id_proyecto_1' => 'required|exists:projects,id',
             'id_proyecto_2' => 'required|exists:projects,id',
         ]);
+
+        if ((int) $request->id_proyecto_1 === (int) $request->id_proyecto_2) {
+            return response()->json(['message' => 'Una propuesta no se puede comparar consigo misma.'], 422);
+        }
 
         $item = Similarity::create($request->all());
         return response()->json($item, 201);
@@ -85,12 +99,16 @@ class SimilarityController extends Controller
     public function update(Request $request, Similarity $similarity)
     {
         $request->validate([
-            'porcentaje' => 'required|numeric',
+            'porcentaje' => 'required|numeric|min:0|max:100',
             'detalles' => 'nullable|array',
             'fecha' => 'nullable|date',
             'id_proyecto_1' => 'required|exists:projects,id',
             'id_proyecto_2' => 'required|exists:projects,id',
         ]);
+
+        if ((int) $request->id_proyecto_1 === (int) $request->id_proyecto_2) {
+            return response()->json(['message' => 'Una propuesta no se puede comparar consigo misma.'], 422);
+        }
 
         $similarity->update($request->all());
         return $similarity;

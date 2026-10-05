@@ -20,13 +20,13 @@ use Illuminate\Support\Facades\DB;
 class BorradoCascada
 {
     // Ficha: borra sus propuestas (arrastran similitudes, observaciones y equipo)
-    // y luego la ficha (la FK de aprendices es cascade).
+    // y luego la ficha. Los aprendices se conservan sin ficha (la FK cascade los
+    // borraría y perderían sus equipos en otras propuestas).
     public static function ficha(ClassGroup $ficha): void
     {
         DB::transaction(function () use ($ficha) {
-            // Aprendices de la ficha: su fila cae por cascade, la cuenta no.
-            // Se les avisa que quedaron sin ficha.
-            $idUsuarios = Apprentice::where('id_class_group', $ficha->id)->pluck('id_usuario');
+            $aprendices = Apprentice::where('id_class_group', $ficha->id)->get();
+            $idUsuarios = $aprendices->pluck('id_usuario');
             $titulo = 'Tu ficha "' . $ficha->nombre . '" fue eliminada. Quedaste sin ficha.';
 
             // Las propuestas de la ficha se eliminan: sus notificaciones con
@@ -36,6 +36,12 @@ class BorradoCascada
 
             Project::where('id_class_group', $ficha->id)->get()->each->delete();
             Notification::where('enlace', 'ficha:' . $ficha->id)->delete();
+
+            // Desvincular antes de borrar la ficha (conserva fila y pivotes).
+            foreach ($aprendices as $aprendiz) {
+                $aprendiz->update(['id_class_group' => null, 'id_programa' => null]);
+            }
+
             $ficha->delete();
 
             foreach ($idUsuarios as $idUsuario) {
@@ -45,12 +51,14 @@ class BorradoCascada
     }
 
     // Programa: borra sus fichas (con su cascada) y los aprendices del programa,
-    // y luego el programa.
+    // y luego el programa. Los aprendices se capturan antes porque ficha() los
+    // desvincula del programa.
     public static function programa(TrainingProgram $programa): void
     {
         DB::transaction(function () use ($programa) {
+            $aprendices = Apprentice::where('id_programa', $programa->id)->pluck('id');
             ClassGroup::where('id_programa', $programa->id)->get()->each(fn ($f) => self::ficha($f));
-            Apprentice::where('id_programa', $programa->id)->delete();
+            Apprentice::whereIn('id', $aprendices)->delete();
             $programa->delete();
         });
     }
@@ -78,6 +86,17 @@ class BorradoCascada
             // que apuntaban a ellas.
             $proyectos = Project::where('id_creador', $usuario->id)->pluck('id');
             Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
+
+            // Reportes del usuario: la FK los borra; limpia los avisos a admins.
+            $reportes = \App\Models\BugReport::where('id_usuario', $usuario->id)->pluck('id');
+            Notification::whereIn('enlace', $reportes->map(fn ($id) => 'reporte:' . $id))->delete();
+
+            // Tokens de sesión y de recuperación (no tienen FK al usuario).
+            $usuario->tokens()->delete();
+            DB::table('password_reset_tokens')
+                ->where('email', strtolower((string) $usuario->correo))
+                ->delete();
+
             $usuario->delete();
         });
     }

@@ -10,6 +10,7 @@ use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ApprenticeController extends Controller
 {
@@ -44,7 +45,7 @@ class ApprenticeController extends Controller
         $request->validate([
             'codigo' => 'required|max:255|unique:apprentices,codigo',
             'id_class_group' => 'nullable|exists:class_groups,id',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')],
             // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
             'id_programa' => 'nullable|exists:training_programs,id',
         ]);
@@ -62,10 +63,20 @@ class ApprenticeController extends Controller
             }
         }
 
+        // Una ficha finalizada/anulada no admite nuevos integrantes (admin exento).
+        if ($request->filled('id_class_group')) {
+            $fichaDestino = ClassGroup::findOrFail($request->id_class_group);
+            if ($fichaDestino->estado !== 'activo' && optional($user)->rol !== 'admin') {
+                return response()->json(['message' => 'La ficha no está activa: no admite nuevos integrantes.'], 422);
+            }
+        }
+
         $data = $request->all();
-        // Invariante: el programa del aprendiz es el de su ficha.
+        // Invariante: el programa del aprendiz es el de su ficha (o null sin ficha).
         if ($request->filled('id_class_group')) {
             $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
+        } else {
+            $data['id_programa'] = null;
         }
 
         $item = Apprentice::create($data);
@@ -125,12 +136,15 @@ class ApprenticeController extends Controller
         $user = $request->user();
         if (optional($user)->rol !== 'admin') {
             $fichaActual = $apprentice->id_class_group;
-            if ($fichaActual && !$this->puedeGestionarFicha($user, (int) $fichaActual)) {
-                return response()->json(['message' => 'No puedes modificar aprendices de otra ficha.'], 403);
+            // Un aprendiz sin ficha no pertenece a ninguna ficha del instructor.
+            if (!$fichaActual || !$this->puedeGestionarFicha($user, (int) $fichaActual)) {
+                return response()->json(['message' => 'No puedes modificar aprendices fuera de tus fichas.'], 403);
             }
-            if ($request->filled('id_class_group') && (int) $request->id_class_group !== (int) $fichaActual
-                && !$this->puedeGestionarFicha($user, (int) $request->id_class_group)) {
-                return response()->json(['message' => 'Solo puedes mover aprendices a tus propias fichas.'], 403);
+            if ($request->filled('id_class_group') && (int) $request->id_class_group !== (int) $fichaActual) {
+                $destino = ClassGroup::findOrFail($request->id_class_group);
+                if ($destino->estado !== 'activo' || !$this->puedeGestionarFicha($user, (int) $destino->id)) {
+                    return response()->json(['message' => 'Solo puedes mover aprendices a tus fichas activas.'], 403);
+                }
             }
             if ((int) $request->id_usuario !== (int) $apprentice->id_usuario) {
                 return response()->json(['message' => 'No puedes reasignar la cuenta del aprendiz.'], 403);
@@ -138,9 +152,11 @@ class ApprenticeController extends Controller
         }
 
         $data = $request->all();
-        // Invariante: el programa del aprendiz es el de su ficha.
+        // Invariante: el programa del aprendiz es el de su ficha (o null sin ficha).
         if ($request->filled('id_class_group')) {
             $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
+        } elseif ($request->has('id_class_group')) {
+            $data['id_programa'] = null;
         }
 
         $fichaAnterior = $apprentice->id_class_group;
