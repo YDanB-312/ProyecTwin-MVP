@@ -50,9 +50,9 @@ class ApprenticeProjectController extends Controller
             return response()->json(['message' => 'No puedes gestionar el equipo de esta propuesta.'], 403);
         }
 
-        // El equipo se gestiona mientras la propuesta es editable (borrador o
-        // rechazada); una vez enviada queda en revisión.
-        if ($request->user()->rol === 'aprendiz' && !in_array($proyecto->estado, ['borrador', 'rechazado'], true)) {
+        // El equipo se gestiona mientras la propuesta es editable (borrador,
+        // en revisión o rechazada); aprobada queda bloqueada.
+        if ($request->user()->rol === 'aprendiz' && !in_array($proyecto->estado, ['borrador', 'pendiente', 'rechazado'], true)) {
             return response()->json([
                 'message' => 'Solo puedes gestionar el equipo mientras la propuesta es editable.',
             ], 422);
@@ -102,7 +102,7 @@ class ApprenticeProjectController extends Controller
         }
 
         if ($request->user()->rol === 'aprendiz'
-            && !in_array($proyecto->estado, ['borrador', 'rechazado'], true)) {
+            && !in_array($proyecto->estado, ['borrador', 'pendiente', 'rechazado'], true)) {
             return response()->json([
                 'message' => 'Solo puedes gestionar el equipo mientras la propuesta es editable.',
             ], 422);

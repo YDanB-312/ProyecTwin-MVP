@@ -159,6 +159,49 @@ class EquipoTest extends TestCase
         ]);
     }
 
+    public function test_en_revision_el_creador_gestiona_el_equipo(): void
+    {
+        $ficha = $this->ficha($this->programa());
+        $creador = $this->aprendizEn($ficha);
+        $miembro = $this->aprendizEn($ficha);
+        $proyecto = $this->proyecto($creador->generalUser, $ficha);
+        $proyecto->update(['estado' => 'pendiente']);
+
+        // Agregar en revisión (la propuesta sigue siendo editable).
+        $this->como($creador->generalUser)
+            ->postJson('/v1/apprentice-projects', [
+                'id_aprendiz' => $miembro->id,
+                'id_proyecto' => $proyecto->id,
+            ])
+            ->assertCreated();
+
+        $pivote = ApprenticeProject::where('id_aprendiz', $miembro->id)
+            ->where('id_proyecto', $proyecto->id)
+            ->firstOrFail();
+
+        // Quitar en revisión.
+        $this->como($creador->generalUser)
+            ->deleteJson('/v1/apprentice-projects/' . $pivote->id)
+            ->assertOk();
+        $this->assertDatabaseMissing('apprentice_projects', ['id' => $pivote->id]);
+    }
+
+    public function test_en_aprobado_no_se_gestiona_el_equipo(): void
+    {
+        $ficha = $this->ficha($this->programa());
+        $creador = $this->aprendizEn($ficha);
+        $miembro = $this->aprendizEn($ficha);
+        $proyecto = $this->proyecto($creador->generalUser, $ficha);
+        $proyecto->update(['estado' => 'aprobado']);
+
+        $this->como($creador->generalUser)
+            ->postJson('/v1/apprentice-projects', [
+                'id_aprendiz' => $miembro->id,
+                'id_proyecto' => $proyecto->id,
+            ])
+            ->assertStatus(422);
+    }
+
     public function test_el_listado_incluye_el_aprendiz_con_su_usuario(): void
     {
         $ficha = $this->ficha($this->programa());

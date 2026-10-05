@@ -197,7 +197,7 @@ class FlujoPropuestaTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_aprendiz_no_edita_una_propuesta_en_revision(): void
+    public function test_aprendiz_edita_una_propuesta_en_revision_sin_aprobarla(): void
     {
         $programa = $this->programa();
         $ficha = $this->ficha($programa, $this->usuario('instructor'));
@@ -208,12 +208,58 @@ class FlujoPropuestaTest extends TestCase
             ->assertCreated();
         $this->como($aprendiz)->postJson('/v1/projects/' . $creada->json('id') . '/enviar')->assertOk();
 
+        // Editar en revisión: se guarda, pero el estado sigue siendo pendiente.
         $this->como($aprendiz)
             ->putJson('/v1/projects/' . $creada->json('id'), array_merge(
                 $this->borradorCompleto($aprendiz),
-                ['titulo' => 'Intento de edición']
+                ['titulo' => 'Inventarios con diferencial']
             ))
-            ->assertStatus(422);
+            ->assertOk()
+            ->assertJsonPath('estado', 'pendiente');
+
+        $this->assertSame('pendiente', Project::find($creada->json('id'))->estado);
+
+        // La modificación queda registrada en el historial.
+        $historial = $this->como($aprendiz)
+            ->getJson('/v1/projects/' . $creada->json('id') . '/historial')
+            ->assertOk()->json();
+        $this->assertContains('actualizada', collect($historial)->pluck('accion')->all());
+    }
+
+    public function test_editar_en_revision_conserva_la_huella_y_permite_reenviar_tras_rechazo(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $aprendiz = $this->aprendizEn($ficha);
+
+        $creada = $this->como($aprendiz)
+            ->postJson('/v1/projects', $this->borradorCompleto($aprendiz))
+            ->assertCreated();
+        $id = $creada->json('id');
+        $this->como($aprendiz)->postJson('/v1/projects/' . $id . '/enviar')->assertOk();
+        $huellaOriginal = Project::find($id)->huella_envio;
+
+        // Editar en revisión no toca la huella del último envío.
+        $this->como($aprendiz)
+            ->putJson('/v1/projects/' . $id, array_merge(
+                $this->borradorCompleto($aprendiz),
+                ['titulo' => 'Inventarios con diferencial de trazabilidad']
+            ))
+            ->assertOk();
+        $this->assertSame($huellaOriginal, Project::find($id)->huella_envio);
+
+        // El instructor rechaza y el reenvío con cambios reales funciona.
+        $this->como($instructorUser)
+            ->putJson('/v1/projects/' . $id, ['estado' => 'rechazado'])
+            ->assertOk();
+
+        $this->como($aprendiz)
+            ->postJson('/v1/projects/' . $id . '/enviar')
+            ->assertOk()
+            ->assertJsonPath('estado', 'pendiente');
+
+        $this->assertNotSame($huellaOriginal, Project::find($id)->huella_envio);
     }
 
     // ---------------------------------------------------------------- Rechazo y reenvío

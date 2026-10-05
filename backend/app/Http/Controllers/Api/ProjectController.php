@@ -241,11 +241,11 @@ class ProjectController extends Controller
                     'message' => 'Solo lectura: ya no perteneces a la ficha de esta propuesta.',
                 ], 403);
             }
-            // El aprendiz edita mientras esté en borrador o rechazada; el envío
+            // El aprendiz edita en borrador, en revisión o rechazada; el envío
             // (y el cambio de estado) es una acción explícita.
-            if (!in_array($project->estado, ['borrador', 'rechazado'], true)) {
+            if (!in_array($project->estado, ['borrador', 'pendiente', 'rechazado'], true)) {
                 return response()->json([
-                    'message' => 'Solo puedes editar una propuesta en borrador o rechazada.',
+                    'message' => 'Solo puedes editar una propuesta en borrador, en revisión o rechazada.',
                 ], 422);
             }
         } elseif ($rol === 'instructor') {
@@ -365,6 +365,15 @@ class ProjectController extends Controller
                 }
             } elseif ($contenidoCambio) {
                 \App\Support\HistorialProyecto::registrar($project, 'actualizada');
+
+                // Edición en revisión: la detección anterior corresponde al
+                // contenido enviado (se conserva como histórica) y el motor
+                // analiza el contenido nuevo.
+                if ($rol === 'aprendiz' && $project->estado === 'pendiente') {
+                    $motor = app(Recomputador::class);
+                    $motor->archivar($project);
+                    $motor->detectar($project, false);
+                }
             }
         });
 
