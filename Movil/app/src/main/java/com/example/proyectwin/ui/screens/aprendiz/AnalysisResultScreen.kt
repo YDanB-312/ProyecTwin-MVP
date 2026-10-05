@@ -30,7 +30,7 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "Resultado del An�lisis",
+                title = "Resultado del Análisis",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
@@ -58,7 +58,7 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SenaPageHeader(
-                title = "An�lisis Completado",
+                title = "Análisis Completado",
                 subtitle = "Revisa el informe de originalidad generado por nuestro sistema.",
                 icon = Icons.Default.Verified
             )
@@ -73,8 +73,8 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
                     }
                     Spacer(Modifier.width(20.dp))
                     Column {
-                        Text("An�lisis Exitoso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = senaColors().success)
-                        Text("El sistema no encontr� similitudes cr�ticas en tu propuesta.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                        Text("Análisis Exitoso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = senaColors().success)
+                        Text("El sistema no encontró similitudes críticas en tu propuesta.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
                     }
                 }
             }
@@ -93,16 +93,16 @@ fun AnalysisResultScreen(onBack: () -> Unit, onViewDetail: (String) -> Unit) {
             SenaSectionHeader(title = "Detalle de Coincidencias")
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 MatchItem("Plataforma Educativa SENA", "65%", "Resumen", onClick = { onViewDetail("1") })
-                MatchItem("Sistema de Notas Web", "8%", "Tecnolog�as", onClick = { onViewDetail("2") })
+                MatchItem("Sistema de Notas Web", "8%", "Tecnologías", onClick = { onViewDetail("2") })
             }
 
             // Recommendations
             SenaSectionHeader(title = "Recomendaciones IA")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    RecommendationItem("El t�tulo de tu proyecto es original y descriptivo.")
-                    RecommendationItem("Las tecnolog�as propuestas son adecuadas.")
-                    RecommendationItem("Considera ampliar la secci�n de metodolog�a.")
+                    RecommendationItem("El título de tu proyecto es original y descriptivo.")
+                    RecommendationItem("Las tecnologías propuestas son adecuadas.")
+                    RecommendationItem("Considera ampliar la sección de metodología.")
                 }
             }
 
@@ -133,7 +133,7 @@ fun MatchItem(project: String, percentage: String, section: String, onClick: () 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(project, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
-                Text("Secci�n: $section", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                Text("Sección: $section", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
             }
             Surface(
                 color = if (value > 50) senaColors().warning.copy(alpha = 0.1f) else senaColors().success.copy(alpha = 0.1f),

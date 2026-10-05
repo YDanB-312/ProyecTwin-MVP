@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.navigation.AppNavigation
@@ -36,8 +36,8 @@ fun UserDetailScreen(
     userId: String = "",
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     var showDeactivateDialog by remember { mutableStateOf(false) }
@@ -89,7 +89,7 @@ fun UserDetailScreen(
         ) {
             SenaPageHeader(
                 title = "Detalle de Usuario",
-                subtitle = "Informaci�n completa y actividad del usuario en el sistema.",
+                subtitle = "Información completa y actividad del usuario en el sistema.",
                 icon = Icons.Default.Person
             )
 
@@ -118,7 +118,7 @@ fun UserDetailScreen(
                 }
             }
 
-            SenaSectionHeader(title = "Informaci�n Personal")
+            SenaSectionHeader(title = "Información Personal")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     UserDetailRow(Icons.Default.School, "Rol", user?.roleDisplayName ?: "N/A")
@@ -184,7 +184,7 @@ fun UserDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeactivateDialog = false },
             title = { Text("Desactivar Usuario") },
-            text = { Text("�Est�s seguro de que deseas desactivar esta cuenta? El usuario ya no podr� iniciar sesi�n.") },
+            text = { Text("~?Estás seguro de que deseas desactivar esta cuenta? El usuario ya no podrá iniciar sesión.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeactivateDialog = false

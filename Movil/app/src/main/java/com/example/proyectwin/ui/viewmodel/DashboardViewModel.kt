@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.Project
-import com.example.proyectwin.data.repository.NotificationsRepository
-import com.example.proyectwin.data.repository.ProjectsRepository
+import com.example.proyectwin.domain.repository.NotificationsRepository
+import com.example.proyectwin.domain.repository.ProjectsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class DashboardUiState {
     data object Loading : DashboardUiState()
@@ -21,93 +23,70 @@ sealed class DashboardUiState {
     data class Error(val message: String) : DashboardUiState()
 }
 
-class DashboardViewModel : ViewModel() {
-    private val projectsRepository = ProjectsRepository()
-    private val notificationsRepository = NotificationsRepository()
+/**
+ * Dashboards de aprendiz/instructor/admin. `GET /projects` ya viene acotado por
+ * rol del lado del backend (`paraUsuario`), por lo que los tres flujos cargan
+ * el mismo listado y el servidor devuelve lo que corresponde.
+ */
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
+    private val projectsRepository: ProjectsRepository,
+    private val notificationsRepository: NotificationsRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    fun loadStudentDashboard(studentId: Int) {
-        viewModelScope.launch {
-            _uiState.value = DashboardUiState.Loading
-            try {
-                projectsRepository.getProjectsByStudent(studentId).collect { projects ->
-                    _uiState.value = withProjects(projects)
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
-            }
-        }
-    }
+    private var ultimaCarga: (() -> Unit)? = null
 
-    fun loadInstructorDashboard(instructorId: Int) {
-        viewModelScope.launch {
-            _uiState.value = DashboardUiState.Loading
-            try {
-                projectsRepository.getProjectsByInstructor(instructorId).collect { projects ->
-                    _uiState.value = withProjects(projects)
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
-            }
-        }
-    }
+    fun loadStudentDashboard(studentId: Int) = cargarProyectos()
 
-    fun loadAdminDashboard() {
+    fun loadInstructorDashboard(instructorId: Int) = cargarProyectos()
+
+    fun loadAdminDashboard() = cargarProyectos()
+
+    private fun cargarProyectos() {
+        ultimaCarga = { cargarProyectos() }
         viewModelScope.launch {
             _uiState.value = DashboardUiState.Loading
-            try {
-                projectsRepository.getAllProjects().collect { projects ->
-                    _uiState.value = withProjects(projects)
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
-            }
+            projectsRepository.listar().fold(
+                onSuccess = { proyectos -> _uiState.value = conProyectos(proyectos) },
+                onFailure = { e ->
+                    _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
+                },
+            )
         }
     }
 
     fun loadNotifications(userId: Int) {
+        ultimaCarga = { loadNotifications(userId) }
         viewModelScope.launch {
-            try {
-                notificationsRepository.getNotificationsByUser(userId).collect { notifications ->
-                    val current = _uiState.value
-                    if (current is DashboardUiState.Success) {
-                        _uiState.value = current.copy(notifications = notifications)
+            notificationsRepository.listar(userId).fold(
+                onSuccess = { notificaciones ->
+                    val actual = _uiState.value
+                    if (actual is DashboardUiState.Success) {
+                        _uiState.value = actual.copy(
+                            notifications = notificaciones,
+                            unreadCount = notificaciones.count { !it.leido },
+                        )
                     }
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar notificaciones")
-            }
+                },
+                // Si falla la bandeja se conserva el dashboard ya cargado.
+                onFailure = { },
+            )
         }
     }
 
-    fun loadUnreadCount(userId: Int) {
-        viewModelScope.launch {
-            try {
-                notificationsRepository.getUnreadCount(userId).collect { count ->
-                    val current = _uiState.value
-                    if (current is DashboardUiState.Success) {
-                        _uiState.value = current.copy(unreadCount = count)
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar notificaciones")
-            }
-        }
-    }
+    fun loadUnreadCount(userId: Int) = loadNotifications(userId)
 
     fun refresh() {
-        val current = _uiState.value
-        if (current is DashboardUiState.Success) {
-            _uiState.value = current.copy()
-        }
+        ultimaCarga?.invoke()
     }
 
-    private fun withProjects(projects: List<Project>): DashboardUiState {
-        val current = _uiState.value
-        return if (current is DashboardUiState.Success) {
-            current.copy(projects = projects)
+    private fun conProyectos(projects: List<Project>): DashboardUiState {
+        val actual = _uiState.value
+        return if (actual is DashboardUiState.Success) {
+            actual.copy(projects = projects)
         } else {
             DashboardUiState.Success(projects)
         }

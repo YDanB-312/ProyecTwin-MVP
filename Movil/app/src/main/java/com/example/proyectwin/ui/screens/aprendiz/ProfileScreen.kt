@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
@@ -44,9 +44,9 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel(),
-    dashboardViewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     val authState by authViewModel.uiState.collectAsState()
@@ -76,7 +76,6 @@ fun ProfileScreen(
                 bytes?.let { b ->
                     val base64 = Base64.getEncoder().encodeToString(b)
                     profileViewModel.updateFoto(base64)
-                    authViewModel.getSessionManager().updateFoto(base64)
                 }
             }
         }
@@ -125,7 +124,8 @@ fun ProfileScreen(
                     fotoBase64 = user?.fotoPerfil,
                     nombre = user?.name ?: "Usuario",
                     modifier = Modifier.size(100.dp),
-                    onClick = { photoPickerLauncher.launch("image/*") }
+                    onClick = { photoPickerLauncher.launch("image/*") },
+                    showChangeIndicator = true
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -175,7 +175,7 @@ fun ProfileScreen(
                                 SenaTextField(value = editName, onValueChange = { editName = it }, label = "Nombre", modifier = Modifier.weight(1f))
                                 SenaTextField(value = editLastName, onValueChange = { editLastName = it }, label = "Apellido", modifier = Modifier.weight(1f))
                             }
-                            SenaTextField(value = editEmail, onValueChange = { editEmail = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email)
+                            SenaTextField(value = editEmail, onValueChange = { editEmail = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email, enabled = false)
                             SenaTextField(value = editPhone, onValueChange = { editPhone = it }, label = "Teléfono", leadingIcon = Icons.Default.Phone)
 
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -226,6 +226,12 @@ fun ProfileScreen(
                             description = "Gestión de credenciales",
                             onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
                         )
+                        SenaSettingsItem(
+                            icon = Icons.Default.Email,
+                            title = "Cambiar Correo Electrónico",
+                            description = "Actualiza tu correo de contacto",
+                            onClick = { onNavigate(AppNavigation.CHANGE_EMAIL) }
+                        )
                     }
                 }
 
@@ -235,7 +241,6 @@ fun ProfileScreen(
                     text = "Cerrar Sesión",
                     onClick = {
                         authViewModel.logout()
-                        onNavigate(AppNavigation.HOME)
                     },
                     icon = Icons.AutoMirrored.Filled.Logout,
                     containerColor = senaColors().danger,
@@ -253,7 +258,7 @@ fun MetricCardAprendiz(icon: ImageVector, value: String, label: String, modifier
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {

@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
@@ -35,7 +35,7 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 fun RegisterScreen(
     onBackToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
@@ -47,7 +47,7 @@ fun RegisterScreen(
     val isSubmitting by authViewModel.isSubmitting.collectAsState()
 
     LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.LoggedIn) {
+        if (uiState is AuthUiState.LoggedIn || uiState is AuthUiState.Registered) {
             onRegisterSuccess()
         }
     }
@@ -186,7 +186,7 @@ fun PremiumRoleCard(
             .height(100.dp)
             .clip(RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        color = if (isSelected) senaColors().green.copy(alpha = 0.05f) else Color.White,
+        color = if (isSelected) senaColors().green.copy(alpha = 0.05f) else senaColors().backgroundElevated,
         border = androidx.compose.foundation.BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
             color = if (isSelected) senaColors().green else senaColors().border

@@ -18,15 +18,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
-import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
 data class UserItem(
     val id: Int,
@@ -34,7 +31,7 @@ data class UserItem(
     val document: String,
     val email: String,
     val role: String,
-    val status: String,
+    val status: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,22 +40,14 @@ fun UserManagementScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Todos") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var userToDelete by remember { mutableStateOf<UserItem?>(null) }
-    var isRefreshing by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val adminState by adminViewModel.uiState.collectAsState()
-
     val isLoading = adminState is AdminUiState.Loading
-    LaunchedEffect(isLoading) {
-        if (!isLoading) isRefreshing = false
-    }
 
     if (adminState is AdminUiState.Loading) {
         Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
@@ -93,25 +82,27 @@ fun UserManagementScreen(
                 document = user.documentoIdentidad ?: "",
                 email = user.email,
                 role = user.roleDisplayName,
-                status = "Activo"
+                status = if (user.estado) "Activo" else "Inactivo"
             )
         }
     }
 
     val filteredUsers = usersList.filter { user ->
         val matchesRole = if (selectedRole == "Todos") true else user.role == selectedRole
-        val matchesSearch = user.name.contains(searchQuery, ignoreCase = true) || user.email.contains(searchQuery, ignoreCase = true) || user.document.contains(searchQuery, ignoreCase = true)
+        val matchesSearch = user.name.contains(searchQuery, ignoreCase = true) ||
+                user.email.contains(searchQuery, ignoreCase = true) ||
+                user.document.contains(searchQuery, ignoreCase = true)
         matchesRole && matchesSearch
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(SnackbarHostState()) },
         topBar = {
             SenaTopBar(
                 title = "ProyecTwin",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true,
+                showNotifications = true
             )
         },
         containerColor = senaColors().background,
@@ -129,76 +120,73 @@ fun UserManagementScreen(
         }
     ) { paddingValues ->
         SenaPullRefresh(
-            isRefreshing = isRefreshing,
-            onRefresh = { isRefreshing = true; adminViewModel.refresh() },
+            isRefreshing = isLoading,
+            onRefresh = { adminViewModel.refresh() },
             modifier = Modifier.padding(paddingValues)
         ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            item {
-                SenaPageHeader(
-                    title = "Gesti�n de Usuarios",
-                    subtitle = "Administra las cuentas, roles y permisos de acceso al sistema.",
-                    icon = Icons.Default.ManageAccounts
-                )
-            }
-
-            // Filter Section
-            item {
-                SenaFilterBar(title = "Filtros de b�squeda") {
-                    SenaTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        label = "",
-                        placeholder = "Buscar por nombre, correo o documento...",
-                        leadingIcon = Icons.Default.Search
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                item {
+                    SenaPageHeader(
+                        title = "Gestión de Usuarios",
+                        subtitle = "Administra las cuentas, roles y permisos de acceso al sistema.",
+                        icon = Icons.Default.ManageAccounts
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        roles.forEach { role ->
-                            SenaChip(
-                                text = role,
-                                color = when(role) {
-                                    "Aprendiz" -> senaColors().success
-                                    "Instructor" -> senaColors().warning
-                                    "Administrador" -> senaColors().danger
-                                    else -> senaColors().green
-                                },
-                                isSelected = selectedRole == role,
-                                onClick = { selectedRole = role }
-                            )
+                }
+
+                // Filter Section
+                item {
+                    SenaFilterBar(title = "Filtros de búsqueda") {
+                        SenaTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = "",
+                            placeholder = "Buscar por nombre, correo o documento...",
+                            leadingIcon = Icons.Default.Search
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            roles.forEach { role ->
+                                SenaChip(
+                                    text = role,
+                                    color = when(role) {
+                                        "Aprendiz" -> senaColors().success
+                                        "Instructor" -> senaColors().warning
+                                        "Administrador" -> senaColors().danger
+                                        else -> senaColors().green
+                                    },
+                                    isSelected = selectedRole == role,
+                                    onClick = { selectedRole = role }
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            if (filteredUsers.isEmpty()) {
-                item {
-                    SenaEmptyState(
-                        message = "No hay usuarios que coincidan con los criterios de b�squeda.",
-                        icon = Icons.Default.GroupOff
-                    )
+                if (filteredUsers.isEmpty()) {
+                    item {
+                        SenaEmptyState(
+                            message = "No hay usuarios que coincidan con los criterios de búsqueda.",
+                            icon = Icons.Default.GroupOff
+                        )
+                    }
+                } else {
+                    items(filteredUsers) { user ->
+                        UserCard(
+                            user = user,
+                            onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", user.id.toString())) },
+                            onDelete = { userToDelete = user; showDeleteDialog = true }
+                        )
+                    }
                 }
-            } else {
-                items(filteredUsers) { user ->
-                    UserCard(
-                        user = user,
-                        onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", user.id.toString())) },
-                        onDelete = {
-                            userToDelete = user
-                            showDeleteDialog = true
-                        }
-                    )
-                }
-            }
 
-            item { Spacer(Modifier.height(80.dp)) }
-        }
+                item { Spacer(Modifier.height(80.dp)) }
+            }
         }
     }
 
@@ -206,16 +194,13 @@ fun UserManagementScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Eliminar Usuario") },
-            text = { Text("�Est�s seguro de que deseas eliminar a ${userToDelete?.name}? Esta acci�n no se puede deshacer.") },
+            text = { Text("¿Estás seguro de que deseas eliminar a ${userToDelete?.name}? Esta acción no se puede deshacer.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    userToDelete?.let {
-                        MockDataProvider.deleteUser(it.id)
-                        adminViewModel.loadAll()
-                    }
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Usuario eliminado")
+                    val targetId = userToDelete?.id
+                    if (targetId != null) {
+                        adminViewModel.deleteUser(targetId)
                     }
                 }) {
                     Text("Eliminar", color = senaColors().danger)
@@ -265,59 +250,16 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                         Text(user.email, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     }
                 }
-                SenaStatusBadge(status = user.status)
-            }
-
-            HorizontalDivider(color = senaColors().borderSoft)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Rol y Documento", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, fontSize = 9.sp)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Badge,
-                            contentDescription = null,
-                            tint = senaColors().green,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "${user.role} � ${user.document}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = senaColors().textSecondary
-                        )
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green)
                     }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledIconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = senaColors().borderSoft)
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green, modifier = Modifier.size(18.dp))
-                    }
-                    FilledIconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = senaColors().borderSoft)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = senaColors().danger, modifier = Modifier.size(18.dp))
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = senaColors().danger)
                     }
                 }
             }
+            SenaStatusBadge(status = user.status)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun UserManagementPreview() {
-    ProyecTwinTheme {
-        UserManagementScreen(onBack = {}, onNavigate = {})
     }
 }

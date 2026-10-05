@@ -7,17 +7,30 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.UserRole
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private val Context.dataStore by preferencesDataStore(name = "proyectwin_session")
 
-class SessionManager(private val context: Context) {
+/**
+ * Sesión persistente (DataStore Preferences): usuario, token Bearer de Sanctum
+ * y datos locales de perfil. Fuente de verdad de la sesión; la copia en
+ * memoria para la red la mantiene `TokenProvider`.
+ */
+@Singleton
+class SessionManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+) {
 
     companion object {
         private val KEY_USER_ID = intPreferencesKey("user_id")
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
+        private val KEY_USER_APELLIDO = stringPreferencesKey("user_apellido")
+        private val KEY_USER_NOMBRE = stringPreferencesKey("user_nombre")
         private val KEY_USER_EMAIL = stringPreferencesKey("user_email")
         private val KEY_USER_ROLE = stringPreferencesKey("user_role")
         private val KEY_USER_TOKEN = stringPreferencesKey("user_token")
@@ -38,7 +51,9 @@ class SessionManager(private val context: Context) {
             fotoPerfil = prefs[KEY_USER_FOTO],
             telefono = prefs[KEY_USER_TELEFONO],
             fichaId = prefs[KEY_USER_FICHA_ID],
-            documentoIdentidad = prefs[KEY_USER_DOCUMENTO]
+            documentoIdentidad = prefs[KEY_USER_DOCUMENTO],
+            nombre = prefs[KEY_USER_NOMBRE],
+            apellido = prefs[KEY_USER_APELLIDO],
         )
     }
 
@@ -50,6 +65,8 @@ class SessionManager(private val context: Context) {
             prefs[KEY_USER_NAME] = user.name
             prefs[KEY_USER_EMAIL] = user.email
             prefs[KEY_USER_ROLE] = user.role
+            user.nombre?.let { prefs[KEY_USER_NOMBRE] = it }
+            user.apellido?.let { prefs[KEY_USER_APELLIDO] = it }
             if (user.token != null) prefs[KEY_USER_TOKEN] = user.token
             if (user.fotoPerfil != null) prefs[KEY_USER_FOTO] = user.fotoPerfil
             if (user.telefono != null) prefs[KEY_USER_TELEFONO] = user.telefono
@@ -77,6 +94,12 @@ class SessionManager(private val context: Context) {
     suspend fun joinFicha(fichaId: Int) {
         context.dataStore.edit { prefs ->
             prefs[KEY_USER_FICHA_ID] = fichaId
+        }
+    }
+
+    suspend fun clearFicha() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(KEY_USER_FICHA_ID)
         }
     }
 

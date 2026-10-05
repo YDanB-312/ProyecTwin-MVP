@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -43,8 +43,8 @@ import java.util.Locale
 fun DashboardScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    dashboardViewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
@@ -216,7 +216,7 @@ fun DashboardScreen(
 
                 item {
                     PaddingRow {
-                        SenaCard(containerColor = Color(0xFF0F172A)) {
+                        SenaCard(containerColor = senaColors().header) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text("Estado de Originalidad", color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
@@ -258,7 +258,7 @@ fun PremiumActionCard(title: String, icon: ImageVector, color: Color, onClick: (
         onClick = onClick,
         modifier = Modifier.size(140.dp),
         shape = RoundedCornerShape(32.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 8.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {

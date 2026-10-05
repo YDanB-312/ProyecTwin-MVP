@@ -20,14 +20,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.NotificationType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.NotificationsUiState
+import com.example.proyectwin.ui.viewmodel.NotificationsViewModel
 
 enum class AlertType(val label: String) {
     URGENT("Urgente"),
@@ -45,27 +46,33 @@ fun AlertsScreen(
     similarityRoute: String = "aprendiz_similarity/{projectId}",
     detailRoute: String = "aprendiz_detail/{id}",
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val uiState by authViewModel.uiState.collectAsState()
     val user = (uiState as? AuthUiState.LoggedIn)?.user
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
+
+    val notificationsState by notificationsViewModel.uiState.collectAsState()
+    LaunchedEffect(user?.id) {
+        user?.id?.let { notificationsViewModel.load(it) }
+    }
+
     var selectedFilter by remember { mutableStateOf("Todos") }
     val filters = listOf("Todos", "Similitud", "Instructor", "Sistema")
 
-    val allAlerts = remember(user, refreshTrigger) {
-        MockDataProvider.getNotificationsByUser(user?.id ?: 1)
-    }
-
+    val allAlerts = (notificationsState as? NotificationsUiState.Success)?.notifications
+        ?: emptyList()
     val filteredAlerts = if (selectedFilter == "Todos") {
         allAlerts
     } else {
         allAlerts.filter { alert ->
             val category = when (alert.notifType) {
-                NotificationType.INFO, NotificationType.SUCCESS -> "Sistema"
-                NotificationType.WARNING, NotificationType.ERROR -> "Similitud"
+                NotificationType.INFO, NotificationType.SUCCESS, NotificationType.SISTEMA -> "Sistema"
+                NotificationType.WARNING, NotificationType.ERROR, NotificationType.SIMILITUD -> "Similitud"
+                NotificationType.OBSERVACION, NotificationType.REVISION, NotificationType.MENSAJE -> "Instructor"
             }
             category == selectedFilter
         }
@@ -83,6 +90,18 @@ fun AlertsScreen(
         containerColor = senaColors().background,
         bottomBar = bottomBar
     ) { paddingValues ->
+        when (notificationsState) {
+            is NotificationsUiState.Loading -> {
+                SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            }
+            is NotificationsUiState.Error -> {
+                SenaErrorState(
+                    message = (notificationsState as NotificationsUiState.Error).message,
+                    modifier = Modifier.padding(paddingValues),
+                    onRetry = { notificationsViewModel.refresh() },
+                )
+            }
+            is NotificationsUiState.Success -> {
         SenaPullRefresh(
             isRefreshing = isRefreshing,
             onRefresh = { isRefreshing = true; refreshTrigger++ },
@@ -99,6 +118,43 @@ fun AlertsScreen(
                     subtitle = "Mantente al día con el estado de tus proyectos y observaciones.",
                     icon = Icons.Default.Notifications
                 )
+            }
+
+            item {
+                val sinLeer = allAlerts.count { !it.leido }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (sinLeer > 0)
+                            "Tienes $sinLeer alerta${if (sinLeer != 1) "s" else ""} sin leer."
+                        else
+                            "Estás al día con tus notificaciones.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().textSecondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { notificationsViewModel.marcarTodasComoLeidas() },
+                        enabled = sinLeer > 0,
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.DoneAll,
+                            contentDescription = null,
+                            tint = if (sinLeer > 0) senaColors().green else senaColors().textMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Marcar todas como leídas",
+                            color = if (sinLeer > 0) senaColors().green else senaColors().textMuted,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
             }
 
             item {
@@ -120,22 +176,31 @@ fun AlertsScreen(
             if (filteredAlerts.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No tienes notificaciones en esta categoría.",
+                        message = "No tienes notificaciones.",
                         icon = Icons.Default.NotificationsNone
                     )
                 }
             } else {
                 items(filteredAlerts, key = { it.id }) { alert ->
                     NotificationCard(alert, onClick = {
-                        MockDataProvider.markNotificationAsRead(alert.id)
+                        notificationsViewModel.marcarComoLeida(alert)
                         refreshTrigger++
                         val category = when (alert.notifType) {
-                            NotificationType.INFO, NotificationType.SUCCESS -> "Sistema"
-                            NotificationType.WARNING, NotificationType.ERROR -> "Similitud"
+                            NotificationType.INFO, NotificationType.SUCCESS, NotificationType.SISTEMA -> "Sistema"
+                            NotificationType.WARNING, NotificationType.ERROR, NotificationType.SIMILITUD -> "Similitud"
+                            NotificationType.OBSERVACION, NotificationType.REVISION, NotificationType.MENSAJE -> "Instructor"
                         }
-                        val projectId = alert.projectId ?: 1
-                        if (category == "Similitud") onNavigate(similarityRoute.replace("{projectId}", projectId.toString()))
-                        else onNavigate(detailRoute.replace("{id}", projectId.toString()))
+                        val enlaceId = alert.enlaceId
+                        when {
+                            category == "Similitud" &&
+                                alert.enlaceModulo == "proyecto" && enlaceId != null ->
+                                onNavigate(similarityRoute.replace("{projectId}", enlaceId.toString()))
+
+                            alert.enlaceModulo == "proyecto" && enlaceId != null ->
+                                onNavigate(detailRoute.replace("{id}", enlaceId.toString()))
+
+                            else -> {}
+                        }
                     })
                 }
             }
@@ -143,19 +208,32 @@ fun AlertsScreen(
             item { Spacer(Modifier.height(40.dp)) }
         }
         }
+            }
+        }
     }
 
     LaunchedEffect(refreshTrigger) {
-        kotlinx.coroutines.delay(500)
+        if (refreshTrigger > 0) {
+            notificationsViewModel.refresh()
+            kotlinx.coroutines.delay(500)
+        }
         isRefreshing = false
     }
+}
+
+/** "2026-10-05" (o ISO "2026-10-05T12:30:00Z") → "05/10/2026"; si no parsea, llega como vino. */
+private fun formatearFechaApi(valor: String?): String {
+    if (valor.isNullOrBlank()) return "Recientemente"
+    val partes = valor.take(10).split("-")
+    return if (partes.size == 3 && partes[0].length == 4) "${partes[2]}/${partes[1]}/${partes[0]}"
+    else valor
 }
 
 @Composable
 fun NotificationCard(alert: Notification, onClick: () -> Unit) {
     val alertType = when (alert.notifType) {
-        NotificationType.INFO -> AlertType.INFO
-        NotificationType.WARNING -> AlertType.WARNING
+        NotificationType.INFO, NotificationType.REVISION, NotificationType.MENSAJE, NotificationType.SISTEMA -> AlertType.INFO
+        NotificationType.WARNING, NotificationType.SIMILITUD, NotificationType.OBSERVACION -> AlertType.WARNING
         NotificationType.SUCCESS -> AlertType.SUCCESS
         NotificationType.ERROR -> AlertType.URGENT
     }
@@ -167,8 +245,9 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit) {
     }
 
     val category = when (alert.notifType) {
-        NotificationType.INFO, NotificationType.SUCCESS -> "Sistema"
-        NotificationType.WARNING, NotificationType.ERROR -> "Similitud"
+        NotificationType.INFO, NotificationType.SUCCESS, NotificationType.SISTEMA -> "Sistema"
+        NotificationType.WARNING, NotificationType.ERROR, NotificationType.SIMILITUD -> "Similitud"
+        NotificationType.OBSERVACION, NotificationType.REVISION, NotificationType.MENSAJE -> "Instructor"
     }
 
     val title = when (alert.notifType) {
@@ -176,12 +255,17 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit) {
         NotificationType.WARNING -> "Advertencia"
         NotificationType.SUCCESS -> "Logro"
         NotificationType.ERROR -> "Urgente"
+        NotificationType.SIMILITUD -> "Similitud detectada"
+        NotificationType.OBSERVACION -> "Observación"
+        NotificationType.REVISION -> "Revisión"
+        NotificationType.MENSAJE -> "Mensaje"
+        NotificationType.SISTEMA -> "Sistema"
     }
 
     SenaCard(
         elevation = if (!alert.leido) 2.dp else 0.5.dp,
         onClick = onClick,
-        containerColor = Color.White
+        containerColor = senaColors().backgroundElevated
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -223,7 +307,7 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit) {
                         letterSpacing = 0.5.sp
                     )
                     Text(
-                        alert.createdAt ?: "Recientemente",
+                        formatearFechaApi(alert.createdAt),
                         style = MaterialTheme.typography.labelSmall,
                         color = senaColors().textLight
                     )

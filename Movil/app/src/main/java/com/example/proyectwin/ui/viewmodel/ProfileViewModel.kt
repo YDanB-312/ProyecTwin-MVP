@@ -1,15 +1,16 @@
 package com.example.proyectwin.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.proyectwin.data.local.SessionManager
+import com.example.proyectwin.data.mapper.dividirNombre
 import com.example.proyectwin.data.model.GeneralUser
-import com.example.proyectwin.data.repository.AuthRepository
+import com.example.proyectwin.domain.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class ProfileUiState {
     data object Loading : ProfileUiState()
@@ -17,8 +18,10 @@ sealed class ProfileUiState {
     data class Error(val message: String) : ProfileUiState()
 }
 
-class ProfileViewModel(application: Application) : AndroidViewModel(application) {
-    private val authRepository = AuthRepository(SessionManager(application))
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -32,6 +35,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private val _saveError = MutableStateFlow<String?>(null)
     val saveError: StateFlow<String?> = _saveError.asStateFlow()
 
+    private val _isChangingEmail = MutableStateFlow(false)
+    val isChangingEmail: StateFlow<Boolean> = _isChangingEmail.asStateFlow()
+
     init {
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
@@ -44,14 +50,17 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isSaving.value = true
             _saveError.value = null
-            try {
-                authRepository.updateProfile(name, email, telefono)
-                _isSaving.value = false
-                _saveSuccess.value = true
-            } catch (e: Exception) {
-                _isSaving.value = false
-                _saveError.value = e.message ?: "Error al actualizar el perfil"
-            }
+            val (nombre, apellido) = dividirNombre(name)
+            authRepository.updateProfile(nombre, apellido, email).fold(
+                onSuccess = {
+                    _isSaving.value = false
+                    _saveSuccess.value = true
+                },
+                onFailure = { e ->
+                    _isSaving.value = false
+                    _saveError.value = e.message ?: "Error al actualizar el perfil"
+                },
+            )
         }
     }
 
@@ -59,14 +68,36 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isSaving.value = true
             _saveError.value = null
-            try {
-                authRepository.updateFoto(fotoBase64)
-                _isSaving.value = false
-                _saveSuccess.value = true
-            } catch (e: Exception) {
-                _isSaving.value = false
-                _saveError.value = e.message ?: "Error al actualizar la foto"
-            }
+            authRepository.updateFoto(fotoBase64).fold(
+                onSuccess = {
+                    _isSaving.value = false
+                    _saveSuccess.value = true
+                },
+                onFailure = { e ->
+                    _isSaving.value = false
+                    _saveError.value = e.message ?: "Error al actualizar la foto"
+                },
+            )
+        }
+    }
+
+    fun changeEmail(correo: String, passwordActual: String) {
+        viewModelScope.launch {
+            _isChangingEmail.value = true
+            _isSaving.value = true
+            _saveError.value = null
+            authRepository.changeEmail(correo, passwordActual).fold(
+                onSuccess = {
+                    _isChangingEmail.value = false
+                    _isSaving.value = false
+                    _saveSuccess.value = true
+                },
+                onFailure = { e ->
+                    _isChangingEmail.value = false
+                    _isSaving.value = false
+                    _saveError.value = e.message ?: "Error al cambiar el correo"
+                },
+            )
         }
     }
 

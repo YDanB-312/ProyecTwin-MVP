@@ -1,5 +1,7 @@
 package com.example.proyectwin.ui.components
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -7,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,7 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardActions
@@ -38,8 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import com.example.proyectwin.data.local.SessionManager
-import com.example.proyectwin.data.repository.NotificationsRepository
+import com.example.proyectwin.di.AppEntryPoint
+import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.ui.theme.*
+import dagger.hilt.android.EntryPointAccessors
 
 // --- PREMIUM COMPONENTS (EMERALD LUSH EDITION) ---
 
@@ -137,8 +145,8 @@ fun SenaTextField(
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = senaColors().green,
                 unfocusedBorderColor = senaColors().border,
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
+                focusedContainerColor = senaColors().inputBackground,
+                unfocusedContainerColor = senaColors().inputBackground,
                 cursorColor = senaColors().green
             ),
             singleLine = true
@@ -249,12 +257,22 @@ fun SenaTopBar(
     val isDarkState = LocalThemeIsDark.current
     val effectiveBadgeCount = if (notificationBadgeCount == -1 && showNotifications) {
         val context = LocalContext.current
-        val sessionManager = remember { SessionManager(context) }
+        val entryPoint = remember(context) {
+            EntryPointAccessors.fromApplication(context.applicationContext, AppEntryPoint::class.java)
+        }
+        val sessionManager = remember(entryPoint) { entryPoint.sessionManager() }
+        val repo = remember(entryPoint) { entryPoint.notificationsRepository() }
         val user by sessionManager.currentUser.collectAsState(initial = null)
-        val userId = user?.id ?: -1
-        val repo = remember { NotificationsRepository() }
-        val count by repo.getUnreadCount(userId).collectAsState(initial = 0)
-        if (userId == -1) 0 else count
+        var unreadCount by remember { mutableStateOf(0) }
+        val version by com.example.proyectwin.ui.viewmodel.NotificationsVersion.version.collectAsState()
+        LaunchedEffect(user?.id, version) {
+            val id = user?.id ?: return@LaunchedEffect
+            unreadCount = repo.listar(id).fold(
+                onSuccess = { lista -> lista.count { !it.leido } },
+                onFailure = { 0 },
+            )
+        }
+        if (user == null) 0 else unreadCount
     } else {
         notificationBadgeCount.coerceAtLeast(0)
     }
@@ -332,7 +350,7 @@ fun SenaTopBar(
 fun SenaMetricPill(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shape = RoundedCornerShape(24.dp),
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
@@ -525,7 +543,7 @@ fun SenaBottomBar(
         modifier = modifier.fillMaxWidth(),
         tonalElevation = 12.dp,
         shadowElevation = 24.dp,
-        color = Color.White
+        color = senaColors().backgroundElevated
     ) {
         Row(
             modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(16.dp).fillMaxWidth(),
@@ -625,7 +643,7 @@ fun SenaBottomNavigationBar(
     items: List<SenaBottomNavItem>
 ) {
     NavigationBar(
-        containerColor = Color.White,
+        containerColor = senaColors().backgroundElevated,
         tonalElevation = 8.dp,
         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
     ) {
@@ -676,41 +694,67 @@ fun SenaAvatar(
     fotoBase64: String?,
     nombre: String,
     modifier: Modifier = Modifier.size(100.dp),
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    showChangeIndicator: Boolean = false
 ) {
+    val imagen = remember(fotoBase64) { decodificarFotoBase64(fotoBase64) }
     Surface(
         modifier = modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = CircleShape,
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 10.dp
     ) {
-        if (!fotoBase64.isNullOrBlank()) {
-            // Base64 image preview — using a simple colored surface with text fallback
-            // In a real app, use Coil or Glide to decode base64
-            Box(
-                modifier = Modifier.padding(5.dp).fillMaxSize().background(senaColors().green, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (fotoBase64.length > 50) "📷" else nombre.take(2).uppercase(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 32.sp
+        Box(contentAlignment = Alignment.Center) {
+            if (imagen != null) {
+                Image(
+                    bitmap = imagen,
+                    contentDescription = "Foto de $nombre",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier.padding(5.dp).fillMaxSize().background(senaColors().green, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = nombre.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() },
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 32.sp
+                    )
+                }
             }
-        } else {
-            Box(
-                modifier = Modifier.padding(5.dp).fillMaxSize().background(senaColors().green, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = nombre.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() },
-                    color = Color.White,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 32.sp
-                )
+            if (showChangeIndicator) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 4.dp, bottom = 4.dp)
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Camera,
+                        contentDescription = "Cambiar foto",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
+    }
+}
+
+private fun decodificarFotoBase64(valor: String?): ImageBitmap? {
+    if (valor.isNullOrBlank()) return null
+    val limpio = valor.substringAfter("base64,").trim()
+    return try {
+        val bytes = Base64.decode(limpio, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+    } catch (e: Exception) {
+        null
     }
 }
 
@@ -986,7 +1030,7 @@ fun SenaMetricCard(
     trendUp: Boolean = true,
     color: Color = senaColors().green
 ) {
-    SenaCard(modifier = modifier, elevation = 4.dp, containerColor = Color.White) {
+    SenaCard(modifier = modifier, elevation = 4.dp, containerColor = senaColors().backgroundElevated) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
@@ -1047,7 +1091,7 @@ fun SenaFilterBar(
     var internalExpanded by remember { mutableStateOf(expanded) }
     val isExpanded = onToggle != null || internalExpanded
 
-    SenaCard(modifier = modifier, elevation = 1.dp, containerColor = Color.White) {
+    SenaCard(modifier = modifier, elevation = 1.dp, containerColor = senaColors().backgroundElevated) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable {

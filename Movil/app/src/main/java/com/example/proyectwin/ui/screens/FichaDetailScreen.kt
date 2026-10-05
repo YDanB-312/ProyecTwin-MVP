@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.navigation.AppNavigation
@@ -36,8 +36,8 @@ import com.example.proyectwin.ui.viewmodel.FichasViewModel
 fun FichaDetailScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user

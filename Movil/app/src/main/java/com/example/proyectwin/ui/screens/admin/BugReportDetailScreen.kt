@@ -21,13 +21,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.BugReport
 import com.example.proyectwin.data.model.BugReportStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.BugReportsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,23 +35,24 @@ import kotlinx.coroutines.launch
 fun BugReportDetailScreen(
     bugId: String = "",
     onBack: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    bugReportsViewModel: BugReportsViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    var bug by remember(bugId) {
-        mutableStateOf(
-            MockDataProvider.getAllBugReports().find { it.id == (bugId.toIntOrNull() ?: 0) }
-        )
+    val bugIdNum = bugId.toIntOrNull() ?: 0
+    val bug by bugReportsViewModel.detalle.collectAsState()
+    LaunchedEffect(bugIdNum) {
+        if (bugIdNum > 0) bugReportsViewModel.cargarDetalle(bugIdNum)
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "Falla T�cnica",
+                title = "Falla Técnica",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
@@ -61,11 +62,10 @@ fun BugReportDetailScreen(
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
-                    text = "ASIGNAR T�CNICO",
+                    text = "ASIGNAR TÉCNICO",
                     onClick = {
                         bug?.let { b ->
-                            MockDataProvider.updateBugReportEstado(b.id, BugReportStatus.EN_REVISION.value)
-                            bug = b.copy(estado = BugReportStatus.EN_REVISION.value)
+                            bugReportsViewModel.cambiarEstado(b.id, BugReportStatus.EN_REVISION)
                         }
                         scope.launch {
                             snackbarHostState.showSnackbar("Reporte escalado a Nivel 2")
@@ -77,8 +77,7 @@ fun BugReportDetailScreen(
                     text = "CERRAR CASO", 
                     onClick = {
                         bug?.let { b ->
-                            MockDataProvider.updateBugReportEstado(b.id, BugReportStatus.CERRADO.value)
-                            bug = b.copy(estado = BugReportStatus.CERRADO.value)
+                            bugReportsViewModel.cambiarEstado(b.id, BugReportStatus.CERRADO)
                         }
                         scope.launch {
                             snackbarHostState.showSnackbar("Caso cerrado")
@@ -141,15 +140,15 @@ fun BugReportDetailScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             BugDetailRow(Icons.Default.Person, "Reportado por", bug?.reporterName ?: "Aprendiz")
                             BugDetailRow(Icons.Default.PriorityHigh, "Criticidad", bug?.typeDisplay ?: "Alta")
-                            BugDetailRow(Icons.Default.AccessTime, "Antig�edad", "2 horas")
+                            BugDetailRow(Icons.Default.AccessTime, "Antigúedad", "2 horas")
                         }
                     }
                 }
 
-                SenaSectionHeader(title = "Descripci�n del Error")
+                SenaSectionHeader(title = "Descripción del Error")
                 SenaCard {
                     Text(
-                        bug?.descripcion ?: "Sin descripci�n t�cnica.",
+                        bug?.descripcion ?: "Sin descripción técnica.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = senaColors().textSecondary,
                         lineHeight = 22.sp
@@ -158,8 +157,8 @@ fun BugReportDetailScreen(
 
                 SenaSectionHeader(title = "Logs de Actividad")
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BugActivityItem("Admin Sistema", "Recibi� el reporte y valid� la captura de pantalla.", "10:30 AM")
-                    BugActivityItem("Servidor IA", "Reinicio de m�dulo de comparaci�n exitoso.", "11:15 AM")
+                    BugActivityItem("Admin Sistema", "Recibió el reporte y validó la captura de pantalla.", "10:30 AM")
+                    BugActivityItem("Servidor IA", "Reinicio de módulo de comparación exitoso.", "11:15 AM")
                 }
 
                 Spacer(modifier = Modifier.height(60.dp))

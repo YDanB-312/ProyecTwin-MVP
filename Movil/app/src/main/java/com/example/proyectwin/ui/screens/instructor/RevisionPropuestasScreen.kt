@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectStatus
@@ -38,8 +38,8 @@ fun RevisionPropuestasScreen(
     onBack: () -> Unit,
     onProjectDetail: (Int) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    dashboardViewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
@@ -91,14 +91,14 @@ fun RevisionPropuestasScreen(
         ) {
             item {
                 SenaPageHeader(
-                    title = "Revisi�n de Propuestas",
-                    subtitle = "Eval�a las propuestas de proyectos enviadas por los aprendices.",
+                    title = "Revisión de Propuestas",
+                    subtitle = "Evalúa las propuestas de proyectos enviadas por los aprendices.",
                     icon = Icons.AutoMirrored.Filled.List
                 )
             }
 
             item {
-                SenaFilterBar(title = "Filtros de revisi�n") {
+                SenaFilterBar(title = "Filtros de revisión") {
                     SenaTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },

@@ -81,6 +81,7 @@ object AppNavigation {
     // Shared screens
     const val EDIT_PROFILE = "edit_profile"
     const val REPORT_ISSUE = "report_issue"
+    const val CHANGE_EMAIL = "change_email"
 
     // Containers
     const val ADMIN_MAIN = "admin_main"
@@ -107,11 +108,7 @@ object AppNavigation {
     )
 
     fun NavGraphBuilder.authGraph(navController: NavHostController) {
-        navigation(startDestination = HOME, route = AUTH_GRAPH) {
-            composable(HOME) { HomeScreen(
-                onLoginClick = { navController.navigate(LOGIN) },
-                onRegisterClick = { navController.navigate(REGISTER) },
-            ) }
+        navigation(startDestination = LOGIN, route = AUTH_GRAPH) {
             composable(LOGIN) { LoginScreen(
                 onLoginSuccess = { role: String ->
                     val destination = when(role) {
@@ -140,7 +137,7 @@ object AppNavigation {
                 onGoToLogin = { navController.navigate(LOGIN) { popUpTo(AUTH_GRAPH) { inclusive = true } } }
             ) }
             composable(NOT_FOUND) { NotFoundScreen(
-                onGoHome = { navController.navigate(HOME) { popUpTo(AUTH_GRAPH) { inclusive = true } } },
+                onGoHome = { navController.navigate(LOGIN) { popUpTo(AUTH_GRAPH) { inclusive = true } } },
                 onGoLogin = { navController.navigate(LOGIN) }
             ) }
         }
@@ -240,6 +237,7 @@ object AppNavigation {
                 )
             }
             composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
+            composable(CHANGE_EMAIL) { ChangeEmailScreen(onBack = { navController.popBackStack() }) }
             composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
         }
     }
@@ -340,6 +338,7 @@ object AppNavigation {
                 )
             }
             composable(EDIT_PROFILE) { EditProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
+            composable(CHANGE_EMAIL) { ChangeEmailScreen(onBack = { navController.popBackStack() }) }
             composable(REPORT_ISSUE) { ReportIssueScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
         }
     }
@@ -387,11 +386,12 @@ object AppNavigation {
                     onNavigate = { route -> navController.navigateTo(route) }
                 )
             }
-            composable(ADMIN_SIMILARITY_LIST) { AdminSimilarityListScreen(
-                onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigateTo(route) },
-                bottomBar = { bottomBar() }
-            ) }
+            composable(ADMIN_SIMILARITY_LIST) {
+                AdminSimilarityListScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigate = { route -> navController.navigateTo(route) }
+                )
+            }
             composable(
                 route = ADMIN_SIMILARITY_DETAIL,
                 arguments = listOf(

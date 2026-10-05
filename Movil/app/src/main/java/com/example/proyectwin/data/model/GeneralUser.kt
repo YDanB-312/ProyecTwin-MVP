@@ -12,7 +12,10 @@ data class GeneralUser(
     val fotoPerfil: String? = null,
     val telefono: String? = null,
     val fichaId: Int? = null,
-    val documentoIdentidad: String? = null
+    val documentoIdentidad: String? = null,
+    val nombre: String? = null,
+    val apellido: String? = null,
+    val estado: Boolean = true
 ) {
     val userRole: UserRole get() = UserRole.fromValue(role)
     val roleDisplayName: String get() = when (userRole) {

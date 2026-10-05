@@ -1,12 +1,12 @@
 package com.example.proyectwin.ui.screens.aprendiz
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,55 +17,69 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.data.model.GeneralUser
+import com.example.proyectwin.data.model.ProjectDraft
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import com.example.proyectwin.ui.viewmodel.AuthUiState
-import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-
-data class NewProjectFormData(
-    val title: String = "",
-    val summary: String = "",
-    val keywords: String = "",
-    val technologies: String = "",
-    val objectives: String = "",
-    val deliverables: String = "",
-    val observations: String = "",
-    val duration: String = "",
-    val startDate: String = "",
-    val projectType: String = "aplicacion",
-)
+import com.example.proyectwin.ui.viewmodel.ProjectsViewModel
+import com.example.proyectwin.ui.viewmodel.TeamSelectionUiState
+import com.example.proyectwin.ui.viewmodel.TeamSelectionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewProjectScreen(
     onBack: () -> Unit,
-    onSubmit: () -> Unit = {},
+    onSubmit: (ProjectDraft) -> Unit = { },
+    onSuccess: (Int) -> Unit = { },
     projectId: String = "",
-    authViewModel: AuthViewModel = viewModel()
+    projectsViewModel: ProjectsViewModel = hiltViewModel(),
+    teamSelectionViewModel: TeamSelectionViewModel = hiltViewModel()
 ) {
-    val authState by authViewModel.uiState.collectAsState()
-    val currentUser = (authState as? AuthUiState.LoggedIn)?.user
-    val existingProject = remember(projectId) {
-        projectId.toIntOrNull()?.let { MockDataProvider.findProjectById(it) }
+    var title by remember { mutableStateOf("") }
+    var summary by remember { mutableStateOf("") }
+    var keywords by remember { mutableStateOf("") }
+    var objectives by remember { mutableStateOf("") }
+    var deliverables by remember { mutableStateOf("") }
+    var observations by remember { mutableStateOf("") }
+    var duration by remember { mutableStateOf("6") }
+    var projectType by remember { mutableStateOf("aplicacion") }
+
+    val scrollState = rememberScrollState()
+    val createState by projectsViewModel.createState.collectAsState()
+    val teamUiState by teamSelectionViewModel.uiState.collectAsState()
+
+    LaunchedEffect(createState) {
+        if (createState is ProjectsViewModel.CreateState.Success) {
+            onSuccess((createState as ProjectsViewModel.CreateState.Success).projectId)
+            projectsViewModel.resetCreateState()
+        }
     }
-    var formData by remember {
-        mutableStateOf(
-            existingProject?.let { project ->
-                NewProjectFormData(
-                    title = project.title,
-                    summary = project.description,
-                    observations = "Editando proyecto existente"
-                )
-            } ?: NewProjectFormData()
+
+    LaunchedEffect(Unit) {
+        teamSelectionViewModel.loadTeam()
+    }
+
+    val draft = remember(title, summary, keywords, projectType, objectives, deliverables) {
+        ProjectDraft(
+            titulo = title,
+            resumen = summary,
+            palabrasClave = if (keywords.isNotBlank()) keywords.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString(",") else null,
+            areaAplicacion = projectType,
+            objetivoGeneral = objectives,
+            objetivosEspecificos = if (deliverables.isNotBlank()) deliverables.split(",").map { it.trim() }.filter { it.isNotBlank() } else emptyList(),
+            estado = ProjectStatus.PENDIENTE.value,
+            idCreador = 0,
+            idInstructorAsignado = null,
+            idClassGroup = null
         )
     }
-    var isSubmitting by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
+
+    val selectedIds = when (val state = teamUiState) {
+        is TeamSelectionUiState.Success -> state.selectedIds
+        else -> emptySet()
+    }
 
     Scaffold(
         topBar = {
@@ -79,35 +93,22 @@ fun NewProjectScreen(
         containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
-                SenaButton(text = "Cancelar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
+                SenaButton(
+                    text = "Cancelar",
+                    onClick = onBack,
+                    isPrimary = false,
+                    modifier = Modifier.weight(1f)
+                )
                 SenaButton(
                     text = "Guardar Proyecto",
                     onClick = {
-                        isSubmitting = true
-                        scope.launch {
-                            delay(1500)
-                            if (existingProject != null) {
-                                MockDataProvider.updateProject(
-                                    id = existingProject.id,
-                                    title = formData.title,
-                                    description = formData.summary
-                                )
-                            } else {
-                                MockDataProvider.createProject(
-                                    title = formData.title,
-                                    description = formData.summary,
-                                    studentId = currentUser?.id ?: 2,
-                                    instructorId = 1,
-                                    fichaId = currentUser?.fichaId ?: 1,
-                                    studentName = currentUser?.name ?: "Ana Aprendiz",
-                                    instructorName = "Carlos Instructor"
-                                )
-                            }
-                            isSubmitting = false
-                            onSubmit()
+                        if (title.isBlank() || summary.isBlank() || objectives.isBlank() || deliverables.isBlank()) {
+                            return@SenaButton
                         }
+                        val team = selectedIds.toList()
+                        projectsViewModel.crear(draft, team)
                     },
-                    isLoading = isSubmitting,
+                    isLoading = createState is ProjectsViewModel.CreateState.Loading,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -122,12 +123,11 @@ fun NewProjectScreen(
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             SenaPageHeader(
-                title = if (existingProject != null) "Editar Proyecto" else "Nuevo Proyecto",
-                subtitle = if (existingProject != null) "Modifica la información de tu propuesta." else "Inicia una idea desde cero y compártela con tus instructores.",
+                title = "Nuevo Proyecto",
+                subtitle = "Inicia una idea desde cero y compártela con tus instructores.",
                 icon = Icons.Default.AddCircle
             )
 
-            // Step Indicator (Inspirado en la web que es un formulario guiado)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -148,27 +148,45 @@ fun NewProjectScreen(
                 )
             }
 
+            if (createState is ProjectsViewModel.CreateState.Error) {
+                SenaAlertBanner(
+                    title = "Error al crear el proyecto",
+                    message = (createState as ProjectsViewModel.CreateState.Error).message,
+                    icon = Icons.Default.Error,
+                    color = senaColors().danger
+                )
+                val fieldErrors = (createState as ProjectsViewModel.CreateState.Error).fieldErrors
+                fieldErrors.forEach { (campo, error) ->
+                    Text(
+                        text = "$campo: $error",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().danger,
+                        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                    )
+                }
+            }
+
             SenaSectionHeader(title = "Información del Proyecto")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     SenaTextField(
-                        value = formData.title,
-                        onValueChange = { formData = formData.copy(title = it) },
+                        value = title,
+                        onValueChange = { title = it },
                         label = "Título del proyecto *",
                         placeholder = "Ej: Sistema de Gestión IoT"
                     )
-                    
+
                     SenaTextField(
-                        value = formData.summary,
-                        onValueChange = { formData = formData.copy(summary = it) },
+                        value = summary,
+                        onValueChange = { summary = it },
                         label = "Resumen ejecutivo *",
                         placeholder = "Describe brevemente el alcance...",
                         modifier = Modifier.heightIn(min = 120.dp)
                     )
-                    
+
                     SenaTextField(
-                        value = formData.keywords,
-                        onValueChange = { formData = formData.copy(keywords = it) },
+                        value = keywords,
+                        onValueChange = { keywords = it },
                         label = "Palabras clave (separadas por coma) *",
                         placeholder = "Desarrollo, IoT, Sena"
                     )
@@ -179,16 +197,16 @@ fun NewProjectScreen(
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     SenaTextField(
-                        value = formData.objectives,
-                        onValueChange = { formData = formData.copy(objectives = it) },
+                        value = objectives,
+                        onValueChange = { objectives = it },
                         label = "Objetivos generales *",
                         placeholder = "Define lo que esperas lograr...",
                         modifier = Modifier.heightIn(min = 100.dp)
                     )
-                    
+
                     SenaTextField(
-                        value = formData.deliverables,
-                        onValueChange = { formData = formData.copy(deliverables = it) },
+                        value = deliverables,
+                        onValueChange = { deliverables = it },
                         label = "Entregables esperados *",
                         placeholder = "Software, Documentación, etc.",
                         modifier = Modifier.heightIn(min = 100.dp)
@@ -196,30 +214,39 @@ fun NewProjectScreen(
                 }
             }
 
-            SenaSectionHeader(title = "Equipo de Trabajo")
+            SenaSectionHeader(title = "Equipo")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "Selecciona los integrantes de tu equipo (máx 5)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = senaColors().textLight
-                    )
-                    
-                    repeat(3) { index ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Checkbox(
-                                checked = index == 0, 
-                                onCheckedChange = {},
-                                colors = CheckboxDefaults.colors(checkedColor = senaColors().green)
-                            )
-                            Text(
-                                if (index == 0) "Maria Gonzalez (Tú)" else if (index == 1) "Juan Perez" else "Laura Gomez",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (index == 0) senaColors().text else senaColors().textSecondary
-                            )
+                    when (val state = teamUiState) {
+                        is TeamSelectionUiState.Loading -> {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                        is TeamSelectionUiState.Error -> {
+                            Text(state.message, color = senaColors().danger)
+                        }
+                        is TeamSelectionUiState.Success -> {
+                            if (state.members.isEmpty()) {
+                                Text("No hay compañeros disponibles en tu ficha.", color = senaColors().textSecondary)
+                            } else {
+                                TeamMemberList(
+                                    members = state.members,
+                                    selectedIds = state.selectedIds,
+                                    onToggle = { teamSelectionViewModel.toggleMember(it) }
+                                )
+                            }
+                            val selectedList = state.members.filter { it.id in state.selectedIds }
+                            if (selectedList.isNotEmpty()) {
+                                HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(vertical = 8.dp))
+                                Text("Seleccionados:", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    selectedList.forEach { member ->
+                                        Chip(
+                                            label = member.name ?: member.email,
+                                            onClick = { teamSelectionViewModel.removeSelected(member.id) }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -229,40 +256,80 @@ fun NewProjectScreen(
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     Text("Tipo de proyecto", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
                         SenaChip(
-                            text = "Software", 
-                            color = senaColors().green, 
-                            isSelected = formData.projectType == "aplicacion",
-                            onClick = { formData = formData.copy(projectType = "aplicacion") }
+                            text = "Software",
+                            color = senaColors().green,
+                            isSelected = projectType == "aplicacion",
+                            onClick = { projectType = "aplicacion" }
                         )
                         SenaChip(
-                            text = "Investigación", 
-                            color = senaColors().accent, 
-                            isSelected = formData.projectType == "investigacion",
-                            onClick = { formData = formData.copy(projectType = "investigacion") }
+                            text = "Investigación",
+                            color = senaColors().accent,
+                            isSelected = projectType == "investigacion",
+                            onClick = { projectType = "investigacion" }
                         )
                     }
-                    
+
                     SenaTextField(
-                        value = formData.duration,
-                        onValueChange = { formData = formData.copy(duration = it) },
+                        value = duration,
+                        onValueChange = { duration = it },
                         label = "Duración estimada (meses)",
                         placeholder = "6"
-                    )
-                    
-                    SenaTextField(
-                        value = formData.observations,
-                        onValueChange = { formData = formData.copy(observations = it) },
-                        label = "Observaciones",
-                        placeholder = "Información adicional relevante...",
-                        modifier = Modifier.heightIn(min = 80.dp)
                     )
                 }
             }
 
             Spacer(Modifier.height(100.dp))
         }
+    }
+}
+
+@Composable
+fun TeamMemberList(
+    members: List<GeneralUser>,
+    selectedIds: Set<Int>,
+    onToggle: (Int) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        members.forEach { member ->
+            val selected = selectedIds.contains(member.id)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggle(member.id) }
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .background(
+                            if (selected) senaColors().green else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(member.name ?: member.email, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+fun Chip(label: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        color = senaColors().success.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().success)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = senaColors().success
+        )
     }
 }
 

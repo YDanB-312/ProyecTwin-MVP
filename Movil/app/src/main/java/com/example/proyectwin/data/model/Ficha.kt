@@ -11,7 +11,10 @@ data class Ficha(
     val instructorId: Int? = null,
     val instructorName: String? = null,
     val createdAt: String? = null,
-    val estudiantes: List<GeneralUser> = emptyList()
+    val estudiantes: List<GeneralUser> = emptyList(),
+    val nombre: String? = null,
+    val numero: String? = null,
+    val idPrograma: Int? = null
 ) {
     val classGroupStatus: ClassGroupStatus get() = ClassGroupStatus.fromValue(estado)
     val statusDisplay: String get() = when (classGroupStatus) {

@@ -14,7 +14,13 @@ data class Project(
     val createdAt: String? = null,
     val updatedAt: String? = null,
     val studentName: String? = null,
-    val instructorName: String? = null
+    val instructorName: String? = null,
+    val palabrasClave: String? = null,
+    val areaAplicacion: String = "",
+    val objetivoGeneral: String? = null,
+    val objetivosEspecificos: List<String> = emptyList(),
+    val programa: String? = null,
+    val equipo: List<GeneralUser> = emptyList()
 ) {
     val projectStatus: ProjectStatus get() = ProjectStatus.fromValue(estado)
     val statusDisplay: String get() = when (projectStatus) {

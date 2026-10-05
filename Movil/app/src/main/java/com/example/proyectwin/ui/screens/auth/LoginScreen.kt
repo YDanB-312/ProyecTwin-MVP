@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
@@ -37,7 +37,7 @@ fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -188,23 +188,6 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = Color.White,
-                border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().border)
-            ) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("ACCESO RÁPIDO (DEMO)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textMuted)
-                    Text("Usa: aprendiz@test.com • instructor@test.com • admin@test.com", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                    Text("Contraseña: 123456", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-
-                    QuickAccessRow("Aprendiz (aprendiz@test.com)", senaColors().success) { email = "aprendiz@test.com"; password = "123456" }
-                    QuickAccessRow("Instructor (instructor@test.com)", senaColors().info) { email = "instructor@test.com"; password = "123456" }
-                    QuickAccessRow("Admin (admin@test.com)", senaColors().warning) { email = "admin@test.com"; password = "123456" }
-                }
-            }
         }
 
         Spacer(Modifier.height(40.dp))
