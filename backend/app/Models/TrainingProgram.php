@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,22 +16,13 @@ class TrainingProgram extends Model
 
     protected $fillable = ['nombre', 'nivel', 'num_trimestres', 'knowledge_network_id'];
 
-    protected $allowIncluded = ['apprentices', 'classGroups', 'knowledgeNetwork'];
+    // Solo lo que el frontend necesita: las rutas públicas de catálogos no
+    // deben poder cargar aprendices ni fichas (PII y códigos de unión).
+    public $allowIncluded = ['knowledgeNetwork'];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
     }
 
     public function apprentices()

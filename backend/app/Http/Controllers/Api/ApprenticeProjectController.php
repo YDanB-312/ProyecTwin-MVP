@@ -50,6 +50,14 @@ class ApprenticeProjectController extends Controller
             return response()->json(['message' => 'No puedes gestionar el equipo de esta propuesta.'], 403);
         }
 
+        // El equipo se gestiona mientras la propuesta es editable (borrador o
+        // rechazada); una vez enviada queda en revisión.
+        if ($request->user()->rol === 'aprendiz' && !in_array($proyecto->estado, ['borrador', 'rechazado'], true)) {
+            return response()->json([
+                'message' => 'Solo puedes gestionar el equipo mientras la propuesta es editable.',
+            ], 422);
+        }
+
         // Invariante: el integrante debe pertenecer a la ficha de la propuesta.
         $aprendiz = Apprentice::findOrFail($request->id_aprendiz);
         if ($proyecto->id_class_group
@@ -91,6 +99,13 @@ class ApprenticeProjectController extends Controller
             || !$proyecto
             || !$proyecto->puedeEscribir($request->user())) {
             return response()->json(['message' => 'No puedes gestionar el equipo de esta propuesta.'], 403);
+        }
+
+        if ($request->user()->rol === 'aprendiz'
+            && !in_array($proyecto->estado, ['borrador', 'rechazado'], true)) {
+            return response()->json([
+                'message' => 'Solo puedes gestionar el equipo mientras la propuesta es editable.',
+            ], 422);
         }
 
         $aprendiz = Apprentice::find($item->id_aprendiz);

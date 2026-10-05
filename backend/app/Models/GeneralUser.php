@@ -6,6 +6,7 @@ use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,7 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     protected $fillable = [
         'nombre', 'apellido', 'tipo_documento', 'numero_documento', 'correo',
         'username', 'password', 'must_change_password', 'password_temporal',
+        'credenciales_enviadas_en', 'credenciales_error',
         'foto_url', 'rol', 'estado',
     ];
 
@@ -29,7 +31,11 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     // contraseña temporal se descifra solo al exportar credenciales.
     protected $hidden = ['password', 'remember_token', 'password_temporal'];
 
-    protected $casts = ['estado' => 'boolean', 'must_change_password' => 'boolean'];
+    protected $casts = [
+        'estado' => 'boolean',
+        'must_change_password' => 'boolean',
+        'credenciales_enviadas_en' => 'datetime',
+    ];
 
     // El correo es el identificador de acceso (no existe columna `email`).
     public function getEmailForPasswordReset()
@@ -61,22 +67,11 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
     }
 
-    protected $allowIncluded = ['apprentice', 'instructor', 'admin', 'projects', 'notifications', 'comments', 'bugReports'];
+    public $allowIncluded = ['apprentice', 'instructor', 'admin', 'projects', 'notifications', 'comments', 'bugReports'];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
     }
 
     // ---------------------------------------------------------------- Filtros de listado

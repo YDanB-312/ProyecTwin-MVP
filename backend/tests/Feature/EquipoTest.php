@@ -91,7 +91,8 @@ class EquipoTest extends TestCase
             'titulo' => 'Propuesta equipo',
             'resumen' => 'Resumen de la propuesta de equipo para la prueba.',
             'area_aplicacion' => 'Tecnología',
-            'estado' => 'pendiente',
+            // El equipo se gestiona mientras la propuesta es editable.
+            'estado' => 'borrador',
             'id_creador' => $creador->id,
             'id_class_group' => $ficha->id,
         ]);

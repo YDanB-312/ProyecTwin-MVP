@@ -191,6 +191,8 @@ class ReglasNegocioFase2Test extends TestCase
         $aprendiz = $this->aprendizEn($ficha);
 
         $project = $this->proyecto('Mía', $aprendiz, $ficha, $instructor->id);
+        // El aprendiz edita mientras la propuesta es editable (borrador).
+        $project->update(['estado' => 'borrador']);
 
         $this->como($aprendiz)->putJson('/v1/projects/' . $project->id, [
             'titulo' => 'Mía',

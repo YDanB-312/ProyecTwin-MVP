@@ -157,7 +157,7 @@ class LogicaNegocioTest extends TestCase
             'titulo' => 'Original',
             'resumen' => 'Resumen original de la propuesta de prueba.',
             'area_aplicacion' => 'Tecnología',
-            'estado' => 'pendiente',
+            'estado' => 'borrador',
             'id_creador' => $aprendiz->id,
             'id_class_group' => $ficha->id,
         ]);

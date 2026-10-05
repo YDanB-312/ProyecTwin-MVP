@@ -1,3 +1,5 @@
+> NOTA HISTÓRICA (F8): documento anterior a la integración real. El frontend ya no usa datos mock y el motor de similitud detecta al enviar (no al aprobar).
+
 # Alcance del Backend – ProyecTwin MVP
 
 > Este documento aclara qué parte del frontend cubre el backend actual y qué queda pendiente, respetando el patrón del instructor.

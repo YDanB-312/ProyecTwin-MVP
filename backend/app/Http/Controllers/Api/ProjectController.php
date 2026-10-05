@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
 use App\Models\ClassGroup;
+use App\Models\Comment;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Notification;
 use App\Models\Project;
+use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Services\NotificacionesService;
+use App\Similarity\Recomputador;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -26,19 +29,20 @@ class ProjectController extends Controller
             ->byEstado($request->query('estado'))
             ->byFicha($request->query('ficha_id'))
             ->byPrograma($request->query('programa'))
+            ->orderByDesc('id')
             ->get();
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'titulo' => 'required|max:255',
-            'resumen' => 'required',
+            'titulo' => 'nullable|max:255',
+            'resumen' => 'nullable',
             'palabras_clave' => 'nullable|max:255',
-            'area_aplicacion' => 'required|max:255',
+            'area_aplicacion' => 'nullable|max:255',
             'objetivo_general' => 'nullable',
             'objetivos_especificos' => 'nullable|array',
-            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
+            'estado' => 'nullable|in:borrador,pendiente,aprobado,rechazado',
             'id_creador' => 'nullable|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
             'id_class_group' => 'nullable|exists:class_groups,id',
@@ -47,6 +51,8 @@ class ProjectController extends Controller
         $usuario = $request->user();
         $rol = optional($usuario)->rol;
         $datos = $request->all();
+        // La huella de envío la calcula el servidor al enviar: nunca llega del cliente.
+        unset($datos['huella_envio']);
 
         if ($rol === 'aprendiz') {
             // La propuesta vive en la ficha ACTUAL del aprendiz (activa) y con
@@ -62,6 +68,8 @@ class ProjectController extends Controller
             $datos['id_class_group'] = $ficha->id;
             $datos['id_instructor_asignado'] = $ficha->id_instructor;
             $datos['id_creador'] = $usuario->id;
+            // Toda propuesta nace como borrador: el envío es explícito.
+            $datos['estado'] = 'borrador';
         } elseif ($rol === 'admin') {
             // Un admin puede registrarla a nombre de otro, pero el autor debe
             // ser un aprendiz (integridad de dominio).
@@ -73,24 +81,109 @@ class ProjectController extends Controller
             } else {
                 $datos['id_creador'] = $usuario->id;
             }
+            $datos['estado'] = $datos['estado'] ?? 'borrador';
         } else {
             // Solo aprendices (o un admin a nombre de uno) pueden ser autores:
             // una propuesta sin autor aprendiz rompe el dominio del motor.
             return response()->json(['message' => 'Solo un aprendiz puede registrar propuestas.'], 403);
         }
 
-        // Alta atómica: propuesta + equipo + notificación (todo o nada).
+        // Alta atómica: propuesta + equipo + auditoría (todo o nada).
         $item = DB::transaction(function () use ($datos) {
             $item = Project::create($datos);
             // El creador forma parte del equipo: se registra en el pivote para que
             // los conteos y el listado de integrantes sean consistentes.
             $this->asegurarCreadorEnEquipo($item);
-            // Avisa al instructor a cargo que hay una propuesta pendiente de revisión.
-            app(NotificacionesService::class)->revisionPropuesta($item);
+            \App\Support\Auditoria::registrar('crear_propuesta', 'projects', $item->id, [
+                'titulo' => $item->titulo,
+                'estado' => $item->estado,
+            ]);
+            \App\Support\HistorialProyecto::registrar($item, 'creada', [
+                'titulo' => $item->titulo,
+            ]);
             return $item;
         });
 
         return response()->json($item, 201);
+    }
+
+    // Envío explícito del borrador (o reenvío tras un rechazo): valida la
+    // propuesta completa, ejecuta el motor de similitud en el servidor y avisa
+    // al instructor. El frontend ya no dispara el análisis.
+    public function enviar(Request $request, Project $project)
+    {
+        $usuario = $request->user();
+        $rol = optional($usuario)->rol;
+
+        $permitido = $rol === 'admin'
+            || ($rol === 'aprendiz'
+                && $this->esPropiaDelAprendiz($project, $usuario)
+                && $project->puedeEscribir($usuario));
+        if (!$permitido) {
+            return response()->json(['message' => 'No puedes enviar esta propuesta.'], 403);
+        }
+
+        if (!in_array($project->estado, ['borrador', 'rechazado'], true)) {
+            $mensaje = $project->estado === 'aprobado'
+                ? 'La propuesta ya está aprobada.'
+                : 'La propuesta ya fue enviada y está en revisión.';
+            return response()->json(['message' => $mensaje], 422);
+        }
+
+        // Validación estricta del contenido al enviar (el borrador es libre).
+        $faltantes = $this->camposFaltantes($project);
+        if ($faltantes) {
+            return response()->json([
+                'message' => 'Completa la propuesta antes de enviarla: ' . implode(', ', $faltantes) . '.',
+                'campos' => $faltantes,
+            ], 422);
+        }
+
+        // Reenvío sin cambios reales: se compara con el último envío.
+        $huella = $this->huellaContenido($project);
+        $eraRechazada = $project->estado === 'rechazado';
+        if ($eraRechazada && $project->huella_envio && $project->huella_envio === $huella) {
+            return response()->json([
+                'message' => 'No hay cambios respecto a la versión anterior. Modifica la propuesta antes de reenviarla.',
+            ], 422);
+        }
+
+        $item = DB::transaction(function () use ($project, $huella, $eraRechazada) {
+            $project->update(['estado' => 'pendiente', 'huella_envio' => $huella]);
+
+            // Reenvío: la detección de la versión rechazada queda como evidencia
+            // histórica y el motor analiza el contenido nuevo.
+            if ($eraRechazada) {
+                app(Recomputador::class)->archivar($project);
+            }
+
+            // El motor corre en el servidor (guarda pares y notifica al creador).
+            $creadas = app(Recomputador::class)->detectar($project);
+
+            \App\Support\Auditoria::registrar('enviar_propuesta', 'projects', $project->id, [
+                'titulo' => $project->titulo,
+                'huella' => $huella,
+            ]);
+
+            \App\Support\HistorialProyecto::registrar($project, $eraRechazada ? 'reenviada' : 'enviada', [
+                'huella' => $huella,
+            ]);
+
+            // Avisa al instructor: reenvío (nueva revisión) o envío inicial.
+            if ($eraRechazada) {
+                app(NotificacionesService::class)->propuestaReenviada($project);
+            } else {
+                app(NotificacionesService::class)->revisionPropuesta($project);
+            }
+            // Si el motor encontró coincidencias, el instructor las revisa.
+            if ($creadas > 0) {
+                app(NotificacionesService::class)->similitudesEncontradas($project, $creadas);
+            }
+
+            return $project->fresh();
+        });
+
+        return $item;
     }
 
     public function show(Request $request, $id)
@@ -119,14 +212,16 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $request->validate([
-            'titulo' => 'required|max:255',
-            'resumen' => 'required',
+            'titulo' => 'nullable|max:255',
+            'resumen' => 'nullable',
             'palabras_clave' => 'nullable|max:255',
-            'area_aplicacion' => 'required|max:255',
+            'area_aplicacion' => 'nullable|max:255',
             'objetivo_general' => 'nullable',
             'objetivos_especificos' => 'nullable|array',
-            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
-            'id_creador' => 'required|exists:general_users,id',
+            'estado' => 'nullable|in:borrador,pendiente,aprobado,rechazado',
+            // Observación del instructor al rechazar (opcional).
+            'observacion' => 'nullable|string|max:1000',
+            'id_creador' => 'nullable|exists:general_users,id',
             'id_instructor_asignado' => 'nullable|exists:instructors,id',
             'id_class_group' => 'nullable|exists:class_groups,id',
         ]);
@@ -146,15 +241,38 @@ class ProjectController extends Controller
                     'message' => 'Solo lectura: ya no perteneces a la ficha de esta propuesta.',
                 ], 403);
             }
+            // El aprendiz edita mientras esté en borrador o rechazada; el envío
+            // (y el cambio de estado) es una acción explícita.
+            if (!in_array($project->estado, ['borrador', 'rechazado'], true)) {
+                return response()->json([
+                    'message' => 'Solo puedes editar una propuesta en borrador o rechazada.',
+                ], 422);
+            }
         } elseif ($rol === 'instructor') {
             if (!$this->esInstructorDeLaPropuesta($project, $usuario)) {
                 return response()->json(['message' => 'No puedes editar una propuesta fuera de tus fichas.'], 403);
+            }
+            // Un proyecto aprobado es estado final del flujo normal: el
+            // instructor no lo edita (el admin conserva su intervención).
+            if ($project->estado === 'aprobado') {
+                return response()->json([
+                    'message' => 'Un proyecto aprobado no se edita en el flujo normal.',
+                ], 422);
+            }
+            // Transiciones válidas: solo desde "pendiente" hacia aprobado/rechazado.
+            $nuevoEstado = $request->input('estado');
+            if ($nuevoEstado && $nuevoEstado !== $project->estado
+                && !($project->estado === 'pendiente' && in_array($nuevoEstado, ['aprobado', 'rechazado'], true))) {
+                return response()->json(['message' => 'Transición no permitida desde el estado actual.'], 422);
             }
         } elseif ($rol !== 'admin') {
             return response()->json(['message' => 'Sin permiso para editar propuestas.'], 403);
         }
 
         $datos = $request->all();
+        unset($datos['observacion']);
+        // La huella de envío la fija el servidor en `enviar`: no se edita a mano.
+        unset($datos['huella_envio']);
 
         // La propuesta no cambia de ficha ni de creador por esta vía
         // (trazabilidad histórica); se conservan los valores actuales.
@@ -165,38 +283,106 @@ class ProjectController extends Controller
         if ($rol !== 'admin') {
             unset($datos['id_instructor_asignado']);
         }
-
-        // El aprendiz no aprueba/rechaza: al reenviar una rechazada vuelve a
-        // pendiente para una nueva revisión del instructor.
+        // El aprendiz no cambia estados por esta vía (usa "Enviar propuesta").
         if ($rol === 'aprendiz') {
+            unset($datos['estado']);
+        }
+
+        // ¿Cambió el contenido descriptivo? Sirve para devolver a revisión una
+        // aprobada editada por el staff y para registrarlo en el historial.
+        $camposContenido = ['titulo', 'resumen', 'palabras_clave', 'area_aplicacion', 'objetivo_general', 'objetivos_especificos'];
+        $contenidoCambio = false;
+        foreach ($camposContenido as $c) {
+            if (!$request->has($c)) continue;
+            if (json_encode($request->input($c)) !== json_encode($project->{$c})) {
+                $contenidoCambio = true;
+                break;
+            }
+        }
+        if ($rol !== 'aprendiz' && $project->estado === 'aprobado' && $contenidoCambio) {
             $datos['estado'] = 'pendiente';
         }
 
-        // Contenido de una propuesta APROBADA editado por staff → nueva revisión.
-        if ($rol !== 'aprendiz' && $project->estado === 'aprobado') {
-            $campos = ['titulo', 'resumen', 'palabras_clave', 'area_aplicacion', 'objetivo_general', 'objetivos_especificos'];
-            foreach ($campos as $c) {
-                if (!$request->has($c)) continue;
-                if (json_encode($request->input($c)) !== json_encode($project->{$c})) {
-                    $datos['estado'] = 'pendiente';
-                    break;
-                }
-            }
-        }
-
         $estadoAnterior = $project->estado;
-        $project->update($datos);
+        $observacion = trim((string) $request->input('observacion', ''));
 
-        // Aprobar/rechazar queda en la bitácora (decisión con efecto académico).
-        if ($rol !== 'aprendiz' && $estadoAnterior !== $project->estado) {
-            \App\Support\Auditoria::registrar('revisar_propuesta', 'projects', $project->id, [
-                'de' => $estadoAnterior,
-                'a' => $project->estado,
-                'titulo' => $project->titulo,
-            ]);
-        }
+        // Actualización atómica: propuesta + comentario + historial + avisos.
+        DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario) {
+            $project->update($datos);
+
+            // Aprobar/rechazar queda en la bitácora (decisión con efecto académico).
+            if ($rol !== 'aprendiz' && $estadoAnterior !== $project->estado) {
+                // Intervención excepcional del admin: una aprobada editada
+                // vuelve a revisión y se marca como intervención administrativa.
+                $intervencionAdmin = $rol === 'admin'
+                    && $estadoAnterior === 'aprobado'
+                    && $project->estado === 'pendiente';
+
+                \App\Support\Auditoria::registrar('revisar_propuesta', 'projects', $project->id, array_filter([
+                    'de' => $estadoAnterior,
+                    'a' => $project->estado,
+                    'titulo' => $project->titulo,
+                    'intervencion_admin' => $intervencionAdmin ?: null,
+                ]));
+
+                // Observación opcional del instructor al rechazar: se guarda como
+                // comentario del proyecto.
+                if ($project->estado === 'rechazado' && $observacion !== '') {
+                    Comment::create([
+                        'texto' => $observacion,
+                        'id_proyecto' => $project->id,
+                        'id_usuario' => $usuario->id,
+                        'respuesta_a' => null,
+                    ]);
+                }
+
+                // Historial de la decisión (con la observación si la hubo).
+                $accionHistorial = $project->estado === 'aprobado'
+                    ? 'aprobada'
+                    : ($project->estado === 'rechazado' ? 'rechazada' : null);
+                if ($accionHistorial) {
+                    \App\Support\HistorialProyecto::registrar($project, $accionHistorial, array_filter([
+                        'contenido_cambiado' => $contenidoCambio ?: null,
+                        'observacion' => $project->estado === 'rechazado' ? ($observacion ?: null) : null,
+                    ]));
+                } elseif ($intervencionAdmin) {
+                    \App\Support\HistorialProyecto::registrar($project, 'devuelta_revision', [
+                        'intervencion_admin' => true,
+                    ]);
+                }
+
+                // La versión rechazada conserva sus coincidencias como evidencia
+                // histórica (dejan de estar vigentes).
+                if ($project->estado === 'rechazado') {
+                    app(Recomputador::class)->archivar($project);
+                }
+
+                // Avisa al creador de la decisión (el rechazo incluye la observación).
+                if ($project->estado === 'aprobado') {
+                    app(NotificacionesService::class)->propuestaAprobada($project);
+                } elseif ($project->estado === 'rechazado') {
+                    app(NotificacionesService::class)->propuestaRechazada($project, $observacion ?: null);
+                }
+            } elseif ($contenidoCambio) {
+                \App\Support\HistorialProyecto::registrar($project, 'actualizada');
+            }
+        });
 
         return $project;
+    }
+
+    // Historial de la propuesta (participantes y staff con alcance).
+    public function historial(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!Project::where('id', $id)->paraDetalle($user)->exists()) {
+            return response()->json(['message' => 'No tienes acceso al historial de esta propuesta.'], 403);
+        }
+
+        return ProjectHistory::included()
+            ->where('id_proyecto', $id)
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function destroy(Request $request, Project $project)
@@ -213,9 +399,16 @@ class ProjectController extends Controller
             return response()->json(['message' => 'No puedes eliminar esta propuesta.'], 403);
         }
 
-        $project->delete();
-        // Evita notificaciones con enlace a una propuesta ya inexistente.
-        Notification::where('enlace', 'proyecto:' . $project->id)->delete();
+        DB::transaction(function () use ($project) {
+            $project->delete();
+            // Evita notificaciones con enlace a una propuesta ya inexistente.
+            Notification::where('enlace', 'proyecto:' . $project->id)->delete();
+            \App\Support\Auditoria::registrar('eliminar_propuesta', 'projects', $project->id, [
+                'titulo' => $project->titulo,
+                'estado' => $project->estado,
+            ]);
+        });
+
         return $project;
     }
 
@@ -255,6 +448,35 @@ class ProjectController extends Controller
             'id_proyecto' => $project->id,
             'id_aprendiz' => $filaAprendiz->id,
         ]);
+    }
+
+    // Campos obligatorios para enviar la propuesta (coherente con el formulario).
+    private function camposFaltantes(Project $project): array
+    {
+        $faltantes = [];
+        if (mb_strlen(trim((string) $project->titulo)) < 5) $faltantes[] = 'título';
+        if (mb_strlen(trim((string) $project->resumen)) < 20) $faltantes[] = 'descripción';
+        if (mb_strlen(trim((string) $project->area_aplicacion)) < 3) $faltantes[] = 'área de aplicación';
+        if (mb_strlen(trim((string) $project->objetivo_general)) < 15) $faltantes[] = 'objetivo general';
+
+        $objetivos = collect($project->objetivos_especificos ?? [])
+            ->filter(fn ($o) => mb_strlen(trim((string) $o)) >= 8);
+        if ($objetivos->count() < 2) $faltantes[] = 'al menos 2 objetivos específicos';
+
+        return $faltantes;
+    }
+
+    // Huella del contenido que define la propuesta (bloquea reenvíos sin cambios).
+    private function huellaContenido(Project $project): string
+    {
+        return sha1(json_encode([
+            $project->titulo,
+            $project->resumen,
+            $project->palabras_clave,
+            $project->area_aplicacion,
+            $project->objetivo_general,
+            $project->objetivos_especificos,
+        ]));
     }
 
 }

@@ -38,10 +38,11 @@ class DatabaseSeeder extends Seeder
         $this->observaciones();
         $this->reportes();
         $this->fichaMovimiento();
-        MotorConfig::create(['umbral' => 0.30, 'meses' => 12]);
+        MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
 
         // --- Causa → efecto: cada acción dispara sus reacciones ---
         $this->reacciones();
+        $this->historiales();
     }
 
     // Reacciones del sistema (notificaciones + bitácora), como en el uso real.
@@ -57,18 +58,41 @@ class DatabaseSeeder extends Seeder
         // 2) Analizar → el motor detecta coincidencias y avisa a los creadores.
         app(\App\Similarity\Recomputador::class)->recalcular(true);
 
-        // 3) La copia rechazada (C) había sido detectada antes de rechazarse.
-        if (!empty($this->idsSimilares['C'])) {
-            $c = Project::find($this->idsSimilares['C']);
-            if ($c) $notif->similitud($c, 7, 100);
+        // 3) La copia rechazada (C) había sido detectada antes de rechazarse:
+        //    se conserva como evidencia histórica (vigente=false) y su aviso
+        //    queda respaldado por una fila real del motor.
+        $c = Project::find($this->idsSimilares['C'] ?? null);
+        $base7 = Project::find(7);
+        if ($c && $base7) {
+            foreach (\App\Services\SimilitudService::puntaje($c, [$c, $base7]) as $par) {
+                if ((int) $par['project_id'] !== (int) $base7->id) continue;
+
+                Similarity::create([
+                    'id_proyecto_1' => $c->id,
+                    'id_proyecto_2' => $base7->id,
+                    'porcentaje' => $par['porcentaje'],
+                    'detalles' => $par['detalles'],
+                    'fecha' => now()->toDateString(),
+                    'vigente' => false,
+                ]);
+                $notif->similitud($c, $base7->id, $par['porcentaje']);
+                break;
+            }
         }
 
         // 4) El instructor revisó: B aprobada, C rechazada → bitácora.
         $this->auditarRevision($this->idsSimilares['B'] ?? null, 'pendiente', 'aprobado');
         $this->auditarRevision($this->idsSimilares['C'] ?? null, 'pendiente', 'rechazado');
 
-        // 5) Reporte de falla → avisa a los admins.
-        BugReport::orderBy('id')->get()->each(fn ($r) => $notif->reporteFalla($r));
+        // 5) Reportes de falla: los abiertos avisan a los admins; los ya
+        //    resueltos/rechazados avisan a su autor (como en el uso real).
+        BugReport::orderBy('id')->get()->each(function ($r) use ($notif) {
+            if (in_array($r->estado, ['resuelto', 'rechazado'], true)) {
+                $notif->soporteResuelto($r);
+            } else {
+                $notif->reporteFalla($r);
+            }
+        });
 
         // 6) El admin ajustó el motor → bitácora.
         $cfg = MotorConfig::first();
@@ -88,6 +112,31 @@ class DatabaseSeeder extends Seeder
             'a' => $a,
             'titulo' => $p->titulo,
         ]);
+    }
+
+    // Historial funcional de la demo: cada propuesta muestra su ciclo real
+    // (creada → enviada → decisión) con el actor que correspondía.
+    private function historiales(): void
+    {
+        foreach (Project::orderBy('id')->get() as $p) {
+            \App\Support\HistorialProyecto::registrar($p, 'creada', ['titulo' => $p->titulo], $p->id_creador);
+
+            if (!in_array($p->estado, ['pendiente', 'aprobado', 'rechazado'], true)) {
+                continue;
+            }
+            \App\Support\HistorialProyecto::registrar($p, 'enviada', [], $p->id_creador);
+
+            $idInstructor = optional(Instructor::find($p->id_instructor_asignado))->id_usuario;
+            if ($p->estado === 'aprobado') {
+                \App\Support\HistorialProyecto::registrar($p, 'aprobada', [], $idInstructor);
+            } elseif ($p->estado === 'rechazado') {
+                $detalle = [];
+                if ($p->id === ($this->idsSimilares['C'] ?? null)) {
+                    $detalle['observacion'] = 'Propuesta rechazada: el motor detectó una alta similitud con una propuesta ya aprobada. Se recomienda replantear el enfoque y diferenciar los objetivos.';
+                }
+                \App\Support\HistorialProyecto::registrar($p, 'rechazada', $detalle, $idInstructor);
+            }
+        }
     }
 
     // ---------------------------------------------------------------- Usuarios

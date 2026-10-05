@@ -127,6 +127,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);
         }
 
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'La nueva contraseña debe ser distinta a la actual.'], 422);
+        }
+
         $user->update([
             'password' => Hash::make($request->password),
             // La contraseña definitiva reemplaza a la temporal: se limpia la
@@ -182,6 +186,12 @@ class AuthController extends Controller
         ]);
 
         $correo = strtolower(trim($request->correo));
+
+        // No se permite reutilizar la contraseña actual (ni la temporal vigente).
+        $existente = GeneralUser::where('correo', $correo)->first();
+        if ($existente && Hash::check($request->password, $existente->password)) {
+            return response()->json(['message' => 'La nueva contraseña debe ser distinta a la actual.'], 422);
+        }
 
         $status = Password::reset(
             [

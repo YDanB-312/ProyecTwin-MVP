@@ -7,6 +7,7 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
+use App\Models\Notification;
 use App\Models\Project;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -146,6 +147,27 @@ class DeleteGuardsTest extends TestCase
 
         $this->como($admin)->deleteJson('/v1/general-users/' . $admin->id)->assertStatus(422);
         $this->assertDatabaseHas('general_users', ['id' => $admin->id]);
+    }
+
+    public function test_borrar_un_usuario_limpia_las_notificaciones_de_sus_propuestas(): void
+    {
+        $admin = $this->usuario('admin');
+        $autor = $this->usuario('aprendiz');
+        $proyecto = $this->proyecto($autor);
+
+        Notification::create([
+            'titulo' => 'Similitud detectada',
+            'tipo' => 'similitud',
+            'enlace' => 'proyecto:' . $proyecto->id,
+            'leida' => false,
+            'fecha' => now()->toDateString(),
+            'id_usuario' => $admin->id,
+        ]);
+
+        $this->como($admin)->deleteJson('/v1/general-users/' . $autor->id)->assertOk();
+
+        // Sin proyecto, la notificación con enlace no queda huérfana.
+        $this->assertDatabaseMissing('notifications', ['enlace' => 'proyecto:' . $proyecto->id]);
     }
 
     public function test_no_se_puede_suspender_al_ultimo_admin_activo(): void

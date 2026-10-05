@@ -6,7 +6,6 @@ use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
-use App\Models\Notification;
 use App\Services\NotificacionesService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -55,6 +54,14 @@ class ApprenticeController extends Controller
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
+        // Un instructor solo inscribe en sus propias fichas.
+        $user = $request->user();
+        if (optional($user)->rol === 'instructor') {
+            if (!$request->filled('id_class_group') || !$this->puedeGestionarFicha($user, (int) $request->id_class_group)) {
+                return response()->json(['message' => 'Solo puedes inscribir aprendices en tus propias fichas.'], 403);
+            }
+        }
+
         $data = $request->all();
         // Invariante: el programa del aprendiz es el de su ficha.
         if ($request->filled('id_class_group')) {
@@ -62,13 +69,40 @@ class ApprenticeController extends Controller
         }
 
         $item = Apprentice::create($data);
+
+        \App\Support\Auditoria::registrar('crear_aprendiz', 'apprentices', $item->id, [
+            'codigo' => $item->codigo,
+            'id_usuario' => $item->id_usuario,
+            'id_class_group' => $item->id_class_group,
+        ]);
+
         return $item;
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $item = Apprentice::included()->findOrFail($id);
-        return $item;
+        $user = $request->user();
+
+        // Mismo alcance que el listado: admin todos; instructor los de sus
+        // fichas; aprendiz el propio o el de un compañero de su ficha.
+        if (optional($user)->rol === 'admin') {
+            return $item;
+        }
+        if ($user && $user->rol === 'instructor') {
+            if ($item->id_class_group && $this->puedeGestionarFicha($user, (int) $item->id_class_group)) {
+                return $item;
+            }
+        }
+        if ($user && $user->rol === 'aprendiz') {
+            $propio = Apprentice::where('id_usuario', $user->id)->first();
+            if ($propio && ((int) $propio->id === (int) $item->id
+                || ($propio->id_class_group && (int) $propio->id_class_group === (int) $item->id_class_group))) {
+                return $item;
+            }
+        }
+
+        return response()->json(['message' => 'No tienes acceso a este aprendiz.'], 403);
     }
 
     public function update(Request $request, Apprentice $apprentice)
@@ -86,6 +120,23 @@ class ApprenticeController extends Controller
             return response()->json(['message' => 'El usuario no tiene rol de aprendiz.'], 422);
         }
 
+        // Un instructor solo gestiona aprendices de sus fichas y no reasigna
+        // la cuenta dueña de la fila (evita suplantación entre fichas).
+        $user = $request->user();
+        if (optional($user)->rol !== 'admin') {
+            $fichaActual = $apprentice->id_class_group;
+            if ($fichaActual && !$this->puedeGestionarFicha($user, (int) $fichaActual)) {
+                return response()->json(['message' => 'No puedes modificar aprendices de otra ficha.'], 403);
+            }
+            if ($request->filled('id_class_group') && (int) $request->id_class_group !== (int) $fichaActual
+                && !$this->puedeGestionarFicha($user, (int) $request->id_class_group)) {
+                return response()->json(['message' => 'Solo puedes mover aprendices a tus propias fichas.'], 403);
+            }
+            if ((int) $request->id_usuario !== (int) $apprentice->id_usuario) {
+                return response()->json(['message' => 'No puedes reasignar la cuenta del aprendiz.'], 403);
+            }
+        }
+
         $data = $request->all();
         // Invariante: el programa del aprendiz es el de su ficha.
         if ($request->filled('id_class_group')) {
@@ -101,6 +152,11 @@ class ApprenticeController extends Controller
             $this->notificarAprendizDeFicha($apprentice, (int) $fichaAnterior);
         }
 
+        \App\Support\Auditoria::registrar('actualizar_aprendiz', 'apprentices', $apprentice->id, [
+            'de' => $fichaAnterior,
+            'a' => $apprentice->id_class_group,
+        ]);
+
         return $apprentice;
     }
 
@@ -108,6 +164,10 @@ class ApprenticeController extends Controller
     {
         // Admin sin restricciones: borra el perfil (la FK arrastra sus pivotes de
         // equipo). Las propuestas del usuario se conservan (son de la cuenta).
+        \App\Support\Auditoria::registrar('eliminar_aprendiz', 'apprentices', $apprentice->id, [
+            'codigo' => $apprentice->codigo,
+            'id_usuario' => $apprentice->id_usuario,
+        ]);
         $apprentice->delete();
         return $apprentice;
     }
@@ -160,7 +220,7 @@ class ApprenticeController extends Controller
             } else {
                 // Un aprendiz recién registrado no tiene fila todavía: se crea aquí.
                 $aprendiz = Apprentice::create([
-                    'codigo' => $this->codigoDisponible(),
+                    'codigo' => Apprentice::codigoDisponible(),
                     'id_usuario' => $user->id,
                     'id_class_group' => $ficha->id,
                     'id_programa' => $ficha->id_programa,
@@ -223,6 +283,18 @@ class ApprenticeController extends Controller
         return Apprentice::where('id_usuario', $request->user()->id)->first();
     }
 
+    // Admin cualquiera; instructor solo sus fichas (mismo criterio que fichas).
+    private function puedeGestionarFicha($user, int $fichaId): bool
+    {
+        if (optional($user)->rol === 'admin') return true;
+        if (!$user || $user->rol !== 'instructor') return false;
+
+        $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
+        return $instructorId && ClassGroup::where('id', $fichaId)
+            ->where('id_instructor', $instructorId)
+            ->exists();
+    }
+
     // Busca por código sin importar mayúsculas/espacios.
     private function buscarPorCodigo(?string $codigo): ?ClassGroup
     {
@@ -232,17 +304,6 @@ class ApprenticeController extends Controller
         return ClassGroup::with('program', 'instructor.generalUser')
             ->whereRaw('LOWER(codigo) = ?', [$codigo])
             ->first();
-    }
-
-    private function codigoDisponible(): string
-    {
-        $n = (int) Apprentice::max('id') + 1;
-        do {
-            $codigo = 'AP-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
-            $n++;
-        } while (Apprentice::where('codigo', $codigo)->exists());
-
-        return $codigo;
     }
 
     private function nombreDe($user): string

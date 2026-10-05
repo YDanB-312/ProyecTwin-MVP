@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,7 @@ class Project extends Model
 
     protected $fillable = [
         'titulo', 'resumen', 'palabras_clave', 'area_aplicacion',
-        'objetivo_general', 'objetivos_especificos', 'estado',
+        'objetivo_general', 'objetivos_especificos', 'estado', 'huella_envio',
         'id_creador', 'id_instructor_asignado', 'id_class_group',
     ];
 
@@ -23,22 +24,15 @@ class Project extends Model
         'objetivos_especificos' => 'array',
     ];
 
-    protected $allowIncluded = ['creator', 'instructor', 'classGroup', 'apprentices', 'comments', 'similaritiesAsOrigin', 'similaritiesAsDestination'];
+    public $allowIncluded = [
+        'creator', 'instructor', 'instructor.generalUser', 'classGroup',
+        'classGroup.program', 'apprentices', 'apprentices.generalUser',
+        'comments', 'similaritiesAsOrigin', 'similaritiesAsDestination',
+    ];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
     }
 
     // ---------------------------------------------------------------- Filtros de listado
@@ -205,6 +199,11 @@ class Project extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class, 'id_proyecto');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(ProjectHistory::class, 'id_proyecto')->orderByDesc('id');
     }
 
     public function similaritiesAsOrigin()

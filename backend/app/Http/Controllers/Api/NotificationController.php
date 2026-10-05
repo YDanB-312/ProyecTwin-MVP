@@ -79,7 +79,9 @@ class NotificationController extends Controller
             return response()->json(['message' => 'No puedes modificar notificaciones de otro usuario.'], 403);
         }
 
-        $notification->update($request->all());
+        // El destinatario no se reasigna por esta vía (solo se marca/edita la
+        // notificación propia): evita enviar avisos a terceros.
+        $notification->update($request->except('id_usuario'));
         return $notification;
     }
 
