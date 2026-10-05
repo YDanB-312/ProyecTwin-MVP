@@ -59,6 +59,8 @@ fun GeneralUserDto.toDomain(): GeneralUser = GeneralUser(
     nombre = nombre,
     apellido = apellido,
     estado = estado,
+    username = username,
+    mustChangePassword = mustChangePassword,
 )
 
 /** Usuario anidado en otra relación: conserva el vínculo con su ficha si lo trae. */

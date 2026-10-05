@@ -13,6 +13,8 @@ data class GeneralUserDto(
     val nombre: String = "",
     val apellido: String = "",
     val correo: String = "",
+    val username: String = "",
+    @SerialName("must_change_password") val mustChangePassword: Boolean = false,
     @SerialName("foto_url") val fotoUrl: String? = null,
     val rol: String = "aprendiz",
     val estado: Boolean = true,

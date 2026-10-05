@@ -1,6 +1,7 @@
 package com.example.proyectwin.data.local
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -38,6 +39,8 @@ class SessionManager @Inject constructor(
         private val KEY_USER_TELEFONO = stringPreferencesKey("user_telefono")
         private val KEY_USER_FICHA_ID = intPreferencesKey("user_ficha_id")
         private val KEY_USER_DOCUMENTO = stringPreferencesKey("user_documento")
+        private val KEY_USER_USERNAME = stringPreferencesKey("user_username")
+        private val KEY_USER_MUST_CHANGE_PASSWORD = booleanPreferencesKey("user_must_change_password")
     }
 
     val currentUser: Flow<GeneralUser?> = context.dataStore.data.map { prefs ->
@@ -54,6 +57,8 @@ class SessionManager @Inject constructor(
             documentoIdentidad = prefs[KEY_USER_DOCUMENTO],
             nombre = prefs[KEY_USER_NOMBRE],
             apellido = prefs[KEY_USER_APELLIDO],
+            username = prefs[KEY_USER_USERNAME] ?: "",
+            mustChangePassword = prefs[KEY_USER_MUST_CHANGE_PASSWORD] ?: false,
         )
     }
 
@@ -72,6 +77,8 @@ class SessionManager @Inject constructor(
             if (user.telefono != null) prefs[KEY_USER_TELEFONO] = user.telefono
             if (user.fichaId != null) prefs[KEY_USER_FICHA_ID] = user.fichaId
             if (user.documentoIdentidad != null) prefs[KEY_USER_DOCUMENTO] = user.documentoIdentidad
+            prefs[KEY_USER_USERNAME] = user.username
+            prefs[KEY_USER_MUST_CHANGE_PASSWORD] = user.mustChangePassword
         }
     }
 

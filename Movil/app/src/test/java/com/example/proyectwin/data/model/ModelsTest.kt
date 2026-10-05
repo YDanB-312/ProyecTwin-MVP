@@ -83,9 +83,9 @@ class ModelsTest {
 
     @Test
     fun bugReport_typeDisplay() {
-        val funcional = BugReport(id = 1, titulo = "T", descripcion = "D", tipo = "funcional")
-        val visual = BugReport(id = 2, titulo = "T", descripcion = "D", tipo = "visual")
-        assertEquals("Funcional", funcional.typeDisplay)
-        assertEquals("Visual", visual.typeDisplay)
+        val funcional = BugReport(id = 1, titulo = "T", descripcion = "D", tipo = "bug_ui")
+        val visual = BugReport(id = 2, titulo = "T", descripcion = "D", tipo = "error_datos")
+        assertEquals("Bug de UI", funcional.typeDisplay)
+        assertEquals("Error de datos", visual.typeDisplay)
     }
 }

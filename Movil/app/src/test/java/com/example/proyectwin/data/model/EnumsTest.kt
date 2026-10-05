@@ -44,8 +44,8 @@ class EnumsTest {
 
     @Test
     fun bugReportType_fromValue_returnsCorrect() {
-        assertEquals(BugReportType.FUNCIONAL, BugReportType.fromValue("funcional"))
-        assertEquals(BugReportType.VISUAL, BugReportType.fromValue("visual"))
+        assertEquals(BugReportType.BUG_UI, BugReportType.fromValue("bug_ui"))
+        assertEquals(BugReportType.ERROR_DATOS, BugReportType.fromValue("error_datos"))
         assertEquals(BugReportType.RENDIMIENTO, BugReportType.fromValue("rendimiento"))
         assertEquals(BugReportType.SEGURIDAD, BugReportType.fromValue("seguridad"))
         assertEquals(BugReportType.OTRO, BugReportType.fromValue("otro"))
