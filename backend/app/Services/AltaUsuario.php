@@ -18,7 +18,7 @@ class AltaUsuario
 {
     public function crear(array $datos, bool $enviarCredenciales = true): array
     {
-        $username = Credenciales::username($datos['nombre'], $datos['apellido']);
+        $username = Credenciales::usernameSeguro($datos['nombre'], $datos['apellido']);
         $temporal = Credenciales::passwordTemporal();
 
         $data = $datos;

@@ -81,7 +81,7 @@ class CredencialesTest extends TestCase
 
         $username = $respuesta->json('credenciales.username');
         $temporal = $respuesta->json('credenciales.password_temporal');
-        $this->assertSame('cmartinez', $username);
+        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username);
         $this->assertMatchesRegularExpression('/^[A-Z0-9]{4}-[A-Z0-9]{4}$/', $temporal);
 
         $user = GeneralUser::findOrFail($respuesta->json('usuario.id'));
@@ -91,7 +91,7 @@ class CredencialesTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'crear_usuario', 'entidad_id' => $user->id]);
     }
 
-    public function test_el_username_se_desambigua_con_sufijo(): void
+    public function test_dos_altas_con_el_mismo_nombre_generan_usernames_distintos(): void
     {
         $primero = $this->alta(['numero_documento' => '81000001'])->assertCreated();
         $segundo = $this->alta([
@@ -101,8 +101,12 @@ class CredencialesTest extends TestCase
             'correo' => 'carlos2.' . uniqid() . '@correo.com',
         ])->assertCreated();
 
-        $this->assertSame('cmartinez', $primero->json('credenciales.username'));
-        $this->assertSame('cmartinez1', $segundo->json('credenciales.username'));
+        $username1 = $primero->json('credenciales.username');
+        $username2 = $segundo->json('credenciales.username');
+
+        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username1);
+        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username2);
+        $this->assertNotSame($username1, $username2);
     }
 
     // ---------------------------------------------------------------- Login
