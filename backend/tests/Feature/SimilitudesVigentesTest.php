@@ -206,6 +206,34 @@ class SimilitudesVigentesTest extends TestCase
         $this->assertNotSame($historica->id, $nueva->id);
     }
 
+    public function test_editar_una_pendiente_archiva_la_deteccion_anterior_y_detecta_la_nueva(): void
+    {
+        [$instructorUser, $maria, $ana] = $this->escenario();
+
+        $idMaria = $this->crearYEnviar($maria, 'Inventarios María');
+        $this->como($instructorUser)->putJson('/v1/projects/' . $idMaria, ['estado' => 'aprobado'])->assertOk();
+
+        $idAna = $this->crearYEnviar($ana, 'Inventarios Ana');
+        $par = $this->parDe($idAna);
+        $this->assertTrue((bool) $par->vigente);
+
+        // Ana edita su propuesta EN REVISIÓN con contenido aún parecido.
+        $this->como($ana)->putJson('/v1/projects/' . $idAna, [
+            'titulo' => 'Inventarios Ana con diferencial',
+            'resumen' => 'Herramienta web para controlar inventarios de almacén con alertas de stock y reportes.',
+        ])->assertOk();
+
+        // La detección anterior queda como evidencia histórica (no se borra).
+        $this->assertFalse((bool) $par->fresh()->vigente);
+
+        // Y aparece una nueva detección vigente del contenido editado.
+        $nueva = Similarity::where(function ($q) use ($idAna) {
+            $q->where('id_proyecto_1', $idAna)->orWhere('id_proyecto_2', $idAna);
+        })->where('vigente', true)->first();
+        $this->assertNotNull($nueva);
+        $this->assertNotSame($par->id, $nueva->id);
+    }
+
     public function test_el_instructor_no_edita_un_proyecto_aprobado(): void
     {
         [$instructorUser, $maria] = $this->escenario();
