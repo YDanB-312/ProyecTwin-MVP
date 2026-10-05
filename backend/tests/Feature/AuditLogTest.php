@@ -94,17 +94,14 @@ class AuditLogTest extends TestCase
         $admin = $this->usuario('admin');
         $objetivo = $this->usuario('aprendiz');
 
-        $this->como($admin)->putJson('/v1/general-users/' . $objetivo->id, [
-            'nombre' => $objetivo->nombre,
-            'apellido' => $objetivo->apellido,
-            'correo' => $objetivo->correo,
-            'password' => 'claveSecreta123',
-        ])->assertOk();
+        $temporal = $this->como($admin)
+            ->postJson('/v1/general-users/' . $objetivo->id . '/credenciales/restablecer')
+            ->assertOk()
+            ->json('credenciales.password_temporal');
 
-        $log = AuditLog::where('accion', 'actualizar_usuario')->latest('id')->first();
+        $log = AuditLog::where('accion', 'restablecer_credenciales')->latest('id')->first();
         $this->assertNotNull($log);
-        $this->assertStringNotContainsString('claveSecreta123', json_encode($log->detalle));
-        $this->assertTrue((bool) ($log->detalle['password_reset'] ?? false));
+        $this->assertStringNotContainsString($temporal, json_encode($log->detalle));
     }
 
     public function test_solo_el_admin_lee_la_bitacora(): void

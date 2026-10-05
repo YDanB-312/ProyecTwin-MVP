@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +14,7 @@ class Similarity extends Model
     // Relaciones en camelCase en el JSON (el frontend es JS).
     public static $snakeAttributes = false;
 
-    protected $fillable = ['porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2'];
+    protected $fillable = ['porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2', 'vigente'];
 
     // Un par siempre se guarda con el id menor primero: evita duplicados
     // invertidos (que la unique no frenaría) y hace determinista `buscarPar`.
@@ -37,24 +38,19 @@ class Similarity extends Model
 
     protected $casts = [
         'detalles' => 'array',
+        'vigente' => 'boolean',
     ];
 
-    protected $allowIncluded = ['project1', 'project2'];
+    public $allowIncluded = [
+        'project1', 'project2',
+        'project1.classGroup.program', 'project2.classGroup.program',
+        'project1.creator', 'project2.creator',
+        'project1.apprentices.generalUser', 'project2.apprentices.generalUser',
+    ];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
     }
 
     // ---------------------------------------------------------------- Filtros de listado
@@ -87,6 +83,18 @@ class Similarity extends Model
     }
 
     // ---------------------------------------------------------------- Alcance
+
+    // Vigencia: el par vigente corresponde al contenido actual analizado; el
+    // histórico es evidencia de una versión anterior (rechazo/reenvío).
+    public function scopeVigentes(Builder $query): Builder
+    {
+        return $query->where('vigente', true);
+    }
+
+    public function scopeHistoricos(Builder $query): Builder
+    {
+        return $query->where('vigente', false);
+    }
 
     // Pares cuya contraparte desde `$proyectoId` está aprobada (regla de
     // perspectiva): sirve para las vistas de UNA propuesta.
@@ -160,7 +168,20 @@ class Similarity extends Model
             });
         }
 
-        return $query->paraUsuario($user);
+        // Aprendiz: par vigente con la regla de perspectiva, o evidencia
+        // histórica de una propuesta propia (versiones anteriores).
+        $mio = fn (Builder $qq) => $qq->where('id_creador', $user->id)
+            ->orWhereHas('apprentices', fn (Builder $a) => $a->where('id_usuario', $user->id));
+
+        return $query->where(function (Builder $q) use ($user, $mio) {
+            $q->where(function (Builder $qq) use ($user) {
+                $qq->paraUsuario($user);
+            })->orWhere(function (Builder $qq) use ($mio) {
+                $qq->historicos()->where(function (Builder $x) use ($mio) {
+                    $x->whereHas('project1', $mio)->orWhereHas('project2', $mio);
+                });
+            });
+        });
     }
 
     // Filtra los pares que tocan uno o varios proyectos (lista separada por comas).

@@ -38,11 +38,12 @@ Route::get('public/resumen', [MotorConfigController::class, 'resumen']);
 Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
 
 // ------------------------------------------------------------------ Sesión
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('auth/logout', [AuthController::class, 'logout']);
-        Route::get('auth/me', [AuthController::class, 'me']);
-        Route::put('auth/email', [AuthController::class, 'changeEmail']);
-        Route::put('auth/password', [AuthController::class, 'changePassword']);
+// Cuenta suspendida no puede ni siquiera usar su token vigente.
+Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('auth/me', [AuthController::class, 'me']);
+    Route::put('auth/email', [AuthController::class, 'changeEmail']);
+    Route::put('auth/password', [AuthController::class, 'changePassword']);
 });
 
 // ------------------------------------------------------------------ Autenticadas
@@ -60,6 +61,8 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioC
     Route::middleware('rol:admin')->post('general-users', [GeneralUserController::class, 'store']);
     // Credenciales iniciales en PDF: selección de usuarios o toda una ficha.
     Route::middleware('rol:admin')->post('general-users/credenciales', [GeneralUserController::class, 'credenciales']);
+    Route::middleware('rol:admin')->post('general-users/{general_user}/credenciales/reenviar', [GeneralUserController::class, 'reenviarCredenciales']);
+    Route::middleware('rol:admin')->post('general-users/{general_user}/credenciales/restablecer', [GeneralUserController::class, 'restablecerCredenciales']);
     Route::get('general-users/{general_user}/perfil', [GeneralUserController::class, 'perfil']);
     Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
@@ -104,6 +107,7 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioC
     Route::get('class-groups/{class_group}', [ClassGroupController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
         Route::post('class-groups', [ClassGroupController::class, 'store']);
+        Route::post('class-groups/{class_group}/aprendices', [ClassGroupController::class, 'agregarAprendiz']);
         Route::put('class-groups/{class_group}', [ClassGroupController::class, 'update']);
         Route::delete('class-groups/{class_group}', [ClassGroupController::class, 'destroy']);
     });
@@ -111,6 +115,8 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioC
     // Propuestas
     Route::get('projects', [ProjectController::class, 'index']);
     Route::post('projects', [ProjectController::class, 'store']);
+    Route::post('projects/{project}/enviar', [ProjectController::class, 'enviar']);
+    Route::get('projects/{project}/historial', [ProjectController::class, 'historial']);
     Route::get('projects/{project}', [ProjectController::class, 'show']);
     Route::put('projects/{project}', [ProjectController::class, 'update']);
     Route::delete('projects/{project}', [ProjectController::class, 'destroy']);

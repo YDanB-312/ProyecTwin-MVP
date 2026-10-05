@@ -299,4 +299,50 @@ class CredencialesTest extends TestCase
         $this->assertCount(2, $pagina['data']);
         $this->assertSame(2, $pagina['per_page']);
     }
+
+    // ---------------------------------------------------------------- Restablecer
+
+    public function test_el_admin_restablece_la_temporal_generada_por_el_servidor(): void
+    {
+        $respuesta = $this->alta()->assertCreated();
+        $user = GeneralUser::findOrFail($respuesta->json('usuario.id'));
+        $temporalOriginal = $respuesta->json('credenciales.password_temporal');
+        $admin = $this->usuario('admin');
+
+        $nueva = $this->como($admin)
+            ->postJson('/v1/general-users/' . $user->id . '/credenciales/restablecer')
+            ->assertOk()
+            ->json('credenciales.password_temporal');
+
+        // Mismo formato institucional que el alta y distinta a la anterior.
+        $this->assertMatchesRegularExpression('/^[A-Z0-9]{4}-[A-Z0-9]{4}$/', $nueva);
+        $this->assertNotSame($temporalOriginal, $nueva);
+
+        // La nueva temporal funciona y sigue obligando al cambio.
+        $fresco = $user->fresh();
+        $this->assertTrue(Hash::check($nueva, $fresco->password));
+        $this->assertTrue((bool) $fresco->must_change_password);
+        $this->assertTrue(Crypt::decryptString($fresco->password_temporal) === $nueva);
+
+        $this->postJson('/v1/auth/login', [
+            'username' => $user->username,
+            'password' => $nueva,
+        ])->assertOk()->assertJsonPath('user.must_change_password', true);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'accion' => 'restablecer_credenciales',
+            'entidad_id' => $user->id,
+        ]);
+    }
+
+    public function test_solo_el_admin_restablece_credenciales(): void
+    {
+        $respuesta = $this->alta()->assertCreated();
+        $user = GeneralUser::findOrFail($respuesta->json('usuario.id'));
+        $aprendiz = $this->usuario('aprendiz');
+
+        $this->como($aprendiz)
+            ->postJson('/v1/general-users/' . $user->id . '/credenciales/restablecer')
+            ->assertStatus(403);
+    }
 }

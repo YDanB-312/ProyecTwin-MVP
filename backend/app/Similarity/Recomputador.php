@@ -7,37 +7,41 @@ use App\Models\Project;
 use App\Models\Similarity;
 use App\Services\NotificacionesService;
 use App\Services\SimilitudService;
+use App\Support\Auditoria;
+use Illuminate\Support\Facades\DB;
 
 // Recompone la tabla `similarities` con el motor actual: purga los pares que ya
 // no cumplen (umbral/programa/ventana/contraparte aprobada) y crea los que
-// faltan. Lo usan el comando `similitud:recalcular` y el seeder (para que el
-// seed quede consistente de una sola pasada).
+// faltan. Lo usan el comando `similitud:recalcular`, el seeder y la API (envío
+// de propuestas y recalibración): punto único de la orquestación del motor.
 class Recomputador
 {
-    public function recalcular(bool $notificar = true): array
+    // Detección de UNA propuesta contra el corpus vigente: refresca los pares
+    // existentes, crea los nuevos (notificando) y purga los obsoletos.
+    public function detectar(Project $propio, bool $notificar = true): int
     {
         $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
         $umbral = (float) $config->umbral;
         $meses = (int) $config->meses;
 
-        $antes = Similarity::count();
+        // Detección atómica: pares + notificaciones (todo o nada).
+        return DB::transaction(function () use ($propio, $umbral, $meses, $notificar) {
+            // Una rechazada no participa: sus pares dejan de estar vigentes,
+            // pero se conservan como evidencia de la versión analizada.
+            if ($propio->estado === 'rechazado') {
+                $this->archivarPares($propio->id);
+                return 0;
+            }
 
-        // 1) Purga de pares que ya no cumplen las reglas.
-        Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
-            if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
-        });
-        $eliminadas = $antes - Similarity::count();
+            $pares = SimilitudService::puntaje($propio, $this->corpus($propio, $meses));
 
-        // 2) Recomputa y crea los pares faltantes.
-        $proyectos = Project::with('classGroup')->where('estado', '!=', 'rechazado')->get();
-        $creadas = 0;
-        foreach ($proyectos as $p) {
-            foreach (SimilitudService::puntaje($p, $this->corpus($p, $meses)) as $par) {
+            // Ids que quedan vigentes para esta propuesta.
+            $vigentes = [];
+            $creadas = 0;
+            foreach ($pares as $par) {
                 if ($par['score'] < $umbral) continue;
-
-                // Si el par ya existe, se REFRESCA su porcentaje/detalles con el
-                // motor actual (así "recalcular" refleja el umbral vigente).
-                $existente = $this->buscarPar($p->id, $par['project_id']);
+                $vigentes[] = $par['project_id'];
+                $existente = $this->buscarParVigente($propio->id, $par['project_id']);
                 if ($existente) {
                     $existente->update([
                         'porcentaje' => $par['porcentaje'],
@@ -46,15 +50,85 @@ class Recomputador
                     continue;
                 }
 
-                $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
+                $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
                 $creadas++;
-                if ($notificar) app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
+                if ($notificar) {
+                    app(NotificacionesService::class)->similitud($propio, $par['project_id'], $par['porcentaje']);
+                }
             }
-        }
 
-        return ['eliminadas' => $eliminadas, 'creadas' => $creadas, 'total' => Similarity::count()];
+            // Los pares que ya no aplican dejan de estar vigentes (no se borran).
+            $this->archivarParesObsoletos($propio->id, $vigentes);
+
+            return $creadas;
+        });
     }
 
+    // Deja de considerar vigentes los pares de una propuesta (rechazo/reenvío):
+    // se conservan como evidencia histórica de la versión analizada.
+    public function archivar(Project $propio): void
+    {
+        $this->archivarPares($propio->id);
+    }
+
+    public function recalcular(bool $notificar = true, bool $auditar = false): array
+    {
+        $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        $umbral = (float) $config->umbral;
+        $meses = (int) $config->meses;
+
+        // Recalibración atómica: purga + creación + notificaciones (todo o nada).
+        return DB::transaction(function () use ($umbral, $meses, $notificar, $auditar) {
+            $antes = Similarity::where('vigente', true)->count();
+
+            // 1) Los pares vigentes que ya no cumplen dejan de estarlo (se
+            //    conservan como evidencia histórica).
+            Similarity::where('vigente', true)->get()->each(function (Similarity $s) use ($umbral, $meses) {
+                if (!$this->parVigente($s, $umbral, $meses)) $s->update(['vigente' => false]);
+            });
+            $eliminadas = $antes - Similarity::where('vigente', true)->count();
+
+            // 2) Recomputa y crea los pares faltantes.
+            $proyectos = Project::with('classGroup')->where('estado', '!=', 'rechazado')->get();
+            $creadas = 0;
+            foreach ($proyectos as $p) {
+                foreach (SimilitudService::puntaje($p, $this->corpus($p, $meses)) as $par) {
+                    if ($par['score'] < $umbral) continue;
+
+                    // Si el par ya existe, se REFRESCA su porcentaje/detalles con
+                    // el motor actual (así "recalcular" refleja el umbral vigente).
+                    $existente = $this->buscarParVigente($p->id, $par['project_id']);
+                    if ($existente) {
+                        $existente->update([
+                            'porcentaje' => $par['porcentaje'],
+                            'detalles' => $par['detalles'],
+                        ]);
+                        continue;
+                    }
+
+                    $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
+                    $creadas++;
+                    if ($notificar) {
+                        app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
+                    }
+                }
+            }
+
+            if ($auditar) {
+                Auditoria::registrar('recalibrar_motor', 'similarities', null, [
+                    'eliminadas' => $eliminadas,
+                    'creadas' => $creadas,
+                    'umbral' => $umbral,
+                    'meses' => $meses,
+                ]);
+            }
+
+            return ['eliminadas' => $eliminadas, 'creadas' => $creadas, 'total' => Similarity::where('vigente', true)->count()];
+        });
+    }
+
+    // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
+    // la ventana. La propia se incluye solo para que exista en los vectores.
     private function corpus(Project $propio, int $meses): array
     {
         $programaId = optional($propio->classGroup)->id_programa;
@@ -69,6 +143,8 @@ class Recomputador
             ->all();
     }
 
+    // Un par es válido si respeta umbral, mismo programa y ventana, y además
+    // la referencia es una propuesta APROBADA (al menos uno de los dos).
     private function parVigente(Similarity $s, float $umbral, int $meses): bool
     {
         if (($s->porcentaje / 100) < $umbral) return false;
@@ -84,10 +160,12 @@ class Recomputador
         return $p1->created_at >= $desde || $p2->created_at >= $desde;
     }
 
-    private function buscarPar(int $a, int $b): ?Similarity
+    private function buscarParVigente(int $a, int $b): ?Similarity
     {
         [$p1, $p2] = $a < $b ? [$a, $b] : [$b, $a];
-        return Similarity::where('id_proyecto_1', $p1)->where('id_proyecto_2', $p2)->first();
+        return Similarity::where('id_proyecto_1', $p1)->where('id_proyecto_2', $p2)
+            ->where('vigente', true)
+            ->first();
     }
 
     private function guardarPar(int $a, int $b, int $porcentaje, array $detalles): void
@@ -102,4 +180,25 @@ class Recomputador
         ]);
     }
 
+    // Deja como históricos todos los pares vigentes de una propuesta.
+    private function archivarPares(int $projectId): void
+    {
+        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
+            ->where('vigente', true)
+            ->update(['vigente' => false]);
+    }
+
+    // Deja como históricos los pares vigentes de la propuesta que ya no
+    // aparecen en la nueva detección (no se borran).
+    private function archivarParesObsoletos(int $projectId, array $vigentes): void
+    {
+        $vigentes = array_map('intval', $vigentes);
+        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
+            ->where('vigente', true)
+            ->get()
+            ->each(function (Similarity $s) use ($projectId, $vigentes) {
+                $otro = (int) $s->id_proyecto_1 === $projectId ? (int) $s->id_proyecto_2 : (int) $s->id_proyecto_1;
+                if (!in_array($otro, $vigentes, true)) $s->update(['vigente' => false]);
+            });
+    }
 }

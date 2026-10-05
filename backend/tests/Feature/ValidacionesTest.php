@@ -212,11 +212,47 @@ class ValidacionesTest extends TestCase
 
     // ---------------------------------------------------------------- Propuestas
 
-    public function test_crear_propuesta_sin_campos_falla(): void
+    public function test_crear_propuesta_sin_ficha_falla(): void
     {
+        // El borrador puede nacer vacío, pero exige que el aprendiz esté en una
+        // ficha activa (regla Classroom).
         $this->como($this->usuario('aprendiz'))
             ->postJson('/v1/projects', [])
             ->assertStatus(422);
+    }
+
+    public function test_crear_borrador_vacio_con_ficha_funciona(): void
+    {
+        $instructor = Instructor::create([
+            'fecha_ingreso' => '2024-01-01',
+            'id_usuario' => $this->usuario('instructor')->id,
+        ]);
+        $red = KnowledgeNetwork::create(['nombre' => 'Red ' . uniqid()]);
+        $programa = TrainingProgram::create([
+            'nombre' => 'Programa ' . uniqid(),
+            'nivel' => 'Tecnologo',
+            'num_trimestres' => 6,
+            'knowledge_network_id' => $red->id,
+        ]);
+        $ficha = ClassGroup::create([
+            'codigo' => 'val-' . uniqid(),
+            'nombre' => 'Ficha validaciones',
+            'estado' => 'activo',
+            'id_programa' => $programa->id,
+            'id_instructor' => $instructor->id,
+        ]);
+        $aprendiz = $this->usuario('aprendiz');
+        Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $aprendiz->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $programa->id,
+        ]);
+
+        $this->como($aprendiz)
+            ->postJson('/v1/projects', [])
+            ->assertCreated()
+            ->assertJsonPath('estado', 'borrador');
     }
 
     // ---------------------------------------------------------------- Perfil

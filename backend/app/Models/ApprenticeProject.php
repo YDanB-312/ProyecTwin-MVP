@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,22 +16,11 @@ class ApprenticeProject extends Model
 
     protected $fillable = ['id_aprendiz', 'id_proyecto'];
 
-    protected $allowIncluded = ['apprentice', 'project'];
+    public $allowIncluded = ['apprentice', 'apprentice.generalUser', 'project'];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
     }
 
     public function apprentice()

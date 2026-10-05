@@ -67,19 +67,120 @@ class ClassGroupController extends Controller
             $datos['id_instructor'] = $mio->id;
         }
 
-        // Alta atómica: ficha + aprendices seleccionados.
+        // Alta atómica: ficha + aprendices seleccionados + auditoría.
         $item = DB::transaction(function () use ($datos, $request) {
             $item = ClassGroup::create($datos);
             $this->sincronizarAprendices($item, $request->input('aprendices', []));
+            \App\Support\Auditoria::registrar('crear_ficha', 'class_groups', $item->id, [
+                'codigo' => $item->codigo,
+                'numero' => $item->numero,
+                'id_instructor' => $item->id_instructor,
+            ]);
             return $item;
         });
 
         return response()->json($item, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return ClassGroup::included()->findOrFail($id);
+        $ficha = ClassGroup::included()->findOrFail($id);
+        $user = $request->user();
+
+        // Mismo alcance que el listado: admin todas; instructor las suyas;
+        // aprendiz solo su ficha actual (el código es credencial de unión).
+        if (optional($user)->rol === 'admin') {
+            return $ficha;
+        }
+        if ($user && $user->rol === 'instructor') {
+            $instructor = $this->miFilaInstructor($request);
+            if ($instructor && (int) $ficha->id_instructor === (int) $instructor->id) {
+                return $ficha;
+            }
+        }
+        if ($user && $user->rol === 'aprendiz') {
+            $esSuFicha = Apprentice::where('id_usuario', $user->id)
+                ->where('id_class_group', $ficha->id)
+                ->exists();
+            if ($esSuFicha) {
+                return $ficha;
+            }
+        }
+
+        return response()->json(['message' => 'No tienes acceso a esta ficha.'], 403);
+    }
+
+    // Alta/asociación atómica de un aprendiz a la ficha: si el usuario ya
+    // existe solo se asocia (sin credenciales nuevas); si no, se crea la cuenta
+    // con username + temporal, se asocia y se envían las credenciales.
+    public function agregarAprendiz(Request $request, ClassGroup $class_group)
+    {
+        if (!$this->puedeGestionar($request, $class_group)) {
+            return response()->json(['message' => 'No puedes agregar aprendices a esta ficha.'], 403);
+        }
+        if ($class_group->estado !== 'activo') {
+            return response()->json(['message' => 'La ficha no está activa.'], 422);
+        }
+
+        $request->validate([
+            'usuario_id' => 'nullable|integer|exists:general_users,id',
+            'nombre' => 'required_without:usuario_id|nullable|string|max:255',
+            'apellido' => 'required_without:usuario_id|nullable|string|max:255',
+            'tipo_documento' => 'required_without:usuario_id|nullable|in:CC,TI,CE,PPT',
+            'numero_documento' => 'required_without:usuario_id|nullable|string|max:40|unique:general_users,numero_documento',
+            'correo' => 'required_without:usuario_id|nullable|email|unique:general_users,correo',
+        ]);
+
+        // Usuario existente: solo se asocia a la ficha (sin nuevas credenciales).
+        if ($request->filled('usuario_id')) {
+            $usuario = GeneralUser::findOrFail($request->usuario_id);
+            if ($usuario->rol !== 'aprendiz') {
+                return response()->json(['message' => 'Solo se pueden asociar usuarios con rol aprendiz.'], 422);
+            }
+
+            $aprendiz = $this->asociarAprendiz($class_group, $usuario);
+            \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', $class_group->id, [
+                'usuario' => $usuario->id,
+                'creada' => false,
+            ]);
+
+            return response()->json([
+                'usuario' => $usuario,
+                'aprendiz' => $aprendiz,
+                'creada' => false,
+                'credenciales_enviadas' => false,
+            ]);
+        }
+
+        // Usuario nuevo: cuenta + credenciales + asociación (la cuenta se
+        // conserva aunque el correo falle; el admin puede reenviar).
+        $alta = app(\App\Services\AltaUsuario::class)->crear([
+            'nombre' => $request->nombre,
+            'apellido' => $request->apellido,
+            'tipo_documento' => $request->tipo_documento,
+            'numero_documento' => $request->numero_documento,
+            'correo' => $request->correo,
+            'rol' => 'aprendiz',
+        ]);
+        $aprendiz = $this->asociarAprendiz($class_group, $alta['usuario']);
+
+        \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', $class_group->id, [
+            'usuario' => $alta['usuario']->id,
+            'creada' => true,
+            'credenciales_enviadas' => $alta['enviadas'],
+        ]);
+
+        return response()->json([
+            'usuario' => $alta['usuario'],
+            'aprendiz' => $aprendiz,
+            'creada' => true,
+            'credenciales_enviadas' => $alta['enviadas'],
+            'credenciales' => [
+                'username' => $alta['usuario']->username,
+                'password_temporal' => $alta['temporal'],
+                'enviadas' => $alta['enviadas'],
+            ],
+        ], 201);
     }
 
     // Exporta en PDF las credenciales iniciales de la ficha (aprendices +
@@ -167,7 +268,7 @@ class ClassGroupController extends Controller
             if ((int) $programaAnterior !== (int) $class_group->id_programa) {
                 \App\Models\Apprentice::where('id_class_group', $class_group->id)
                     ->update(['id_programa' => $class_group->id_programa]);
-                app(\App\Http\Controllers\Api\SimilarityController::class)->recalculate();
+                app(\App\Similarity\Recomputador::class)->recalcular(true, true);
             }
 
             if ($estadoAnterior !== 'finalizado' && $class_group->estado === 'finalizado') {
@@ -299,21 +400,9 @@ class ClassGroupController extends Controller
 
         // Agrega/actualiza a los seleccionados (solo usuarios con rol aprendiz).
         foreach ($seleccionados as $idUsuario) {
-            $usuario = \App\Models\GeneralUser::find($idUsuario);
+            $usuario = GeneralUser::find($idUsuario);
             if (!$usuario || $usuario->rol !== 'aprendiz') continue;
-
-            $aprendiz = Apprentice::firstOrCreate(
-                ['id_usuario' => $usuario->id],
-                [
-                    'codigo' => $this->codigoAprendizDisponible(),
-                    'id_class_group' => $ficha->id,
-                    'id_programa' => $ficha->id_programa,
-                ]
-            );
-            $aprendiz->update([
-                'id_class_group' => $ficha->id,
-                'id_programa' => $ficha->id_programa,
-            ]);
+            $this->asociarAprendiz($ficha, $usuario);
         }
 
         if ($seleccionados->isNotEmpty()) {
@@ -323,14 +412,22 @@ class ClassGroupController extends Controller
         }
     }
 
-    private function codigoAprendizDisponible(): string
+    // Asocia (o reasocia) a un aprendiz con la ficha: crea su fila si no existía.
+    private function asociarAprendiz(ClassGroup $ficha, GeneralUser $usuario): Apprentice
     {
-        $n = (int) Apprentice::max('id') + 1;
-        do {
-            $codigo = 'AP-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
-            $n++;
-        } while (Apprentice::where('codigo', $codigo)->exists());
+        $aprendiz = Apprentice::firstOrCreate(
+            ['id_usuario' => $usuario->id],
+            [
+                'codigo' => Apprentice::codigoDisponible(),
+                'id_class_group' => $ficha->id,
+                'id_programa' => $ficha->id_programa,
+            ]
+        );
+        $aprendiz->update([
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
 
-        return $codigo;
+        return $aprendiz;
     }
 }

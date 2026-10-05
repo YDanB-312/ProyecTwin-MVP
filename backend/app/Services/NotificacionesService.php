@@ -33,16 +33,63 @@ class NotificacionesService
     // Nueva propuesta → avisa al instructor asignado (o al de la ficha).
     public function revisionPropuesta(Project $project): void
     {
-        $idUsuario = null;
-        if ($project->id_instructor_asignado) {
-            $idUsuario = optional(Instructor::find($project->id_instructor_asignado))->id_usuario;
-        }
-        if (!$idUsuario && $project->id_class_group) {
-            $idUsuario = optional(optional(ClassGroup::find($project->id_class_group))->instructor)->id_usuario;
-        }
+        $idUsuario = $this->instructorDe($project);
         if (!$idUsuario) return;
 
         $this->crear($idUsuario, 'Nueva propuesta pendiente de revisión: "' . $project->titulo . '"', 'revision', 'proyecto:' . $project->id);
+    }
+
+    // Propuesta reenviada (tras correcciones) → nueva revisión del instructor.
+    public function propuestaReenviada(Project $project): void
+    {
+        $idUsuario = $this->instructorDe($project);
+        if (!$idUsuario) return;
+
+        $this->crear($idUsuario, 'Propuesta reenviada para revisión: "' . $project->titulo . '"', 'revision', 'proyecto:' . $project->id);
+    }
+
+    // Similitudes detectadas al enviar → el instructor las revisa con la propuesta.
+    public function similitudesEncontradas(Project $project, int $total): void
+    {
+        $idUsuario = $this->instructorDe($project);
+        if (!$idUsuario) return;
+
+        $this->crear(
+            $idUsuario,
+            'La propuesta "' . $project->titulo . '" tiene ' . $total . ' coincidencia(s) por revisar.',
+            'similitud',
+            'proyecto:' . $project->id
+        );
+    }
+
+    // Propuesta aprobada → avisa al creador.
+    public function propuestaAprobada(Project $project): void
+    {
+        $this->crear($project->id_creador, 'Tu propuesta "' . $project->titulo . '" fue aprobada.', 'revision', 'proyecto:' . $project->id);
+    }
+
+    // Propuesta rechazada → avisa al creador (con la observación si existe).
+    public function propuestaRechazada(Project $project, ?string $observacion = null): void
+    {
+        $titulo = 'Tu propuesta "' . $project->titulo . '" fue rechazada.';
+        if ($observacion) {
+            $titulo .= ' Observación: ' . $observacion;
+        }
+        $this->crear($project->id_creador, $titulo, 'revision', 'proyecto:' . $project->id);
+    }
+
+    // Resuelve el usuario instructor responsable de la propuesta (asignado o de
+    // la ficha). Punto único para las notificaciones al instructor.
+    private function instructorDe(Project $project): ?int
+    {
+        if ($project->id_instructor_asignado) {
+            $id = optional(Instructor::find($project->id_instructor_asignado))->id_usuario;
+            if ($id) return $id;
+        }
+        if ($project->id_class_group) {
+            return optional(optional(ClassGroup::find($project->id_class_group))->instructor)->id_usuario;
+        }
+        return null;
     }
 
     // Similitud detectada → avisa al creador de la propuesta.

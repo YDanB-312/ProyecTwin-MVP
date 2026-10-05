@@ -142,6 +142,8 @@ class InteraccionPropuestaTest extends TestCase
         $creador = $this->aprendizEn($ficha);
         $miembro = $this->aprendizEn($ficha);
         $proyecto = $this->proyecto($creador, $ficha);
+        // El equipo participa mientras la propuesta es editable (borrador).
+        $proyecto->update(['estado' => 'borrador']);
         ApprenticeProject::create(['id_aprendiz' => $miembro->id, 'id_proyecto' => $proyecto->id]);
 
         // Cualquier integrante del equipo (en la ficha) comenta y edita.

@@ -300,6 +300,9 @@ class AuthorizationTest extends TestCase
             'id_proyecto' => $proyecto->id,
         ]);
 
+        // El equipo se gestiona mientras la propuesta es editable.
+        $proyecto->update(['estado' => 'borrador']);
+
         // Un tercero no puede gestionar el equipo de una propuesta ajena.
         $this->como($ajeno)->deleteJson('/v1/apprentice-projects/' . $pivote->id)->assertStatus(403);
 

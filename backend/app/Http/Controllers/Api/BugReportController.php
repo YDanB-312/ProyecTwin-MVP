@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\BugReport;
-use App\Models\GeneralUser;
 use App\Models\Notification;
 use App\Services\NotificacionesService;
 use App\Support\Auditoria;

@@ -13,6 +13,8 @@ use App\Support\Auditoria;
 use App\Support\BorradoCascada;
 use App\Support\Credenciales;
 use App\Support\CredencialesPdf;
+use App\Services\AltaUsuario;
+use App\Services\CredencialesCorreo;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -36,7 +38,7 @@ class GeneralUserController extends Controller
             return $query->orderBy('id')->paginate($porPagina);
         }
 
-        return $query->get();
+        return $query->orderBy('id')->get();
     }
 
     // Alta exclusiva del administrador (no hay registro público): las
@@ -54,43 +56,83 @@ class GeneralUserController extends Controller
             'estado' => 'nullable|boolean',
         ]);
 
-        $username = Credenciales::username($request->nombre, $request->apellido);
-        $temporal = Credenciales::passwordTemporal();
+        // Alta compartida (cuenta + perfil + auditoría + correo de credenciales).
+        $alta = app(AltaUsuario::class)->crear($request->all());
 
-        $data = $request->all();
-        $data['correo'] = strtolower(trim($request->correo));
-        $data['username'] = $username;
-        $data['password'] = Hash::make($temporal);
-        $data['must_change_password'] = true;
-        // Copia encriptada: permite exportar credenciales hasta el primer cambio.
-        $data['password_temporal'] = Crypt::encryptString($temporal);
-        $data['estado'] = $request->has('estado') ? $request->boolean('estado') : true;
-
-        // Alta atómica: cuenta + perfil + auditoría (todo o nada).
-        $item = DB::transaction(function () use ($data) {
-            $item = GeneralUser::create($data);
-
-            // El perfil (instructor) nace junto con la cuenta.
-            $this->sincronizarPerfiles($item);
-
-            Auditoria::registrar('crear_usuario', 'general_users', $item->id, [
-                'correo' => $item->correo,
-                'username' => $item->username,
-                'documento' => $item->tipo_documento . ' ' . $item->numero_documento,
-                'rol' => $item->rol,
-            ]);
-
-            return $item;
-        });
-
-        // Las credenciales se devuelven UNA vez para entregarlas/exportarlas.
         return response()->json([
-            'usuario' => $item,
+            'usuario' => $alta['usuario'],
             'credenciales' => [
-                'username' => $username,
-                'password_temporal' => $temporal,
+                'username' => $alta['usuario']->username,
+                'password_temporal' => $alta['temporal'],
+                'enviadas' => $alta['enviadas'],
             ],
         ], 201);
+    }
+
+    // Reenvía las credenciales temporales (solo admin y solo mientras la
+    // contraseña siga siendo temporal; después nunca se revela la actual).
+    public function reenviarCredenciales(Request $request, GeneralUser $general_user)
+    {
+        if ($general_user->rol === 'admin') {
+            return response()->json(['message' => 'Los administradores no usan credenciales temporales.'], 422);
+        }
+        if (!$general_user->must_change_password || !$general_user->password_temporal) {
+            return response()->json([
+                'message' => 'La contraseña ya fue cambiada: no se pueden reenviar credenciales.',
+            ], 422);
+        }
+
+        try {
+            $temporal = Crypt::decryptString($general_user->password_temporal);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'No se pudo recuperar la contraseña temporal.'], 422);
+        }
+
+        $ok = app(CredencialesCorreo::class)->enviar($general_user, $temporal);
+
+        Auditoria::registrar('reenviar_credenciales', 'general_users', $general_user->id, [
+            'correo' => $general_user->correo,
+            'enviado' => $ok,
+        ]);
+
+        if (!$ok) {
+            return response()->json(['message' => 'No se pudo enviar el correo. Intenta de nuevo.'], 502);
+        }
+
+        return $general_user->fresh();
+    }
+
+    // Restablecimiento del admin: la temporal la genera el servidor (misma
+    // fuente y reglas que el alta) y obliga al cambio en el primer ingreso.
+    public function restablecerCredenciales(Request $request, GeneralUser $general_user)
+    {
+        if ($general_user->rol === 'admin') {
+            return response()->json(['message' => 'Los administradores no usan credenciales temporales.'], 422);
+        }
+
+        $temporal = Credenciales::passwordTemporal();
+
+        $general_user->update([
+            'password' => Hash::make($temporal),
+            'must_change_password' => true,
+            'password_temporal' => Crypt::encryptString($temporal),
+            // La temporal nueva aún no se envía: se limpia el estado del correo.
+            'credenciales_enviadas_en' => null,
+            'credenciales_error' => null,
+        ]);
+
+        Auditoria::registrar('restablecer_credenciales', 'general_users', $general_user->id, [
+            'correo' => $general_user->correo,
+        ]);
+
+        return response()->json([
+            'usuario' => $general_user->fresh(),
+            'credenciales' => [
+                'username' => $general_user->username,
+                'password_temporal' => $temporal,
+                'enviadas' => false,
+            ],
+        ]);
     }
 
     public function show(Request $request, $id)
@@ -129,7 +171,6 @@ class GeneralUserController extends Controller
             'nombre' => 'sometimes|required|max:255',
             'apellido' => 'sometimes|required|max:255',
             'correo' => 'sometimes|required|email|unique:general_users,correo,' . $general_user->id,
-            'password' => 'nullable|min:6|max:255',
             'foto_url' => 'nullable',
             'rol' => 'sometimes|required|in:aprendiz,instructor,admin',
             'estado' => 'sometimes|nullable|boolean',
@@ -186,23 +227,27 @@ class GeneralUserController extends Controller
             }
         }
 
-        $data = $request->all();
-        $huboPassword = !empty($data['password']);
-        // Solo re-hashear si viene clave nueva no vacía. Cuando un admin
-        // restablece la contraseña, vuelve a ser temporal y obliga al cambio.
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $temporal = $data['password'];
-            $data['password'] = Hash::make($temporal);
-            $data['must_change_password'] = true;
-            $data['password_temporal'] = Crypt::encryptString($temporal);
+        // Whitelist: solo campos editables por esta vía. Los campos internos
+        // del flujo de credenciales (username, documentos, must_change_password,
+        // password_temporal, credenciales_*) nunca se aceptan desde el request.
+        $data = $esAdmin
+            ? $request->only(['nombre', 'apellido', 'correo', 'foto_url', 'rol', 'estado'])
+            : $request->only(['nombre', 'apellido', 'correo', 'foto_url']);
+
+        // Las contraseñas no se cambian por esta vía: la propia exige la actual
+        // (PUT /auth/password) y la temporal la genera el servidor.
+        if ($request->filled('password')) {
+            return response()->json([
+                'message' => $esAdmin
+                    ? 'Usa "Restablecer contraseña" para generar una temporal.'
+                    : 'Usa "Cambiar contraseña" e ingresa tu contraseña actual para modificarla.',
+            ], 422);
         }
 
         $cambiaNombre = $request->filled('nombre') && $request->nombre !== $general_user->nombre;
 
         // Actualización atómica: cuenta + perfiles + auditoría (todo o nada).
-        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre, $huboPassword) {
+        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre) {
             $general_user->update($data);
 
             Auditoria::registrar('actualizar_usuario', 'general_users', $general_user->id, array_filter([
@@ -210,7 +255,6 @@ class GeneralUserController extends Controller
                 'estado' => $cambiaEstado ? (bool) $general_user->estado : null,
                 'correo' => $cambiaCorreo ? $general_user->correo : null,
                 'nombre' => $cambiaNombre ? $general_user->nombre : null,
-                'password_reset' => $huboPassword ?: null,
             ]));
 
             // Mantiene coherentes los perfiles (admin/instructor/aprendiz) al cambio de rol.

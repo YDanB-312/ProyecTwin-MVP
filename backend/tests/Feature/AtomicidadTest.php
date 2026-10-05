@@ -93,26 +93,37 @@ class AtomicidadTest extends TestCase
         });
     }
 
-    public function test_crear_propuesta_es_atomico(): void
+    public function test_enviar_propuesta_es_atomico(): void
     {
         $ficha = $this->ficha();
         $aprendiz = $this->aprendizEn($ficha);
-        $this->forzarFalloDeNotificacion();
 
+        // El borrador se crea sin notificar (no falla nada todavía).
+        $creada = $this->como($aprendiz->generalUser)->postJson('/v1/projects', [
+            'titulo' => 'Propuesta atómica',
+            'resumen' => 'Resumen suficientemente largo para la propuesta de prueba.',
+            'area_aplicacion' => 'Tecnología',
+            'objetivo_general' => 'Validar el envío atómico de la propuesta.',
+            'objetivos_especificos' => [
+                'Registrar la propuesta completa.',
+                'Verificar la atomicidad del envío.',
+            ],
+        ])->assertCreated();
+
+        // El envío notifica al instructor: si la notificación falla, todo vuelve.
+        $this->forzarFalloDeNotificacion();
         try {
-            $this->como($aprendiz->generalUser)->postJson('/v1/projects', [
-                'titulo' => 'Propuesta atómica',
-                'resumen' => 'Resumen suficientemente largo para la propuesta de prueba.',
-                'area_aplicacion' => 'Tecnología',
-            ])->assertStatus(500);
+            $this->como($aprendiz->generalUser)
+                ->postJson('/v1/projects/' . $creada->json('id') . '/enviar')
+                ->assertStatus(500);
         } finally {
             Event::forget(self::EVENTO_FALLO);
         }
 
-        // Ni la propuesta ni su pivote quedaron persistidos.
-        $this->assertDatabaseMissing('projects', ['id_creador' => $aprendiz->id_usuario]);
-        $this->assertSame(0, Project::where('id_creador', $aprendiz->id_usuario)->count());
-        $this->assertSame(0, ApprenticeProject::where('id_aprendiz', $aprendiz->id)->count());
+        // La propuesta sigue en borrador y sin huella de envío (sin cambio parcial).
+        $fresca = Project::findOrFail($creada->json('id'));
+        $this->assertSame('borrador', $fresca->estado);
+        $this->assertNull($fresca->huella_envio);
     }
 
     public function test_unirse_a_ficha_es_atomico(): void

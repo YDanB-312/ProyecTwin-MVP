@@ -5,13 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\MotorConfig;
-use App\Models\Notification;
 use App\Services\SimilitudService;
-use App\Services\NotificacionesService;
+use App\Similarity\Recomputador;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SimilarityController extends Controller
 {
@@ -30,15 +28,23 @@ class SimilarityController extends Controller
                 return response()->json(['message' => 'No tienes acceso a esa propuesta.'], 403);
             }
 
-            return Similarity::included()
+            $query = Similarity::included()
                 ->where(function (Builder $q) use ($proyectoId) {
                     $q->where('id_proyecto_1', $proyectoId)->orWhere('id_proyecto_2', $proyectoId);
-                })
-                ->contraparteAprobada((int) $proyectoId)
-                ->get();
+                });
+
+            // Evidencia de versiones anteriores (solo lectura): el contenido
+            // analizado ya no es el vigente, así que no aplica la regla de
+            // contraparte aprobada; manda la visibilidad del par.
+            if ($request->boolean('historial')) {
+                return $query->historicos()->visibleDetalle($user)->orderByDesc('id')->get();
+            }
+
+            return $query->vigentes()->contraparteAprobada((int) $proyectoId)->get();
         }
 
         return Similarity::included()
+            ->vigentes()
             ->paraUsuario($user)
             ->relatedTo($request->query('related_to'))
             ->search($request->query('search'))
@@ -111,85 +117,23 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
         }
 
-        $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.30);
-        $meses = (int) ($config->meses ?? 12);
+        return response()->json(['detectadas' => $this->detectarProyecto($propio)]);
+    }
 
-        // Detección atómica: pares + notificaciones (todo o nada).
-        $creadas = DB::transaction(function () use ($propio, $umbral, $meses) {
-            // Una rechazada no participa: se eliminan sus pares y no se compara.
-            if ($propio->estado === 'rechazado') {
-                $this->purgarPares($propio->id);
-                return 0;
-            }
-
-            $corpus = $this->corpus($propio, $meses);
-            $pares = SimilitudService::puntaje($propio, $corpus);
-
-            // Ids que quedan vigentes para esta propuesta.
-            $vigentes = [];
-            $creadas = 0;
-            foreach ($pares as $par) {
-                if ($par['score'] < $umbral) continue;
-                $vigentes[] = $par['project_id'];
-                $existente = $this->buscarPar($propio->id, $par['project_id']);
-                if ($existente) {
-                    $existente->update(['porcentaje' => $par['porcentaje'], 'detalles' => $par['detalles']]);
-                } else {
-                    $this->guardarPar($propio->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                    $creadas++;
-                    app(NotificacionesService::class)->similitud($propio, $par['project_id'], $par['porcentaje']);
-                }
-            }
-
-            // Limpia pares obsoletos (bajaron del umbral o ya no aplican reglas).
-            $this->purgarParesObsoletos($propio->id, $vigentes);
-
-            return $creadas;
-        });
-
-        return response()->json(['detectadas' => $creadas]);
+    // Detección reutilizable (envío de la propuesta, endpoint manual, etc.):
+    // delega en el orquestador único del motor (`Recomputador`).
+    public function detectarProyecto(Project $propio): int
+    {
+        return app(Recomputador::class)->detectar($propio);
     }
 
     // Recalibra toda la base con el umbral/ventana vigentes: purga los pares
     // que ya no cumplen y re-ejecuta la detección sobre cada propuesta vigente.
     public function recalculate()
     {
-        $config = $this->config();
-        $umbral = (float) ($config->umbral ?? 0.30);
-        $meses = (int) ($config->meses ?? 12);
+        $r = app(Recomputador::class)->recalcular(true, true);
 
-        // Recalibración atómica: purga + creación + notificaciones (todo o nada).
-        [$eliminadas, $creadas] = DB::transaction(function () use ($umbral, $meses) {
-            $antes = Similarity::count();
-            Similarity::all()->each(function (Similarity $s) use ($umbral, $meses) {
-                if (!$this->parVigente($s, $umbral, $meses)) $s->delete();
-            });
-            $eliminadas = $antes - Similarity::count();
-
-            $creadas = 0;
-            foreach (Project::with('classGroup')->where('estado', '!=', 'rechazado')->get() as $p) {
-                $corpus = $this->corpus($p, $meses);
-                foreach (SimilitudService::puntaje($p, $corpus) as $par) {
-                    if ($par['score'] < $umbral) continue;
-                    if ($this->buscarPar($p->id, $par['project_id'])) continue;
-                    $this->guardarPar($p->id, $par['project_id'], $par['porcentaje'], $par['detalles']);
-                    $creadas++;
-                    app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
-                }
-            }
-
-            \App\Support\Auditoria::registrar('recalibrar_motor', 'similarities', null, [
-                'eliminadas' => $eliminadas,
-                'creadas' => $creadas,
-                'umbral' => $umbral,
-                'meses' => $meses,
-            ]);
-
-            return [$eliminadas, $creadas];
-        });
-
-        return response()->json(['eliminadas' => $eliminadas, 'creadas' => $creadas]);
+        return response()->json(['eliminadas' => $r['eliminadas'], 'creadas' => $r['creadas']]);
     }
 
     // ---------------------------------------------------------------- Demo pública
@@ -250,74 +194,6 @@ class SimilarityController extends Controller
     private function config(): MotorConfig
     {
         return MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
-    }
-
-    // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
-    // la ventana. La propia se incluye solo para que exista en los vectores.
-    private function corpus(Project $propio, int $meses): array
-    {
-        $programaId = optional($propio->classGroup)->id_programa;
-        $desde = now()->subMonths($meses);
-
-        return Project::with('classGroup')
-            ->where('id', '!=', $propio->id)
-            ->where('estado', 'aprobado')
-            ->where('created_at', '>=', $desde)
-            ->whereHas('classGroup', fn ($q) => $q->where('id_programa', $programaId))
-            ->get()
-            ->prepend($propio)   // incluir la propia para que exista en los vectores
-            ->all();
-    }
-
-    private function buscarPar(int $a, int $b): ?Similarity
-    {
-        [$p1, $p2] = $a < $b ? [$a, $b] : [$b, $a];
-        return Similarity::where('id_proyecto_1', $p1)->where('id_proyecto_2', $p2)->first();
-    }
-
-    private function guardarPar(int $a, int $b, int $porcentaje, array $detalles): void
-    {
-        [$p1, $p2] = $a < $b ? [$a, $b] : [$b, $a];
-        Similarity::create([
-            'id_proyecto_1' => $p1,
-            'id_proyecto_2' => $p2,
-            'porcentaje' => $porcentaje,
-            'detalles' => $detalles,
-            'fecha' => now()->toDateString(),
-        ]);
-    }
-
-    // Un par es válido si respeta umbral, mismo programa y ventana, y además
-    // la referencia es una propuesta APROBADA (al menos uno de los dos).
-    private function parVigente(Similarity $s, float $umbral, int $meses): bool
-    {
-        if (($s->porcentaje / 100) < $umbral) return false;
-        $p1 = Project::with('classGroup')->find($s->id_proyecto_1);
-        $p2 = Project::with('classGroup')->find($s->id_proyecto_2);
-        if (!$p1 || !$p2) return false;
-        if ($p1->estado === 'rechazado' || $p2->estado === 'rechazado') return false;
-        if ($p1->estado !== 'aprobado' && $p2->estado !== 'aprobado') return false;
-        if (optional($p1->classGroup)->id_programa !== optional($p2->classGroup)->id_programa) return false;
-        $desde = now()->subMonths($meses);
-        return $p1->created_at >= $desde || $p2->created_at >= $desde;
-    }
-
-    // Elimina todos los pares de una propuesta (p. ej. al rechazarla).
-    private function purgarPares(int $projectId): void
-    {
-        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)->delete();
-    }
-
-    // Elimina los pares de la propuesta que no estén en la lista de vigentes.
-    private function purgarParesObsoletos(int $projectId, array $vigentes): void
-    {
-        $vigentes = array_map('intval', $vigentes);
-        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
-            ->get()
-            ->each(function (Similarity $s) use ($projectId, $vigentes) {
-                $otro = (int) $s->id_proyecto_1 === $projectId ? (int) $s->id_proyecto_2 : (int) $s->id_proyecto_1;
-                if (!in_array($otro, $vigentes, true)) $s->delete();
-            });
     }
 
 }

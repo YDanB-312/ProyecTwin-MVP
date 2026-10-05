@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Included;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,22 +16,23 @@ class Apprentice extends Model
 
     protected $fillable = ['codigo', 'id_class_group', 'id_usuario', 'id_programa'];
 
-    protected $allowIncluded = ['generalUser', 'classGroup', 'program', 'projects'];
+    public $allowIncluded = ['generalUser', 'classGroup', 'program', 'projects'];
 
     public function scopeIncluded(Builder $query)
     {
-        if (empty($this->allowIncluded) || empty(request('included'))) {
-            return;
-        }
-        $relations = explode(',', request('included'));
-        $allowIncluded = collect($this->allowIncluded);
-        foreach ($relations as $key => $relationship) {
-            // Admite rutas anidadas (classGroup.program): valida la raiz.
-            if (!$allowIncluded->contains(explode('.', $relationship)[0])) {
-                unset($relations[$key]);
-            }
-        }
-        $query->with($relations);
+        Included::aplicar($query, $this, request('included'));
+    }
+
+    // Código correlativo del aprendiz (AP-001…), generado por el servidor.
+    public static function codigoDisponible(): string
+    {
+        $n = (int) static::max('id') + 1;
+        do {
+            $codigo = 'AP-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+            $n++;
+        } while (static::where('codigo', $codigo)->exists());
+
+        return $codigo;
     }
 
     public function generalUser()

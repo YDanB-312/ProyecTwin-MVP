@@ -29,6 +29,11 @@ class BorradoCascada
             $idUsuarios = Apprentice::where('id_class_group', $ficha->id)->pluck('id_usuario');
             $titulo = 'Tu ficha "' . $ficha->nombre . '" fue eliminada. Quedaste sin ficha.';
 
+            // Las propuestas de la ficha se eliminan: sus notificaciones con
+            // enlace al proyecto quedarían huérfanas.
+            $proyectos = Project::where('id_class_group', $ficha->id)->pluck('id');
+            Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
+
             Project::where('id_class_group', $ficha->id)->get()->each->delete();
             Notification::where('enlace', 'ficha:' . $ficha->id)->delete();
             $ficha->delete();
@@ -69,6 +74,10 @@ class BorradoCascada
             if ($instructor) {
                 ClassGroup::where('id_instructor', $instructor->id)->get()->each(fn ($f) => self::ficha($f));
             }
+            // Sus propias propuestas se eliminan en cascada: limpia los avisos
+            // que apuntaban a ellas.
+            $proyectos = Project::where('id_creador', $usuario->id)->pluck('id');
+            Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
             $usuario->delete();
         });
     }
