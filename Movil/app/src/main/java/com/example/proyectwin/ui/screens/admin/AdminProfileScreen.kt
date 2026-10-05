@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -40,8 +40,8 @@ fun AdminProfileScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     var showLogoutSessionsDialog by remember { mutableStateOf(false) }
@@ -63,7 +63,6 @@ fun AdminProfileScreen(
                 bytes?.let { b ->
                     val base64 = Base64.getEncoder().encodeToString(b)
                     profileViewModel.updateFoto(base64)
-                    authViewModel.getSessionManager().updateFoto(base64)
                 }
             }
         }
@@ -118,7 +117,8 @@ fun AdminProfileScreen(
                     fotoBase64 = user?.fotoPerfil,
                     nombre = user?.name ?: "Admin",
                     modifier = Modifier.size(110.dp),
-                    onClick = { photoPickerLauncher.launch("image/*") }
+                    onClick = { photoPickerLauncher.launch("image/*") },
+                    showChangeIndicator = true
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -137,7 +137,7 @@ fun AdminProfileScreen(
                 Text(
                     text = user?.roleDisplayName ?: "Control Maestro de Plataforma",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF0D9488)
+                    color = senaColors().textLight
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -250,7 +250,6 @@ fun AdminProfileScreen(
                     text = "Cerrar Sesión",
                     onClick = {
                         authViewModel.logout()
-                        onNavigate(AppNavigation.HOME)
                     },
                     icon = Icons.AutoMirrored.Filled.Logout,
                     containerColor = senaColors().danger,
@@ -287,14 +286,14 @@ fun MetricCardAdmin(icon: ImageVector, value: String, label: String, modifier: M
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = Color(0xFFF1F5F9),
+        color = senaColors().surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().border)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = senaColors().text)
             Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)

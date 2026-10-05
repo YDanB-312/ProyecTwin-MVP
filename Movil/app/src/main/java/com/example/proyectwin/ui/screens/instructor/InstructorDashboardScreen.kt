@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
@@ -40,8 +40,8 @@ import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 fun InstructorDashboardScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    dashboardViewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
@@ -70,7 +70,7 @@ fun InstructorDashboardScreen(
                 title = "ProyecTwin",
                 onNavigateToProfile = { onNavigate(AppNavigation.INSTRUCTOR_PROFILE) },
                 onNavigateToAlerts = { onNavigate(AppNavigation.INSTRUCTOR_ALERTS) },
-                onLogout = { onNavigate(AppNavigation.HOME) }
+                onLogout = { authViewModel.logout() }
             )
         },
         containerColor = senaColors().background,
@@ -239,7 +239,7 @@ fun ToolCard(title: String, subtitle: String, icon: ImageVector, color: Color, o
         onClick = onClick,
         modifier = Modifier.width(180.dp).height(100.dp),
         shape = RoundedCornerShape(24.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 4.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {

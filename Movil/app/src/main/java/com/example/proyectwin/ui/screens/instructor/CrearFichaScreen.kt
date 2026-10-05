@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -28,8 +28,8 @@ import com.example.proyectwin.ui.viewmodel.FichasViewModel
 fun CrearFichaScreen(
     onBack: () -> Unit,
     onFichaCreated: () -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user

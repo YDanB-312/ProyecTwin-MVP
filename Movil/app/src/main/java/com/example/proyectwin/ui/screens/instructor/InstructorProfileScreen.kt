@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
@@ -34,6 +34,8 @@ import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
+import com.example.proyectwin.ui.viewmodel.FichasUiState
+import com.example.proyectwin.ui.viewmodel.FichasViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 import java.util.Base64
@@ -44,20 +46,37 @@ fun InstructorProfileScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel(),
-    dashboardViewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     val authState by authViewModel.uiState.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user
     val scope = rememberCoroutineScope()
+    val saveSuccess by profileViewModel.saveSuccess.collectAsState()
+    val saveError by profileViewModel.saveError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val fichasState by fichasViewModel.uiState.collectAsState()
 
     var isEditing by remember { mutableStateOf(false) }
     var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
     var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
     var email by remember(user) { mutableStateOf(user?.email ?: "") }
-    var commentTemplate by remember { mutableStateOf("Estimado aprendiz,\n\nHe revisado tu proyecto y tengo los siguientes comentarios:\n\nAspectos positivos:\n-\n\nAspectos a mejorar:\n-\n\nRecomendaciones:\n-") }
+
+    LaunchedEffect(Unit) { fichasViewModel.loadAllFichas() }
+
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            profileViewModel.clearSaveSuccess()
+            snackbarHostState.showSnackbar("Perfil actualizado correctamente")
+        }
+    }
+
+    LaunchedEffect(saveError) {
+        saveError?.let { snackbarHostState.showSnackbar(it) }
+    }
 
     val instructorProjects = remember(user) {
         MockDataProvider.getProjectsByInstructor(user?.id ?: 0)
@@ -80,7 +99,6 @@ fun InstructorProfileScreen(
                 bytes?.let { b ->
                     val base64 = Base64.getEncoder().encodeToString(b)
                     profileViewModel.updateFoto(base64)
-                    authViewModel.getSessionManager().updateFoto(base64)
                 }
             }
         }
@@ -97,6 +115,7 @@ fun InstructorProfileScreen(
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = bottomBar
     ) { paddingValues ->
         Column(
@@ -133,7 +152,8 @@ fun InstructorProfileScreen(
                     fotoBase64 = user?.fotoPerfil,
                     nombre = user?.name ?: "Instructor",
                     modifier = Modifier.size(110.dp),
-                    onClick = { photoPickerLauncher.launch("image/*") }
+                    onClick = { photoPickerLauncher.launch("image/*") },
+                    showChangeIndicator = true
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -176,7 +196,7 @@ fun InstructorProfileScreen(
                                 SenaTextField(value = name, onValueChange = { name = it }, label = "Nombre", modifier = Modifier.weight(1f))
                                 SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido", modifier = Modifier.weight(1f))
                             }
-                            SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email)
+                            SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email, enabled = false)
 
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SenaButton(text = "Cancelar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
@@ -213,43 +233,46 @@ fun InstructorProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SenaSectionHeader(title = "Evaluación")
+                SenaSectionHeader(title = "Fichas a Cargo")
                 SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Plantilla de Comentarios", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = senaColors().textLight)
-                        OutlinedTextField(
-                            value = commentTemplate,
-                            onValueChange = { commentTemplate = it },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-                            textStyle = MaterialTheme.typography.bodySmall,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = senaColors().green,
-                                unfocusedBorderColor = senaColors().borderSoft,
-                                focusedContainerColor = senaColors().background,
-                                unfocusedContainerColor = senaColors().background
+                    when (fichasState) {
+                        is FichasUiState.Loading -> {
+                            SenaLoadingState(modifier = Modifier.height(80.dp))
+                        }
+                        is FichasUiState.Error -> {
+                            Text(
+                                (fichasState as FichasUiState.Error).message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = senaColors().danger
                             )
-                        )
-
-                        HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(vertical = 8.dp))
-
-                        var notifNuevos by remember { mutableStateOf(true) }
-                        var notifPendientes by remember { mutableStateOf(true) }
-
-                        SenaSettingsItem(
-                            icon = Icons.Default.NotificationsActive,
-                            title = "Nuevos Proyectos",
-                            description = "Alertas de registros",
-                            trailing = { Switch(checked = notifNuevos, onCheckedChange = { notifNuevos = it }, colors = SwitchDefaults.colors(checkedTrackColor = senaColors().green)) }
-                        )
-                        SenaSettingsItem(
-                            icon = Icons.Default.History,
-                            title = "Recordatorios",
-                            description = "Revisiones pendientes",
-                            trailing = { Switch(checked = notifPendientes, onCheckedChange = { notifPendientes = it }, colors = SwitchDefaults.colors(checkedTrackColor = senaColors().green)) }
-                        )
-
-                        SenaButton(text = "Guardar Preferencias", onClick = { }, icon = Icons.Default.Save, modifier = Modifier.height(44.dp))
+                        }
+                        is FichasUiState.Success -> {
+                            val fichas = (fichasState as FichasUiState.Success).fichas
+                            if (fichas.isEmpty()) {
+                                Text(
+                                    "Sin ficha asignada",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = senaColors().textLight
+                                )
+                            } else {
+                                Column {
+                                    fichas.forEachIndexed { index, ficha ->
+                                        SenaSettingsItem(
+                                            icon = Icons.Default.School,
+                                            title = ficha.nombre ?: "Ficha ${ficha.codigo}",
+                                            description = buildString {
+                                                append(ficha.codigo)
+                                                if (!ficha.numero.isNullOrBlank()) append(" · N. ${ficha.numero}")
+                                                if (ficha.programa.isNotBlank()) append(" · ${ficha.programa}")
+                                            }
+                                        )
+                                        if (index < fichas.size - 1) {
+                                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -263,6 +286,25 @@ fun InstructorProfileScreen(
                         description = "Actualiza tu acceso",
                         onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
                     )
+                    HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                    SenaSettingsItem(
+                        icon = Icons.Default.Email,
+                        title = "Cambiar Correo Electrónico",
+                        description = "Actualiza tu correo de contacto",
+                        onClick = { onNavigate(AppNavigation.CHANGE_EMAIL) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SenaSectionHeader(title = "Soporte")
+                SenaCard(elevation = 1.dp) {
+                    SenaSettingsItem(
+                        icon = Icons.Default.BugReport,
+                        title = "Reportar Errores",
+                        description = "Informa fallas técnicas para que el equipo las revise",
+                        onClick = { onNavigate(AppNavigation.REPORT_ISSUE) }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -271,7 +313,6 @@ fun InstructorProfileScreen(
                     text = "Cerrar Sesión",
                     onClick = {
                         authViewModel.logout()
-                        onNavigate(AppNavigation.HOME)
                     },
                     icon = Icons.AutoMirrored.Filled.Logout,
                     containerColor = senaColors().danger,
@@ -289,7 +330,7 @@ fun MetricCardSmall(icon: ImageVector, value: String, label: String, modifier: M
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {

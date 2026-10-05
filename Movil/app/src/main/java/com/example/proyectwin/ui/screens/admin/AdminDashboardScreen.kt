@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.navigation.AppNavigation
@@ -37,8 +37,8 @@ import kotlinx.coroutines.launch
 fun AdminDashboardScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -348,7 +348,7 @@ fun ManagementActionCard(title: String, desc: String, icon: ImageVector, color: 
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        color = Color.White,
+        color = senaColors().backgroundElevated,
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {

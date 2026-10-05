@@ -1,17 +1,16 @@
 package com.example.proyectwin.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.proyectwin.data.local.SessionManager
-import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.ClassGroupStatus
 import com.example.proyectwin.data.model.Ficha
-import com.example.proyectwin.data.repository.FichasRepository
+import com.example.proyectwin.domain.repository.FichasRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class FichasUiState {
     data object Loading : FichasUiState()
@@ -27,9 +26,10 @@ data class FichasActionState(
     val message: String? = null
 )
 
-class FichasViewModel(application: Application) : AndroidViewModel(application) {
-    private val fichasRepository = FichasRepository()
-    private val sessionManager = SessionManager(application)
+@HiltViewModel
+class FichasViewModel @Inject constructor(
+    private val fichasRepository: FichasRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FichasUiState>(FichasUiState.Loading)
     val uiState: StateFlow<FichasUiState> = _uiState.asStateFlow()
@@ -40,61 +40,94 @@ class FichasViewModel(application: Application) : AndroidViewModel(application) 
     fun loadAllFichas() {
         viewModelScope.launch {
             _uiState.value = FichasUiState.Loading
-            fichasRepository.getAllFichas().collect { fichas ->
-                _uiState.value = FichasUiState.Success(fichas)
-            }
+            fichasRepository.listar().fold(
+                onSuccess = { fichas -> _uiState.value = FichasUiState.Success(fichas) },
+                onFailure = { e ->
+                    _uiState.value = FichasUiState.Error(e.message ?: "Error al cargar las fichas")
+                },
+            )
         }
     }
 
     fun loadActiveFichas() {
         viewModelScope.launch {
             _uiState.value = FichasUiState.Loading
-            fichasRepository.getActiveFichas().collect { fichas ->
-                _uiState.value = FichasUiState.Success(fichas)
-            }
+            fichasRepository.listar().fold(
+                onSuccess = { fichas ->
+                    _uiState.value = FichasUiState.Success(
+                        fichas.filter { it.estado == ClassGroupStatus.ACTIVO.value },
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = FichasUiState.Error(e.message ?: "Error al cargar las fichas")
+                },
+            )
         }
     }
 
     fun loadFichaById(id: Int) {
         viewModelScope.launch {
             _uiState.value = FichasUiState.Loading
-            fichasRepository.getFichaById(id).collect { ficha ->
-                _actionState.value = _actionState.value.copy(selectedFicha = ficha)
-                _uiState.value = FichasUiState.Success(ficha?.let { listOf(it) } ?: emptyList())
-            }
+            fichasRepository.obtener(id).fold(
+                onSuccess = { ficha ->
+                    _actionState.value = _actionState.value.copy(selectedFicha = ficha)
+                    _uiState.value = FichasUiState.Success(listOf(ficha))
+                },
+                onFailure = { e ->
+                    _uiState.value = FichasUiState.Error(e.message ?: "Error al cargar la ficha")
+                },
+            )
         }
     }
 
+    /** Valida el código contra el servidor (misma preview que el frontend). */
     fun validarCodigo(codigo: String) {
-        val valido = fichasRepository.esCodigoValido(codigo)
-        _actionState.value = _actionState.value.copy(codigoValido = valido, selectedFicha = null)
-        if (valido) {
-            viewModelScope.launch {
-                fichasRepository.getFichaByCodigo(codigo).collect { ficha ->
-                    _actionState.value = _actionState.value.copy(selectedFicha = ficha)
-                }
-            }
+        viewModelScope.launch {
+            _actionState.value = _actionState.value.copy(codigoValido = null, selectedFicha = null)
+            fichasRepository.fichaPorCodigo(codigo).fold(
+                onSuccess = { ficha ->
+                    _actionState.value = _actionState.value.copy(
+                        codigoValido = true,
+                        selectedFicha = ficha,
+                    )
+                },
+                onFailure = {
+                    _actionState.value = _actionState.value.copy(
+                        codigoValido = false,
+                        selectedFicha = null,
+                    )
+                },
+            )
         }
     }
 
     fun generarCodigo() {
-        val codigo = fichasRepository.generarCodigo()
-        _actionState.value = _actionState.value.copy(codigoGenerado = codigo)
+        _actionState.value = _actionState.value.copy(codigoGenerado = Ficha.generarCodigo())
     }
 
     fun joinFicha(fichaId: Int) {
         viewModelScope.launch {
-            try {
-                sessionManager.joinFicha(fichaId)
-                val ficha = MockDataProvider.findFichaById(fichaId)
-                val user = sessionManager.currentUser.first()
-                if (ficha != null && user != null) {
-                    MockDataProvider.joinFicha(ficha.codigo, user)
-                }
-                _actionState.value = _actionState.value.copy(joinSuccess = true, message = null)
-            } catch (e: Exception) {
-                _actionState.value = _actionState.value.copy(message = e.message ?: "Error al unirse a la ficha")
+            val codigo = _actionState.value.selectedFicha?.codigo
+            if (codigo == null) {
+                _actionState.value = _actionState.value.copy(
+                    message = "Valida el código de la ficha antes de unirte.",
+                )
+                return@launch
             }
+            fichasRepository.unirmeAFicha(codigo).fold(
+                onSuccess = { ficha ->
+                    _actionState.value = _actionState.value.copy(
+                        selectedFicha = ficha,
+                        joinSuccess = true,
+                        message = null,
+                    )
+                },
+                onFailure = { e ->
+                    _actionState.value = _actionState.value.copy(
+                        message = e.message ?: "Error al unirse a la ficha",
+                    )
+                },
+            )
         }
     }
 

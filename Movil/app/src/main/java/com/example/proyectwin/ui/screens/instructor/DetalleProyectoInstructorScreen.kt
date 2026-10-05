@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.BugReport
 import com.example.proyectwin.data.model.Project
@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 fun DetalleProyectoInstructorScreen(
     projectId: String = "",
     onBack: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -105,8 +105,8 @@ fun DetalleProyectoInstructorScreen(
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             SenaPageHeader(
-                title = "Revisi�n de Proyecto",
-                subtitle = "Evaluaci�n detallada de la propuesta enviada por el aprendiz.",
+                title = "Revisión de Proyecto",
+                subtitle = "Evaluación detallada de la propuesta enviada por el aprendiz.",
                 icon = Icons.Default.FolderOpen
             )
 
@@ -139,7 +139,7 @@ fun DetalleProyectoInstructorScreen(
                         InstructorDetailRow(Icons.Default.Person, "Aprendiz", project?.studentName ?: "N/A")
                         InstructorDetailRow(Icons.Default.School, "Programa", "ADSO")
                         InstructorDetailRow(Icons.Default.CalendarToday, "Fecha", project?.createdAt ?: "Sin fecha")
-                        InstructorDetailRow(Icons.Default.Work, "�rea", "Tecnolog�a e Inform�tica")
+                        InstructorDetailRow(Icons.Default.Work, "Área", "Tecnología e Informática")
                     }
                 }
             }
@@ -147,14 +147,14 @@ fun DetalleProyectoInstructorScreen(
             SenaSectionHeader(title = "Resumen del Proyecto")
             SenaCard {
                 Text(
-                    project?.description ?: "Sin descripci�n disponible.",
+                    project?.description ?: "Sin descripción disponible.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = senaColors().textSecondary,
                     lineHeight = 22.sp
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Proyecto", "Sena", "Tecnolog�a").forEach { tag ->
+                    listOf("Proyecto", "Sena", "Tecnología").forEach { tag ->
                         SenaChip(text = tag, color = senaColors().textMuted, isSelected = false)
                     }
                 }
@@ -224,7 +224,7 @@ fun DetalleProyectoInstructorScreen(
                             Text(project?.createdAt ?: "Sin fecha", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                         }
                         Text(
-                            "El proyecto necesita mejorar la secci�n de an�lisis de requisitos. Se recomienda ampliar la documentaci�n t�cnica.",
+                            "El proyecto necesita mejorar la sección de análisis de requisitos. Se recomienda ampliar la documentación técnica.",
                             style = MaterialTheme.typography.bodySmall,
                             color = senaColors().textSecondary
                         )
@@ -233,12 +233,12 @@ fun DetalleProyectoInstructorScreen(
 
                 SenaCard(elevation = 2.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Agregar Observaci�n", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+                        Text("Agregar Observación", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
                         SenaTextField(
                             value = observationText,
                             onValueChange = { observationText = it },
                             label = "",
-                            placeholder = "Escribe tu comentario aqu�...",
+                            placeholder = "Escribe tu comentario aquí...",
                             modifier = Modifier.heightIn(min = 100.dp)
                         )
                         SenaButton(

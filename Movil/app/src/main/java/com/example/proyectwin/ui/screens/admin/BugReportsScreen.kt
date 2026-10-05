@@ -19,28 +19,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.BugReport
 import com.example.proyectwin.data.model.BugReportStatus
 import com.example.proyectwin.data.model.BugReportType
+import com.example.proyectwin.data.model.typeDisplay
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.BugReportsUiState
+import com.example.proyectwin.ui.viewmodel.BugReportsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BugReportsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    bugReportsViewModel: BugReportsViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<BugReportType?>(null) }
     var selectedStatus by remember { mutableStateOf<BugReportStatus?>(null) }
 
-    val reports = remember { MockDataProvider.getAllBugReports() }
+    val reportsState by bugReportsViewModel.uiState.collectAsState()
+    LaunchedEffect(Unit) { bugReportsViewModel.load() }
+    val reports = (reportsState as? BugReportsUiState.Success)?.reports ?: emptyList()
 
     val typeFilters = remember { listOf(null) + BugReportType.entries.toList() }
     val statusFilters = remember { listOf(null) + BugReportStatus.entries.toList() }
@@ -73,7 +78,7 @@ fun BugReportsScreen(
             item {
                 SenaPageHeader(
                     title = "Reportes de Fallas",
-                    subtitle = "Supervisa y gestiona los errores técnicos reportados por los usuarios.",
+                    subtitle = "Supervisa y gestiona los errores tÃ©cnicos reportados por los usuarios.",
                     icon = Icons.Default.BugReport
                 )
             }
@@ -83,7 +88,7 @@ fun BugReportsScreen(
                 SenaCard(elevation = 1.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            "Filtros de búsqueda",
+                            "Filtros de bÃºsqueda",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = senaColors().textLight,
@@ -93,7 +98,7 @@ fun BugReportsScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = "",
-                            placeholder = "Buscar por usuario o descripción...",
+                            placeholder = "Buscar por usuario o descripciÃ³n...",
                             leadingIcon = Icons.Default.Search
                         )
 
@@ -110,18 +115,10 @@ fun BugReportsScreen(
                         ) {
                             typeFilters.forEach { type ->
                                 SenaChip(
-                                    text = type?.let {
-                                        when (it) {
-                                            BugReportType.FUNCIONAL -> "Funcional"
-                                            BugReportType.VISUAL -> "Visual"
-                                            BugReportType.RENDIMIENTO -> "Rendimiento"
-                                            BugReportType.SEGURIDAD -> "Seguridad"
-                                            BugReportType.OTRO -> "Otro"
-                                        }
-                                    } ?: "Todos",
+                                    text = type?.typeDisplay ?: "Todos",
                                     color = when (type) {
-                                        BugReportType.FUNCIONAL -> senaColors().info
-                                        BugReportType.VISUAL -> senaColors().warning
+                                        BugReportType.BUG_UI -> senaColors().info
+                                        BugReportType.ERROR_DATOS -> senaColors().warning
                                         BugReportType.RENDIMIENTO -> senaColors().danger
                                         BugReportType.SEGURIDAD -> senaColors().danger
                                         else -> senaColors().green
@@ -148,9 +145,10 @@ fun BugReportsScreen(
                                     text = status?.let {
                                         when (it) {
                                             BugReportStatus.PENDIENTE -> "Pendiente"
-                                            BugReportStatus.EN_REVISION -> "En Revisión"
+                                            BugReportStatus.EN_REVISION -> "En RevisiÃ³n"
                                             BugReportStatus.RESUELTO -> "Resuelto"
                                             BugReportStatus.CERRADO -> "Cerrado"
+                                            BugReportStatus.RECHAZADO -> "Rechazado"
                                         }
                                     } ?: "Todos",
                                     color = when (status) {
@@ -172,7 +170,7 @@ fun BugReportsScreen(
             if (filteredReports.isEmpty()) {
                 item {
                     SenaEmptyState(
-                        message = "No se encontraron reportes que coincidan con la búsqueda.",
+                        message = "No se encontraron reportes que coincidan con la bÃºsqueda.",
                         icon = Icons.Default.SearchOff
                     )
                 }
@@ -226,15 +224,15 @@ fun BugReportCard(report: BugReport, onClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(report.reporterName ?: "Anónimo", style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
+                    Text(report.reporterName ?: "AnÃ³nimo", style = MaterialTheme.typography.labelSmall, color = senaColors().textSecondary)
                     Spacer(Modifier.weight(1f))
                     Surface(
                         color = when (report.bugType) {
-                            BugReportType.FUNCIONAL -> senaColors().info.copy(alpha = 0.1f)
-                            BugReportType.VISUAL -> senaColors().warning.copy(alpha = 0.1f)
+                            BugReportType.BUG_UI -> senaColors().info.copy(alpha = 0.1f)
+                            BugReportType.ERROR_DATOS -> senaColors().warning.copy(alpha = 0.1f)
                             BugReportType.RENDIMIENTO -> senaColors().danger.copy(alpha = 0.1f)
                             BugReportType.SEGURIDAD -> senaColors().danger.copy(alpha = 0.1f)
-                            BugReportType.OTRO -> senaColors().textLight.copy(alpha = 0.1f)
+                            else -> senaColors().textLight.copy(alpha = 0.1f)
                         },
                         shape = RoundedCornerShape(4.dp)
                     ) {
@@ -243,11 +241,11 @@ fun BugReportCard(report: BugReport, onClick: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = when (report.bugType) {
-                                BugReportType.FUNCIONAL -> senaColors().info
-                                BugReportType.VISUAL -> senaColors().warning
+                                BugReportType.BUG_UI -> senaColors().info
+                                BugReportType.ERROR_DATOS -> senaColors().warning
                                 BugReportType.RENDIMIENTO -> senaColors().danger
                                 BugReportType.SEGURIDAD -> senaColors().danger
-                                BugReportType.OTRO -> senaColors().textLight
+                                else -> senaColors().textLight
                             },
                             fontSize = 9.sp
                         )

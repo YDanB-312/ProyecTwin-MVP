@@ -2,8 +2,8 @@ package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -17,26 +17,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.proyectwin.data.mock.MockDataProvider
-import com.example.proyectwin.data.model.UserRole
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.AdminUiState
+import com.example.proyectwin.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewUserScreen(onBack: () -> Unit) {
+fun NewUserScreen(
+    onBack: () -> Unit,
+    adminViewModel: AdminViewModel = hiltViewModel()
+) {
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRol by remember { mutableStateOf("Aprendiz") }
     val roles = listOf("Aprendiz", "Instructor", "Administrador")
-    
-    val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
+    val adminState by adminViewModel.uiState.collectAsState()
     var isSaving by remember { mutableStateOf(false) }
+
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -50,26 +53,24 @@ fun NewUserScreen(onBack: () -> Unit) {
         containerColor = senaColors().background,
         bottomBar = {
             SenaBottomBar {
-                SenaButton(text = "Cancelar", onClick = onBack, isPrimary = false, modifier = Modifier.weight(1f))
                 SenaButton(
-                    text = "Crear Usuario", 
+                    text = "Cancelar",
+                    onClick = onBack,
+                    isPrimary = false,
+                    modifier = Modifier.weight(1f)
+                )
+                SenaButton(
+                    text = "Crear Usuario",
                     onClick = {
-                        isSaving = true
-                        scope.launch {
-                            delay(1000)
-                            MockDataProvider.createUser(
-                                name = "${name.trim()} ${lastName.trim()}".trim(),
-                                email = email.trim(),
-                                role = when (selectedRol) {
-                                    "Aprendiz" -> UserRole.APRENDIZ.value
-                                    "Instructor" -> UserRole.INSTRUCTOR.value
-                                    else -> UserRole.ADMINISTRADOR.value
-                                }
-                            )
-                            isSaving = false
-                            onBack()
+                        val fullName = "${name.trim()} ${lastName.trim()}".trim()
+                        if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
+                            isSaving = true
+                            adminViewModel.createUser(fullName, email, selectedRol) {
+                                isSaving = false
+                                onBack()
+                            }
                         }
-                    }, 
+                    },
                     isLoading = isSaving,
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.PersonAdd
@@ -99,14 +100,14 @@ fun NewUserScreen(onBack: () -> Unit) {
                         SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido *", modifier = Modifier.weight(1f))
                     }
                     SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional *", leadingIcon = Icons.Default.Email)
-                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contrase�a Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
+                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseña Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
                 }
             }
 
-            SenaSectionHeader(title = "Asignaci�n de Rol")
+            SenaSectionHeader(title = "Asignación de Rol")
             SenaCard(elevation = 1.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Selecciona el rol jer�rquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    Text("Selecciona el rol jerárquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -146,13 +147,13 @@ fun NewUserScreen(onBack: () -> Unit) {
             if (selectedRol == "Aprendiz") {
                 SenaSectionHeader(title = "Detalles del Aprendiz")
                 SenaCard {
-                    SenaTextField(value = "", onValueChange = {}, label = "C�digo de Ficha", placeholder = "Ej: 2568421")
+                    SenaTextField(value = "", onValueChange = {}, label = "Código de Ficha", placeholder = "Ej: 2568421")
                 }
             }
 
             SenaAlertBanner(
-                title = "Activaci�n Autom�tica",
-                message = "Al crear el usuario, se le enviar� un correo de bienvenida con sus credenciales de acceso.",
+                title = "Activación Automática",
+                message = "Al crear el usuario, se le enviará un correo de bienvenida con sus credenciales de acceso.",
                 icon = Icons.Default.Info,
                 color = senaColors().info
             )
@@ -162,7 +163,6 @@ fun NewUserScreen(onBack: () -> Unit) {
     }
 }
 
-// Missing icon
 val Icons.Filled.UserAdd: ImageVector get() = Icons.Default.PersonAdd
 
 @Preview(showBackground = true)

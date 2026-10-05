@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -33,8 +33,8 @@ import com.example.proyectwin.ui.viewmodel.FichasViewModel
 fun UnirseFichaAprendizScreen(
     onBack: () -> Unit,
     onJoined: () -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     var codigoFicha by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
@@ -197,7 +197,7 @@ fun UnirseBenefitItem(icon: ImageVector, title: String, desc: String) {
         Surface(
             modifier = Modifier.size(36.dp),
             shape = RoundedCornerShape(10.dp),
-            color = Color.White,
+            color = senaColors().backgroundElevated,
             border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
         ) {
             Box(contentAlignment = Alignment.Center) {

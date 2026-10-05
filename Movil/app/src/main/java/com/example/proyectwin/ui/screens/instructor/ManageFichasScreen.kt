@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
@@ -51,8 +51,8 @@ fun ManageFichasScreen(
     onCreateFicha: () -> Unit,
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todas") }
@@ -112,7 +112,7 @@ fun ManageFichasScreen(
             item {
                 SenaPageHeader(
                     title = "Gestionar Fichas",
-                    subtitle = "Administra los grupos de formaci�n y supervisa el progreso de los aprendices.",
+                    subtitle = "Administra los grupos de formación y supervisa el progreso de los aprendices.",
                     icon = Icons.Default.LayerGroup
                 )
             }
@@ -151,8 +151,8 @@ fun ManageFichasScreen(
                         SenaTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            label = "B�squeda r�pida",
-                            placeholder = "Buscar por c�digo o nombre...",
+                            label = "Búsqueda rápida",
+                            placeholder = "Buscar por código o nombre...",
                             leadingIcon = Icons.Default.Search
                         )
                         Row(

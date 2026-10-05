@@ -194,12 +194,12 @@ object MockDataProvider {
     private val bugReportList = mutableListOf(
         BugReport(
             id = 1, titulo = "Error al guardar", descripcion = "No guarda los cambios",
-            tipo = BugReportType.FUNCIONAL.value, estado = "pendiente",
+            tipo = BugReportType.BUG_UI.value, estado = "pendiente",
             projectId = 1, reporterId = 2, reporterName = "Ana Aprendiz"
         ),
         BugReport(
             id = 2, titulo = "Botón roto", descripcion = "El botón de submit no responde",
-            tipo = BugReportType.VISUAL.value, estado = "en_revision",
+            tipo = BugReportType.ERROR_DATOS.value, estado = "en_revision",
             projectId = 1, reporterId = 2, reporterName = "Ana Aprendiz"
         ),
         BugReport(

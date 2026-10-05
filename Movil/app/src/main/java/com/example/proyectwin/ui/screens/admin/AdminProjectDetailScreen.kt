@@ -22,14 +22,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
+import com.example.proyectwin.ui.viewmodel.AdminViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun AdminProjectDetailScreen(
+    projectId: String = "",
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    adminViewModel: AdminViewModel = hiltViewModel()
+) {
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -42,7 +49,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "Auditor�a de Proyecto",
+                title = "Auditoría de Proyecto",
                 onBack = onBack,
                 showProfile = true,
                 showNotifications = true
@@ -55,7 +62,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                     text = "HISTORIAL", 
                     onClick = { 
                         scope.launch {
-                            snackbarHostState.showSnackbar("Bit�cora t�cnica encriptada")
+                            snackbarHostState.showSnackbar("Bitácora técnica encriptada")
                         }
                     }, 
                     isPrimary = false, 
@@ -63,7 +70,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                 )
                 SenaButton(
                     text = "SIMILITUDES", 
-                    onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_DETAIL) }, 
+                    onClick = { onNavigate(AppNavigation.ADMIN_SIMILARITY_LIST) }, 
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Troubleshoot
                 )
@@ -107,7 +114,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                         }
 
                         Text(
-                            project?.title ?: "Sistema IoT para Agricultura de Precisi�n", 
+                            project?.title ?: "Sistema IoT para Agricultura de Precisión", 
                             style = MaterialTheme.typography.titleLarge, 
                             fontWeight = FontWeight.Black, 
                             color = senaColors().text,
@@ -118,7 +125,7 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
 
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             AdminProjectDetailRow(Icons.Default.School, "Programa", "ADSO")
-                            AdminProjectDetailRow(Icons.Default.Person, "Aprendiz L�der", project?.studentName ?: "Maria Gonzalez")
+                            AdminProjectDetailRow(Icons.Default.Person, "Aprendiz Líder", project?.studentName ?: "Maria Gonzalez")
                             AdminProjectDetailRow(Icons.Default.SupervisorAccount, "Instructor", project?.instructorName ?: "Carlos Ruiz")
                         }
                     }
@@ -140,12 +147,12 @@ fun AdminProjectDetailScreen(projectId: String = "", onBack: () -> Unit, onNavig
                     }
                 }
 
-                SenaSectionHeader(title = "Equipo T�cnico")
+                SenaSectionHeader(title = "Equipo Técnico")
                 SenaCard {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TeamMemberRow("MG", "Maria Gonzalez", "L�der de Proyecto", true)
-                        TeamMemberRow("JP", "Juan P�rez", "Desarrollador Backend")
-                        TeamMemberRow("LG", "Laura G�mez", "Dise�adora UI/UX")
+                        TeamMemberRow("MG", "Maria Gonzalez", "Líder de Proyecto", true)
+                        TeamMemberRow("JP", "Juan Pérez", "Desarrollador Backend")
+                        TeamMemberRow("LG", "Laura Gómez", "Diseñadora UI/UX")
                     }
                 }
 

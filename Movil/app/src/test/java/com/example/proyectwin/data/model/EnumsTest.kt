@@ -22,6 +22,7 @@ class EnumsTest {
     fun userRole_fromValue_returnsCorrect() {
         assertEquals(UserRole.INSTRUCTOR, UserRole.fromValue("instructor"))
         assertEquals(UserRole.APRENDIZ, UserRole.fromValue("aprendiz"))
+        assertEquals(UserRole.ADMINISTRADOR, UserRole.fromValue("admin"))
         assertEquals(UserRole.ADMINISTRADOR, UserRole.fromValue("administrador"))
     }
 

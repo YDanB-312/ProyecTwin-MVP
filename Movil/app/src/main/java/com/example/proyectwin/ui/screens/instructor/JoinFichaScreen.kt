@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -28,8 +28,8 @@ import kotlinx.coroutines.launch
 fun JoinFichaScreen(
     onBack: () -> Unit,
     onFichaCreated: () -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     var nombre by remember { mutableStateOf("") }
     var programa by remember { mutableStateOf("") }

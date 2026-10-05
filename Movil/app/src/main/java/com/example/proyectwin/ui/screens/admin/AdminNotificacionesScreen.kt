@@ -19,14 +19,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.NotificationType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.NotificationsUiState
+import com.example.proyectwin.ui.viewmodel.NotificationsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,12 +36,16 @@ fun AdminNotificacionesScreen(
     onNavigateToUser: (String) -> Unit,
     onNavigateToReport: (String) -> Unit,
     onNavigateToSimilarity: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val userId = (authState as? AuthUiState.LoggedIn)?.user?.id ?: 1
 
-    val notifications = remember(userId) { MockDataProvider.getNotificationsByUser(userId) }
+    val notificationsState by notificationsViewModel.uiState.collectAsState()
+    LaunchedEffect(userId) { notificationsViewModel.load(userId) }
+    val notifications = (notificationsState as? NotificationsUiState.Success)?.notifications
+        ?: emptyList()
 
     Scaffold(
         topBar = {
@@ -68,16 +73,20 @@ fun AdminNotificacionesScreen(
 
             items(notifications) { notification ->
                 AdminNotificationCard(notification = notification) {
-                    val module = detectNotificationModule(notification.mensaje)
-                    val projectId = notification.projectId ?: 0
-                    when (module) {
-                        "Usuarios" -> onNavigateToUser(notification.userId.toString())
-                        "Reportes" -> onNavigateToReport(
-                            MockDataProvider.getBugReportsByProject(projectId).firstOrNull()?.id?.toString() ?: "1"
-                        )
-                        "Similitudes" -> onNavigateToSimilarity(
-                            MockDataProvider.getSimilaritiesByProject(projectId).firstOrNull()?.id?.toString() ?: "1"
-                        )
+                    val module = detectNotificationModule(notification)
+                    val enlaceId = notification.enlaceId
+                    when {
+                        module == "Reportes" &&
+                            notification.enlaceModulo == "reporte" && enlaceId != null ->
+                            onNavigateToReport(enlaceId.toString())
+
+                        module == "Similitudes" &&
+                            notification.enlaceModulo == "proyecto" && enlaceId != null ->
+                            onNavigateToSimilarity(enlaceId.toString())
+
+                        module == "Usuarios" ->
+                            onNavigateToUser((notification.userId ?: 0).toString())
+
                         else -> {}
                     }
                 }
@@ -88,13 +97,19 @@ fun AdminNotificacionesScreen(
     }
 }
 
-private fun detectNotificationModule(mensaje: String): String {
-    val lower = mensaje.lowercase()
+private fun detectNotificationModule(notification: Notification): String {
+    val lower = notification.mensaje.lowercase()
     return when {
-        lower.contains("reporte") || lower.contains("bug") -> "Reportes"
-        lower.contains("similitud") -> "Similitudes"
+        notification.enlaceModulo == "reporte" ||
+            lower.contains("reporte") || lower.contains("bug") -> "Reportes"
+
+        notification.notifType == NotificationType.SIMILITUD ||
+            lower.contains("similitud") -> "Similitudes"
+
         lower.contains("usuario") || lower.contains("bienvenido") || lower.contains("registrado") -> "Usuarios"
-        lower.contains("proyecto") -> "Proyectos"
+
+        notification.enlaceModulo == "proyecto" || lower.contains("proyecto") -> "Proyectos"
+
         else -> "Sistema"
     }
 }
@@ -104,6 +119,11 @@ private fun notifIcon(notifType: NotificationType): ImageVector = when (notifTyp
     NotificationType.WARNING -> Icons.Default.Warning
     NotificationType.SUCCESS -> Icons.Default.CheckCircle
     NotificationType.ERROR -> Icons.Default.Error
+    NotificationType.SIMILITUD -> Icons.Default.CompareArrows
+    NotificationType.OBSERVACION -> Icons.Default.Visibility
+    NotificationType.REVISION -> Icons.Default.Assignment
+    NotificationType.MENSAJE -> Icons.Default.Email
+    NotificationType.SISTEMA -> Icons.Default.Settings
 }
 
 @Composable
@@ -112,6 +132,11 @@ private fun notifColor(notifType: NotificationType): Color = when (notifType) {
     NotificationType.WARNING -> senaColors().warning
     NotificationType.SUCCESS -> senaColors().success
     NotificationType.ERROR -> senaColors().danger
+    NotificationType.SIMILITUD -> senaColors().danger
+    NotificationType.OBSERVACION -> senaColors().warning
+    NotificationType.REVISION -> senaColors().info
+    NotificationType.MENSAJE -> senaColors().green
+    NotificationType.SISTEMA -> senaColors().textLight
 }
 
 @Composable
@@ -124,7 +149,7 @@ private fun notifModuleColor(module: String): Color = when (module) {
 
 @Composable
 fun AdminNotificationCard(notification: Notification, onClick: () -> Unit) {
-    val module = detectNotificationModule(notification.mensaje)
+    val module = detectNotificationModule(notification)
     val color = notifModuleColor(module)
     val icon = notifIcon(notification.notifType)
     val isRead = notification.leido

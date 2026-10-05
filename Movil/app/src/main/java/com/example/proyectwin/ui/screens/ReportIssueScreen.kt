@@ -1,5 +1,6 @@
 package com.example.proyectwin.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,22 +16,51 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.proyectwin.data.mock.MockDataProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.BugReportType
+import com.example.proyectwin.data.model.typeDisplay
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.BugReportsUiState
+import com.example.proyectwin.ui.viewmodel.BugReportsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+fun ReportIssueScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    bugReportsViewModel: BugReportsViewModel = hiltViewModel()
+) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf(BugReportType.BUG_UI) }
     var isLoading by remember { mutableStateOf(false) }
-    var reportes by remember { mutableStateOf(MockDataProvider.getBugReportsByReporter(2)) }
-    val scope = rememberCoroutineScope()
+    var errorMsg by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
+
+    val reportsState by bugReportsViewModel.uiState.collectAsState()
+    val creado by bugReportsViewModel.creado.collectAsState()
+    val accionError by bugReportsViewModel.accionError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) { bugReportsViewModel.load() }
+    val reportes = (reportsState as? BugReportsUiState.Success)?.reports ?: emptyList()
+
+    LaunchedEffect(creado) {
+        if (creado) {
+            title = ""
+            description = ""
+            tipo = BugReportType.BUG_UI
+            isLoading = false
+            bugReportsViewModel.limpiarCreado()
+            snackbarHostState.showSnackbar("Reporte enviado. Un administrador lo revisará.")
+        }
+    }
+    LaunchedEffect(accionError) {
+        if (accionError != null) {
+            isLoading = false
+            errorMsg = accionError
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -42,29 +72,24 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
                     text = "Enviar Reporte",
                     onClick = {
-                        isLoading = true
-                        scope.launch {
-                            delay(1500)
-                            if (title.isNotBlank() && description.isNotBlank()) {
-                                MockDataProvider.createBugReport(
-                                    titulo = title.trim(),
-                                    descripcion = description.trim(),
-                                    tipo = BugReportType.FUNCIONAL.value,
-                                    projectId = 1,
-                                    reporterId = 2,
-                                    reporterName = "Ana Aprendiz"
-                                )
-                                reportes = MockDataProvider.getBugReportsByReporter(2)
-                                title = ""
-                                description = ""
-                            }
-                            isLoading = false
-                            onBack()
+                        val titulo = title.trim()
+                        val desc = description.trim()
+                        if (titulo.isBlank() || desc.isBlank()) {
+                            errorMsg = "Completa el título y la descripción del reporte."
+                        } else {
+                            errorMsg = null
+                            isLoading = true
+                            bugReportsViewModel.crear(
+                                titulo = titulo,
+                                descripcion = desc,
+                                tipo = tipo.value,
+                            )
                         }
                     },
                     isLoading = isLoading,
@@ -105,10 +130,40 @@ fun ReportIssueScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         placeholder = "Explica paso a paso qué sucedió...",
                         modifier = Modifier.heightIn(min = 120.dp)
                     )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "Tipo de falla",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = senaColors().textSecondary
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BugReportType.opcionesReporte.forEach { opcion ->
+                                SenaChip(
+                                    text = opcion.typeDisplay,
+                                    color = senaColors().green,
+                                    isSelected = tipo == opcion,
+                                    onClick = { tipo = opcion }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             SenaSectionHeader(title = "Tus Reportes Recientes")
+
+            errorMsg?.let { mensaje ->
+                Text(
+                    mensaje,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = senaColors().danger
+                )
+            }
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (reportes.isEmpty()) {

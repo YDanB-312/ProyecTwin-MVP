@@ -16,7 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -30,8 +30,8 @@ import kotlinx.coroutines.launch
 fun EditProfileScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -40,6 +40,7 @@ fun EditProfileScreen(
     val saveSuccess by profileViewModel.saveSuccess.collectAsState()
     val isSaving by profileViewModel.isSaving.collectAsState()
     val saveError by profileViewModel.saveError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
     var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
@@ -49,7 +50,7 @@ fun EditProfileScreen(
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
             profileViewModel.clearSaveSuccess()
-            onBack()
+            snackbarHostState.showSnackbar("Perfil actualizado correctamente")
         }
     }
 
@@ -63,6 +64,7 @@ fun EditProfileScreen(
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             SenaBottomBar {
                 SenaButton(
@@ -124,7 +126,8 @@ fun EditProfileScreen(
                         onValueChange = { email = it }, 
                         label = "Correo Electrónico *",
                         leadingIcon = Icons.Default.Email,
-                        keyboardType = KeyboardType.Email
+                        keyboardType = KeyboardType.Email,
+                        enabled = false
                     )
                     
                     SenaTextField(
@@ -138,7 +141,7 @@ fun EditProfileScreen(
             }
 
             Text(
-                text = "Credenciales demo — Los cambios se reflejarán en tiempo real.",
+                text = "Los cambios se reflejarán en tiempo real.",
                 style = MaterialTheme.typography.bodySmall,
                 color = senaColors().textMuted,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -151,6 +154,12 @@ fun EditProfileScreen(
                     title = "Cambiar Contraseña", 
                     description = "Se te redirigirá a la pantalla de cambio de clave.",
                     onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
+                )
+                SenaSettingsItem(
+                    icon = Icons.Default.Email,
+                    title = "Cambiar Correo Electrónico",
+                    description = "Se te redirigirá a la pantalla de cambio de correo.",
+                    onClick = { onNavigate(AppNavigation.CHANGE_EMAIL) }
                 )
             }
 

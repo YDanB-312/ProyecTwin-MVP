@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectStatus
@@ -34,8 +34,8 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 fun AdminProjectsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedStatus by remember { mutableStateOf("Todos") }
@@ -85,7 +85,7 @@ fun AdminProjectsScreen(
             item {
                 SenaPageHeader(
                     title = "Proyectos Globales",
-                    subtitle = "Supervisión de todas las propuestas técnicas registradas en la plataforma.",
+                    subtitle = "Supervisi\u00f3n de todas las propuestas t\u00e9cnicas registradas en la plataforma.",
                     icon = Icons.Default.FolderSpecial
                 )
             }

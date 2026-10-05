@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -42,8 +42,8 @@ fun FichaDirectoryScreen(
     onBack: () -> Unit,
     onCreateFicha: () -> Unit,
     onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    fichasViewModel: FichasViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    fichasViewModel: FichasViewModel = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
