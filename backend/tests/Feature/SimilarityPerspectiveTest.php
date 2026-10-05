@@ -36,7 +36,6 @@ class SimilarityPerspectiveTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
 
@@ -191,7 +190,6 @@ class SimilarityPerspectiveTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         $ficha = ClassGroup::create([
@@ -216,7 +214,6 @@ class SimilarityPerspectiveTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         $otraFicha = ClassGroup::create([

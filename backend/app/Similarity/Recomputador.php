@@ -145,6 +145,12 @@ class Recomputador
 
     // Un par es válido si respeta umbral, mismo programa y ventana, y además
     // la referencia es una propuesta APROBADA (al menos uno de los dos).
+    //
+    // Regla temporal (intencional): el corpus solo compara contra aprobadas
+    // dentro de la ventana, mientras que un par vigente se conserva si
+    // CUALQUIERA de los dos está en ventana. Los proyectos antiguos se
+    // reanalizan al recalibrar desde Config (no en cada envío); está
+    // documentado en README y no es una inconsistencia accidental.
     private function parVigente(Similarity $s, float $umbral, int $meses): bool
     {
         if (($s->porcentaje / 100) < $umbral) return false;

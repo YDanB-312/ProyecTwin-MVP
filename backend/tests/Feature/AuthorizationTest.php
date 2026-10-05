@@ -59,7 +59,6 @@ class AuthorizationTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         $ficha = ClassGroup::create([
@@ -145,19 +144,36 @@ class AuthorizationTest extends TestCase
         $this->como($admin)->getJson('/v1/general-users')->assertOk();
     }
 
-    public function test_el_detalle_ajeno_es_privado_pero_el_perfil_publico_no(): void
+    public function test_el_perfil_esta_acotado_por_relacion_academica(): void
     {
         $a = $this->usuario('aprendiz');
         $b = $this->usuario('aprendiz');
+        $ajeno = $this->usuario('aprendiz');
 
+        // El detalle ajeno sigue siendo privado.
         $this->como($a)->getJson('/v1/general-users/' . $b->id)->assertStatus(403);
+
+        // Sin relación académica, el perfil ajeno también es privado.
+        $this->como($a)->getJson('/v1/general-users/' . $ajeno->id . '/perfil')->assertStatus(403);
+
+        // Compañeros de la misma ficha: el perfil se muestra sin datos sensibles.
+        $this->proyectoDe($b); // crea ficha activa con B dentro
+        $fichaId = Apprentice::where('id_usuario', $b->id)->value('id_class_group');
+        Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $a->id,
+            'id_class_group' => $fichaId,
+            'id_programa' => ClassGroup::find($fichaId)->id_programa,
+        ]);
 
         $this->como($a)
             ->getJson('/v1/general-users/' . $b->id . '/perfil')
             ->assertOk()
             ->assertJsonPath('id', $b->id)
             ->assertJsonMissingPath('estado')
-            ->assertJsonMissingPath('password');
+            ->assertJsonMissingPath('password')
+            ->assertJsonMissingPath('numero_documento')
+            ->assertJsonMissingPath('username');
     }
 
     public function test_un_aprendiz_no_borra_propuestas_ajenas(): void
@@ -221,19 +237,55 @@ class AuthorizationTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_un_instructor_si_puede_notificar_a_un_aprendiz(): void
+    public function test_un_instructor_solo_notifica_a_sus_aprendices(): void
     {
-        $instructor = $this->usuario('instructor');
-        $aprendiz = $this->usuario('aprendiz');
+        $instructorUser = $this->usuario('instructor');
+        $instructor = Instructor::create([
+            'fecha_ingreso' => '2024-01-01',
+            'id_usuario' => $instructorUser->id,
+        ]);
+        $red = KnowledgeNetwork::create(['nombre' => 'Red ' . uniqid()]);
+        $programa = TrainingProgram::create([
+            'nombre' => 'Programa ' . uniqid(),
+            'nivel' => 'Tecnologo',
+            'knowledge_network_id' => $red->id,
+        ]);
+        $ficha = ClassGroup::create([
+            'codigo' => 'nf-' . uniqid(),
+            'nombre' => 'Ficha notif',
+            'estado' => 'activo',
+            'id_programa' => $programa->id,
+            'id_instructor' => $instructor->id,
+        ]);
 
-        $this->como($instructor)
+        $propio = $this->usuario('aprendiz');
+        Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $propio->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $programa->id,
+        ]);
+
+        // Aprendiz de su ficha: permitido.
+        $this->como($instructorUser)
             ->postJson('/v1/notifications', [
                 'titulo' => 'Tu propuesta fue revisada',
                 'tipo' => 'revision',
                 'fecha' => now()->toDateString(),
-                'id_usuario' => $aprendiz->id,
+                'id_usuario' => $propio->id,
             ])
             ->assertCreated();
+
+        // Aprendiz fuera de sus fichas: bloqueado.
+        $ajeno = $this->usuario('aprendiz');
+        $this->como($instructorUser)
+            ->postJson('/v1/notifications', [
+                'titulo' => 'Aviso ajeno',
+                'tipo' => 'mensaje',
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $ajeno->id,
+            ])
+            ->assertStatus(403);
     }
 
     public function test_solo_un_admin_actualiza_reportes_de_falla(): void
@@ -285,7 +337,6 @@ class AuthorizationTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         // El pivote es de un MIEMBRO (no del creador): al creador no se le puede
@@ -316,7 +367,6 @@ class AuthorizationTest extends TestCase
         $programa = TrainingProgram::create([
             'nombre' => 'Programa ' . uniqid(),
             'nivel' => 'Tecnologo',
-            'num_trimestres' => 6,
             'knowledge_network_id' => $red->id,
         ]);
         $user = $this->usuario('instructor');

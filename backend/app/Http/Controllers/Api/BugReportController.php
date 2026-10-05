@@ -32,7 +32,6 @@ class BugReportController extends Controller
             'motivo' => 'nullable|max:120',
             'descripcion' => 'required',
             'tipo' => 'required|in:' . self::TIPOS,
-            'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
             'fecha' => 'required|date',
             'id_usuario' => 'nullable|exists:general_users,id',
         ]);
@@ -51,7 +50,8 @@ class BugReportController extends Controller
             'motivo' => $request->motivo,
             'descripcion' => $request->descripcion,
             'tipo' => $request->tipo,
-            'estado' => $request->estado ?? 'pendiente',
+            // El estado inicial siempre lo controla el backend.
+            'estado' => 'pendiente',
             'fecha' => $request->fecha,
             'id_usuario' => $request->user()->id,
         ]);

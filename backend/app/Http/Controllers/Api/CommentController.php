@@ -82,6 +82,14 @@ class CommentController extends Controller
             return response()->json(['message' => 'Solo puedes editar tus propias observaciones.'], 403);
         }
 
+        // La regla Classroom también aplica al editar: ficha activa y pertenencia.
+        if ($user->rol !== 'admin') {
+            $proyecto = Project::find($comment->id_proyecto);
+            if (!$proyecto || !$proyecto->puedeEscribir($user)) {
+                return response()->json(['message' => 'Solo lectura: ya no puedes editar esta observación.'], 403);
+            }
+        }
+
         // Solo cambia el texto: la observación no se mueve de proyecto ni de hilo
         // (trazabilidad del hilo de revisión).
         $comment->update([

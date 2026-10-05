@@ -28,8 +28,14 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     ];
 
     // Datos sensibles que nunca salen por la API (login/me/listados). La
-    // contraseña temporal se descifra solo al exportar credenciales.
-    protected $hidden = ['password', 'remember_token', 'password_temporal'];
+    // contraseña temporal se descifra solo al exportar credenciales. Los campos
+    // institucionales/credenciales se ocultan por defecto y solo los revelan
+    // los endpoints de administración (makeVisible).
+    protected $hidden = [
+        'password', 'remember_token', 'password_temporal',
+        'tipo_documento', 'numero_documento', 'username',
+        'must_change_password', 'credenciales_enviadas_en', 'credenciales_error',
+    ];
 
     protected $casts = [
         'estado' => 'boolean',

@@ -43,10 +43,16 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        $token = $user->createToken('proyectwin')->plainTextToken;
+        // El token Bearer solo se emite a clientes sin sesión (móvil/tests).
+        // El SPA usa la cookie httpOnly: no necesita un token que quedaría sin
+        // usar y sin revocar.
+        $token = null;
+        if (!$request->hasSession()) {
+            $token = $user->createToken('proyectwin')->plainTextToken;
+        }
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->makeVisible(['username', 'must_change_password']),
             'token' => $token,
             'rol' => $user->rol,
         ]);
@@ -73,7 +79,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return $request->user();
+        return $request->user()->makeVisible(['username', 'must_change_password']);
     }
 
     // Cambio de correo del propio usuario: exige la contraseña actual antes de

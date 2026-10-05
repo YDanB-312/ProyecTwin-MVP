@@ -146,6 +146,23 @@ class Project extends Model
         });
     }
 
+    // Vista (NO gestión): propuesta propia/de la ficha o contraparte de una
+    // similitud autorizada del usuario (solo lectura, aunque sea de otra ficha).
+    // La gestión sigue dependiendo de `puedeEscribir`/ownership en los controllers.
+    public function scopeVisiblePara(Builder $query, $user): Builder
+    {
+        if (!$user) return $query->whereRaw('1 = 0');
+        if ($user->rol !== 'aprendiz') return $query->paraDetalle($user);
+
+        return $query->where(function (Builder $q) use ($user) {
+            $q->paraDetalle($user)
+              ->orWhere(function (Builder $qq) use ($user) {
+                  $qq->whereHas('similaritiesAsOrigin', fn (Builder $s) => $s->visibleDetalle($user))
+                     ->orWhereHas('similaritiesAsDestination', fn (Builder $s) => $s->visibleDetalle($user));
+              });
+        });
+    }
+
     // Regla Classroom: se PARTICIPA (comentar/editar/gestionar equipo) solo
     // dentro de la ficha ACTIVA de la propuesta. Fuera de la ficha (o con la
     // ficha finalizada) es SOLO LECTURA. Instructor de la ficha/asignado y admin

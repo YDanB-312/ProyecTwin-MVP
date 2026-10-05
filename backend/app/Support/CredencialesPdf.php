@@ -17,11 +17,13 @@ class CredencialesPdf
     {
         $filas = $usuarios->map(function (GeneralUser $usuario) use ($contexto) {
             $temporal = null;
+            $errorTemporal = false;
             if ($usuario->must_change_password && $usuario->password_temporal) {
                 try {
                     $temporal = Crypt::decryptString($usuario->password_temporal);
                 } catch (\Throwable $e) {
                     $temporal = null;
+                    $errorTemporal = true;
                 }
             }
 
@@ -34,7 +36,8 @@ class CredencialesPdf
             return [
                 'nombre' => trim($usuario->nombre . ' ' . $usuario->apellido),
                 'username' => $usuario->username,
-                'password' => $temporal ?? 'Contraseña ya establecida',
+                'password' => $temporal
+                    ?? ($errorTemporal ? 'No se pudo recuperar; restablecer' : 'Contraseña ya establecida'),
                 'ficha' => $ficha?->numero ?? $contexto['ficha'] ?? '—',
                 'programa' => $programa ?? $contexto['programa'] ?? '—',
                 'rol' => ucfirst($usuario->rol),

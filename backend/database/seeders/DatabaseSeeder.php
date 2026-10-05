@@ -344,9 +344,9 @@ class DatabaseSeeder extends Seeder
         $informatica = KnowledgeNetwork::create(['id' => 1, 'nombre' => 'Informática, Diseño y Desarrollo de Software']);
         $artes = KnowledgeNetwork::create(['id' => 2, 'nombre' => 'Artes Gráficas']);
 
-        TrainingProgram::create(['id' => 1, 'nombre' => 'ADSO', 'nivel' => 'Tecnologo', 'num_trimestres' => 6, 'knowledge_network_id' => $informatica->id]);
-        TrainingProgram::create(['id' => 2, 'nombre' => 'Produccion Multimedia', 'nivel' => 'Tecnologo', 'num_trimestres' => 6, 'knowledge_network_id' => $artes->id]);
-        TrainingProgram::create(['id' => 3, 'nombre' => 'Infraestructura Redes', 'nivel' => 'Tecnologo', 'num_trimestres' => 6, 'knowledge_network_id' => $informatica->id]);
+        TrainingProgram::create(['id' => 1, 'nombre' => 'ADSO', 'nivel' => 'Tecnologo', 'knowledge_network_id' => $informatica->id]);
+        TrainingProgram::create(['id' => 2, 'nombre' => 'Produccion Multimedia', 'nivel' => 'Tecnologo', 'knowledge_network_id' => $artes->id]);
+        TrainingProgram::create(['id' => 3, 'nombre' => 'Infraestructura Redes', 'nivel' => 'Tecnologo', 'knowledge_network_id' => $informatica->id]);
     }
 
     // ---------------------------------------------------------------- Fichas
