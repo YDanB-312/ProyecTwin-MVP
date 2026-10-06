@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Identidad ProyecTwin: verde profundo del encabezado y fondo neutro
+         para el icono adaptativo (el logo oficial va sin filtros encima). -->
+    <color name="proyectwin_splash">#FF022C22</color>
+    <color name="proyectwin_launcher_background">#FFFFFFFF</color>
 </resources>

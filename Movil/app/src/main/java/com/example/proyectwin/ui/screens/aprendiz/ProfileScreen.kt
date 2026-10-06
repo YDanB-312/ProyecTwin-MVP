@@ -26,17 +26,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.local.ImagenUtils
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
-import java.util.Base64
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,16 +53,35 @@ fun ProfileScreen(
     val profileState by profileViewModel.uiState.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val saveSuccess by profileViewModel.saveSuccess.collectAsState()
+    val saveError by profileViewModel.saveError.collectAsState()
+
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            profileViewModel.clearSaveSuccess()
+            snackbarHostState.showSnackbar("Perfil actualizado correctamente")
+        }
+    }
+    LaunchedEffect(saveError) {
+        saveError?.let {
+            snackbarHostState.showSnackbar(it)
+            profileViewModel.clearError()
+        }
+    }
 
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
     var editLastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
     var editEmail by remember(user) { mutableStateOf(user?.email ?: "") }
-    var editPhone by remember(user) { mutableStateOf(user?.telefono ?: "") }
 
-    val projectCount = remember(user) {
-        MockDataProvider.getProjectsByStudent(user?.id ?: 0).size
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    LaunchedEffect(user?.id) {
+        if (user != null) dashboardViewModel.loadStudentDashboard(user.id)
     }
+    val projectCount = (dashState as? DashboardUiState.Success)?.projects
+        ?.count { it.studentId == user?.id || it.equipo.any { miembro -> miembro.id == user?.id } }
+        ?: 0
 
     val context = LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -70,13 +89,8 @@ fun ProfileScreen(
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val bytes = inputStream?.readBytes()
-                inputStream?.close()
-                bytes?.let { b ->
-                    val base64 = Base64.getEncoder().encodeToString(b)
-                    profileViewModel.updateFoto(base64)
-                }
+                val dataUrl = ImagenUtils.uriAFotoDataUrl(context, it)
+                if (dataUrl != null) profileViewModel.updateFoto(dataUrl)
             }
         }
     }
@@ -92,6 +106,7 @@ fun ProfileScreen(
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = bottomBar
     ) { paddingValues ->
         Column(
@@ -176,12 +191,11 @@ fun ProfileScreen(
                                 SenaTextField(value = editLastName, onValueChange = { editLastName = it }, label = "Apellido", modifier = Modifier.weight(1f))
                             }
                             SenaTextField(value = editEmail, onValueChange = { editEmail = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email, enabled = false)
-                            SenaTextField(value = editPhone, onValueChange = { editPhone = it }, label = "Teléfono", leadingIcon = Icons.Default.Phone)
 
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SenaButton(text = "Cerrar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
                                 SenaButton(text = "Guardar", onClick = {
-                                    profileViewModel.updateProfile("$editName $editLastName", editEmail, editPhone.ifBlank { null })
+                                    profileViewModel.updateProfileNombres(editName.trim(), editLastName.trim())
                                     isEditing = false
                                 }, modifier = Modifier.weight(1f))
                             }
@@ -190,9 +204,9 @@ fun ProfileScreen(
                         Column {
                             SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = user?.name ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = user?.email ?: "-")
+                            SenaSettingsItem(icon = Icons.Default.AccountCircle, title = "Usuario", description = user?.username?.ifBlank { "No registrado" } ?: "No registrado")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.Phone, title = "Teléfono", description = user?.telefono ?: "-")
+                            SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = user?.email ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Badge, title = "Documento de Identidad", description = user?.documentoIdentidad ?: "-")
 
@@ -201,7 +215,6 @@ fun ProfileScreen(
                                 editName = user?.name?.split(" ")?.firstOrNull() ?: ""
                                 editLastName = user?.name?.split(" ")?.getOrNull(1) ?: ""
                                 editEmail = user?.email ?: ""
-                                editPhone = user?.telefono ?: ""
                                 isEditing = true
                             }, isPrimary = false, icon = Icons.Default.Edit, modifier = Modifier.height(44.dp))
                         }
@@ -224,13 +237,19 @@ fun ProfileScreen(
                             icon = Icons.Default.VpnKey,
                             title = "Cambiar Contraseña",
                             description = "Gestión de credenciales",
-                            onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
+                            onClick = { onNavigate(AppNavigation.CHANGE_PASSWORD) }
                         )
                         SenaSettingsItem(
                             icon = Icons.Default.Email,
                             title = "Cambiar Correo Electrónico",
                             description = "Actualiza tu correo de contacto",
                             onClick = { onNavigate(AppNavigation.CHANGE_EMAIL) }
+                        )
+                        SenaSettingsItem(
+                            icon = Icons.Default.BugReport,
+                            title = "Reportar Falla",
+                            description = "Informa un problema a los administradores",
+                            onClick = { onNavigate(AppNavigation.REPORT_ISSUE) }
                         )
                     }
                 }

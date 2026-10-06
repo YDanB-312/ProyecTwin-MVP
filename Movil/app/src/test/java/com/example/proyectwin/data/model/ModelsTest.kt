@@ -19,66 +19,56 @@ class ModelsTest {
 
     @Test
     fun generalUser_roleDisplay() {
-        val instructor = GeneralUser(id = 1, name = "Carlos", email="c@t.com", role="instructor")
-        val aprendiz = GeneralUser(id = 2, name = "Ana", email="a@t.com", role="aprendiz")
-        val admin = GeneralUser(id = 3, name = "Admin", email="ad@t.com", role="administrador")
+        val instructor = GeneralUser(id = 1, name = "Carlos", email = "c@t.com", role = "instructor")
+        val aprendiz = GeneralUser(id = 2, name = "Ana", email = "a@t.com", role = "aprendiz")
+        val admin = GeneralUser(id = 3, name = "Admin", email = "ad@t.com", role = "admin")
         assertEquals("Instructor", instructor.roleDisplayName)
         assertEquals("Aprendiz", aprendiz.roleDisplayName)
         assertEquals("Administrador", admin.roleDisplayName)
     }
 
     @Test
-    fun ficha_codigoValido() {
-        assertTrue(Ficha.esCodigoValido("FT-2692701"))
-        assertTrue(Ficha.esCodigoValido("FT-3309264"))
-        assertFalse(Ficha.esCodigoValido("FT-0000000"))
-        assertFalse(Ficha.esCodigoValido(""))
-        assertFalse(Ficha.esCodigoValido("invalido"))
-    }
-
-    @Test
-    fun ficha_generarCodigo_format() {
-        val codigo = Ficha.generarCodigo()
-        assertTrue(codigo.matches(Regex("^FT-\\d{7}$")))
-        assertTrue(Ficha.esCodigoValido(codigo))
-    }
-
-    @Test
-    fun ficha_generarCodigoLibre_excludesUsed() {
-        val usados = listOf("FT-2692701", "FT-2771109")
-        repeat(20) {
-            val codigo = Ficha.generarCodigoLibre(usados)
-            assertTrue(codigo.matches(Regex("^FT-\\d{7}$")))
-            assertFalse(usados.contains(codigo))
-            assertTrue(Ficha.esCodigoValido(codigo))
-        }
-    }
-
-    @Test
-    fun ficha_codigosValidos_ampliados() {
-        assertTrue(Ficha.fichasValidas.size >= 30)
-    }
-
-    @Test
     fun ficha_statusDisplay() {
-        val activa = Ficha(id = 1, codigo = "FT-2692701", programa = "ADSO", estado = "activo")
-        val inactiva = Ficha(id = 2, codigo = "FT-2771109", programa = "Web", estado = "inactivo")
+        val activa = Ficha(id = 1, codigo = "abc-defg", programa = "ADSO", estado = "activo")
+        val finalizada = Ficha(id = 2, codigo = "hij-klmn", programa = "Web", estado = "finalizado")
+        val anulada = Ficha(id = 3, codigo = "", programa = "Web", estado = "anulada")
         assertEquals("Activo", activa.statusDisplay)
-        assertEquals("Inactivo", inactiva.statusDisplay)
+        assertEquals("Finalizado", finalizada.statusDisplay)
+        assertEquals("Anulada", anulada.statusDisplay)
     }
 
     @Test
     fun project_statusDisplay() {
-        val enProgreso = Project(id = 1, title = "Test", estado = "en_progreso")
-        val completado = Project(id = 2, title = "Test", estado = "completado")
-        assertEquals("En Progreso", enProgreso.statusDisplay)
-        assertEquals("Completado", completado.statusDisplay)
+        val borrador = Project(id = 1, title = "Test", estado = "borrador")
+        val pendiente = Project(id = 2, title = "Test", estado = "pendiente")
+        val aprobado = Project(id = 3, title = "Test", estado = "aprobado")
+        val rechazado = Project(id = 4, title = "Test", estado = "rechazado")
+        assertEquals("Borrador", borrador.statusDisplay)
+        assertEquals("En revisión", pendiente.statusDisplay)
+        assertEquals("Aprobado", aprobado.statusDisplay)
+        assertEquals("Rechazado", rechazado.statusDisplay)
     }
 
     @Test
-    fun similarity_similitudPercent() {
-        val sim = Similarity(id = 1, projectId1 = 1, projectId2 = 2, similitud = 0.756)
-        assertEquals("75.6%", sim.similitudPercent)
+    fun project_editabilidad_porEstado() {
+        val borrador = Project(id = 1, title = "T", estado = "borrador")
+        val pendiente = Project(id = 2, title = "T", estado = "pendiente")
+        val rechazado = Project(id = 3, title = "T", estado = "rechazado")
+        val aprobado = Project(id = 4, title = "T", estado = "aprobado")
+        assertTrue(borrador.esEditable && borrador.puedeEnviar)
+        assertTrue(pendiente.esEditable && !pendiente.puedeEnviar)
+        assertTrue(rechazado.esEditable && rechazado.puedeEnviar)
+        assertFalse(aprobado.esEditable)
+        assertFalse(aprobado.puedeEnviar)
+    }
+
+    @Test
+    fun similarity_similitudPercent_yEstado() {
+        val vigente = Similarity(id = 1, projectId1 = 1, projectId2 = 2, similitud = 0.756, vigente = true)
+        val historica = Similarity(id = 2, projectId1 = 1, projectId2 = 3, similitud = 0.4, vigente = false)
+        assertEquals("75.6%", vigente.similitudPercent)
+        assertEquals("Vigente", vigente.estadoDisplay)
+        assertEquals("Histórica", historica.estadoDisplay)
     }
 
     @Test

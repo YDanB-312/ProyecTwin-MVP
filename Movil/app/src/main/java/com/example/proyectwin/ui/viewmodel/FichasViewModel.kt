@@ -21,8 +21,8 @@ sealed class FichasUiState {
 data class FichasActionState(
     val selectedFicha: Ficha? = null,
     val codigoValido: Boolean? = null,
-    val codigoGenerado: String? = null,
     val joinSuccess: Boolean = false,
+    val leftSuccess: Boolean = false,
     val message: String? = null
 )
 
@@ -36,6 +36,29 @@ class FichasViewModel @Inject constructor(
 
     private val _actionState = MutableStateFlow(FichasActionState())
     val actionState: StateFlow<FichasActionState> = _actionState.asStateFlow()
+
+    /** Detalle (roster) por ficha, cargado bajo demanda. */
+    private val _detalles = MutableStateFlow<Map<Int, Ficha>>(emptyMap())
+    val detalles: StateFlow<Map<Int, Ficha>> = _detalles.asStateFlow()
+
+    fun cargarDetalle(fichaId: Int) {
+        if (_detalles.value.containsKey(fichaId)) return
+        viewModelScope.launch {
+            fichasRepository.obtener(fichaId).onSuccess { ficha ->
+                _detalles.value = _detalles.value + (fichaId to ficha)
+            }
+        }
+    }
+
+    /** Recarga silenciosa para volver de editar sin perder scroll ni expansión. */
+    fun refrescar() {
+        viewModelScope.launch {
+            _detalles.value = emptyMap()
+            fichasRepository.listar().onSuccess { fichas ->
+                _uiState.value = FichasUiState.Success(fichas)
+            }
+        }
+    }
 
     fun loadAllFichas() {
         viewModelScope.launch {
@@ -101,10 +124,6 @@ class FichasViewModel @Inject constructor(
         }
     }
 
-    fun generarCodigo() {
-        _actionState.value = _actionState.value.copy(codigoGenerado = Ficha.generarCodigo())
-    }
-
     fun joinFicha(fichaId: Int) {
         viewModelScope.launch {
             val codigo = _actionState.value.selectedFicha?.codigo
@@ -131,8 +150,29 @@ class FichasViewModel @Inject constructor(
         }
     }
 
+    /** Salir de la ficha actual (el backend desvincula y notifica al instructor). */
+    fun salirDeFicha() {
+        viewModelScope.launch {
+            _actionState.value = _actionState.value.copy(message = null, leftSuccess = false)
+            fichasRepository.salirDeFicha().fold(
+                onSuccess = {
+                    _actionState.value = _actionState.value.copy(leftSuccess = true)
+                },
+                onFailure = { e ->
+                    _actionState.value = _actionState.value.copy(
+                        message = e.message ?: "No se pudo salir de la ficha",
+                    )
+                },
+            )
+        }
+    }
+
     fun clearJoinSuccess() {
         _actionState.value = _actionState.value.copy(joinSuccess = false)
+    }
+
+    fun clearLeftSuccess() {
+        _actionState.value = _actionState.value.copy(leftSuccess = false)
     }
 
     fun clearError() {

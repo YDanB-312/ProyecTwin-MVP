@@ -31,7 +31,8 @@ data class UserItem(
     val document: String,
     val email: String,
     val role: String,
-    val status: String
+    val status: String,
+    val photo: String? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,7 +83,8 @@ fun UserManagementScreen(
                 document = user.documentoIdentidad ?: "",
                 email = user.email,
                 role = user.roleDisplayName,
-                status = if (user.estado) "Activo" else "Inactivo"
+                status = if (user.estado) "Activo" else "Inactivo",
+                photo = user.fotoPerfil,
             )
         }
     }
@@ -226,19 +228,11 @@ fun UserCard(user: UserItem, onEdit: () -> Unit, onDelete: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Surface(
+                    SenaAvatar(
+                        fotoBase64 = user.photo,
+                        nombre = user.name,
                         modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = senaColors().green.copy(alpha = 0.1f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                user.name.take(1).uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                color = senaColors().green
-                            )
-                        }
-                    }
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(

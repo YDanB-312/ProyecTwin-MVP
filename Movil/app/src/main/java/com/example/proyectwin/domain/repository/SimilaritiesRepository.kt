@@ -8,6 +8,8 @@ interface SimilaritiesRepository {
 
     suspend fun listar(
         proyectoId: Int? = null,
+        /** `true` = evidencia histórica del proyecto (`vigente=false`). */
+        historial: Boolean? = null,
         relatedTo: String? = null,
         search: String? = null,
         fichaId: Int? = null,
@@ -15,9 +17,6 @@ interface SimilaritiesRepository {
     ): Result<List<Similarity>>
 
     suspend fun obtener(id: Int): Result<Similarity>
-
-    /** Ejecuta el motor para una propuesta y devuelve los pares creados. */
-    suspend fun detectar(idProyecto: Int): Result<Int>
 
     /** Recalculación global (solo admin). */
     suspend fun recalcular(): Result<RecalculoSimilitudes>

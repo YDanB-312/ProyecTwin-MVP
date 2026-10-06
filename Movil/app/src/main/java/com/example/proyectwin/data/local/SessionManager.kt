@@ -36,7 +36,6 @@ class SessionManager @Inject constructor(
         private val KEY_USER_ROLE = stringPreferencesKey("user_role")
         private val KEY_USER_TOKEN = stringPreferencesKey("user_token")
         private val KEY_USER_FOTO = stringPreferencesKey("user_foto")
-        private val KEY_USER_TELEFONO = stringPreferencesKey("user_telefono")
         private val KEY_USER_FICHA_ID = intPreferencesKey("user_ficha_id")
         private val KEY_USER_DOCUMENTO = stringPreferencesKey("user_documento")
         private val KEY_USER_USERNAME = stringPreferencesKey("user_username")
@@ -52,7 +51,6 @@ class SessionManager @Inject constructor(
             role = prefs[KEY_USER_ROLE] ?: UserRole.APRENDIZ.value,
             token = prefs[KEY_USER_TOKEN],
             fotoPerfil = prefs[KEY_USER_FOTO],
-            telefono = prefs[KEY_USER_TELEFONO],
             fichaId = prefs[KEY_USER_FICHA_ID],
             documentoIdentidad = prefs[KEY_USER_DOCUMENTO],
             nombre = prefs[KEY_USER_NOMBRE],
@@ -74,7 +72,6 @@ class SessionManager @Inject constructor(
             user.apellido?.let { prefs[KEY_USER_APELLIDO] = it }
             if (user.token != null) prefs[KEY_USER_TOKEN] = user.token
             if (user.fotoPerfil != null) prefs[KEY_USER_FOTO] = user.fotoPerfil
-            if (user.telefono != null) prefs[KEY_USER_TELEFONO] = user.telefono
             if (user.fichaId != null) prefs[KEY_USER_FICHA_ID] = user.fichaId
             if (user.documentoIdentidad != null) prefs[KEY_USER_DOCUMENTO] = user.documentoIdentidad
             prefs[KEY_USER_USERNAME] = user.username
@@ -82,19 +79,17 @@ class SessionManager @Inject constructor(
         }
     }
 
+    /** Marca/desmarca el cambio obligatorio de contraseña (403 del middleware). */
+    suspend fun setMustChangePassword(value: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_USER_MUST_CHANGE_PASSWORD] = value
+        }
+    }
+
     suspend fun updateFoto(fotoBase64: String?) {
         context.dataStore.edit { prefs ->
             if (fotoBase64 != null) prefs[KEY_USER_FOTO] = fotoBase64
             else prefs.remove(KEY_USER_FOTO)
-        }
-    }
-
-    suspend fun updateProfile(name: String, email: String, telefono: String?) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_USER_NAME] = name
-            prefs[KEY_USER_EMAIL] = email
-            if (telefono != null) prefs[KEY_USER_TELEFONO] = telefono
-            else prefs.remove(KEY_USER_TELEFONO)
         }
     }
 

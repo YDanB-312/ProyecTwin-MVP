@@ -7,15 +7,15 @@ class EnumsTest {
 
     @Test
     fun projectStatus_fromValue_returnsCorrect() {
-        assertEquals(ProjectStatus.EN_PROGRESO, ProjectStatus.fromValue("en_progreso"))
-        assertEquals(ProjectStatus.COMPLETADO, ProjectStatus.fromValue("completado"))
+        assertEquals(ProjectStatus.BORRADOR, ProjectStatus.fromValue("borrador"))
         assertEquals(ProjectStatus.PENDIENTE, ProjectStatus.fromValue("pendiente"))
-        assertEquals(ProjectStatus.CANCELADO, ProjectStatus.fromValue("cancelado"))
+        assertEquals(ProjectStatus.APROBADO, ProjectStatus.fromValue("aprobado"))
+        assertEquals(ProjectStatus.RECHAZADO, ProjectStatus.fromValue("rechazado"))
     }
 
     @Test
     fun projectStatus_fromValue_invalid_returnsDefault() {
-        assertEquals(ProjectStatus.PENDIENTE, ProjectStatus.fromValue("invalido"))
+        assertEquals(ProjectStatus.BORRADOR, ProjectStatus.fromValue("invalido"))
     }
 
     @Test
@@ -52,16 +52,9 @@ class EnumsTest {
     }
 
     @Test
-    fun similarityStatus_fromValue_returnsCorrect() {
-        assertEquals(SimilarityStatus.PENDIENTE, SimilarityStatus.fromValue("pendiente"))
-        assertEquals(SimilarityStatus.CONFIRMADO, SimilarityStatus.fromValue("confirmado"))
-        assertEquals(SimilarityStatus.RECHAZADO, SimilarityStatus.fromValue("rechazado"))
-    }
-
-    @Test
     fun classGroupStatus_fromValue_returnsCorrect() {
         assertEquals(ClassGroupStatus.ACTIVO, ClassGroupStatus.fromValue("activo"))
-        assertEquals(ClassGroupStatus.INACTIVO, ClassGroupStatus.fromValue("inactivo"))
         assertEquals(ClassGroupStatus.FINALIZADO, ClassGroupStatus.fromValue("finalizado"))
+        assertEquals(ClassGroupStatus.ANULADA, ClassGroupStatus.fromValue("anulada"))
     }
 }

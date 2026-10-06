@@ -42,6 +42,7 @@ fun BugReportsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<BugReportType?>(null) }
     var selectedStatus by remember { mutableStateOf<BugReportStatus?>(null) }
+    var reporteParaEliminar by remember { mutableStateOf<BugReport?>(null) }
 
     val reportsState by bugReportsViewModel.uiState.collectAsState()
     LaunchedEffect(Unit) { bugReportsViewModel.load() }
@@ -176,19 +177,44 @@ fun BugReportsScreen(
                 }
             } else {
                 items(filteredReports) { report ->
-                    BugReportCard(report) {
-                        onNavigate(AppNavigation.ADMIN_BUG_DETAIL.replace("{bugId}", report.id.toString()))
-                    }
+                    BugReportCard(
+                        report = report,
+                        onClick = {
+                            onNavigate(AppNavigation.ADMIN_BUG_DETAIL.replace("{bugId}", report.id.toString()))
+                        },
+                        onDelete = { reporteParaEliminar = report },
+                    )
                 }
             }
 
             item { Spacer(Modifier.height(40.dp)) }
         }
+
+        reporteParaEliminar?.let { reporte ->
+            AlertDialog(
+                onDismissRequest = { reporteParaEliminar = null },
+                title = { Text("Eliminar reporte") },
+                text = { Text("Se eliminará el reporte #${reporte.id} y sus notificaciones asociadas.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        reporteParaEliminar = null
+                        bugReportsViewModel.eliminar(reporte.id)
+                    }) { Text("Eliminar", color = senaColors().danger) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { reporteParaEliminar = null }) { Text("Cancelar") }
+                },
+            )
+        }
     }
 }
 
 @Composable
-fun BugReportCard(report: BugReport, onClick: () -> Unit) {
+fun BugReportCard(
+    report: BugReport,
+    onClick: () -> Unit,
+    onDelete: () -> Unit = {},
+) {
     SenaCard(elevation = 1.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -265,10 +291,10 @@ fun BugReportCard(report: BugReport, onClick: () -> Unit) {
                     Text("Ver Detalle", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onClick) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                TextButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = senaColors().danger)
                     Spacer(Modifier.width(4.dp))
-                    Text("Gestionar", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("Eliminar", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = senaColors().danger)
                 }
             }
         }

@@ -59,10 +59,17 @@ fun InstructorDashboardScreen(
         if (!isLoading) isRefreshing = false
     }
 
+    var busqueda by remember { mutableStateOf("") }
     val projects = (dashState as? DashboardUiState.Success)?.projects ?: emptyList()
     val pendingCount = projects.count { it.estado == ProjectStatus.PENDIENTE.value }
-    val enProgresoCount = projects.count { it.estado == ProjectStatus.EN_PROGRESO.value }
-    val inboxProjects = projects.filter { it.estado == ProjectStatus.EN_PROGRESO.value }
+    val aprobadasCount = projects.count { it.estado == ProjectStatus.APROBADO.value }
+    val inboxProjects = projects
+        .filter { it.estado == ProjectStatus.PENDIENTE.value }
+        .filter {
+            busqueda.isBlank() ||
+                it.title.contains(busqueda, true) ||
+                it.studentName.orEmpty().contains(busqueda, true)
+        }
 
     Scaffold(
         topBar = {
@@ -114,7 +121,7 @@ fun InstructorDashboardScreen(
                         Spacer(Modifier.height(16.dp))
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            InstructorSummaryMetric("$enProgresoCount", "Activos", senaColors().accent)
+                            InstructorSummaryMetric("$aprobadasCount", "Aprobadas", senaColors().accent)
                             InstructorSummaryMetric("$pendingCount", "Pendientes", senaColors().warning)
                         }
                     }
@@ -125,8 +132,8 @@ fun InstructorDashboardScreen(
             item {
                 Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                     SenaTextField(
-                        value = "",
-                        onValueChange = {},
+                        value = busqueda,
+                        onValueChange = { busqueda = it },
                         label = "",
                         placeholder = "Buscar propuesta o aprendiz...",
                         leadingIcon = Icons.Default.Search
@@ -183,6 +190,15 @@ fun InstructorDashboardScreen(
                                 icon = Icons.AutoMirrored.Filled.Assignment,
                                 color = senaColors().green,
                                 onClick = { onNavigate(AppNavigation.INSTRUCTOR_MANAGE_FICHAS) }
+                            )
+                        }
+                        item {
+                            ToolCard(
+                                title = "Similitudes",
+                                subtitle = "Coincidencias del motor",
+                                icon = Icons.Default.Compare,
+                                color = senaColors().warning,
+                                onClick = { onNavigate(AppNavigation.INSTRUCTOR_SIMILITUDES) }
                             )
                         }
                     }

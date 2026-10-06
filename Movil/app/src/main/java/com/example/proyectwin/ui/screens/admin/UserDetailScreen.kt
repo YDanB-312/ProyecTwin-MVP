@@ -1,10 +1,8 @@
 package com.example.proyectwin.ui.screens.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,217 +10,374 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.mock.MockDataProvider
-import com.example.proyectwin.data.model.Project
-import com.example.proyectwin.navigation.AppNavigation
+import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import com.example.proyectwin.ui.viewmodel.AdminViewModel
-import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.AdminUserAction
+import com.example.proyectwin.ui.viewmodel.AdminUserUiState
+import com.example.proyectwin.ui.viewmodel.UserDetailViewModel
 
+/**
+ * Detalle real de una cuenta (admin): edición, estado, rol, ficha del aprendiz
+ * y credenciales (restablecer/reenviar). Las reglas finas las valida backend.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserDetailScreen(
     userId: String = "",
     onBack: () -> Unit,
-    onNavigate: (String) -> Unit,
-    authViewModel: AuthViewModel = hiltViewModel(),
-    adminViewModel: AdminViewModel = hiltViewModel()
+    onNavigate: (String) -> Unit = {},
+    userDetailViewModel: UserDetailViewModel = hiltViewModel(),
 ) {
-    val scrollState = rememberScrollState()
-    var showDeactivateDialog by remember { mutableStateOf(false) }
+    val uiState by userDetailViewModel.uiState.collectAsState()
+    val accion by userDetailViewModel.accion.collectAsState()
+    val fichas by userDetailViewModel.fichasDisponibles.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboardManager.current
 
-    val user = remember(userId) {
-        MockDataProvider.findUserById(userId.toIntOrNull() ?: 0)
+    var dialogoEditar by remember { mutableStateOf(false) }
+    var dialogoEliminar by remember { mutableStateOf(false) }
+    var dialogoFicha by remember { mutableStateOf(false) }
+    var credenciales by remember { mutableStateOf<CredencialesUsuario?>(null) }
+
+    LaunchedEffect(userId) {
+        userId.toIntOrNull()?.let { userDetailViewModel.load(it) }
     }
-    var isActive by remember(userId) {
-        mutableStateOf(MockDataProvider.isUserActive(userId.toIntOrNull() ?: 0))
+
+    LaunchedEffect(accion) {
+        when (val estado = accion) {
+            is AdminUserAction.Saved -> userDetailViewModel.resetAccion()
+            is AdminUserAction.Message -> {
+                snackbarHostState.showSnackbar(estado.text)
+                userDetailViewModel.resetAccion()
+            }
+            is AdminUserAction.Error -> {
+                snackbarHostState.showSnackbar(estado.message)
+                userDetailViewModel.resetAccion()
+            }
+            is AdminUserAction.Credenciales -> {
+                credenciales = estado.credenciales
+                userDetailViewModel.resetAccion()
+            }
+            is AdminUserAction.Deleted -> {
+                userDetailViewModel.resetAccion()
+                onBack()
+            }
+            else -> Unit
+        }
     }
-    val userProjects = remember(userId) {
-        val uid = userId.toIntOrNull() ?: 0
-        MockDataProvider.getProjectsByStudent(uid)
+
+    if (credenciales != null) {
+        val datos = credenciales!!
+        AlertDialog(
+            onDismissRequest = { credenciales = null },
+            icon = { Icon(Icons.Default.Key, contentDescription = null, tint = senaColors().green) },
+            title = { Text("Credenciales temporales", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Se muestra una sola vez. El correo no se envía automáticamente.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Usuario: ${datos.username}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { clipboard.setText(AnnotatedString(datos.username)) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Contraseña: ${datos.passwordTemporal}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { clipboard.setText(AnnotatedString(datos.passwordTemporal)) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { credenciales = null }) { Text("Entendido", color = senaColors().green) }
+            },
+        )
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "ProyecTwin",
+                title = "Detalle de Usuario",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
         containerColor = senaColors().background,
-        bottomBar = {
-            SenaBottomBar {
-                SenaButton(text = "Editar Usuario", onClick = { onNavigate(AppNavigation.ADMIN_NEW_USER) }, modifier = Modifier.weight(1f))
-                SenaButton(text = "Desactivar", onClick = {
-                    if (isActive) {
-                        showDeactivateDialog = true
-                    } else {
-                        scope.launch { snackbarHostState.showSnackbar("El usuario ya est\u00e1 inactivo") }
-                    }
-                }, isPrimary = false, containerColor = senaColors().danger, modifier = Modifier.weight(1f))
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp)
-        ) {
-            SenaPageHeader(
-                title = "Detalle de Usuario",
-                subtitle = "Información completa y actividad del usuario en el sistema.",
-                icon = Icons.Default.Person
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Brush.linearGradient(colors = listOf(senaColors().header, senaColors().green)))
-                    .padding(24.dp)
+        when (val estado = uiState) {
+            is AdminUserUiState.Loading ->
+                SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            is AdminUserUiState.Error -> Box(
+                Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        modifier = Modifier.size(64.dp),
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.2f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(user?.initials ?: "??", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 24.sp)
-                        }
-                    }
-                    Spacer(Modifier.width(20.dp))
-                    Column {
-                        Text(user?.name ?: "Usuario no encontrado", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(user?.email ?: "", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
-                    }
-                }
+                SenaErrorState(message = estado.message, onRetry = { userDetailViewModel.recargar() })
             }
+            is AdminUserUiState.Success -> {
+                val data = estado.data
+                val usuario = data.usuario
+                val enProceso = accion is AdminUserAction.Loading
 
-            SenaSectionHeader(title = "Información Personal")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    UserDetailRow(Icons.Default.School, "Rol", user?.roleDisplayName ?: "N/A")
-                    HorizontalDivider(color = senaColors().borderSoft)
-                    UserDetailRow(Icons.Default.Badge, "Documento", user?.documentoIdentidad ?: "N/A")
-                    HorizontalDivider(color = senaColors().borderSoft)
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Rol", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                            Spacer(Modifier.height(4.dp))
-                            SenaStatusBadge(status = user?.roleDisplayName ?: "N/A")
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                            Spacer(Modifier.height(4.dp))
-                            SenaStatusBadge(status = if (isActive) "Activo" else "Inactivo")
-                        }
-                    }
-                }
-            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    SenaPageHeader(
+                        title = usuario.name,
+                        subtitle = usuario.roleDisplayName,
+                        icon = Icons.Default.Person,
+                    )
 
-            SenaSectionHeader(title = "Actividad en el Sistema")
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SenaMetricPill(Icons.Default.FolderOpen, "${userProjects.size}", "Proyectos")
-                    val simCount = userProjects.sumOf { p ->
-                        MockDataProvider.getSimilaritiesByProject(p.id).size
-                    }
-                    SenaMetricPill(Icons.Default.Search, "$simCount", "Similitudes")
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val bugCount = userProjects.sumOf { p ->
-                        MockDataProvider.getBugReportsByProject(p.id).size
-                    }
-                    SenaMetricPill(Icons.Default.CheckCircle, "${userProjects.size}", "Revisiones")
-                    SenaMetricPill(Icons.Default.BugReport, "$bugCount", "Reportes")
-                }
-            }
-
-            if (userProjects.isNotEmpty()) {
-                SenaSectionHeader(title = "Proyectos del Usuario")
-                userProjects.forEach { project ->
-                    SenaCard(
-                        elevation = 0.5.dp,
-                        onClick = { onNavigate(AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", "${project.id}")) }
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(project.title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
-                                Text(project.statusDisplay, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    SenaCard(elevation = 1.dp) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SenaAvatar(fotoBase64 = usuario.fotoPerfil, nombre = usuario.name, modifier = Modifier.size(96.dp))
+                            Text(usuario.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(usuario.email, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SenaStatusBadge(status = if (usuario.estado) "Activo" else "Suspendido")
+                                Surface(shape = CircleShape, color = senaColors().green.copy(alpha = 0.1f)) {
+                                    Text(
+                                        usuario.roleDisplayName,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = senaColors().green,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
-                            SenaStatusBadge(status = project.statusDisplay)
+                        }
+                    }
+
+                    SenaSectionHeader(title = "Datos de la cuenta")
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            DatoCuenta("Usuario", usuario.username.ifBlank { "—" })
+                            DatoCuenta("Documento", "${usuario.tipoDocumento ?: ""} ${usuario.documentoIdentidad ?: "—"}".trim())
+                            DatoCuenta(
+                                "Credenciales",
+                                when {
+                                    usuario.role == "admin" -> "No aplica para administradores"
+                                    !usuario.mustChangePassword -> "Contraseña ya establecida"
+                                    usuario.credencialesError != null -> "Falló el envío: ${usuario.credencialesError}"
+                                    usuario.credencialesEnviadasEn != null -> "Enviadas (${usuario.credencialesEnviadasEn.take(10)})"
+                                    else -> "Pendientes de envío"
+                                },
+                            )
+                            if (data.aprendiz != null) {
+                                val ficha = data.fichaActual
+                                DatoCuenta(
+                                    "Ficha",
+                                    ficha?.let { "${it.nombre ?: it.programa} (${it.codigo})" } ?: "Sin ficha",
+                                )
+                            }
+                        }
+                    }
+
+                    SenaSectionHeader(title = "Acciones")
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SenaButton(
+                            text = "EDITAR DATOS",
+                            onClick = { dialogoEditar = true },
+                            isPrimary = false,
+                            enabled = !enProceso,
+                            icon = Icons.Default.Edit,
+                        )
+                        SenaButton(
+                            text = if (usuario.estado) "SUSPENDER CUENTA" else "ACTIVAR CUENTA",
+                            onClick = { userDetailViewModel.cambiarEstado(!usuario.estado) },
+                            isPrimary = false,
+                            enabled = !enProceso,
+                            icon = if (usuario.estado) Icons.Default.Block else Icons.Default.CheckCircle,
+                            containerColor = if (usuario.estado) senaColors().warning10 else senaColors().success10,
+                        )
+                        if (usuario.role != "admin") {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                SenaButton(
+                                    text = "Restablecer",
+                                    onClick = { userDetailViewModel.restablecerCredenciales() },
+                                    isPrimary = false,
+                                    enabled = !enProceso,
+                                    icon = Icons.Default.LockReset,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SenaButton(
+                                    text = "Reenviar",
+                                    onClick = { userDetailViewModel.reenviarCredenciales() },
+                                    isPrimary = false,
+                                    enabled = !enProceso && usuario.mustChangePassword,
+                                    icon = Icons.Default.Send,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                        if (data.aprendiz != null) {
+                            SenaButton(
+                                text = "CAMBIAR DE FICHA",
+                                onClick = { dialogoFicha = true },
+                                isPrimary = false,
+                                enabled = !enProceso,
+                                icon = Icons.Default.SwapHoriz,
+                            )
+                        }
+                        SenaButton(
+                            text = "ELIMINAR USUARIO",
+                            onClick = { dialogoEliminar = true },
+                            isPrimary = false,
+                            enabled = !enProceso,
+                            icon = Icons.Default.Delete,
+                            containerColor = senaColors().danger10,
+                        )
+                    }
+
+                    Spacer(Modifier.height(40.dp))
+                }
+
+                if (dialogoEditar) {
+                    EditarUsuarioDialog(
+                        usuario = usuario,
+                        onDismiss = { dialogoEditar = false },
+                        onGuardar = { editado ->
+                            dialogoEditar = false
+                            userDetailViewModel.guardar(editado)
+                        },
+                    )
+                }
+
+                if (dialogoFicha) {
+                    ModalBottomSheet(onDismissRequest = { dialogoFicha = false }) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text("Mover a otra ficha", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Actual: ${data.fichaActual?.codigo ?: "sin ficha"}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = senaColors().textSecondary,
+                            )
+                            fichas.filter { it.id != data.fichaActual?.id }.forEach { ficha ->
+                                Surface(
+                                    onClick = {
+                                        dialogoFicha = false
+                                        userDetailViewModel.moverAprendiz(ficha.id)
+                                    },
+                                    color = senaColors().backgroundElevated,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(ficha.nombre ?: ficha.programa, fontWeight = FontWeight.Bold)
+                                        Text("${ficha.codigo} · ${ficha.statusDisplay}", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                    }
+                                }
+                            }
+                            TextButton(onClick = {
+                                dialogoFicha = false
+                                userDetailViewModel.moverAprendiz(null)
+                            }) { Text("Quitar de la ficha actual", color = senaColors().danger) }
+                            Spacer(Modifier.height(20.dp))
                         }
                     }
                 }
+
+                if (dialogoEliminar) {
+                    AlertDialog(
+                        onDismissRequest = { dialogoEliminar = false },
+                        title = { Text("Eliminar usuario") },
+                        text = { Text("Se eliminarán sus datos asociados. Esta acción no se puede deshacer.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                dialogoEliminar = false
+                                userDetailViewModel.eliminar()
+                            }) { Text("Eliminar", color = senaColors().danger) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { dialogoEliminar = false }) { Text("Cancelar") }
+                        },
+                    )
+                }
             }
-
-            Spacer(Modifier.height(40.dp))
         }
     }
+}
 
-    if (showDeactivateDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeactivateDialog = false },
-            title = { Text("Desactivar Usuario") },
-            text = { Text("~?Estás seguro de que deseas desactivar esta cuenta? El usuario ya no podrá iniciar sesión.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeactivateDialog = false
-                    user?.let { MockDataProvider.deactivateUser(it.id) }
-                    isActive = false
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Cuenta desactivada")
+@Composable
+private fun DatoCuenta(etiqueta: String, valor: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(etiqueta, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+        Text(valor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
+    }
+}
+
+@Composable
+private fun EditarUsuarioDialog(
+    usuario: GeneralUser,
+    onDismiss: () -> Unit,
+    onGuardar: (GeneralUser) -> Unit,
+) {
+    var nombre by remember { mutableStateOf(usuario.nombre ?: usuario.name.substringBefore(' ')) }
+    var apellido by remember { mutableStateOf(usuario.apellido ?: usuario.name.substringAfter(' ', "")) }
+    var correo by remember { mutableStateOf(usuario.email) }
+    var rol by remember { mutableStateOf(usuario.role) }
+    var estado by remember { mutableStateOf(usuario.estado) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar usuario", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SenaTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre")
+                SenaTextField(value = apellido, onValueChange = { apellido = it }, label = "Apellido")
+                SenaTextField(value = correo, onValueChange = { correo = it }, label = "Correo")
+                Text("Rol", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("aprendiz", "instructor", "admin").forEach { valor ->
+                        SenaChip(
+                            text = valor.replaceFirstChar { it.uppercase() },
+                            color = senaColors().green,
+                            isSelected = rol == valor,
+                            onClick = { rol = valor },
+                        )
                     }
-                }) {
-                    Text("Desactivar", color = senaColors().danger)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeactivateDialog = false }) {
-                    Text("Cancelar")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Cuenta activa", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Switch(checked = estado, onCheckedChange = { estado = it })
                 }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
-    }
-}
-
-@Composable
-fun UserDetailRow(icon: ImageVector, label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-            Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun UserDetailScreenPreview() {
-    ProyecTwinTheme {
-        UserDetailScreen(onBack = {}, onNavigate = {})
-    }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onGuardar(
+                    usuario.copy(
+                        nombre = nombre.trim(),
+                        apellido = apellido.trim(),
+                        name = "$nombre $apellido".trim(),
+                        email = correo.trim().lowercase(),
+                        role = rol,
+                        estado = estado,
+                    ),
+                )
+            }) { Text("Guardar", color = senaColors().green, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }

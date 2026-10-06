@@ -29,6 +29,8 @@ data class ClassGroupCreateRequest(
     val estado: String,
     @SerialName("id_programa") val idPrograma: Int,
     @SerialName("id_instructor") val idInstructor: Int,
+    /** Usuarios (`general_users.id`) a matricular; el backend sincroniza el roster. */
+    val aprendices: List<Int>? = null,
 )
 
 /** PUT /class-groups: objeto completo (como el frontend); `numero` en null limpia el campo. */
@@ -40,4 +42,36 @@ data class ClassGroupUpdateRequest(
     val estado: String,
     @SerialName("id_programa") val idPrograma: Int,
     @SerialName("id_instructor") val idInstructor: Int,
+    /** Roster completo (usuarios); los ausentes quedan desvinculados. */
+    val aprendices: List<Int>? = null,
+)
+
+/** `DELETE /class-groups/{id}`: `{accion: "anulada"|"eliminada", ficha}`. */
+@Serializable
+data class ClassGroupDeleteResponse(
+    val accion: String = "",
+    val ficha: ClassGroupDto? = null,
+)
+
+/**
+ * Alta/asociación de aprendiz en una ficha. Con [usuarioId] asocia una cuenta
+ * existente; sin él crea la cuenta (documento y correo obligatorios).
+ */
+@Serializable
+data class AgregarAprendizRequest(
+    @SerialName("usuario_id") val usuarioId: Int? = null,
+    val nombre: String? = null,
+    val apellido: String? = null,
+    @SerialName("tipo_documento") val tipoDocumento: String? = null,
+    @SerialName("numero_documento") val numeroDocumento: String? = null,
+    val correo: String? = null,
+)
+
+@Serializable
+data class AgregarAprendizResponse(
+    val usuario: GeneralUserDto? = null,
+    val aprendiz: ApprenticeDto? = null,
+    val creada: Boolean = false,
+    @SerialName("credenciales_enviadas") val credencialesEnviadas: Boolean = false,
+    val credenciales: CredencialesDto? = null,
 )

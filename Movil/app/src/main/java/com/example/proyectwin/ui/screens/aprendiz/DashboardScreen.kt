@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -165,10 +166,10 @@ fun DashboardScreen(
                             }
                             item {
                                 PremiumActionCard(
-                                    title = "Alertas IA",
-                                    icon = Icons.Default.AutoAwesome,
+                                    title = "Similitudes",
+                                    icon = Icons.Default.Compare,
                                     color = senaColors().info,
-                                    onClick = { onNavigate(AppNavigation.APRENDIZ_ALERTS) }
+                                    onClick = { onNavigate(AppNavigation.APRENDIZ_SIMILITUDES_BASE) }
                                 )
                             }
                             item {
@@ -215,27 +216,52 @@ fun DashboardScreen(
                 }
 
                 item {
+                    val misPropuestas = state.projects.filter { proyecto ->
+                        proyecto.studentId == user?.id || proyecto.equipo.any { it.id == user?.id }
+                    }
+                    val aprobadas = misPropuestas.count { it.estado == ProjectStatus.APROBADO.value }
+                    val enRevision = misPropuestas.count { it.estado == ProjectStatus.PENDIENTE.value }
+                    val progreso = if (misPropuestas.isEmpty()) 0f else aprobadas.toFloat() / misPropuestas.size
+
                     PaddingRow {
                         SenaCard(containerColor = senaColors().header) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("Estado de Originalidad", color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
+                                    Text("Estado de Propuestas", color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
                                     Spacer(Modifier.height(4.dp))
-                                    Text("Nivel Óptimo", color = senaColors().success, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                                    Text(
+                                        if (misPropuestas.isEmpty()) "Sin propuestas" else "$aprobadas de ${misPropuestas.size} aprobadas",
+                                        color = if (aprobadas > 0) senaColors().success else Color.White,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Black,
+                                    )
                                     Spacer(Modifier.height(8.dp))
-                                    Text("Tus proyectos mantienen un promedio del 92% de originalidad detectada por IA.", color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodySmall)
+                                    Text(
+                                        if (misPropuestas.isEmpty()) {
+                                            "Crea tu primera propuesta para comenzar el seguimiento."
+                                        } else {
+                                            "$enRevision en revisión · ${misPropuestas.size - aprobadas - enRevision} en borrador o rechazadas."
+                                        },
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Box(contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(
-                                        progress = { 0.92f },
+                                        progress = { progreso },
                                         modifier = Modifier.size(64.dp),
                                         color = senaColors().success,
                                         strokeWidth = 6.dp,
                                         trackColor = Color.White.copy(alpha = 0.1f),
                                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                                     )
-                                    Text("92%", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                    Text(
+                                        "${(progreso * 100).toInt()}%",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 12.sp,
+                                    )
                                 }
                             }
                         }

@@ -1,217 +1,231 @@
 package com.example.proyectwin.ui.screens.aprendiz
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.Similarity
+import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.SimilarityDetailUiState
+import com.example.proyectwin.ui.viewmodel.SimilarityDetailViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Detalle de una similitud: propuesta propia vs contraparte (solo lectura).
+ * La autorización la decide el backend; si responde 403 se muestra el mensaje.
+ */
 @Composable
-fun SimilarityDetailScreen(onBack: () -> Unit, projectId: String = "") {
-    val scrollState = rememberScrollState()
+fun SimilarityDetailScreen(
+    similarityId: String = "",
+    detalleProyectoRoute: String = AppNavigation.APRENDIZ_DETAIL,
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    similarityDetailViewModel: SimilarityDetailViewModel = hiltViewModel(),
+) {
+    val uiState by similarityDetailViewModel.uiState.collectAsState()
 
-    val sim = Similarity(
-        id = projectId.toIntOrNull() ?: 1,
-        projectId1 = 1,
-        projectId2 = 2,
-        project1Title = "Sistema de Gestión IoT",
-        project2Title = "Monitoreo Agrícola Automatizado",
-        project1Student = "Maria Gonzalez",
-        project2Student = "Juan Perez",
-        similitud = 0.45,
-        estado = "PENDIENTE"
-    )
+    LaunchedEffect(similarityId) {
+        similarityId.toIntOrNull()?.let { similarityDetailViewModel.load(it) }
+    }
 
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "Comparativa Técnica",
+                title = "Detalle de Similitud",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
-        containerColor = senaColors().background
+        containerColor = senaColors().background,
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(senaColors().header, Color(0xFF0F172A))
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .offset(y = (-80).dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+        when (val estado = uiState) {
+            is SimilarityDetailUiState.Loading ->
+                SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            is SimilarityDetailUiState.Error -> Box(
+                Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center,
             ) {
-                SimilarityScoreCard(sim)
+                SenaErrorState(message = estado.message, onRetry = { similarityDetailViewModel.retry() })
+            }
+            is SimilarityDetailUiState.Success -> {
+                val data = estado.data
+                val par = data.similarity
 
-                SenaSectionHeader(title = "Contraste de Proyectos")
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ProjectMiniCard("ORIGEN", sim.project1Title ?: "Proyecto 1", senaColors().green, Modifier.weight(1f))
-                    ProjectMiniCard("COINCIDENCIA", sim.project2Title ?: "Proyecto 2", senaColors().warning, Modifier.weight(1f))
-                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    SenaPageHeader(
+                        title = par.similitudPercent,
+                        subtitle = "Similitud entre propuestas · ${par.estadoDisplay}",
+                        icon = Icons.Default.Compare,
+                    )
 
-                SenaSectionHeader(title = "Registro de Similitud")
-                SenaCard(elevation = 1.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "${sim.project1Title ?: "Proyecto 1"} vs ${sim.project2Title ?: "Proyecto 2"}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = senaColors().text
-                                )
-                                Text(
-                                    "Estado: ${sim.statusDisplay}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = senaColors().textLight
-                                )
-                            }
-                            Surface(
-                                color = if (sim.similitud > 0.5) senaColors().warning.copy(alpha = 0.1f) else senaColors().success.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    sim.similitudPercent,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = if (sim.similitud > 0.5) senaColors().warning else senaColors().success
-                                )
+                    if (!par.vigente) {
+                        SenaAlertBanner(
+                            title = "Evidencia histórica",
+                            message = "Esta coincidencia pertenece a una versión anterior de la propuesta (rechazada o archivada). No es una coincidencia vigente.",
+                            icon = Icons.Default.History,
+                            color = senaColors().warning,
+                        )
+                    } else {
+                        SenaAlertBanner(
+                            title = "Coincidencia vigente",
+                            message = "Revisa la propuesta contraparte para identificar y diferenciar tu contenido.",
+                            icon = Icons.Default.Search,
+                            color = senaColors().info,
+                        )
+                    }
+
+                    if (data.miProyecto != null) {
+                        SenaSectionHeader(title = if (data.ambasMias) "Tu propuesta (A)" else "Tu propuesta")
+                        PanelPropuesta(
+                            proyecto = data.miProyecto,
+                            onClick = {
+                                onNavigate(detalleProyectoRoute.replace("{projectId}", data.miProyecto.id.toString()))
+                            },
+                        )
+                    }
+
+                    if (data.contraparte != null) {
+                        SenaSectionHeader(
+                            title = if (data.ambasMias) "Tu propuesta (B)" else "Contraparte · solo lectura",
+                        )
+                        PanelPropuesta(
+                            proyecto = data.contraparte,
+                            onClick = {
+                                onNavigate(detalleProyectoRoute.replace("{projectId}", data.contraparte.id.toString()))
+                            },
+                        )
+                    }
+
+                    if (data.miProyecto == null && data.contraparte == null) {
+                        SenaSectionHeader(title = "Propuestas comparadas")
+                        PanelPropuesta(
+                            proyecto = par.project1,
+                            onClick = {
+                                par.project1?.let {
+                                    onNavigate(detalleProyectoRoute.replace("{projectId}", it.id.toString()))
+                                }
+                            },
+                        )
+                        PanelPropuesta(
+                            proyecto = par.project2,
+                            onClick = {
+                                par.project2?.let {
+                                    onNavigate(detalleProyectoRoute.replace("{projectId}", it.id.toString()))
+                                }
+                            },
+                        )
+                    }
+
+                    SenaSectionHeader(title = "Otras coincidencias relacionadas (${data.relacionadas.size})")
+                    SenaCard(elevation = 1.dp) {
+                        if (data.relacionadas.isEmpty()) {
+                            Text("No hay otras coincidencias entre estas propuestas.", color = senaColors().textSecondary)
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                data.relacionadas.forEach { relacionada: Similarity ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                relacionada.project1Title ?: "Propuesta",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = senaColors().text,
+                                            )
+                                            Text(
+                                                relacionada.project2Title ?: "Propuesta",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = senaColors().textSecondary,
+                                            )
+                                        }
+                                        Text(
+                                            relacionada.similitudPercent,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = senaColors().green,
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        IconButton(
+                                            onClick = {
+                                                onNavigate(
+                                                    AppNavigation.APRENDIZ_SIMILARITY
+                                                        .replace("{similarityId}", relacionada.id.toString()),
+                                                )
+                                            },
+                                        ) {
+                                            Icon(Icons.Default.ChevronRight, contentDescription = "Ver", tint = senaColors().textMuted)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(40.dp))
                 }
-
-                SenaAlertBanner(
-                    title = "Acción Recomendada",
-                    message = "Considera reformular las secciones con alto nivel de coincidencia para asegurar la originalidad de tu propuesta.",
-                    icon = Icons.Default.Lightbulb,
-                    color = senaColors().warning
-                )
-
-                SenaButton(
-                    text = "Regresar a Proyectos",
-                    onClick = onBack,
-                    isPrimary = false,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(60.dp))
             }
         }
     }
 }
 
 @Composable
-private fun SimilarityScoreCard(sim: Similarity) {
-    SenaCard(elevation = 8.dp) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+private fun PanelPropuesta(proyecto: Project?, onClick: () -> Unit) {
+    if (proyecto == null) {
+        SenaCard(elevation = 0.5.dp) {
+            Text("Propuesta no disponible.", color = senaColors().textSecondary)
+        }
+        return
+    }
+    SenaCard(elevation = 0.5.dp, onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    proyecto.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = senaColors().text,
+                    modifier = Modifier.weight(1f),
+                )
+                SenaStatusBadge(status = proyecto.estado)
+            }
             Text(
-                "RIESGO DE SIMILITUD",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Black,
-                color = if (sim.similitud > 0.5) senaColors().danger else senaColors().success,
-                letterSpacing = 1.sp
-            )
-
-            Text(
-                text = sim.similitudPercent,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Black,
-                color = if (sim.similitud > 0.5) senaColors().danger else senaColors().success
-            )
-
-            Text(
-                if (sim.similitud > 0.5) "Coincidencias moderadas detectadas en la base de datos global." else "Nivel de similitud bajo. Tu propuesta es original.",
+                "${proyecto.studentName ?: "Autor no visible"} · ${proyecto.areaAplicacion.ifBlank { "Área no definida" }}",
                 style = MaterialTheme.typography.bodySmall,
                 color = senaColors().textSecondary,
-                textAlign = TextAlign.Center
             )
-
-            Surface(
-                color = senaColors().info.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
+            if (proyecto.description.isNotBlank()) {
                 Text(
-                    "Estado: ${sim.statusDisplay}",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = senaColors().info
+                    proyecto.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = senaColors().textSecondary,
+                    maxLines = 4,
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun ProjectMiniCard(label: String, title: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = senaColors().backgroundElevated,
-        border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft),
-        shadowElevation = 2.dp
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = color)
-            Spacer(Modifier.height(8.dp))
             Text(
-                title,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = senaColors().text,
-                maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                "Toca para ver el detalle completo",
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().green,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SimilarityDetailScreenPreview() {
-    ProyecTwinTheme {
-        SimilarityDetailScreen(onBack = {}, projectId = "1")
     }
 }

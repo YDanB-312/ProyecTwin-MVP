@@ -45,7 +45,7 @@ fun EditProfileScreen(
     var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
     var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
     var email by remember(user) { mutableStateOf(user?.email ?: "") }
-    var phone by remember(user) { mutableStateOf(user?.telefono ?: "") }
+
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
@@ -76,11 +76,7 @@ fun EditProfileScreen(
                 SenaButton(
                     text = "Guardar Cambios", 
                     onClick = {
-                        profileViewModel.updateProfile(
-                            "$name $lastName".trim(),
-                            email,
-                            phone.ifBlank { null }
-                        )
+                        profileViewModel.updateProfile("$name $lastName".trim())
                     }, 
                     isLoading = isSaving,
                     modifier = Modifier.weight(1f),
@@ -130,13 +126,7 @@ fun EditProfileScreen(
                         enabled = false
                     )
                     
-                    SenaTextField(
-                        value = phone, 
-                        onValueChange = { phone = it }, 
-                        label = "Teléfono de Contacto",
-                        leadingIcon = Icons.Default.Phone,
-                        keyboardType = KeyboardType.Phone
-                    )
+
                 }
             }
 
@@ -153,7 +143,7 @@ fun EditProfileScreen(
                     icon = Icons.Default.Lock, 
                     title = "Cambiar Contraseña", 
                     description = "Se te redirigirá a la pantalla de cambio de clave.",
-                    onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
+                    onClick = { onNavigate(AppNavigation.CHANGE_PASSWORD) }
                 )
                 SenaSettingsItem(
                     icon = Icons.Default.Email,

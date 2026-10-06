@@ -1,12 +1,10 @@
 package com.example.proyectwin.ui.screens.instructor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -15,197 +13,161 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.mock.MockDataProvider
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import com.example.proyectwin.ui.viewmodel.AuthUiState
-import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import com.example.proyectwin.ui.viewmodel.DashboardUiState
-import com.example.proyectwin.ui.viewmodel.DashboardViewModel
+import com.example.proyectwin.ui.util.formatearFechaHoraLocal
+import com.example.proyectwin.ui.viewmodel.PropuestaRevision
+import com.example.proyectwin.ui.viewmodel.RevisionUiState
+import com.example.proyectwin.ui.viewmodel.RevisionViewModel
 
+/**
+ * Revisión de propuestas del instructor: excluye borradores (como React) y
+ * aprobar/rechazar se realiza en el detalle, donde también viven comentarios,
+ * similitudes e historial.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RevisionPropuestasScreen(
     onBack: () -> Unit,
     onProjectDetail: (Int) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    authViewModel: AuthViewModel = hiltViewModel(),
-    dashboardViewModel: DashboardViewModel = hiltViewModel()
+    revisionViewModel: RevisionViewModel = hiltViewModel(),
 ) {
-    val authState by authViewModel.uiState.collectAsState()
-    val dashState by dashboardViewModel.uiState.collectAsState()
-    val user = (authState as? AuthUiState.LoggedIn)?.user
-
-    LaunchedEffect(user) {
-        user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
-    }
-
     var searchQuery by remember { mutableStateOf("") }
-    var selectedStatus by remember { mutableStateOf("Todos") }
-    var obsModalId by remember { mutableStateOf<Int?>(null) }
-    var obsTexto by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val statuses = listOf("Todos", "Pendiente", "En Progreso", "Completado", "Cancelado")
+    var selectedStatus by remember { mutableStateOf("Pendiente") }
+    val uiState by revisionViewModel.uiState.collectAsState()
+    val statuses = listOf("Todos", "Pendiente", "Aprobado", "Rechazado")
 
-    val filteredPropuestas = (dashState as? DashboardUiState.Success)?.projects?.filter { proposal ->
-        val statusMatch = when (selectedStatus) {
-            "Todos" -> true
-            "Pendiente" -> proposal.estado == ProjectStatus.PENDIENTE.value
-            "En Progreso" -> proposal.estado == ProjectStatus.EN_PROGRESO.value
-            "Completado" -> proposal.estado == ProjectStatus.COMPLETADO.value
-            "Cancelado" -> proposal.estado == ProjectStatus.CANCELADO.value
-            else -> false
-        }
-        val searchMatch = proposal.title.contains(searchQuery, ignoreCase = true) ||
-            (proposal.studentName?.contains(searchQuery, ignoreCase = true) ?: false)
-        statusMatch && searchMatch
-    } ?: emptyList()
+    // Al regresar del detalle de una propuesta no se pierde la lista: el VM
+    // refresca en silencio y conserva la posición del scroll.
+    LaunchedEffect(Unit) { revisionViewModel.iniciar() }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
                 title = "ProyecTwin",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
         containerColor = senaColors().background,
-        bottomBar = bottomBar
+        bottomBar = bottomBar,
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            item {
-                SenaPageHeader(
-                    title = "Revisión de Propuestas",
-                    subtitle = "Evalúa las propuestas de proyectos enviadas por los aprendices.",
-                    icon = Icons.AutoMirrored.Filled.List
-                )
+        when (val estado = uiState) {
+            is RevisionUiState.Loading ->
+                SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            is RevisionUiState.Error -> Box(
+                Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center,
+            ) {
+                SenaErrorState(message = estado.message, onRetry = { revisionViewModel.retry() })
             }
+            is RevisionUiState.Success -> {
+                val propuestas = estado.propuestas.filter { propuesta ->
+                    val matchesEstado = when (selectedStatus) {
+                        "Todos" -> true
+                        "Pendiente" -> propuesta.proyecto.estado == ProjectStatus.PENDIENTE.value
+                        "Aprobado" -> propuesta.proyecto.estado == ProjectStatus.APROBADO.value
+                        "Rechazado" -> propuesta.proyecto.estado == ProjectStatus.RECHAZADO.value
+                        else -> true
+                    }
+                    val matchesSearch = propuesta.proyecto.title.contains(searchQuery, ignoreCase = true) ||
+                        propuesta.proyecto.studentName.orEmpty().contains(searchQuery, ignoreCase = true)
+                    matchesEstado && matchesSearch
+                }
 
-            item {
-                SenaFilterBar(title = "Filtros de revisión") {
-                    SenaTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        label = "",
-                        placeholder = "Buscar por proyecto o aprendiz...",
-                        leadingIcon = Icons.Default.Search
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        statuses.forEach { status ->
-                            SenaChip(
-                                text = status,
-                                color = when(status) {
-                                    "Completado" -> senaColors().success
-                                    "Pendiente" -> senaColors().warning
-                                    "En Progreso" -> senaColors().accent
-                                    "Cancelado" -> senaColors().danger
-                                    else -> senaColors().green
-                                },
-                                isSelected = selectedStatus == status,
-                                onClick = { selectedStatus = status }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    item {
+                        SenaPageHeader(
+                            title = "Revisión de Propuestas",
+                            subtitle = "Evalúa las propuestas enviadas por los aprendices.",
+                            icon = Icons.AutoMirrored.Filled.List,
+                        )
+                    }
+
+                    item {
+                        SenaFilterBar(title = "Filtros de revisión") {
+                            SenaTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                label = "",
+                                placeholder = "Buscar por proyecto o aprendiz...",
+                                leadingIcon = Icons.Default.Search,
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                statuses.forEach { status ->
+                                    SenaChip(
+                                        text = status,
+                                        color = when (status) {
+                                            "Aprobado" -> senaColors().success
+                                            "Pendiente" -> senaColors().warning
+                                            "Rechazado" -> senaColors().danger
+                                            else -> senaColors().green
+                                        },
+                                        isSelected = selectedStatus == status,
+                                        onClick = { selectedStatus = status },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (propuestas.isEmpty()) {
+                        item {
+                            SenaEmptyState(
+                                message = "No hay propuestas que coincidan con los filtros seleccionados.",
+                                icon = Icons.Default.SearchOff,
+                            )
+                        }
+                    } else {
+                        items(propuestas, key = { it.proyecto.id }) { propuesta ->
+                            ProposalReviewCard(
+                                propuesta = propuesta,
+                                onDetailClick = { onProjectDetail(propuesta.proyecto.id) },
                             )
                         }
                     }
+
+                    item { Spacer(Modifier.height(40.dp)) }
                 }
             }
-
-            if (filteredPropuestas.isEmpty()) {
-                item {
-                    SenaEmptyState(
-                        message = "No hay propuestas que coincidan con los filtros seleccionados.",
-                        icon = Icons.Default.SearchOff
-                    )
-                }
-            } else {
-                items(filteredPropuestas) { proposal ->
-                    ProposalReviewCard(
-                        proposal,
-                        onDetailClick = { onProjectDetail(proposal.id) },
-                        onObsClick = { obsModalId = proposal.id; obsTexto = "" }
-                    )
-                }
-            }
-
-            item { Spacer(Modifier.height(40.dp)) }
         }
-    }
-
-    if (obsModalId != null) {
-        AlertDialog(
-            onDismissRequest = { obsModalId = null },
-            icon = { Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null, tint = senaColors().green) },
-            title = { Text("Agregar Observaciones", fontWeight = FontWeight.Bold) },
-            text = {
-                OutlinedTextField(
-                    value = obsTexto,
-                    onValueChange = { obsTexto = it },
-                    placeholder = { Text("Escribe tus observaciones...") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = senaColors().green,
-                        unfocusedBorderColor = senaColors().border
-                    )
-                )
-            },
-            confirmButton = {
-                SenaButton(
-                    text = "Guardar",
-                    onClick = {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Observaciones guardadas correctamente")
-                        }
-                        obsModalId = null
-                    }
-                )
-            },
-            dismissButton = {
-                TextButton(onClick = { obsModalId = null }) {
-                    Text("Cancelar", color = senaColors().textSecondary)
-                }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
     }
 }
 
 @Composable
-fun ProposalReviewCard(proposal: Project, onDetailClick: () -> Unit, onObsClick: () -> Unit = {}) {
-    val similarities = remember(proposal.id) {
-        MockDataProvider.getSimilaritiesByProject(proposal.id)
-    }
-    val maxSimilarity = similarities.maxOfOrNull { it.similitud } ?: 0.0
-
+fun ProposalReviewCard(
+    propuesta: PropuestaRevision,
+    onDetailClick: () -> Unit,
+) {
+    val proposal: Project = propuesta.proyecto
     SenaCard {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 SenaStatusBadge(status = proposal.statusDisplay)
-                proposal.createdAt?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                }
+                Text(
+                    formatearFechaHoraLocal(proposal.createdAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = senaColors().textLight,
+                )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -213,37 +175,37 @@ fun ProposalReviewCard(proposal: Project, onDetailClick: () -> Unit, onObsClick:
                     proposal.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = senaColors().text
+                    color = senaColors().text,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "${proposal.studentName ?: "Sin aprendiz"}",
+                        proposal.studentName ?: "Sin aprendiz",
                         style = MaterialTheme.typography.bodySmall,
-                        color = senaColors().textSecondary
+                        color = senaColors().textSecondary,
                     )
                 }
             }
 
-            if (maxSimilarity > 0) {
+            if (propuesta.maxSimilitud > 0) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = senaColors().danger.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().danger.copy(alpha = 0.2f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().danger.copy(alpha = 0.2f)),
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = senaColors().danger, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "%d%% de similitud detectada".format((maxSimilarity * 100).toInt()),
+                            "${(propuesta.maxSimilitud * 100).toInt()}% de similitud detectada",
                             style = MaterialTheme.typography.labelSmall,
                             color = senaColors().danger,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
@@ -254,32 +216,14 @@ fun ProposalReviewCard(proposal: Project, onDetailClick: () -> Unit, onObsClick:
                 style = MaterialTheme.typography.bodySmall,
                 color = senaColors().textSecondary,
                 maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SenaButton(
-                    text = "Observaciones",
-                    onClick = onObsClick,
-                    icon = Icons.AutoMirrored.Filled.Comment,
-                    isPrimary = false,
-                    modifier = Modifier.weight(1f)
-                )
-                SenaButton(
-                    text = "Revisar",
-                    onClick = onDetailClick,
-                    icon = Icons.Default.Visibility,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            SenaButton(
+                text = "Revisar",
+                onClick = onDetailClick,
+                icon = Icons.Default.Visibility,
+            )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RevisionPropuestasPreview() {
-    ProyecTwinTheme {
-        RevisionPropuestasScreen(onBack = {}, onProjectDetail = {})
     }
 }

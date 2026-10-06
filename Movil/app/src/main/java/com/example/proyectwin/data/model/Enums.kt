@@ -1,23 +1,23 @@
 package com.example.proyectwin.data.model
 
+/** Estados reales de `projects.estado` en el backend. */
 enum class ProjectStatus(val value: String) {
-    EN_PROGRESO("en_progreso"),
-    COMPLETADO("completado"),
+    BORRADOR("borrador"),
     PENDIENTE("pendiente"),
-    CANCELADO("cancelado"),
     APROBADO("aprobado"),
     RECHAZADO("rechazado");
 
     companion object {
         fun fromValue(value: String): ProjectStatus =
-            entries.find { it.value == value } ?: PENDIENTE
+            entries.find { it.value == value } ?: BORRADOR
     }
 }
 
+/** Estados reales de `class_groups.estado` en el backend. */
 enum class ClassGroupStatus(val value: String) {
     ACTIVO("activo"),
-    INACTIVO("inactivo"),
-    FINALIZADO("finalizado");
+    FINALIZADO("finalizado"),
+    ANULADA("anulada");
 
     companion object {
         fun fromValue(value: String): ClassGroupStatus =
@@ -54,18 +54,6 @@ enum class BugReportType(val value: String) {
 
         fun fromValue(value: String): BugReportType =
             entries.find { it.value == value } ?: OTRO
-    }
-}
-
-enum class SimilarityStatus(val value: String) {
-    PENDIENTE("pendiente"),
-    REVISADO("revisado"),
-    CONFIRMADO("confirmado"),
-    RECHAZADO("rechazado");
-
-    companion object {
-        fun fromValue(value: String): SimilarityStatus =
-            entries.find { it.value == value } ?: PENDIENTE
     }
 }
 

@@ -1,30 +1,31 @@
 package com.example.proyectwin.data.model
 
 import kotlinx.serialization.Serializable
+import java.util.Locale
 
+/**
+ * Par de propuestas comparadas por el motor. `vigente=true` es una coincidencia
+ * actual; `vigente=false` es evidencia histórica (versión rechazada/archivada).
+ */
 @Serializable
 data class Similarity(
     val id: Int,
     val projectId1: Int,
     val projectId2: Int,
+    val project1: Project? = null,
+    val project2: Project? = null,
     val project1Title: String? = null,
     val project2Title: String? = null,
     val project1Student: String? = null,
     val project2Student: String? = null,
     val similitud: Double = 0.0,
-    val estado: String = SimilarityStatus.PENDIENTE.value,
+    val vigente: Boolean = false,
     val createdAt: String? = null,
     val fecha: String? = null,
-    val detalles: DetalleSimilitud? = null
+    val detalles: DetalleSimilitud? = null,
 ) {
-    val simStatus: SimilarityStatus get() = SimilarityStatus.fromValue(estado)
-    val statusDisplay: String get() = when (simStatus) {
-        SimilarityStatus.PENDIENTE -> "Pendiente"
-        SimilarityStatus.REVISADO -> "Revisado"
-        SimilarityStatus.CONFIRMADO -> "Confirmado"
-        SimilarityStatus.RECHAZADO -> "Rechazado"
-    }
-    val similitudPercent: String get() = "%.1f%%".format(java.util.Locale.US, similitud * 100)
+    val similitudPercent: String get() = "%.1f%%".format(Locale.US, similitud * 100)
+    val estadoDisplay: String get() = if (vigente) "Vigente" else "Histórica"
 }
 
 /** Desglose del motor de similitud (columna json `detalles`). */

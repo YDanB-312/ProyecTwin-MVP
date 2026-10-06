@@ -10,7 +10,13 @@ interface BugReportsRepository {
     suspend fun obtener(id: Int): Result<BugReport>
 
     /** Alta de reporte: el backend lo firma con el usuario del token. */
-    suspend fun crear(titulo: String?, descripcion: String, tipo: String): Result<BugReport>
+    suspend fun crear(
+        titulo: String?,
+        descripcion: String,
+        tipo: String,
+        numeroFicha: String? = null,
+        motivo: String? = null,
+    ): Result<BugReport>
 
     /** PUT completo (cambio de estado desde admin, u otra edición). */
     suspend fun actualizar(id: Int, reporte: BugReport): Result<BugReport>

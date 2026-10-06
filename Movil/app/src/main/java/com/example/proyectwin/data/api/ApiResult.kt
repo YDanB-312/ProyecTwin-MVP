@@ -11,6 +11,8 @@ import java.net.SocketTimeoutException
 private data class ErrorPayload(
     val message: String? = null,
     val errors: Map<String, List<String>>? = null,
+    @kotlinx.serialization.SerialName("must_change_password")
+    val mustChangePassword: Boolean? = null,
 )
 
 private val errorJson = Json { ignoreUnknownKeys = true }
@@ -44,6 +46,8 @@ sealed class ApiException(
         status: Int,
         message: String,
         val fieldErrors: Map<String, String> = emptyMap(),
+        /** El backend bloquea la API hasta cambiar la contraseña temporal. */
+        val mustChangePassword: Boolean = false,
     ) : ApiException(message, status)
 
     class Formato(cause: Throwable) : ApiException(
@@ -82,7 +86,12 @@ private fun HttpException.toApiException(): ApiException {
         .orEmpty()
         .mapValues { (_, mensajes) -> mensajes.firstOrNull().orEmpty() }
 
-    return ApiException.Http(code, message, fieldErrors)
+    return ApiException.Http(
+        status = code,
+        message = message,
+        fieldErrors = fieldErrors,
+        mustChangePassword = payload?.mustChangePassword == true,
+    )
 }
 
 /**
@@ -94,8 +103,12 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T> = try {
     Result.success(apiCall())
 } catch (e: Throwable) {
     val error = e.toApiException()
-    if (error is ApiException.Http && error.status == 401) {
-        SessionEvents.notifyExpired()
+    if (error is ApiException.Http) {
+        when {
+            error.status == 401 -> SessionEvents.notifyExpired()
+            // 403 con la marca del middleware: la app debe ir al cambio obligatorio.
+            error.status == 403 && error.mustChangePassword -> SessionEvents.notifyMustChangePassword()
+        }
     }
     Result.failure(error)
 }

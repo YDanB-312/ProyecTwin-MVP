@@ -1,5 +1,6 @@
 package com.example.proyectwin.data.repository
 
+import com.example.proyectwin.data.api.dto.AgregarAprendizRequest
 import com.example.proyectwin.data.api.dto.ClassGroupCreateRequest
 import com.example.proyectwin.data.api.dto.ClassGroupUpdateRequest
 import com.example.proyectwin.data.api.dto.JoinFichaRequest
@@ -8,7 +9,9 @@ import com.example.proyectwin.data.api.service.ApprenticesApi
 import com.example.proyectwin.data.api.service.ClassGroupsApi
 import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.data.mapper.toDomain
+import com.example.proyectwin.data.model.CredencialesUsuario
 import com.example.proyectwin.data.model.Ficha
+import com.example.proyectwin.data.model.ResultadoFichaEliminada
 import com.example.proyectwin.domain.repository.FichasRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +36,7 @@ class FichasRepositoryImpl @Inject constructor(
         estado: String,
         idPrograma: Int,
         idInstructor: Int,
+        aprendices: List<Int>?,
     ): Result<Ficha> = safeApiCall {
         api.crear(
             ClassGroupCreateRequest(
@@ -42,6 +46,7 @@ class FichasRepositoryImpl @Inject constructor(
                 estado = estado,
                 idPrograma = idPrograma,
                 idInstructor = idInstructor,
+                aprendices = aprendices,
             ),
         )
     }.map { it.toDomain() }
@@ -54,6 +59,7 @@ class FichasRepositoryImpl @Inject constructor(
         estado: String,
         idPrograma: Int,
         idInstructor: Int,
+        aprendices: List<Int>?,
     ): Result<Ficha> = safeApiCall {
         api.actualizar(
             id,
@@ -64,12 +70,51 @@ class FichasRepositoryImpl @Inject constructor(
                 estado = estado,
                 idPrograma = idPrograma,
                 idInstructor = idInstructor,
+                aprendices = aprendices,
             ),
         )
     }.map { it.toDomain() }
 
-    override suspend fun eliminar(id: Int): Result<Unit> =
-        safeApiCall { api.eliminar(id) }.map {}
+    override suspend fun eliminar(id: Int): Result<ResultadoFichaEliminada> =
+        safeApiCall { api.eliminar(id) }.map { respuesta ->
+            ResultadoFichaEliminada(accion = respuesta.accion, ficha = respuesta.ficha?.toDomain())
+        }
+
+    override suspend fun agregarAprendiz(fichaId: Int, usuarioId: Int): Result<Unit> =
+        safeApiCall { api.agregarAprendiz(fichaId, AgregarAprendizRequest(usuarioId = usuarioId)) }.map {}
+
+    override suspend fun crearAprendizEnFicha(
+        fichaId: Int,
+        nombre: String,
+        apellido: String,
+        tipoDocumento: String,
+        numeroDocumento: String,
+        correo: String,
+    ): Result<CredencialesUsuario?> = safeApiCall {
+        api.agregarAprendiz(
+            fichaId,
+            AgregarAprendizRequest(
+                nombre = nombre,
+                apellido = apellido,
+                tipoDocumento = tipoDocumento,
+                numeroDocumento = numeroDocumento,
+                correo = correo.trim().lowercase(),
+            ),
+        )
+    }.map { respuesta ->
+        respuesta.credenciales?.let { credenciales ->
+            CredencialesUsuario(
+                usuario = respuesta.usuario?.toDomain()
+                    ?: throw IllegalStateException("El backend no devolvió el usuario creado."),
+                username = credenciales.username,
+                passwordTemporal = credenciales.passwordTemporal,
+                enviadas = credenciales.enviadas,
+            )
+        }
+    }
+
+    override suspend fun descargarCredencialesPdf(fichaId: Int): Result<ByteArray> =
+        safeApiCall { api.credencialesPdf(fichaId).bytes() }
 
     override suspend fun fichaPorCodigo(codigo: String): Result<Ficha> =
         safeApiCall { apprenticesApi.fichaPorCodigo(normalizar(codigo)) }.map { it.toDomain() }
@@ -96,7 +141,9 @@ class FichasRepositoryImpl @Inject constructor(
     private fun normalizar(codigo: String): String = codigo.trim().lowercase()
 
     companion object {
-        private const val INCLUDE_LISTA = "program,instructor.generalUser"
+        // El roster viaja también en el listado: evita una llamada por ficha y
+        // permite mostrar integrantes/counts de inmediato.
+        private const val INCLUDE_LISTA = "program,instructor.generalUser,apprentices.generalUser"
         private const val INCLUDE_DETALLE = "program,instructor.generalUser,apprentices.generalUser"
     }
 }

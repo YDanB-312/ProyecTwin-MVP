@@ -21,7 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -114,7 +113,7 @@ fun UnirseFichaAprendizScreen(
                         value = codigoFicha,
                         onValueChange = { codigoFicha = it },
                         label = "Ingresa el código *",
-                        placeholder = "Ej: FT-2692701",
+                        placeholder = "Ej: abc-defg",
                         leadingIcon = Icons.Default.Key
                     )
 
@@ -144,18 +143,6 @@ fun UnirseFichaAprendizScreen(
                             color = senaColors().green
                         )
                     }
-
-                    SenaCopyButton(
-                        textToCopy = "FT-2692701",
-                        label = "Copiar código de ejemplo"
-                    )
-
-                    SenaAlertBanner(
-                        title = "Códigos de ficha válidos",
-                        message = "Existen ${Ficha.fichasValidas.size} códigos de ficha activos. Ejemplo: ${Ficha.fichasValidas.take(3).joinToString(", ")}",
-                        icon = Icons.Default.Info,
-                        color = senaColors().info
-                    )
 
                     SenaAlertBanner(
                         title = "Información Importante",

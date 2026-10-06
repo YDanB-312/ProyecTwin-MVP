@@ -15,7 +15,17 @@ object SessionEvents {
 
     val expired: SharedFlow<Unit> = _expired.asSharedFlow()
 
+    // 403 del middleware CambioContrasenaObligatorio: la sesión es válida, pero
+    // la app debe llevar al usuario al cambio de la contraseña temporal.
+    private val _mustChangePassword = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    val mustChangePassword: SharedFlow<Unit> = _mustChangePassword.asSharedFlow()
+
     fun notifyExpired() {
         _expired.tryEmit(Unit)
+    }
+
+    fun notifyMustChangePassword() {
+        _mustChangePassword.tryEmit(Unit)
     }
 }

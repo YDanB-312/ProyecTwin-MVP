@@ -10,14 +10,18 @@ data class GeneralUser(
     val role: String,
     val token: String? = null,
     val fotoPerfil: String? = null,
-    val telefono: String? = null,
     val fichaId: Int? = null,
     val documentoIdentidad: String? = null,
+    val tipoDocumento: String? = null,
     val nombre: String? = null,
     val apellido: String? = null,
     val estado: Boolean = true,
     val username: String = "",
-    val mustChangePassword: Boolean = false
+    val mustChangePassword: Boolean = false,
+    /** ISO de envío de credenciales (admin); null = aún no enviadas. */
+    val credencialesEnviadasEn: String? = null,
+    /** Error del último envío de credenciales, si lo hubo. */
+    val credencialesError: String? = null,
 ) {
     val userRole: UserRole get() = UserRole.fromValue(role)
     val roleDisplayName: String get() = when (userRole) {

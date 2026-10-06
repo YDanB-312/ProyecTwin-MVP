@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,11 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
+import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
@@ -52,25 +57,46 @@ fun ManageFichasScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
-    fichasViewModel: FichasViewModel = hiltViewModel()
+    fichasViewModel: FichasViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Todas") }
-    val filters = listOf("Todas", "Activo", "Inactivo")
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedFilter by rememberSaveable { mutableStateOf("Todas") }
+    // -1 = ninguna expandida (sentinel para rememberSaveable).
+    var fichaExpandida by rememberSaveable { mutableIntStateOf(-1) }
+    var inicializado by rememberSaveable { mutableStateOf(false) }
+    val filters = listOf("Todas", "Activo", "Finalizado", "Anulada")
     val uiState by fichasViewModel.uiState.collectAsState()
+    val authState by authViewModel.uiState.collectAsState()
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    val detalles by fichasViewModel.detalles.collectAsState()
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
     LaunchedEffect(Unit) {
-        fichasViewModel.loadAllFichas()
+        if (inicializado) {
+            // Al volver de editar, refresco silencioso: conserva scroll y expansión.
+            fichasViewModel.refrescar()
+        } else {
+            fichasViewModel.loadAllFichas()
+            inicializado = true
+        }
+        (authState as? AuthUiState.LoggedIn)?.user?.let {
+            dashboardViewModel.loadInstructorDashboard(it.id)
+        }
+    }
+    LaunchedEffect(fichaExpandida) {
+        if (fichaExpandida != -1) fichasViewModel.cargarDetalle(fichaExpandida)
     }
 
+    val proyectos = (dashState as? DashboardUiState.Success)?.projects.orEmpty()
     val fichas = (uiState as? FichasUiState.Success)?.fichas?.map { ficha ->
         FichaItem(
             id = ficha.id,
             code = ficha.codigo,
-            name = ficha.programa,
+            name = ficha.nombre ?: ficha.programa,
             program = ficha.programa,
             students = ficha.estudiantes.size,
-            projects = MockDataProvider.getProjectsByFicha(ficha.id).size,
+            projects = proyectos.count { it.fichaId == ficha.id },
             status = ficha.statusDisplay
         )
     } ?: emptyList()
@@ -105,6 +131,7 @@ fun ManageFichasScreen(
         bottomBar = bottomBar
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -162,7 +189,12 @@ fun ManageFichasScreen(
                             filters.forEach { filter ->
                                 SenaChip(
                                     text = filter,
-                                    color = if (filter == "Activo") senaColors().success else if (filter == "Inactivo") senaColors().danger else senaColors().green,
+                                    color = when (filter) {
+                                        "Activo" -> senaColors().success
+                                        "Finalizado" -> senaColors().warning
+                                        "Anulada" -> senaColors().danger
+                                        else -> senaColors().green
+                                    },
                                     isSelected = selectedFilter == filter,
                                     onClick = { selectedFilter = filter }
                                 )
@@ -190,12 +222,22 @@ fun ManageFichasScreen(
                             )
                         }
                     } else {
-                        items(filteredFichas) { ficha ->
+                        items(filteredFichas, key = { it.id }) { ficha ->
                             InstructorFichaCard(
                                 ficha = ficha,
+                                detalle = detalles[ficha.id],
+                                expandida = fichaExpandida == ficha.id,
+                                onToggleRoster = {
+                                    fichaExpandida = if (fichaExpandida == ficha.id) -1 else ficha.id
+                                },
                                 onViewDetail = { onViewDetail(ficha.id.toString()) },
                                 onViewDirectory = { onViewDirectory(ficha.id.toString()) },
-                                onEdit = { onNavigate(AppNavigation.INSTRUCTOR_CREAR_FICHA) }
+                                onEdit = {
+                                    onNavigate(
+                                        AppNavigation.INSTRUCTOR_CREAR_FICHA
+                                            .replace("{fichaId}", ficha.id.toString()),
+                                    )
+                                }
                             )
                         }
                     }
@@ -208,7 +250,15 @@ fun ManageFichasScreen(
 }
 
 @Composable
-fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirectory: () -> Unit, onEdit: () -> Unit) {
+fun InstructorFichaCard(
+    ficha: FichaItem,
+    detalle: Ficha? = null,
+    expandida: Boolean = false,
+    onToggleRoster: () -> Unit = {},
+    onViewDetail: () -> Unit,
+    onViewDirectory: () -> Unit,
+    onEdit: () -> Unit,
+) {
     SenaCard(elevation = 1.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -242,6 +292,40 @@ fun InstructorFichaCard(ficha: FichaItem, onViewDetail: () -> Unit, onViewDirect
             ) {
                 FichaStatMini(Icons.Default.Groups, "${ficha.students} Aprendices", Modifier.weight(1f))
                 FichaStatMini(Icons.Default.FolderOpen, "${ficha.projects} Proyectos", Modifier.weight(1f))
+            }
+
+            TextButton(onClick = onToggleRoster) {
+                Icon(
+                    if (expandida) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(if (expandida) "Ocultar integrantes" else "Ver integrantes (${detalle?.estudiantes?.size ?: ficha.students})")
+            }
+
+            if (expandida) {
+                val estudiantes = detalle?.estudiantes ?: emptyList()
+                if (estudiantes.isEmpty()) {
+                    Text(
+                        "Sin aprendices en esta ficha. Usa \"Editar\" para agregarlos.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().textSecondary,
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        estudiantes.forEach { aprendiz ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SenaAvatar(fotoBase64 = aprendiz.fotoPerfil, nombre = aprendiz.name, modifier = Modifier.size(28.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(aprendiz.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    Text(aprendiz.email, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             HorizontalDivider(color = senaColors().borderSoft)

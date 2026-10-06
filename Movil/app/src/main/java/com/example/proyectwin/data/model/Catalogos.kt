@@ -15,7 +15,6 @@ data class TrainingProgram(
     val id: Int,
     val nombre: String,
     val nivel: String? = null,
-    val numTrimestres: Int? = null,
     val redId: Int? = null,
     val redNombre: String? = null
 )

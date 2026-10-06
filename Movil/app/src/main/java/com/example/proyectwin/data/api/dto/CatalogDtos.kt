@@ -21,7 +21,6 @@ data class TrainingProgramDto(
     val id: Int = 0,
     val nombre: String = "",
     val nivel: String? = null,
-    @SerialName("num_trimestres") val numTrimestres: Int? = null,
     @SerialName("knowledge_network_id") val knowledgeNetworkId: Int = 0,
     val knowledgeNetwork: KnowledgeNetworkDto? = null,
 )
@@ -30,7 +29,6 @@ data class TrainingProgramDto(
 data class TrainingProgramRequest(
     val nombre: String,
     val nivel: String? = null,
-    @SerialName("num_trimestres") val numTrimestres: Int? = null,
     @SerialName("knowledge_network_id") val knowledgeNetworkId: Int,
 )
 

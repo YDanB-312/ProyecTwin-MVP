@@ -14,8 +14,10 @@ data class ProjectDraft(
     val areaAplicacion: String = "",
     val objetivoGeneral: String? = null,
     val objetivosEspecificos: List<String> = emptyList(),
-    val estado: String = ProjectStatus.PENDIENTE.value,
+    val estado: String = ProjectStatus.BORRADOR.value,
     val idCreador: Int = 0,
     val idInstructorAsignado: Int? = null,
-    val idClassGroup: Int? = null
+    val idClassGroup: Int? = null,
+    /** Solo se usa al rechazar desde instructor/admin. */
+    val observacion: String? = null,
 )

@@ -1,7 +1,5 @@
 package com.example.proyectwin.data.api.service
 
-import com.example.proyectwin.data.api.dto.DetectRequest
-import com.example.proyectwin.data.api.dto.DetectResponse
 import com.example.proyectwin.data.api.dto.RecalculateResponse
 import com.example.proyectwin.data.api.dto.SimilarityDto
 import retrofit2.http.Body
@@ -17,6 +15,8 @@ interface SimilaritiesApi {
     @GET("similarities")
     suspend fun listar(
         @Query("proyecto_id") proyectoId: Int? = null,
+        /** Con `true` devuelve la evidencia histórica (`vigente=false`) del proyecto. */
+        @Query("historial") historial: Boolean? = null,
         @Query("related_to") relatedTo: String? = null,
         @Query("search") search: String? = null,
         @Query("ficha_id") fichaId: Int? = null,
@@ -29,10 +29,6 @@ interface SimilaritiesApi {
         @Path("id") id: Int,
         @Query("included") included: String? = null,
     ): SimilarityDto
-
-    /** Ejecuta el motor sobre una propuesta y devuelve los pares creados. */
-    @POST("similarities/detect")
-    suspend fun detectar(@Body body: DetectRequest): DetectResponse
 
     @POST("similarities/recalculate")
     suspend fun recalcular(@Body body: Map<String, String>): RecalculateResponse
