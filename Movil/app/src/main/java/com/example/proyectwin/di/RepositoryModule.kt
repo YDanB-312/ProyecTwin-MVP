@@ -6,6 +6,7 @@ import com.example.proyectwin.data.repository.BugReportsRepositoryImpl
 import com.example.proyectwin.data.repository.CatalogsRepositoryImpl
 import com.example.proyectwin.data.repository.CommentsRepositoryImpl
 import com.example.proyectwin.data.repository.FichasRepositoryImpl
+import com.example.proyectwin.data.repository.MembersRepositoryImpl
 import com.example.proyectwin.data.repository.MotorRepositoryImpl
 import com.example.proyectwin.data.repository.NotificationsRepositoryImpl
 import com.example.proyectwin.data.repository.ProjectsRepositoryImpl
@@ -17,6 +18,7 @@ import com.example.proyectwin.domain.repository.BugReportsRepository
 import com.example.proyectwin.domain.repository.CatalogsRepository
 import com.example.proyectwin.domain.repository.CommentsRepository
 import com.example.proyectwin.domain.repository.FichasRepository
+import com.example.proyectwin.domain.repository.MembersRepository
 import com.example.proyectwin.domain.repository.MotorRepository
 import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
@@ -64,4 +66,7 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAuditRepository(impl: AuditRepositoryImpl): AuditRepository
+
+    @Binds
+    abstract fun bindMembersRepository(impl: MembersRepositoryImpl): MembersRepository
 }

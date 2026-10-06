@@ -26,19 +26,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.mock.MockDataProvider
+import com.example.proyectwin.data.local.ImagenUtils
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
-import java.util.Base64
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +65,10 @@ fun InstructorProfileScreen(
     var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
     var email by remember(user) { mutableStateOf(user?.email ?: "") }
 
-    LaunchedEffect(Unit) { fichasViewModel.loadAllFichas() }
+    LaunchedEffect(Unit) {
+        fichasViewModel.loadAllFichas()
+        user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
+    }
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
@@ -75,17 +78,21 @@ fun InstructorProfileScreen(
     }
 
     LaunchedEffect(saveError) {
-        saveError?.let { snackbarHostState.showSnackbar(it) }
+        saveError?.let {
+            snackbarHostState.showSnackbar(it)
+            profileViewModel.clearError()
+        }
     }
 
-    val instructorProjects = remember(user) {
-        MockDataProvider.getProjectsByInstructor(user?.id ?: 0)
-    }
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    val instructorProjects = (dashState as? DashboardUiState.Success)?.projects.orEmpty()
     val proyectosCount = instructorProjects.size
-    val proyectosActivos = instructorProjects.count { it.estado == ProjectStatus.EN_PROGRESO.value }
-    val aprendicesCount = remember(user) {
-        MockDataProvider.getAllFichas().flatMap { it.estudiantes }.distinctBy { it.id }.size
-    }
+    val proyectosAprobados = instructorProjects.count { it.estado == ProjectStatus.APROBADO.value }
+    val aprendicesCount = (fichasState as? FichasUiState.Success)?.fichas
+        ?.flatMap { it.estudiantes }
+        ?.distinctBy { it.id }
+        ?.size
+        ?: 0
 
     val context = LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -93,13 +100,8 @@ fun InstructorProfileScreen(
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val bytes = inputStream?.readBytes()
-                inputStream?.close()
-                bytes?.let { b ->
-                    val base64 = Base64.getEncoder().encodeToString(b)
-                    profileViewModel.updateFoto(base64)
-                }
+                val dataUrl = ImagenUtils.uriAFotoDataUrl(context, it)
+                if (dataUrl != null) profileViewModel.updateFoto(dataUrl)
             }
         }
     }
@@ -170,7 +172,7 @@ fun InstructorProfileScreen(
                     color = senaColors().text
                 )
                 Text(
-                    text = "${user?.roleDisplayName ?: "Instructor"} — ADSO",
+                    text = user?.roleDisplayName ?: "Instructor",
                     style = MaterialTheme.typography.bodyMedium,
                     color = senaColors().textLight
                 )
@@ -182,7 +184,7 @@ fun InstructorProfileScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     MetricCardSmall(icon = Icons.Filled.Tasks, value = "$proyectosCount", label = "Proyectos", modifier = Modifier.weight(1f))
-                    MetricCardSmall(icon = Icons.Default.CheckCircle, value = "$proyectosActivos", label = "Activos", modifier = Modifier.weight(1f))
+                    MetricCardSmall(icon = Icons.Default.CheckCircle, value = "$proyectosAprobados", label = "Aprobados", modifier = Modifier.weight(1f))
                     MetricCardSmall(icon = Icons.Default.People, value = "$aprendicesCount", label = "Aprendices", modifier = Modifier.weight(1f))
                 }
 
@@ -201,7 +203,7 @@ fun InstructorProfileScreen(
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 SenaButton(text = "Cancelar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
                                 SenaButton(text = "Guardar", onClick = {
-                                    profileViewModel.updateProfile("$name $lastName", email, user?.telefono)
+                                    profileViewModel.updateProfileNombres(name.trim(), lastName.trim())
                                     isEditing = false
                                 }, modifier = Modifier.weight(1f))
                             }
@@ -209,6 +211,8 @@ fun InstructorProfileScreen(
                     } else {
                         Column {
                             SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = user?.name ?: "-")
+                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                            SenaSettingsItem(icon = Icons.Default.AccountCircle, title = "Usuario", description = user?.username?.ifBlank { "No registrado" } ?: "No registrado")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Institucional", description = user?.email ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
@@ -284,7 +288,7 @@ fun InstructorProfileScreen(
                         icon = Icons.Default.Lock,
                         title = "Cambiar Contraseña",
                         description = "Actualiza tu acceso",
-                        onClick = { onNavigate(AppNavigation.RESET_PASSWORD) }
+                        onClick = { onNavigate(AppNavigation.CHANGE_PASSWORD) }
                     )
                     HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                     SenaSettingsItem(

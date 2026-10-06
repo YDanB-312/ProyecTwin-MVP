@@ -67,6 +67,26 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
+    private val _mensaje = MutableStateFlow<String?>(null)
+    val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
+
+    /** Eliminar solo está permitido al admin (el backend lo valida). */
+    fun eliminar(id: Int) {
+        viewModelScope.launch {
+            notificationsRepository.eliminar(id).fold(
+                onSuccess = {
+                    _mensaje.value = "Notificación eliminada."
+                    fetch()
+                },
+                onFailure = { e -> _mensaje.value = e.message ?: "No se pudo eliminar la notificación." },
+            )
+        }
+    }
+
+    fun limpiarMensaje() {
+        _mensaje.value = null
+    }
+
     private fun fetch() {
         val userId = idUsuario ?: return
         viewModelScope.launch {

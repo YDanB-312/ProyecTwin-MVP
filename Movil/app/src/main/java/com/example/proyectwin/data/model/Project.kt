@@ -7,7 +7,7 @@ data class Project(
     val id: Int,
     val title: String,
     val description: String = "",
-    val estado: String = ProjectStatus.PENDIENTE.value,
+    val estado: String = ProjectStatus.BORRADOR.value,
     val studentId: Int? = null,
     val instructorId: Int? = null,
     val fichaId: Int? = null,
@@ -20,15 +20,21 @@ data class Project(
     val objetivoGeneral: String? = null,
     val objetivosEspecificos: List<String> = emptyList(),
     val programa: String? = null,
+    val fichaEstado: String? = null,
     val equipo: List<GeneralUser> = emptyList()
 ) {
     val projectStatus: ProjectStatus get() = ProjectStatus.fromValue(estado)
     val statusDisplay: String get() = when (projectStatus) {
-        ProjectStatus.EN_PROGRESO -> "En Progreso"
-        ProjectStatus.COMPLETADO -> "Completado"
-        ProjectStatus.PENDIENTE -> "Pendiente"
-        ProjectStatus.CANCELADO -> "Cancelado"
+        ProjectStatus.BORRADOR -> "Borrador"
+        ProjectStatus.PENDIENTE -> "En revisión"
         ProjectStatus.APROBADO -> "Aprobado"
         ProjectStatus.RECHAZADO -> "Rechazado"
     }
+
+    /** Estados en los que el aprendiz puede editar (regla del backend). */
+    val esEditable: Boolean get() = projectStatus != ProjectStatus.APROBADO
+
+    /** Solo borrador y rechazado pueden enviarse/reenviarse. */
+    val puedeEnviar: Boolean get() =
+        projectStatus == ProjectStatus.BORRADOR || projectStatus == ProjectStatus.RECHAZADO
 }

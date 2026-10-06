@@ -1,8 +1,9 @@
 package com.example.proyectwin.domain.repository
 
+import com.example.proyectwin.data.model.CredencialesUsuario
 import com.example.proyectwin.data.model.GeneralUser
 
-/** Cuentas de usuario (`general-users`): listado admin y gestión. */
+/** Cuentas de usuario (`general-users`): listado admin, gestión y credenciales. */
 interface UsersRepository {
 
     suspend fun listar(
@@ -20,16 +21,27 @@ interface UsersRepository {
     /** Cuenta del token con ficha/perfil incluidos; refresca la sesión local. */
     suspend fun miCuenta(): Result<GeneralUser>
 
+    /** Alta (admin): el backend genera username y contraseña temporal. */
     suspend fun crear(
         nombre: String,
         apellido: String,
+        tipoDocumento: String,
+        numeroDocumento: String,
         correo: String,
-        password: String,
         rol: String,
-    ): Result<GeneralUser>
+    ): Result<CredencialesUsuario>
 
-    /** PUT parcial: [datos] aporta nombre/apellido/correo/rol/estado; [password] solo si cambia. */
-    suspend fun actualizar(id: Int, datos: GeneralUser, password: String? = null): Result<GeneralUser>
+    /** PUT parcial: [datos] aporta nombre/apellido/correo/rol/estado. */
+    suspend fun actualizar(id: Int, datos: GeneralUser): Result<GeneralUser>
 
     suspend fun eliminar(id: Int): Result<Unit>
+
+    /** Nuevas credenciales temporales (no envía correo; lo reenvía el admin). */
+    suspend fun restablecerCredenciales(id: Int): Result<CredencialesUsuario>
+
+    /** Reenvía por correo la contraseña temporal vigente. */
+    suspend fun reenviarCredenciales(id: Int): Result<GeneralUser>
+
+    /** PDF binario con las credenciales de los usuarios indicados. */
+    suspend fun descargarCredencialesPdf(ids: List<Int>): Result<ByteArray>
 }

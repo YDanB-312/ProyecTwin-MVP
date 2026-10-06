@@ -25,12 +25,20 @@ class BugReportsRepositoryImpl @Inject constructor(
     override suspend fun obtener(id: Int): Result<BugReport> =
         safeApiCall { api.obtener(id, INCLUDE) }.map { it.toDomain() }
 
-    override suspend fun crear(titulo: String?, descripcion: String, tipo: String): Result<BugReport> =
+    override suspend fun crear(
+        titulo: String?,
+        descripcion: String,
+        tipo: String,
+        numeroFicha: String?,
+        motivo: String?,
+    ): Result<BugReport> =
         safeApiCall {
             api.crear(
                 BugReport(
                     id = 0,
                     titulo = titulo.orEmpty(),
+                    numeroFicha = numeroFicha,
+                    motivo = motivo,
                     descripcion = descripcion,
                     tipo = tipo,
                 ).toCreateRequest(idUsuario = null),

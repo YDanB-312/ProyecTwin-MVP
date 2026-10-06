@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.di.AppEntryPoint
 import com.example.proyectwin.domain.repository.NotificationsRepository
+import com.example.proyectwin.navigation.NavIntents
 import com.example.proyectwin.ui.theme.*
 import dagger.hilt.android.EntryPointAccessors
 
@@ -66,7 +67,9 @@ fun SenaButton(
     
     Surface(
         modifier = modifier
-            .height(56.dp)
+            // Se adapta al contenido: no recorta el texto si el caller fija una
+            // altura menor o si el texto ocupa más de una línea.
+            .heightIn(min = 56.dp)
             .widthIn(min = 120.dp)
             .clip(CircleShape)
             .then(if (isPrimary && enabled && !isLoading) Modifier.background(primaryGradient) else Modifier)
@@ -80,7 +83,7 @@ fun SenaButton(
         shape = CircleShape
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
@@ -92,12 +95,13 @@ fun SenaButton(
                         Spacer(modifier = Modifier.width(12.dp))
                     }
                     Text(
-                        text = text, 
+                        text = text,
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Black, 
+                            fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp,
                             color = if (isPrimary) Color.White else senaColors().green
-                        )
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
             }
@@ -116,9 +120,18 @@ fun SenaTextField(
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
 ) {
     val focusManager = LocalFocusManager.current
+    // Los campos de varias líneas deben conservar la tecla Intro (nueva línea)
+    // y el comportamiento normal de los espacios: con ImeAction.Next el teclado
+    // mostraba "→|" y al pulsarlo (o al escribir) saltaba al siguiente campo,
+    // impidiendo redactar párrafos y objetivos.
+    val multilinea = !singleLine
     Column(modifier = modifier.fillMaxWidth()) {
         if (label.isNotEmpty()) {
             Text(
@@ -133,23 +146,30 @@ fun SenaTextField(
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
+            isError = isError,
             placeholder = { Text(placeholder, color = senaColors().textMuted) },
-            leadingIcon = leadingIcon?.let { { Icon(it, contentDescription = null, tint = senaColors().green) } },
+            leadingIcon = leadingIcon?.let { { Icon(it, contentDescription = null, tint = if (isError) senaColors().danger else senaColors().green) } },
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             shape = RoundedCornerShape(20.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                onDone = { focusManager.clearFocus() }
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = if (multilinea) ImeAction.Default else imeAction,
             ),
+            keyboardActions = KeyboardActions(
+                onNext = { if (!multilinea) focusManager.moveFocus(FocusDirection.Down) },
+                onDone = { focusManager.clearFocus() },
+            ),
+            supportingText = supportingText?.let { { Text(it, color = senaColors().danger) } },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = senaColors().green,
-                unfocusedBorderColor = senaColors().border,
+                focusedBorderColor = if (isError) senaColors().danger else senaColors().green,
+                unfocusedBorderColor = if (isError) senaColors().danger else senaColors().border,
                 focusedContainerColor = senaColors().inputBackground,
                 unfocusedContainerColor = senaColors().inputBackground,
-                cursorColor = senaColors().green
+                cursorColor = senaColors().green,
+                errorBorderColor = senaColors().danger
             ),
-            singleLine = true
+            singleLine = singleLine,
+            minLines = minLines,
         )
     }
 }
@@ -218,9 +238,11 @@ fun SenaPageHeader(
 @Composable
 fun SenaStatusBadge(status: String, modifier: Modifier = Modifier) {
     val color = when (status.lowercase()) {
-        "pendiente", "en revisión" -> senaColors().warning
-        "aprobado", "revisado", "activo" -> senaColors().success
-        "rechazado", "error", "inactivo" -> senaColors().danger
+        "borrador" -> senaColors().accent
+        "pendiente", "en revisión", "en_revision" -> senaColors().warning
+        "aprobado", "revisado", "activo", "vigente", "resuelto" -> senaColors().success
+        "rechazado", "error", "inactivo", "anulada", "anulado", "suspendido", "histórica", "falló" -> senaColors().danger
+        "finalizado", "cerrado" -> senaColors().info
         else -> senaColors().textMuted
     }
 
@@ -316,10 +338,10 @@ fun SenaTopBar(
                                 icon = Icons.Default.Notifications,
                                 badgeCount = effectiveBadgeCount,
                                 contentDescription = "Notificaciones",
-                                onClick = { onNavigateToAlerts?.invoke() }
+                                onClick = { onNavigateToAlerts?.invoke() ?: NavIntents.pedirNotificaciones() }
                             )
                         } else {
-                            IconButton(onClick = { onNavigateToAlerts?.invoke() }) { 
+                            IconButton(onClick = { onNavigateToAlerts?.invoke() ?: NavIntents.pedirNotificaciones() }) { 
                                 Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White.copy(alpha = 0.9f)) 
                             }
                         }
@@ -335,7 +357,7 @@ fun SenaTopBar(
                             shape = CircleShape, 
                             color = Color.White.copy(alpha = 0.2f)
                         ) {
-                            IconButton(onClick = { onNavigateToProfile?.invoke() }) { 
+                            IconButton(onClick = { onNavigateToProfile?.invoke() ?: NavIntents.pedirPerfil() }) { 
                                 Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(18.dp)) 
                             }
                         }
@@ -540,7 +562,9 @@ fun SenaBottomBar(
     content: @Composable RowScope.() -> Unit
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        // Con el teclado abierto, la barra de acciones sube por encima de él:
+        // antes quedaba tapada y no se podía pulsar Guardar/Enviar/Borrador.
+        modifier = modifier.fillMaxWidth().imePadding(),
         tonalElevation = 12.dp,
         shadowElevation = 24.dp,
         color = senaColors().backgroundElevated
@@ -704,7 +728,17 @@ fun SenaAvatar(
         color = senaColors().backgroundElevated,
         shadowElevation = 10.dp
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        BoxWithConstraints(contentAlignment = Alignment.Center) {
+            // El tamaño de la inicial se deriva del lado real del avatar (los
+            // callers usan 28–110 dp): un tamaño fijo recortaba las letras en
+            // los círculos pequeños y las desbordaba en los grandes.
+            val lado = if (maxWidth < maxHeight) maxWidth else maxHeight
+            val iniciales = nombre.split(" ")
+                .filter { it.isNotBlank() }
+                .take(2)
+                .joinToString("") { it.first().uppercase() }
+                .ifBlank { "?" }
+            val tamanoLetra = (lado.value * if (iniciales.length > 1) 0.38f else 0.46f).sp
             if (imagen != null) {
                 Image(
                     bitmap = imagen,
@@ -714,14 +748,20 @@ fun SenaAvatar(
                 )
             } else {
                 Box(
-                    modifier = Modifier.padding(5.dp).fillMaxSize().background(senaColors().green, CircleShape),
+                    modifier = Modifier
+                        .padding(lado * 0.05f)
+                        .fillMaxSize()
+                        .background(senaColors().green, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = nombre.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() },
+                        text = iniciales,
                         color = Color.White,
                         fontWeight = FontWeight.Black,
-                        fontSize = 32.sp
+                        fontSize = tamanoLetra,
+                        lineHeight = tamanoLetra,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
             }
@@ -730,7 +770,9 @@ fun SenaAvatar(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 4.dp, bottom = 4.dp)
-                        .size(32.dp)
+                        // El indicador también escala para no tapar el círculo
+                        // en los avatares pequeños.
+                        .size(if (lado < 48.dp) 22.dp else 32.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center
@@ -739,7 +781,7 @@ fun SenaAvatar(
                         imageVector = Icons.Default.Camera,
                         contentDescription = "Cambiar foto",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(if (lado < 48.dp) 12.dp else 18.dp)
                     )
                 }
             }

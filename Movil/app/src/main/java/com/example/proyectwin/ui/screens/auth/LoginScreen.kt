@@ -2,6 +2,7 @@ package com.example.proyectwin.ui.screens.auth
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,12 +22,14 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.R
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
@@ -34,21 +37,17 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String) -> Unit,
-    onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
     val isSubmitting by authViewModel.isSubmitting.collectAsState()
-
-    LaunchedEffect(uiState) {
-        (uiState as? AuthUiState.LoggedIn)?.let { onLoginSuccess(it.user.role) }
-    }
+    // La navegación tras el login (rol + must_change_password) la decide
+    // MainActivity observando el estado de sesión.
 
     val infiniteTransition = rememberInfiniteTransition(label = "login_bg")
     val glowAlpha by infiniteTransition.animateFloat(
@@ -81,22 +80,15 @@ fun LoginScreen(
             )
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(
-                    modifier = Modifier.size(80.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White.copy(alpha = 0.1f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Security,
-                            contentDescription = null,
-                            tint = senaColors().accent,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
+                // Logo oficial de ProyecTwin (sin filtros ni rediseño).
+                Image(
+                    painter = painterResource(id = R.drawable.logo_proyectwin),
+                    contentDescription = "Logo de ProyecTwin",
+                    modifier = Modifier
+                        .width(200.dp)
+                        .aspectRatio(656f / 380f),
+                )
+                Spacer(Modifier.height(12.dp))
                 Text(
                     "ProyecTwin",
                     style = MaterialTheme.typography.displaySmall,
@@ -122,11 +114,11 @@ fun LoginScreen(
             SenaCard(elevation = 12.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     SenaTextField(
-                        value = email,
-                        onValueChange = { email = it; authViewModel.clearError() },
-                        label = "Correo Institucional",
-                        placeholder = "ejemplo@sena.edu.co",
-                        leadingIcon = Icons.Default.AlternateEmail
+                        value = username,
+                        onValueChange = { username = it; authViewModel.clearError() },
+                        label = "Usuario",
+                        placeholder = "tu.usuario",
+                        leadingIcon = Icons.Default.Person
                     )
 
                     SenaTextField(
@@ -169,22 +161,19 @@ fun LoginScreen(
 
                     SenaButton(
                         text = "ENTRAR AL SISTEMA",
-                        onClick = { authViewModel.login(email, password) },
+                        onClick = { authViewModel.login(username, password, rememberMe) },
                         isLoading = isSubmitting,
                         icon = Icons.AutoMirrored.Filled.Login,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text("¿No tienes cuenta?", style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
-                        TextButton(onClick = onRegisterClick) {
-                            Text("Regístrate aquí", color = senaColors().green, fontWeight = FontWeight.Black, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
+                    Text(
+                        "¿No tienes cuenta? Solicítala al administrador de tu centro.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().textLight,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
@@ -216,6 +205,6 @@ fun QuickAccessRow(label: String, color: Color, onClick: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     ProyecTwinTheme {
-        LoginScreen(onLoginSuccess = {}, onRegisterClick = {}, onForgotPasswordClick = {})
+        LoginScreen(onForgotPasswordClick = {})
     }
 }

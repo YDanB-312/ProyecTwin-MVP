@@ -66,15 +66,18 @@ class BugReportsViewModel @Inject constructor(
         }
     }
 
-    /** PUT completo con el nuevo estado (como hace el admin del frontend). */
-    fun cambiarEstado(id: Int, estado: BugReportStatus) {
+    /** PUT completo con estado y respuesta (como hace el admin del frontend). */
+    fun cambiarEstado(id: Int, estado: BugReportStatus, respuesta: String? = null) {
         viewModelScope.launch {
             _accionError.value = null
             val actual = bugReportsRepository.obtener(id).getOrElse { e ->
                 _accionError.value = e.message ?: "Error al actualizar el reporte"
                 return@launch
             }
-            bugReportsRepository.actualizar(id, actual.copy(estado = estado.value)).fold(
+            bugReportsRepository.actualizar(
+                id,
+                actual.copy(estado = estado.value, respuesta = respuesta ?: actual.respuesta),
+            ).fold(
                 onSuccess = { actualizado ->
                     _detalle.value = actualizado
                     load()
@@ -86,11 +89,30 @@ class BugReportsViewModel @Inject constructor(
         }
     }
 
-    fun crear(titulo: String?, descripcion: String, tipo: String) {
+    fun eliminar(id: Int, onEliminado: () -> Unit = {}) {
+        viewModelScope.launch {
+            _accionError.value = null
+            bugReportsRepository.eliminar(id).fold(
+                onSuccess = {
+                    load()
+                    onEliminado()
+                },
+                onFailure = { e -> _accionError.value = e.message ?: "Error al eliminar el reporte" },
+            )
+        }
+    }
+
+    fun crear(
+        titulo: String?,
+        descripcion: String,
+        tipo: String,
+        numeroFicha: String? = null,
+        motivo: String? = null,
+    ) {
         viewModelScope.launch {
             _accionError.value = null
             _creado.value = false
-            bugReportsRepository.crear(titulo, descripcion, tipo).fold(
+            bugReportsRepository.crear(titulo, descripcion, tipo, numeroFicha, motivo).fold(
                 onSuccess = {
                     _creado.value = true
                     load()

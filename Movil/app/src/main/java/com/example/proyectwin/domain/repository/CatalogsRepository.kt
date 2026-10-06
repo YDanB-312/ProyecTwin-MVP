@@ -19,7 +19,6 @@ interface CatalogsRepository {
     suspend fun crearPrograma(
         nombre: String,
         nivel: String?,
-        numTrimestres: Int?,
         redId: Int,
     ): Result<TrainingProgram>
 
@@ -27,7 +26,6 @@ interface CatalogsRepository {
         id: Int,
         nombre: String,
         nivel: String?,
-        numTrimestres: Int?,
         redId: Int,
     ): Result<TrainingProgram>
 

@@ -1,258 +1,322 @@
 package com.example.proyectwin.ui.screens.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.proyectwin.data.mock.MockDataProvider
-import com.example.proyectwin.data.model.Similarity
-import com.example.proyectwin.data.model.SimilarityStatus
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.proyectwin.data.model.Comment
+import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.AdminSimilarityAction
+import com.example.proyectwin.ui.viewmodel.AdminSimilarityDetailViewModel
+import com.example.proyectwin.ui.viewmodel.AdminSimilarityUiState
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Detalle admin de un par de similitud: ambas propuestas, observaciones de cada
+ * una y eliminación del par (el motor puede volver a detectarlo al recalcular).
+ */
 @Composable
-fun AdminSimilarityDetailScreen(onBack: () -> Unit, similarityId: String = "") {
-    val scrollState = rememberScrollState()
+fun AdminSimilarityDetailScreen(
+    similarityId: String = "",
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit = {},
+    adminSimilarityViewModel: AdminSimilarityDetailViewModel = hiltViewModel(),
+) {
+    val uiState by adminSimilarityViewModel.uiState.collectAsState()
+    val accion by adminSimilarityViewModel.accion.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    var confirmarEliminar by remember { mutableStateOf(false) }
+    var comentarioProyecto by remember { mutableIntStateOf(0) }
+    var nuevoComentario by remember { mutableStateOf("") }
 
-    var similarity by remember(similarityId) {
-        mutableStateOf(
-            MockDataProvider.getAllSimilarities().find { it.id == (similarityId.toIntOrNull() ?: 0) }
-        )
+    LaunchedEffect(similarityId) {
+        similarityId.toIntOrNull()?.let { adminSimilarityViewModel.load(it) }
     }
-    var selectedComparison by remember { mutableIntStateOf(0) }
 
-    val comparisons = listOfNotNull(
-        similarity?.project1Title,
-        similarity?.project2Title
-    )
+    LaunchedEffect(accion) {
+        when (val estado = accion) {
+            is AdminSimilarityAction.Success -> adminSimilarityViewModel.resetAccion()
+            is AdminSimilarityAction.Error -> {
+                snackbarHostState.showSnackbar(estado.message)
+                adminSimilarityViewModel.resetAccion()
+            }
+            is AdminSimilarityAction.Deleted -> {
+                adminSimilarityViewModel.resetAccion()
+                onBack()
+            }
+            else -> Unit
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "ProyecTwin",
+                title = "Detalle de Similitud",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
         containerColor = senaColors().background,
-        bottomBar = {
-            if (similarity != null) {
-                SenaBottomBar {
-                    SenaButton(
-                        text = "Marcar Resuelto",
-                        onClick = {
-                            similarity?.let { s ->
-                                MockDataProvider.updateSimilarityEstado(s.id, SimilarityStatus.CONFIRMADO.value)
-                                similarity = s.copy(estado = SimilarityStatus.CONFIRMADO.value)
-                            }
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Caso marcado como resuelto")
-                                kotlinx.coroutines.delay(1000)
-                                onBack()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    SenaButton(
-                        text = "Desestimar",
-                        onClick = {
-                            similarity?.let { s ->
-                                MockDataProvider.updateSimilarityEstado(s.id, SimilarityStatus.RECHAZADO.value)
-                                similarity = s.copy(estado = SimilarityStatus.RECHAZADO.value)
-                            }
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Similitud desestimada")
-                                kotlinx.coroutines.delay(1000)
-                                onBack()
-                            }
-                        },
-                        isPrimary = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
     ) { paddingValues ->
-        if (similarity == null) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(20.dp),
-                contentAlignment = Alignment.Center
+        when (val estado = uiState) {
+            is AdminSimilarityUiState.Loading ->
+                SenaLoadingState(modifier = Modifier.padding(paddingValues))
+            is AdminSimilarityUiState.Error -> Box(
+                Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center,
             ) {
-                SenaEmptyState(
-                    message = "No se encontraron similitudes para revisar.",
-                    icon = Icons.Default.SearchOff
-                )
+                SenaErrorState(message = estado.message, onRetry = { adminSimilarityViewModel.recargar() })
             }
-            return@Scaffold
-        }
+            is AdminSimilarityUiState.Success -> {
+                val data = estado.data
+                val par = data.similarity
 
-        val sim = similarity!!
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            SenaPageHeader(
-                title = "An\u00e1lisis de Control",
-                subtitle = "Comparativa t\u00e9cnica de alto nivel para la supervisi\u00f3n de integridad acad\u00e9mica.",
-                icon = Icons.Default.ExclamationTriangle
-            )
-
-            // Selector Banner
-            SenaCard(elevation = 2.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "Proyecto Bajo Supervisi\u00f3n: ${sim.project1Title ?: "Proyecto ${sim.projectId1}"}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = senaColors().text
-                    )
-                    Text(
-                        "Se detectaron ${comparisons.size} casos de similitud. Selecciona uno:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = senaColors().textLight
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    SenaPageHeader(
+                        title = "Similitud #${par.id}",
+                        subtitle = "Coincidencia ${par.estadoDisplay.lowercase()} · ${par.similitudPercent}",
+                        icon = Icons.Default.Compare,
                     )
 
-                    var expanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = comparisons.getOrNull(selectedComparison) ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true).fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            textStyle = MaterialTheme.typography.bodySmall,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = senaColors().green,
-                                unfocusedBorderColor = senaColors().border
-                            )
+                    if (!par.vigente) {
+                        SenaAlertBanner(
+                            title = "Evidencia histórica",
+                            message = "Este par quedó archivado (vigente = false): es evidencia de una versión anterior.",
+                            icon = Icons.Default.History,
+                            color = senaColors().warning,
                         )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            comparisons.forEachIndexed { index, name ->
-                                DropdownMenuItem(
-                                    text = { Text(name, style = MaterialTheme.typography.bodySmall) },
-                                    onClick = {
-                                        selectedComparison = index
-                                        expanded = false
+                    }
+
+                    PanelProyectoAdmin(
+                        etiqueta = "Propuesta A",
+                        proyecto = par.project1,
+                        comentarios = data.comentarios1,
+                        onVerProyecto = {
+                            par.project1?.let {
+                                onNavigate(AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", it.id.toString()))
+                            }
+                        },
+                    )
+
+                    PanelProyectoAdmin(
+                        etiqueta = "Propuesta B",
+                        proyecto = par.project2,
+                        comentarios = data.comentarios2,
+                        onVerProyecto = {
+                            par.project2?.let {
+                                onNavigate(AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", it.id.toString()))
+                            }
+                        },
+                    )
+
+                    if (data.relacionadas.isNotEmpty()) {
+                        SenaSectionHeader(title = "Otras coincidencias (${data.relacionadas.size})")
+                        SenaCard(elevation = 1.dp) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                data.relacionadas.forEach { relacionada ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                relacionada.project1Title ?: "Propuesta",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = senaColors().text,
+                                            )
+                                            Text(
+                                                relacionada.project2Title ?: "Propuesta",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = senaColors().textSecondary,
+                                            )
+                                        }
+                                        Text(
+                                            relacionada.similitudPercent,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = senaColors().green,
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                onNavigate(
+                                                    AppNavigation.ADMIN_SIMILARITY_DETAIL
+                                                        .replace("{similarityId}", relacionada.id.toString()),
+                                                )
+                                            },
+                                        ) {
+                                            Icon(Icons.Default.ChevronRight, contentDescription = "Ver")
+                                        }
                                     }
-                                )
+                                }
                             }
                         }
                     }
+
+                    SenaSectionHeader(title = "Agregar observación")
+                    SenaCard(elevation = 1.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf(0, 1).forEach { indice ->
+                                    val proyecto = if (indice == 0) par.project1 else par.project2
+                                    SenaChip(
+                                        text = if (indice == 0) "A" else "B",
+                                        color = senaColors().green,
+                                        isSelected = comentarioProyecto == indice,
+                                        onClick = { comentarioProyecto = indice },
+                                    )
+                                    Text(
+                                        proyecto?.title ?: "Propuesta ${if (indice == 0) "A" else "B"}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = senaColors().textLight,
+                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                    )
+                                }
+                            }
+                            SenaTextField(
+                                value = nuevoComentario,
+                                onValueChange = { nuevoComentario = it },
+                                label = "Observación",
+                                placeholder = "Escribe una observación para la propuesta seleccionada...",
+                                singleLine = false,
+                                minLines = 2,
+                            )
+                            SenaButton(
+                                text = "PUBLICAR OBSERVACIÓN",
+                                onClick = {
+                                    val proyectoId = (if (comentarioProyecto == 0) par.project1 else par.project2)?.id
+                                    if (proyectoId != null && nuevoComentario.isNotBlank()) {
+                                        adminSimilarityViewModel.comentar(proyectoId, nuevoComentario.trim())
+                                        nuevoComentario = ""
+                                    }
+                                },
+                                enabled = nuevoComentario.isNotBlank() && accion !is AdminSimilarityAction.Loading,
+                                isLoading = accion is AdminSimilarityAction.Loading,
+                                icon = Icons.AutoMirrored.Filled.Send,
+                            )
+                        }
+                    }
+
+                    SenaButton(
+                        text = "ELIMINAR PAR DE SIMILITUD",
+                        onClick = { confirmarEliminar = true },
+                        isPrimary = false,
+                        icon = Icons.Default.Delete,
+                        containerColor = senaColors().danger10,
+                    )
+
+                    Spacer(Modifier.height(40.dp))
+                }
+
+                if (confirmarEliminar) {
+                    AlertDialog(
+                        onDismissRequest = { confirmarEliminar = false },
+                        title = { Text("Eliminar par") },
+                        text = { Text("El par se elimina de la base; el motor podría volver a detectarlo en un recálculo.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                confirmarEliminar = false
+                                adminSimilarityViewModel.eliminar()
+                            }) { Text("Eliminar", color = senaColors().danger) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { confirmarEliminar = false }) { Text("Cancelar") }
+                        },
+                    )
                 }
             }
-
-            SenaSectionHeader(title = "Comparativa Directa")
-
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AdminCompCard("Proyecto Original", sim.project1Student ?: "Sin asignar", senaColors().green, Modifier.fillMaxWidth())
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = senaColors().textLight, modifier = Modifier.size(24.dp))
-                }
-                AdminCompCard("Caso Coincidente", sim.project2Student ?: "Sin asignar", senaColors().warning, Modifier.fillMaxWidth())
-            }
-
-            SenaSectionHeader(title = "Niveles de Coincidencia")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    AdminMatchItem("Similitud Global", (sim.similitud * 100).toInt(), senaColors().danger)
-                    AdminMatchItem("Alcance y Objetivos", minOf((sim.similitud * 100).toInt() - 15, 100).coerceAtLeast(0), senaColors().warning)
-                    AdminMatchItem("Metodolog\u00eda", maxOf((sim.similitud * 100).toInt() - 30, 0), senaColors().warning)
-                }
-            }
-
-            SenaCard(elevation = 1.dp) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Estado del caso", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                    SenaStatusBadge(status = sim.statusDisplay)
-                }
-            }
-
-            Spacer(Modifier.height(40.dp))
         }
     }
 }
 
 @Composable
-fun AdminCompCard(label: String, author: String, color: Color, modifier: Modifier = Modifier) {
-    SenaCard(elevation = 1.dp, modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = color.copy(alpha = 0.1f)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.FilePresent, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+private fun PanelProyectoAdmin(
+    etiqueta: String,
+    proyecto: Project?,
+    comentarios: List<Comment>,
+    onVerProyecto: () -> Unit,
+) {
+    SenaSectionHeader(title = etiqueta)
+    SenaCard(elevation = 1.dp) {
+        if (proyecto == null) {
+            Text("Propuesta no disponible.", color = senaColors().textSecondary)
+            return@SenaCard
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    proyecto.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = senaColors().text,
+                    modifier = Modifier.weight(1f),
+                )
+                SenaStatusBadge(status = proyecto.estado)
+            }
+            Text(
+                "${proyecto.studentName ?: "Sin autor"} · ${proyecto.programa ?: "Sin programa"}",
+                style = MaterialTheme.typography.bodySmall,
+                color = senaColors().textSecondary,
+            )
+            if (proyecto.description.isNotBlank()) {
+                Text(
+                    proyecto.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = senaColors().textSecondary,
+                    maxLines = 4,
+                )
+            }
+            SenaButton(
+                text = "VER PROPUESTA",
+                onClick = onVerProyecto,
+                isPrimary = false,
+                icon = Icons.Default.OpenInNew,
+            )
+            HorizontalDivider(color = senaColors().borderSoft)
+            Text(
+                "Observaciones (${comentarios.size})",
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().textLight,
+            )
+            if (comentarios.isEmpty()) {
+                Text("Sin observaciones.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+            } else {
+                comentarios.take(6).forEach { comentario ->
+                    Column {
+                        Text(
+                            comentario.autorNombre ?: "Usuario",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = senaColors().green,
+                        )
+                        Text(comentario.texto, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
+                    }
+                }
+                if (comentarios.size > 6) {
+                    Text(
+                        "+${comentarios.size - 6} observaciones más en la propuesta.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = senaColors().textLight,
+                    )
                 }
             }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                Text("Aprendiz: $author", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
-            }
         }
-    }
-}
-
-@Composable
-fun AdminMatchItem(title: String, percentage: Int, color: Color) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(title, style = MaterialTheme.typography.bodySmall, color = senaColors().text)
-            Text("$percentage%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Black, color = color)
-        }
-        LinearProgressIndicator(
-            progress = { percentage / 100f },
-            modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-            color = color,
-            trackColor = senaColors().borderSoft
-        )
-    }
-}
-
-// Missing icon
-val Icons.Filled.ExclamationTriangle: ImageVector get() = Icons.Default.Warning
-
-@Preview(showBackground = true)
-@Composable
-fun AdminSimilarityDetailPreview() {
-    ProyecTwinTheme {
-        AdminSimilarityDetailScreen(similarityId = "1", onBack = {})
     }
 }

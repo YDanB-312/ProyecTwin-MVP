@@ -2,6 +2,7 @@ package com.example.proyectwin.data.api.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /** Propuesta de proyecto (`projects`), tal como la responde Laravel. */
 @Serializable
@@ -61,6 +62,21 @@ data class ProjectUpdateRequest(
     @SerialName("id_creador") val idCreador: Int,
     @SerialName("id_instructor_asignado") val idInstructorAsignado: Int?,
     @SerialName("id_class_group") val idClassGroup: Int?,
+    /** Observación del instructor al rechazar (opcional; null no viaja). */
+    val observacion: String? = null,
+)
+
+/** Fila del historial de la propuesta (`GET /projects/{id}/historial`). */
+@Serializable
+data class ProjectHistoryDto(
+    val id: Int = 0,
+    @SerialName("id_proyecto") val idProyecto: Int = 0,
+    @SerialName("id_usuario") val idUsuario: Int? = null,
+    val accion: String = "",
+    val detalle: JsonObject? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    val user: GeneralUserDto? = null,
 )
 
 /** Fila del pivote `apprentice_projects` (equipo de la propuesta). */

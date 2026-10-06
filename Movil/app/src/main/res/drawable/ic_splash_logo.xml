@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo oficial para el splash del sistema (Android 12+): centrado y dentro
+     del círculo de la máscara para no recortarse. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/logo_proyectwin"
+        android:gravity="center"
+        android:width="88dp"
+        android:height="51dp" />
+</layer-list>

@@ -4,6 +4,7 @@ import com.example.proyectwin.data.api.dto.ApprenticeProjectDto
 import com.example.proyectwin.data.api.dto.MessageResponse
 import com.example.proyectwin.data.api.dto.ProjectCreateRequest
 import com.example.proyectwin.data.api.dto.ProjectDto
+import com.example.proyectwin.data.api.dto.ProjectHistoryDto
 import com.example.proyectwin.data.api.dto.ProjectUpdateRequest
 import com.example.proyectwin.data.api.dto.TeamMemberRequest
 import retrofit2.http.Body
@@ -34,6 +35,16 @@ interface ProjectsApi {
 
     @POST("projects")
     suspend fun crear(@Body body: ProjectCreateRequest): ProjectDto
+
+    /** Envío/reenvío explícito: el servidor valida, ejecuta el motor y notifica. */
+    @POST("projects/{id}/enviar")
+    suspend fun enviar(@Path("id") id: Int): ProjectDto
+
+    @GET("projects/{id}/historial")
+    suspend fun historial(
+        @Path("id") id: Int,
+        @Query("included") included: String? = null,
+    ): List<ProjectHistoryDto>
 
     @PUT("projects/{id}")
     suspend fun actualizar(@Path("id") id: Int, @Body body: ProjectUpdateRequest): ProjectDto

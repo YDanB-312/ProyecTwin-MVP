@@ -23,9 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.util.formatearFechaHoraLocal
 import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
 import com.example.proyectwin.ui.viewmodel.AuthUiState
@@ -125,10 +127,11 @@ fun AdminDashboardScreen(
                         )
                         Spacer(Modifier.height(20.dp))
 
-                        // Analytics Row
+                        // Analytics Row: datos reales del panel.
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            SystemStatusPill("Online", senaColors().success, Icons.Default.CloudDone, modifier = Modifier.weight(1f))
-                            SystemStatusPill("Safe", senaColors().info, Icons.Default.Shield, modifier = Modifier.weight(1f))
+                            val enRevision = adminSuccess.projects.count { it.estado == "pendiente" }
+                            SystemStatusPill("$enRevision en revisión", senaColors().warning, Icons.Default.Pending, modifier = Modifier.weight(1f))
+                            SystemStatusPill("${adminSuccess.similarities.size} pares", senaColors().info, Icons.Default.Compare, modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -197,7 +200,14 @@ fun AdminDashboardScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         adminSuccess.projects.take(5).forEach { project ->
-                            AdminProjectRow(project = project)
+                            AdminProjectRow(
+                                project = project,
+                                onClick = {
+                                    onNavigate(
+                                        AppNavigation.ADMIN_PROJECT_DETAIL.replace("{projectId}", project.id.toString()),
+                                    )
+                                },
+                            )
                         }
                     }
                 }
@@ -229,6 +239,27 @@ fun AdminDashboardScreen(
                         color = senaColors().danger,
                         onClick = { onNavigate(AppNavigation.ADMIN_BUGS) }
                     )
+                    ManagementActionCard(
+                        title = "Fichas",
+                        desc = "Grupos, roster y credenciales",
+                        icon = Icons.Default.Groups,
+                        color = senaColors().success,
+                        onClick = { onNavigate(AppNavigation.ADMIN_FICHAS) }
+                    )
+                    ManagementActionCard(
+                        title = "Catálogos",
+                        desc = "Redes y programas de formación",
+                        icon = Icons.Default.Category,
+                        color = senaColors().accent,
+                        onClick = { onNavigate(AppNavigation.ADMIN_CATALOGOS) }
+                    )
+                    ManagementActionCard(
+                        title = "Bitácora",
+                        desc = "Auditoría de acciones sensibles",
+                        icon = Icons.Default.History,
+                        color = senaColors().textSecondary,
+                        onClick = { onNavigate(AppNavigation.ADMIN_BITACORA) }
+                    )
                 }
             }
 
@@ -248,12 +279,12 @@ fun AdminDashboardScreen(
                             }
                             Spacer(Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Ajustes del Sistema", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                                Text("Configuración global de ProyecTwin", style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
+                                Text("Motor de Similitud", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                Text("Umbral, ventana del corpus y recálculo", style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
                             }
                             SenaButton(text = "Abrir", onClick = {
-                                scope.launch { snackbarHostState.showSnackbar("Acceso restringido") }
-                            }, modifier = Modifier.width(80.dp).height(36.dp), isPrimary = false)
+                                onNavigate(AppNavigation.ADMIN_MOTOR)
+                            }, isPrimary = false)
                         }
                     }
                 }
@@ -264,8 +295,8 @@ fun AdminDashboardScreen(
 }
 
 @Composable
-fun AdminProjectRow(project: Project) {
-    SenaCard(onClick = { }) {
+fun AdminProjectRow(project: Project, onClick: () -> Unit = {}) {
+    SenaCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 modifier = Modifier.size(48.dp),
@@ -282,27 +313,20 @@ fun AdminProjectRow(project: Project) {
                 Text(project.studentName ?: "Sin asignar", style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(project.createdAt ?: "", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                Text(formatearFechaHoraLocal(project.createdAt), style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                 Spacer(Modifier.height(4.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = when (project.estado) {
-                        "Pendiente" -> senaColors().warning.copy(alpha = 0.15f)
-                        "En Progreso" -> senaColors().info.copy(alpha = 0.15f)
-                        "Completado" -> senaColors().success.copy(alpha = 0.15f)
-                        else -> senaColors().textLight.copy(alpha = 0.15f)
-                    }
-                ) {
+                val colorEstado = when (project.projectStatus) {
+                    ProjectStatus.APROBADO -> senaColors().success
+                    ProjectStatus.PENDIENTE -> senaColors().warning
+                    ProjectStatus.RECHAZADO -> senaColors().danger
+                    ProjectStatus.BORRADOR -> senaColors().info
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = colorEstado.copy(alpha = 0.15f)) {
                     Text(
                         project.statusDisplay,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = when (project.estado) {
-                            "Pendiente" -> senaColors().warning
-                            "En Progreso" -> senaColors().info
-                            "Completado" -> senaColors().success
-                            else -> senaColors().textLight
-                        }
+                        color = colorEstado,
                     )
                 }
             }

@@ -1,199 +1,218 @@
 package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.data.model.BugReport
 import com.example.proyectwin.data.model.BugReportStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.BugReportsViewModel
-import kotlinx.coroutines.launch
 
+/** Detalle real del reporte: estado, respuesta al solicitante y datos. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BugReportDetailScreen(
     bugId: String = "",
     onBack: () -> Unit,
-    authViewModel: AuthViewModel = hiltViewModel(),
-    bugReportsViewModel: BugReportsViewModel = hiltViewModel()
+    bugReportsViewModel: BugReportsViewModel = hiltViewModel(),
 ) {
-    val scrollState = rememberScrollState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    val bugIdNum = bugId.toIntOrNull() ?: 0
     val bug by bugReportsViewModel.detalle.collectAsState()
+    val error by bugReportsViewModel.accionError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val bugIdNum = bugId.toIntOrNull() ?: 0
+
+    var estadoSeleccionado by remember { mutableStateOf(BugReportStatus.PENDIENTE) }
+    var respuesta by remember { mutableStateOf("") }
+    var precargado by remember { mutableStateOf(false) }
+
     LaunchedEffect(bugIdNum) {
         if (bugIdNum > 0) bugReportsViewModel.cargarDetalle(bugIdNum)
+    }
+
+    LaunchedEffect(bug) {
+        if (bug != null && !precargado) {
+            estadoSeleccionado = BugReportStatus.fromValue(bug!!.estado)
+            respuesta = bug!!.respuesta.orEmpty()
+            precargado = true
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(it)
+            bugReportsViewModel.limpiarError()
+        }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SenaTopBar(
-                title = "Falla Técnica",
+                title = "Detalle del Reporte",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
         containerColor = senaColors().background,
-        bottomBar = {
-            SenaBottomBar {
-                SenaButton(
-                    text = "ASIGNAR TÉCNICO",
-                    onClick = {
-                        bug?.let { b ->
-                            bugReportsViewModel.cambiarEstado(b.id, BugReportStatus.EN_REVISION)
-                        }
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Reporte escalado a Nivel 2")
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                SenaButton(
-                    text = "CERRAR CASO", 
-                    onClick = {
-                        bug?.let { b ->
-                            bugReportsViewModel.cambiarEstado(b.id, BugReportStatus.CERRADO)
-                        }
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Caso cerrado")
-                            kotlinx.coroutines.delay(600)
-                            onBack()
-                        }
-                    }, 
-                    isPrimary = false, 
-                    containerColor = senaColors().danger,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
     ) { paddingValues ->
+        val reporte = bug
+        if (reporte == null) {
+            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                SenaLoadingState()
+            }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState()),
         ) {
-            // --- HEADER ADMIN ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(senaColors().danger.copy(alpha = 0.8f), senaColors().danger)
-                        )
-                    )
+                    .height(120.dp)
+                    .background(Brush.verticalGradient(colors = listOf(senaColors().header, senaColors().green)))
             )
 
             Column(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
-                    .offset(y = (-50).dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .offset(y = (-40).dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                // Info Card
                 SenaCard(elevation = 8.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            SenaStatusBadge(status = bug?.statusDisplay ?: "Desconocido")
-                            Text("#${bug?.id ?: bugId}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("#${reporte.id}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().textLight)
+                            SenaStatusBadge(status = reporte.statusDisplay)
                         }
-
                         Text(
-                            bug?.titulo ?: "Error en el Sistema", 
-                            style = MaterialTheme.typography.titleLarge, 
-                            fontWeight = FontWeight.Black, 
-                            color = senaColors().text
+                            reporte.titulo.ifBlank { "Solicitud de soporte" },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = senaColors().text,
                         )
-
                         HorizontalDivider(color = senaColors().borderSoft)
-
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            BugDetailRow(Icons.Default.Person, "Reportado por", bug?.reporterName ?: "Aprendiz")
-                            BugDetailRow(Icons.Default.PriorityHigh, "Criticidad", bug?.typeDisplay ?: "Alta")
-                            BugDetailRow(Icons.Default.AccessTime, "Antigúedad", "2 horas")
+                        BugDetailRow(Icons.Default.Person, "Reportado por", reporte.reporterName ?: "—")
+                        BugDetailRow(Icons.Default.BugReport, "Tipo", reporte.typeDisplay)
+                        BugDetailRow(Icons.Default.Event, "Fecha", reporte.fecha ?: reporte.createdAt?.take(10) ?: "—")
+                        reporte.numeroFicha?.takeIf { it.isNotBlank() }?.let {
+                            BugDetailRow(Icons.Default.Numbers, "Ficha", it)
+                        }
+                        reporte.motivo?.takeIf { it.isNotBlank() }?.let {
+                            BugDetailRow(Icons.Default.Info, "Motivo", it)
                         }
                     }
                 }
 
-                SenaSectionHeader(title = "Descripción del Error")
+                SenaSectionHeader(title = "Descripción")
                 SenaCard {
                     Text(
-                        bug?.descripcion ?: "Sin descripción técnica.",
+                        reporte.descripcion,
                         style = MaterialTheme.typography.bodyMedium,
                         color = senaColors().textSecondary,
-                        lineHeight = 22.sp
+                        lineHeight = 22.sp,
                     )
                 }
 
-                SenaSectionHeader(title = "Logs de Actividad")
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BugActivityItem("Admin Sistema", "Recibió el reporte y validó la captura de pantalla.", "10:30 AM")
-                    BugActivityItem("Servidor IA", "Reinicio de módulo de comparación exitoso.", "11:15 AM")
+                SenaSectionHeader(title = "Gestión")
+                SenaCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            BugReportStatus.entries.forEach { estado ->
+                                SenaChip(
+                                    text = etiquetaEstado(estado),
+                                    color = colorEstado(estado),
+                                    isSelected = estadoSeleccionado == estado,
+                                    onClick = { estadoSeleccionado = estado },
+                                )
+                            }
+                        }
+
+                        SenaTextField(
+                            value = respuesta,
+                            onValueChange = { respuesta = it },
+                            label = "Respuesta al solicitante (opcional)",
+                            placeholder = "Describe la solución o el motivo del rechazo...",
+                            singleLine = false,
+                            minLines = 3,
+                        )
+
+                        if (reporte.respuesta?.isNotBlank() == true) {
+                            SenaAlertBanner(
+                                title = "Respuesta enviada",
+                                message = reporte.respuesta,
+                                icon = Icons.Default.MarkChatRead,
+                                color = senaColors().info,
+                            )
+                        }
+
+                        SenaButton(
+                            text = "GUARDAR CAMBIOS",
+                            onClick = {
+                                bugReportsViewModel.cambiarEstado(
+                                    id = reporte.id,
+                                    estado = estadoSeleccionado,
+                                    respuesta = respuesta.trim().ifBlank { null },
+                                )
+                            },
+                            icon = Icons.Default.Save,
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(Modifier.height(60.dp))
             }
         }
     }
+}
+
+private fun etiquetaEstado(estado: BugReportStatus): String = when (estado) {
+    BugReportStatus.PENDIENTE -> "Pendiente"
+    BugReportStatus.EN_REVISION -> "En revisión"
+    BugReportStatus.RESUELTO -> "Resuelto"
+    BugReportStatus.CERRADO -> "Cerrado"
+    BugReportStatus.RECHAZADO -> "Rechazado"
+}
+
+private fun colorEstado(estado: BugReportStatus) = when (estado) {
+    BugReportStatus.RESUELTO -> androidx.compose.ui.graphics.Color(0xFF059669)
+    BugReportStatus.RECHAZADO -> androidx.compose.ui.graphics.Color(0xFFEF4444)
+    BugReportStatus.EN_REVISION -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+    BugReportStatus.CERRADO -> androidx.compose.ui.graphics.Color(0xFF64748B)
+    BugReportStatus.PENDIENTE -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
 }
 
 @Composable
 fun BugDetailRow(icon: ImageVector, label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = senaColors().textMuted, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(Modifier.width(12.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight, modifier = Modifier.width(100.dp))
         Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = senaColors().text)
-    }
-}
-
-@Composable
-fun BugActivityItem(user: String, text: String, date: String) {
-    SenaCard(elevation = 1.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(user, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = senaColors().green)
-                Text(date, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-            }
-            Text(text, style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BugReportDetailScreenPreview() {
-    ProyecTwinTheme {
-        BugReportDetailScreen(bugId = "001", onBack = {})
     }
 }

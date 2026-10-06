@@ -6,9 +6,12 @@ import kotlinx.serialization.Serializable
 data class BugReport(
     val id: Int,
     val titulo: String,
+    val numeroFicha: String? = null,
+    val motivo: String? = null,
     val descripcion: String,
     val tipo: String = BugReportType.OTRO.value,
     val estado: String = BugReportStatus.PENDIENTE.value,
+    val respuesta: String? = null,
     val projectId: Int? = null,
     val reporterId: Int? = null,
     val reporterName: String? = null,

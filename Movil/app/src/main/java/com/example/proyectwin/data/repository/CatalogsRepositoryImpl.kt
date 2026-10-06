@@ -34,14 +34,12 @@ class CatalogsRepositoryImpl @Inject constructor(
     override suspend fun crearPrograma(
         nombre: String,
         nivel: String?,
-        numTrimestres: Int?,
         redId: Int,
     ): Result<TrainingProgram> = safeApiCall {
         api.crearPrograma(
             TrainingProgramRequest(
                 nombre = nombre,
                 nivel = nivel,
-                numTrimestres = numTrimestres,
                 knowledgeNetworkId = redId,
             ),
         )
@@ -51,7 +49,6 @@ class CatalogsRepositoryImpl @Inject constructor(
         id: Int,
         nombre: String,
         nivel: String?,
-        numTrimestres: Int?,
         redId: Int,
     ): Result<TrainingProgram> = safeApiCall {
         api.actualizarPrograma(
@@ -59,7 +56,6 @@ class CatalogsRepositoryImpl @Inject constructor(
             TrainingProgramRequest(
                 nombre = nombre,
                 nivel = nivel,
-                numTrimestres = numTrimestres,
                 knowledgeNetworkId = redId,
             ),
         )

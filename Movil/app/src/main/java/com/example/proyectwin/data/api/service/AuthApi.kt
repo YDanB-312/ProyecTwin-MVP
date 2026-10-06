@@ -9,14 +9,13 @@ import com.example.proyectwin.data.api.dto.GeneralUserDto
 import com.example.proyectwin.data.api.dto.LoginRequest
 import com.example.proyectwin.data.api.dto.LoginResponse
 import com.example.proyectwin.data.api.dto.MessageResponse
-import com.example.proyectwin.data.api.dto.RegisterRequest
 import com.example.proyectwin.data.api.dto.ResetPasswordRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 
-/** Sesión y cuentas públicas (auth y registro, bajo `/v1/auth` y general-users). */
+/** Sesión y credenciales propias (`/v1/auth`). El alta de cuentas es solo del admin. */
 interface AuthApi {
 
     @POST("auth/login")
@@ -39,8 +38,4 @@ interface AuthApi {
 
     @PUT("auth/email")
     suspend fun changeEmail(@Body body: ChangeEmailRequest): ChangeEmailResponse
-
-    /** Registro público de cuentas (rol aprendiz/instructor). */
-    @POST("general-users")
-    suspend fun register(@Body body: RegisterRequest): GeneralUserDto
 }

@@ -46,12 +46,18 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateProfile(name: String, email: String, telefono: String?) {
+    /** Solo nombre/apellido: el correo propio se cambia con [changeEmail]. */
+    fun updateProfile(name: String) {
+        val (nombre, apellido) = dividirNombre(name)
+        updateProfileNombres(nombre, apellido)
+    }
+
+    /** Edición con campos separados (evita re-dividir nombres compuestos). */
+    fun updateProfileNombres(nombre: String, apellido: String) {
         viewModelScope.launch {
             _isSaving.value = true
             _saveError.value = null
-            val (nombre, apellido) = dividirNombre(name)
-            authRepository.updateProfile(nombre, apellido, email).fold(
+            authRepository.updateProfile(nombre, apellido).fold(
                 onSuccess = {
                     _isSaving.value = false
                     _saveSuccess.value = true

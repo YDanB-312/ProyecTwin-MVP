@@ -25,6 +25,7 @@ import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.NotificationType
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.util.formatearFechaLocal
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.NotificationsUiState
@@ -43,8 +44,12 @@ fun AlertsScreen(
     onNavigate: (String) -> Unit,
     onBack: () -> Unit = {},
     profileRoute: String = "aprendiz_profile",
-    similarityRoute: String = "aprendiz_similarity/{projectId}",
+    /** Lista de similitudes del proyecto notificado. */
+    similitudesRoute: String = "aprendiz/similitudes?proyectoId={proyectoId}",
     detailRoute: String = "aprendiz_detail/{id}",
+    fichaRoute: String = "aprendiz/ficha",
+    /** Ruta al reporte; vacía = los no-admin solo marcan la lectura. */
+    reporteRoute: String = "",
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -56,8 +61,16 @@ fun AlertsScreen(
     var isRefreshing by remember { mutableStateOf(false) }
 
     val notificationsState by notificationsViewModel.uiState.collectAsState()
+    val mensaje by notificationsViewModel.mensaje.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(user?.id) {
         user?.id?.let { notificationsViewModel.load(it) }
+    }
+    LaunchedEffect(mensaje) {
+        mensaje?.let {
+            snackbarHostState.showSnackbar(it)
+            notificationsViewModel.limpiarMensaje()
+        }
     }
 
     var selectedFilter by remember { mutableStateOf("Todos") }
@@ -88,6 +101,7 @@ fun AlertsScreen(
             )
         },
         containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = bottomBar
     ) { paddingValues ->
         when (notificationsState) {
@@ -182,6 +196,7 @@ fun AlertsScreen(
                 }
             } else {
                 items(filteredAlerts, key = { it.id }) { alert ->
+                    val esAdmin = user?.role == "admin"
                     NotificationCard(alert, onClick = {
                         notificationsViewModel.marcarComoLeida(alert)
                         refreshTrigger++
@@ -193,14 +208,31 @@ fun AlertsScreen(
                         val enlaceId = alert.enlaceId
                         when {
                             category == "Similitud" &&
-                                alert.enlaceModulo == "proyecto" && enlaceId != null ->
-                                onNavigate(similarityRoute.replace("{projectId}", enlaceId.toString()))
+                                alert.enlaceModulo == "proyecto" && enlaceId != null &&
+                                similitudesRoute.isNotEmpty() ->
+                                onNavigate(similitudesRoute.replace("{proyectoId}", enlaceId.toString()))
 
                             alert.enlaceModulo == "proyecto" && enlaceId != null ->
                                 onNavigate(detailRoute.replace("{id}", enlaceId.toString()))
 
+                            alert.enlaceModulo == "ficha" && enlaceId != null && fichaRoute.isNotEmpty() ->
+                                onNavigate(
+                                    if (fichaRoute.contains("{fichaId}")) {
+                                        fichaRoute.replace("{fichaId}", enlaceId.toString())
+                                    } else {
+                                        fichaRoute
+                                    },
+                                )
+
+                            alert.enlaceModulo == "reporte" && enlaceId != null && reporteRoute.isNotEmpty() ->
+                                onNavigate(reporteRoute.replace("{bugId}", enlaceId.toString()))
+
                             else -> {}
                         }
+                    }, onDelete = if (esAdmin) {
+                        { notificationsViewModel.eliminar(alert.id) }
+                    } else {
+                        null
                     })
                 }
             }
@@ -221,16 +253,8 @@ fun AlertsScreen(
     }
 }
 
-/** "2026-10-05" (o ISO "2026-10-05T12:30:00Z") → "05/10/2026"; si no parsea, llega como vino. */
-private fun formatearFechaApi(valor: String?): String {
-    if (valor.isNullOrBlank()) return "Recientemente"
-    val partes = valor.take(10).split("-")
-    return if (partes.size == 3 && partes[0].length == 4) "${partes[2]}/${partes[1]}/${partes[0]}"
-    else valor
-}
-
 @Composable
-fun NotificationCard(alert: Notification, onClick: () -> Unit) {
+fun NotificationCard(alert: Notification, onClick: () -> Unit, onDelete: (() -> Unit)? = null) {
     val alertType = when (alert.notifType) {
         NotificationType.INFO, NotificationType.REVISION, NotificationType.MENSAJE, NotificationType.SISTEMA -> AlertType.INFO
         NotificationType.WARNING, NotificationType.SIMILITUD, NotificationType.OBSERVACION -> AlertType.WARNING
@@ -307,7 +331,7 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit) {
                         letterSpacing = 0.5.sp
                     )
                     Text(
-                        formatearFechaApi(alert.createdAt),
+                        formatearFechaLocal(alert.createdAt),
                         style = MaterialTheme.typography.labelSmall,
                         color = senaColors().textLight
                     )
@@ -330,6 +354,15 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit) {
                     color = senaColors().textSecondary,
                     lineHeight = 18.sp
                 )
+
+                if (onDelete != null) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = senaColors().danger)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Eliminar", style = MaterialTheme.typography.labelSmall, color = senaColors().danger)
+                    }
+                }
 
                 if (!alert.leido) {
                     Spacer(modifier = Modifier.height(8.dp))

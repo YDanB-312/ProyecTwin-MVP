@@ -1,82 +1,107 @@
 package com.example.proyectwin.ui.screens.admin
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.proyectwin.navigation.AppNavigation
+import com.example.proyectwin.data.local.DescargasArchivos
+import com.example.proyectwin.data.model.CredencialesUsuario
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Alta de usuario (solo admin): documento obligatorio, rol aprendiz/instructor
+ * y credenciales temporales generadas por el backend (se muestran una vez).
+ */
 @Composable
 fun NewUserScreen(
     onBack: () -> Unit,
-    adminViewModel: AdminViewModel = hiltViewModel()
+    adminViewModel: AdminViewModel = hiltViewModel(),
 ) {
-    var name by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var selectedRol by remember { mutableStateOf("Aprendiz") }
-    val roles = listOf("Aprendiz", "Instructor", "Administrador")
-    val adminState by adminViewModel.uiState.collectAsState()
-    var isSaving by remember { mutableStateOf(false) }
+    var nombre by remember { mutableStateOf("") }
+    var apellido by remember { mutableStateOf("") }
+    var tipoDocumento by remember { mutableStateOf("CC") }
+    var numeroDocumento by remember { mutableStateOf("") }
+    var correo by remember { mutableStateOf("") }
+    var rol by remember { mutableStateOf("aprendiz") }
+    var errorLocal by remember { mutableStateOf<String?>(null) }
+    var enviando by remember { mutableStateOf(false) }
+    var errorServidor by remember { mutableStateOf<String?>(null) }
+    var credenciales by remember { mutableStateOf<CredencialesUsuario?>(null) }
 
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val scrollState = rememberScrollState()
+
+    if (credenciales != null) {
+        val datos = credenciales!!
+        AlertDialog(
+            onDismissRequest = { },
+            icon = { Icon(Icons.Default.Key, contentDescription = null, tint = senaColors().green) },
+            title = { Text("Credenciales generadas", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Guárdalas o compártelas: la contraseña temporal no se vuelve a mostrar.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().textSecondary,
+                    )
+                    CredencialFila("Usuario", datos.username) { clipboard.setText(AnnotatedString(datos.username)) }
+                    CredencialFila("Contraseña temporal", datos.passwordTemporal) { clipboard.setText(AnnotatedString(datos.passwordTemporal)) }
+                    Text(
+                        if (datos.enviadas) "El correo con las credenciales fue enviado."
+                        else "El correo no pudo enviarse; usa el reenvío en el detalle del usuario.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (datos.enviadas) senaColors().success else senaColors().warning,
+                    )
+                }
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        adminViewModel.credencialesPdf(listOf(datos.usuario.id)) { resultado ->
+                            val mensaje = resultado.fold(
+                                onSuccess = { bytes ->
+                                    DescargasArchivos.guardarPdf(context, bytes, "credenciales-${datos.username}.pdf")
+                                },
+                                onFailure = { it.message ?: "No se pudo descargar el PDF." },
+                            )
+                            Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                        }
+                    }) {
+                        Text("PDF", color = senaColors().green)
+                    }
+                    TextButton(onClick = { credenciales = null; onBack() }) {
+                        Text("Listo", color = senaColors().green, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
             SenaTopBar(
-                title = "ProyecTwin",
+                title = "Nuevo Usuario",
                 onBack = onBack,
                 showProfile = true,
-                showNotifications = true
+                showNotifications = true,
             )
         },
         containerColor = senaColors().background,
-        bottomBar = {
-            SenaBottomBar {
-                SenaButton(
-                    text = "Cancelar",
-                    onClick = onBack,
-                    isPrimary = false,
-                    modifier = Modifier.weight(1f)
-                )
-                SenaButton(
-                    text = "Crear Usuario",
-                    onClick = {
-                        val fullName = "${name.trim()} ${lastName.trim()}".trim()
-                        if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                            isSaving = true
-                            adminViewModel.createUser(fullName, email, selectedRol) {
-                                isSaving = false
-                                onBack()
-                            }
-                        }
-                    },
-                    isLoading = isSaving,
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.PersonAdd
-                )
-            }
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -84,91 +109,125 @@ fun NewUserScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             SenaPageHeader(
-                title = "Nuevo Usuario",
-                subtitle = "Registra una nueva cuenta en el sistema y asigna los permisos correspondientes.",
-                icon = Icons.Default.UserAdd
+                title = "Crear Usuario",
+                subtitle = "El sistema genera usuario y contraseña temporal automáticamente.",
+                icon = Icons.Default.PersonAdd,
             )
 
-            SenaSectionHeader(title = "Datos del Usuario")
-            SenaCard(elevation = 1.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SenaTextField(value = name, onValueChange = { name = it }, label = "Nombre *", modifier = Modifier.weight(1f))
-                        SenaTextField(value = lastName, onValueChange = { lastName = it }, label = "Apellido *", modifier = Modifier.weight(1f))
-                    }
-                    SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional *", leadingIcon = Icons.Default.Email)
-                    SenaTextField(value = password, onValueChange = { password = it }, label = "Contraseña Temporal *", isPassword = true, leadingIcon = Icons.Default.Lock)
-                }
+            errorLocal?.let {
+                SenaAlertBanner(title = "Revisa el formulario", message = it, icon = Icons.Default.Error, color = senaColors().danger)
+            }
+            errorServidor?.let {
+                SenaAlertBanner(title = "Error del servidor", message = it, icon = Icons.Default.Error, color = senaColors().danger)
             }
 
-            SenaSectionHeader(title = "Asignación de Rol")
-            SenaCard(elevation = 1.dp) {
+            SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Selecciona el rol jerárquico", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                    
-                    var expanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedRol,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true).fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = senaColors().green,
-                                unfocusedBorderColor = senaColors().border
+                    SenaTextField(value = nombre, onValueChange = { nombre = it; errorLocal = null }, label = "Nombre *", placeholder = "Ej: Ana María")
+                    SenaTextField(value = apellido, onValueChange = { apellido = it; errorLocal = null }, label = "Apellido *", placeholder = "Ej: Gómez Ruiz")
+
+                    Text("Tipo de documento *", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("CC", "TI", "CE", "PPT").forEach { tipo ->
+                            SenaChip(
+                                text = tipo,
+                                color = senaColors().green,
+                                isSelected = tipoDocumento == tipo,
+                                onClick = { tipoDocumento = tipo },
                             )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            roles.forEach { rol ->
-                                DropdownMenuItem(
-                                    text = { Text(rol) },
-                                    onClick = {
-                                        selectedRol = rol
-                                        expanded = false
-                                    }
-                                )
-                            }
+                        }
+                    }
+
+                    SenaTextField(
+                        value = numeroDocumento,
+                        onValueChange = { numeroDocumento = it; errorLocal = null },
+                        label = "Número de documento *",
+                        placeholder = "Ej: 1098765432",
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    )
+                    SenaTextField(
+                        value = correo,
+                        onValueChange = { correo = it; errorLocal = null },
+                        label = "Correo institucional *",
+                        placeholder = "usuario@sena.edu.co",
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
+                    )
+
+                    Text("Rol *", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("aprendiz" to "Aprendiz", "instructor" to "Instructor").forEach { (valor, etiqueta) ->
+                            SenaChip(
+                                text = etiqueta,
+                                color = senaColors().green,
+                                isSelected = rol == valor,
+                                onClick = { rol = valor },
+                            )
                         }
                     }
                 }
             }
 
-            if (selectedRol == "Aprendiz") {
-                SenaSectionHeader(title = "Detalles del Aprendiz")
-                SenaCard {
-                    SenaTextField(value = "", onValueChange = {}, label = "Código de Ficha", placeholder = "Ej: 2568421")
-                }
-            }
-
-            SenaAlertBanner(
-                title = "Activación Automática",
-                message = "Al crear el usuario, se le enviará un correo de bienvenida con sus credenciales de acceso.",
-                icon = Icons.Default.Info,
-                color = senaColors().info
+            SenaButton(
+                text = "CREAR USUARIO",
+                onClick = {
+                    errorLocal = when {
+                        nombre.isBlank() || apellido.isBlank() -> "Nombre y apellido son obligatorios."
+                        numeroDocumento.isBlank() -> "El número de documento es obligatorio."
+                        !android.util.Patterns.EMAIL_ADDRESS.matcher(correo.trim()).matches() -> "Ingresa un correo válido."
+                        else -> null
+                    }
+                    if (errorLocal == null && !enviando) {
+                        enviando = true
+                        adminViewModel.createUser(
+                            nombre = nombre.trim(),
+                            apellido = apellido.trim(),
+                            tipoDocumento = tipoDocumento,
+                            numeroDocumento = numeroDocumento.trim(),
+                            correo = correo.trim().lowercase(),
+                            rol = rol,
+                        ) { resultado ->
+                            enviando = false
+                            resultado.fold(
+                                onSuccess = { credenciales = it },
+                                onFailure = { errorServidor = it.message ?: "No se pudo crear el usuario." },
+                            )
+                        }
+                    }
+                },
+                isLoading = enviando,
+                icon = Icons.Default.PersonAdd,
             )
 
-            Spacer(Modifier.height(80.dp))
+            Spacer(Modifier.height(40.dp))
         }
     }
 }
 
-val Icons.Filled.UserAdd: ImageVector get() = Icons.Default.PersonAdd
-
-@Preview(showBackground = true)
 @Composable
-fun NewUserScreenPreview() {
-    ProyecTwinTheme {
-        NewUserScreen(onBack = {})
+private fun CredencialFila(
+    etiqueta: String,
+    valor: String,
+    onCopiar: () -> Unit,
+) {
+    Surface(
+        color = senaColors().inputBackground,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(etiqueta, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                Text(valor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
+            }
+            IconButton(onClick = onCopiar) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
+            }
+        }
     }
 }

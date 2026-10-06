@@ -1,6 +1,5 @@
 package com.example.proyectwin.data.repository
 
-import com.example.proyectwin.data.api.dto.DetectRequest
 import com.example.proyectwin.data.api.safeApiCall
 import com.example.proyectwin.data.api.service.SimilaritiesApi
 import com.example.proyectwin.data.mapper.toDomain
@@ -17,19 +16,18 @@ class SimilaritiesRepositoryImpl @Inject constructor(
 
     override suspend fun listar(
         proyectoId: Int?,
+        historial: Boolean?,
         relatedTo: String?,
         search: String?,
         fichaId: Int?,
         programa: String?,
     ): Result<List<Similarity>> =
-        safeApiCall { api.listar(proyectoId, relatedTo, search, fichaId, programa, INCLUDE) }
-            .map { lista -> lista.map { it.toDomain() } }
+        safeApiCall {
+            api.listar(proyectoId, historial, relatedTo, search, fichaId, programa, INCLUDE)
+        }.map { lista -> lista.map { it.toDomain() } }
 
     override suspend fun obtener(id: Int): Result<Similarity> =
         safeApiCall { api.obtener(id, INCLUDE) }.map { it.toDomain() }
-
-    override suspend fun detectar(idProyecto: Int): Result<Int> =
-        safeApiCall { api.detectar(DetectRequest(idProyecto)) }.map { it.detectadas }
 
     override suspend fun recalcular(): Result<RecalculoSimilitudes> =
         safeApiCall { api.recalcular(emptyMap()) }

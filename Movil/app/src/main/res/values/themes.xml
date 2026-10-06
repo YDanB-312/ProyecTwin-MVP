@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.ProyecTwin" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Fondo del arranque (splash del sistema y primer frame antes de Compose).
+         Evita el destello blanco y encadena con la animación de apertura. -->
+    <style name="Theme.ProyecTwin" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/proyectwin_splash</item>
+    </style>
 </resources>

@@ -1,6 +1,5 @@
 package com.example.proyectwin.domain.usecase
 
-import com.example.proyectwin.data.mapper.toDraft
 import com.example.proyectwin.data.model.ClassGroupStatus
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.data.model.ProjectDraft
@@ -9,10 +8,17 @@ import com.example.proyectwin.domain.repository.ProjectsRepository
 import com.example.proyectwin.domain.repository.UsersRepository
 import javax.inject.Inject
 
+/** Propuesta creada + integrantes que no se pudieron agregar (para reintentar). */
+data class PropuestaCreada(
+    val proyecto: Project,
+    val miembrosFallidos: List<Int> = emptyList(),
+)
+
 /**
- * Crea una propuesta y su equipo en un flujo atómico de UI, igual que el
- * frontend: POST /projects y luego POST /apprentice-projects por cada
- * integrante. Si un miembro falla se reporta el error (la propuesta ya existe).
+ * Crea una propuesta y su equipo, igual que el frontend: POST /projects y luego
+ * POST /apprentice-projects por cada integrante. Si un miembro falla, la
+ * propuesta ya existe: se devuelve con la lista de fallidos para que la UI
+ * avise y el usuario los agregue desde el detalle (no se duplica el borrador).
  */
 class CreateProjectWithTeamUseCase @Inject constructor(
     private val projects: ProjectsRepository,
@@ -20,7 +26,7 @@ class CreateProjectWithTeamUseCase @Inject constructor(
     private val fichas: FichasRepository,
 ) {
 
-    suspend operator fun invoke(draft: ProjectDraft, miembros: List<Int> = emptyList()): Result<Project> {
+    suspend operator fun invoke(draft: ProjectDraft, miembros: List<Int> = emptyList()): Result<PropuestaCreada> {
         var preparado = draft
 
         // Sin ficha destino (caso aprendiz): toma la suya y valida que esté activa.
@@ -49,15 +55,9 @@ class CreateProjectWithTeamUseCase @Inject constructor(
 
         val proyecto = projects.crear(preparado).getOrElse { return Result.failure(it) }
 
-        val resultados = miembros.map { idAprendiz ->
-            projects.agregarAlEquipo(proyecto.id, idAprendiz)
+        val fallidos = miembros.filter { idAprendiz ->
+            projects.agregarAlEquipo(proyecto.id, idAprendiz).isFailure
         }
-        val fallo = resultados.firstOrNull { it.isFailure }
-        if (fallo != null) {
-            return Result.failure(
-                fallo.exceptionOrNull() ?: IllegalStateException("No se pudo completar el equipo de la propuesta."),
-            )
-        }
-        return Result.success(proyecto)
+        return Result.success(PropuestaCreada(proyecto = proyecto, miembrosFallidos = fallidos))
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Android 12+: el splash del sistema usa el logo oficial sobre el mismo
+         verde de la animación de apertura, de modo que la transición no
+         parpadea ni muestra pantallas blancas. -->
+    <style name="Theme.ProyecTwin" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/proyectwin_splash</item>
+        <item name="android:windowSplashScreenBackground">@color/proyectwin_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/proyectwin_splash</item>
+    </style>
+</resources>

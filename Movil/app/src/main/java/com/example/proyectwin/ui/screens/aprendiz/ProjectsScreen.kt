@@ -43,7 +43,7 @@ fun ProjectsScreen(
     var selectedFilter by remember { mutableStateOf("Todos") }
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
-    val filters = listOf("Todos", "En Progreso", "Completado", "Pendiente", "Cancelado")
+    val filters = listOf("Todos", "Borrador", "En revisión", "Aprobado", "Rechazado")
 
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
@@ -142,9 +142,9 @@ fun ProjectsScreen(
                                 SenaChip(
                                     text = filter,
                                     color = if (filter == "Todos") senaColors().green else when(filter) {
-                                        "En Progreso" -> senaColors().accent
-                                        "Completado" -> senaColors().success
-                                        "Pendiente" -> senaColors().warning
+                                        "Borrador" -> senaColors().accent
+                                        "En revisión" -> senaColors().warning
+                                        "Aprobado" -> senaColors().success
                                         else -> senaColors().danger
                                     },
                                     isSelected = selectedFilter == filter,

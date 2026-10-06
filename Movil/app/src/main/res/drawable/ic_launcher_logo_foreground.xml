@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo oficial de ProyecTwin (sin modificar) centrado sobre el lienzo del
+     icono adaptativo. El tamaño se mantiene dentro de la zona segura para que
+     ninguna máscara (círculo, squircle) recorte la imagen. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/logo_proyectwin"
+        android:gravity="center"
+        android:width="64dp"
+        android:height="37dp" />
+</layer-list>

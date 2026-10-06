@@ -1,7 +1,7 @@
 package com.example.proyectwin.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,28 +13,43 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.proyectwin.ui.viewmodel.AuthActionState
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 
+/**
+ * Recuperación por correo (`POST /auth/forgot-password`). La respuesta es
+ * genérica; en modo local el backend agrega `reset_url`, que se usa para
+ * prellenar el token en la pantalla de restablecimiento.
+ */
 @Composable
 fun ForgotPasswordScreen(
-    onBackToLogin: () -> Unit, 
-    onPasswordReset: () -> Unit,
+    onBackToLogin: () -> Unit,
+    onCodeSent: (correo: String, resetUrl: String?) -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     var email by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    var errorLocal by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
+
+    val forgotState by authViewModel.forgotState.collectAsState()
+    val forgotMessage by authViewModel.forgotMessage.collectAsState()
+
+    LaunchedEffect(forgotState) {
+        if (forgotState is AuthActionState.Success) {
+            val url = forgotMessage?.takeIf { it.startsWith("http") }
+            authViewModel.resetForgotState()
+            onCodeSent(email.trim().lowercase(), url)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -42,7 +57,6 @@ fun ForgotPasswordScreen(
             .background(senaColors().background)
             .verticalScroll(scrollState)
     ) {
-        // Decorative Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,7 +86,6 @@ fun ForgotPasswordScreen(
             }
         }
 
-        // Card Section
         Column(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
@@ -90,30 +103,42 @@ fun ForgotPasswordScreen(
 
                     SenaTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = { email = it; errorLocal = null; authViewModel.resetForgotState() },
                         label = "Correo Electrónico",
                         placeholder = "tu@correo.com",
-                        leadingIcon = Icons.Default.Email
+                        leadingIcon = Icons.Default.Email,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Email
                     )
+
+                    val mensajeError = errorLocal ?: (forgotState as? AuthActionState.Error)?.message
+                    if (mensajeError != null) {
+                        SenaAlertBanner(
+                            title = "Error",
+                            message = mensajeError,
+                            icon = Icons.Default.Error,
+                            color = senaColors().danger
+                        )
+                    }
 
                     SenaButton(
                         text = "Enviar Enlace",
                         onClick = {
-                            isLoading = true
-                            scope.launch {
-                                delay(1500)
-                                isLoading = false
-                                onPasswordReset()
+                            val correo = email.trim().lowercase()
+                            errorLocal = when {
+                                correo.isBlank() -> "Ingresa tu correo institucional."
+                                !Patterns.EMAIL_ADDRESS.matcher(correo).matches() -> "Ingresa un correo válido."
+                                else -> null
                             }
+                            if (errorLocal == null) authViewModel.forgotPassword(correo)
                         },
-                        isLoading = isLoading,
+                        isLoading = forgotState is AuthActionState.Loading,
                         icon = Icons.AutoMirrored.Filled.Send
                     )
                 }
             }
 
             Spacer(Modifier.height(24.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -125,13 +150,5 @@ fun ForgotPasswordScreen(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ForgotPasswordScreenPreview() {
-    ProyecTwinTheme {
-        ForgotPasswordScreen(onBackToLogin = {}, onPasswordReset = {})
     }
 }

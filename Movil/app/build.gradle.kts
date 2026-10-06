@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,24 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+// ------------------------------------------------------------------ API
+// URL base configurable sin tocar código versionado:
+//   1) local.properties (no se versiona): proyectwin.apiBaseUrl[.debug|.release]
+//   2) -Pproyectwin.apiBaseUrl[.debug|.release] al invocar Gradle
+// Por defecto 10.0.2.2:8000 apunta al host desde el emulador Android; para un
+// dispositivo físico define la IP LAN del backend en local.properties.
+val localProperties = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
+fun apiBaseUrl(buildType: String): String =
+    localProperties.getProperty("proyectwin.apiBaseUrl.$buildType")
+        ?: localProperties.getProperty("proyectwin.apiBaseUrl")
+        ?: (project.findProperty("proyectwin.apiBaseUrl.$buildType") as String?)
+        ?: (project.findProperty("proyectwin.apiBaseUrl") as String?)
+        ?: "http://10.0.2.2:8000/v1/"
 
 android {
     namespace = "com.example.proyectwin"
@@ -22,19 +42,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // URL base de la API Laravel. 10.0.2.2 apunta al host desde el emulador (AVD).
-        // Para un dispositivo físico, reemplazar por la IP local del backend (ej. http://192.168.x.x:8000/v1/).
-        buildConfigField("String", "API_BASE_URL", " \"http://192.168.101.73:8000/v1/\"")
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl("debug")}\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl("release")}\"")
         }
     }
     compileOptions {

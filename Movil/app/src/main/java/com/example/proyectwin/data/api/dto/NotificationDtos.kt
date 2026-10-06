@@ -11,7 +11,8 @@ data class NotificationDto(
     val descripcion: String? = null,
     val tipo: String = "sistema",
     val enlace: String? = null,
-    val leida: Boolean = false,
+    /** El backend no castea la columna: viaja como 0/1 (int). */
+    val leida: Int = 0,
     val fecha: String? = null,
     @SerialName("id_usuario") val idUsuario: Int = 0,
     @SerialName("created_at") val createdAt: String? = null,

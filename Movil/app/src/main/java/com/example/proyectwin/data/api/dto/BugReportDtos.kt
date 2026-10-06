@@ -8,9 +8,12 @@ import kotlinx.serialization.Serializable
 data class BugReportDto(
     val id: Int = 0,
     val titulo: String? = null,
+    @SerialName("numero_ficha") val numeroFicha: String? = null,
+    val motivo: String? = null,
     val descripcion: String = "",
     val tipo: String = "otro",
     val estado: String = "pendiente",
+    val respuesta: String? = null,
     val fecha: String? = null,
     @SerialName("id_usuario") val idUsuario: Int = 0,
     @SerialName("created_at") val createdAt: String? = null,
@@ -21,6 +24,8 @@ data class BugReportDto(
 @Serializable
 data class BugReportCreateRequest(
     val titulo: String? = null,
+    @SerialName("numero_ficha") val numeroFicha: String? = null,
+    val motivo: String? = null,
     val descripcion: String,
     val tipo: String,
     val estado: String = "pendiente",
@@ -28,13 +33,16 @@ data class BugReportCreateRequest(
     @SerialName("id_usuario") val idUsuario: Int? = null,
 )
 
-/** PUT /bug-reports: objeto completo (cambio de estado desde el admin). `fecha` es obligatoria en el backend. */
+/** PUT /bug-reports: objeto completo (estado/respuesta desde el admin). `fecha` es obligatoria. */
 @Serializable
 data class BugReportUpdateRequest(
     val titulo: String?,
+    @SerialName("numero_ficha") val numeroFicha: String? = null,
+    val motivo: String? = null,
     val descripcion: String,
     val tipo: String,
     val estado: String,
+    val respuesta: String? = null,
     val fecha: String,
     @SerialName("id_usuario") val idUsuario: Int,
 )

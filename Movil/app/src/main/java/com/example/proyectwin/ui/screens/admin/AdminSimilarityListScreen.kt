@@ -28,33 +28,41 @@ import com.example.proyectwin.ui.viewmodel.AdminUiState
 fun AdminSimilarityListScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
     adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedStatus by remember { mutableStateOf("Todos") }
     val statusFilterItems = listOf(
         "Todos" to "Todos",
-        "Pendiente" to "Pendiente",
-        "Revisado" to "Revisado",
-        "Confirmado" to "Confirmado",
-        "Rechazado" to "Rechazado"
+        "Vigentes" to "Vigentes",
+        "Históricas" to "Históricas",
     )
 
     val adminState by adminViewModel.uiState.collectAsState()
+    val completas by adminViewModel.similitudesCompletas.collectAsState()
+
+    // El listado global del servidor solo trae pares con ambos proyectos
+    // aprobados; al abrir la pantalla se completan con los pares por propuesta
+    // (vigentes e históricas) usando los endpoints existentes.
+    LaunchedEffect(Unit) { adminViewModel.cargarSimilitudesCompletas() }
+
     val similarityGroups = when (val state = adminState) {
-        is AdminUiState.Success -> state.similarities
+        is AdminUiState.Success -> completas ?: state.similarities
         else -> emptyList()
     }
 
     val filteredGroups = similarityGroups.filter { group ->
-        val matchesSearch = when (selectedStatus) {
-            "Todos" -> true
-            else -> group.similitud.toString().contains(searchQuery, ignoreCase = true) || (
-                (group.project1Title ?: "").contains(searchQuery, ignoreCase = true) ||
-                (group.project2Title ?: "").contains(searchQuery, ignoreCase = true)
-            )
+        val matchesEstado = when (selectedStatus) {
+            "Vigentes" -> group.vigente
+            "Históricas" -> !group.vigente
+            else -> true
         }
-        matchesSearch
+        val consulta = searchQuery.trim()
+        val matchesSearch = consulta.isEmpty() ||
+            group.project1Title.orEmpty().contains(consulta, ignoreCase = true) ||
+            group.project2Title.orEmpty().contains(consulta, ignoreCase = true)
+        matchesEstado && matchesSearch
     }
 
     Scaffold(
@@ -66,7 +74,8 @@ fun AdminSimilarityListScreen(
                 showNotifications = true
             )
         },
-        containerColor = senaColors().background
+        containerColor = senaColors().background,
+        bottomBar = bottomBar
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -114,10 +123,8 @@ fun AdminSimilarityListScreen(
                                 SenaChip(
                                     text = statusLabel,
                                     color = when (statusKey) {
-                                        "Pendiente" -> senaColors().warning
-                                        "Revisado" -> senaColors().info
-                                        "Confirmado" -> senaColors().success
-                                        "Rechazado" -> senaColors().danger
+                                        "Vigentes" -> senaColors().success
+                                        "Históricas" -> senaColors().warning
                                         else -> senaColors().green
                                     },
                                     isSelected = selectedStatus == statusKey,
@@ -126,6 +133,32 @@ fun AdminSimilarityListScreen(
                             }
                         }
                     }
+                }
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (completas == null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = senaColors().green,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Cargando también los pares de cada propuesta…",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = senaColors().textSecondary,
+                            )
+                        }
+                    }
+                    Text(
+                        "${filteredGroups.size} de ${similarityGroups.size} pares · incluye los pares por propuesta " +
+                            "(vigentes con contraparte aprobada e históricas), no solo los de ambos lados aprobados.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = senaColors().textLight,
+                    )
                 }
             }
 
@@ -138,12 +171,12 @@ fun AdminSimilarityListScreen(
                     )
                 }
             } else {
-                items(filteredGroups) { similarity ->
+                items(filteredGroups, key = { it.id }) { similarity ->
                     SenaCard(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             onNavigate(
-                                AppNavigation.ADMIN_SIMILARITY_DETAIL.replace("{projectId}", similarity.id.toString())
+                                AppNavigation.ADMIN_SIMILARITY_DETAIL.replace("{similarityId}", similarity.id.toString())
                             )
                         }
                     ) {
@@ -158,19 +191,42 @@ fun AdminSimilarityListScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
-                                SenaStatusBadge(
-                                    status = String.format(java.util.Locale.US, "%.0f%%", similarity.similitud * 100)
+                                Text(
+                                    similarity.similitudPercent,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = senaColors().green,
                                 )
                             }
                             Text(
-                                "Proyecto 1: ${similarity.project1Title ?: "N/A"}",
+                                "A: ${similarity.project1Title ?: "N/A"}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = senaColors().textSecondary
                             )
+                            similarity.project1Student?.let {
+                                Text(
+                                    "Aprendiz A: $it",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = senaColors().textLight,
+                                )
+                            }
                             Text(
-                                "Proyecto 2: ${similarity.project2Title ?: "N/A"}",
+                                "B: ${similarity.project2Title ?: "N/A"}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = senaColors().textSecondary
+                            )
+                            similarity.project2Student?.let {
+                                Text(
+                                    "Aprendiz B: $it",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = senaColors().textLight,
+                                )
+                            }
+                            Text(
+                                similarity.estadoDisplay,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (similarity.vigente) senaColors().success else senaColors().warning,
                             )
                         }
                     }
@@ -178,37 +234,6 @@ fun AdminSimilarityListScreen(
             }
 
             item { Spacer(Modifier.height(40.dp)) }
-        }
-    }
-}
-
-@Composable
-fun AdminSimilarityDetailScreen(
-    onBack: () -> Unit,
-    onNavigate: (String) -> Unit = {},
-    similarityId: String = ""
-) {
-    Scaffold(
-        topBar = {
-            SenaTopBar(
-                title = "Detalle de Similitud",
-                onBack = onBack,
-                showProfile = true,
-                showNotifications = true
-            )
-        },
-        containerColor = senaColors().background
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text("Detalle de similitud #$similarityId", style = MaterialTheme.typography.titleLarge)
-            Text("Información detallada sobre la similitud detectada", style = MaterialTheme.typography.bodyMedium, color = senaColors().textSecondary)
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = onBack) {
-                Text("Regresar a la lista")
-            }
         }
     }
 }
