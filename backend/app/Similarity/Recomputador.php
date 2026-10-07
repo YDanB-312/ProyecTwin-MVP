@@ -24,11 +24,14 @@ class Recomputador
         $umbral = (float) $config->umbral;
         $meses = (int) $config->meses;
 
-        // Detección atómica: pares + notificaciones (todo o nada).
-        return DB::transaction(function () use ($propio, $umbral, $meses, $notificar) {
-            // Una rechazada no participa: sus pares dejan de estar vigentes,
-            // pero se conservan como evidencia de la versión analizada.
-            if ($propio->estado === 'rechazado') {
+        // Detección atómica y serializada: el lock de la fila única del motor
+        // evita que dos detecciones concurrentes dupliquen el mismo par.
+        return DB::transaction(function () use ($propio, $umbral, $meses, $notificar, $config) {
+            MotorConfig::whereKey($config->id)->lockForUpdate()->first();
+
+            // Rechazada o borrador no participan: sus pares dejan de estar
+            // vigentes, pero se conservan como evidencia de la versión analizada.
+            if (in_array($propio->estado, ['rechazado', 'borrador'], true)) {
                 $this->archivarPares($propio->id);
                 return 0;
             }
@@ -77,8 +80,10 @@ class Recomputador
         $umbral = (float) $config->umbral;
         $meses = (int) $config->meses;
 
-        // Recalibración atómica: purga + creación + notificaciones (todo o nada).
-        return DB::transaction(function () use ($umbral, $meses, $notificar, $auditar) {
+        // Recalibración atómica y serializada: purga + creación + notificaciones
+        // (todo o nada). El lock del motor evita duplicados concurrentes.
+        return DB::transaction(function () use ($umbral, $meses, $notificar, $auditar, $config) {
+            MotorConfig::whereKey($config->id)->lockForUpdate()->first();
             $antes = Similarity::where('vigente', true)->count();
 
             // 1) Los pares vigentes que ya no cumplen dejan de estarlo (se
@@ -89,7 +94,9 @@ class Recomputador
             $eliminadas = $antes - Similarity::where('vigente', true)->count();
 
             // 2) Recomputa y crea los pares faltantes.
-            $proyectos = Project::with('classGroup')->where('estado', '!=', 'rechazado')->get();
+            // Solo propuestas enviadas participan del corpus (los borradores no
+            // generan coincidencias ni notificaciones; una rechazada tampoco).
+            $proyectos = Project::with('classGroup')->whereIn('estado', ['pendiente', 'aprobado'])->get();
             $creadas = 0;
             foreach ($proyectos as $p) {
                 foreach (SimilitudService::puntaje($p, $this->corpus($p, $meses)) as $par) {
@@ -158,7 +165,8 @@ class Recomputador
         $p1 = Project::with('classGroup')->find($s->id_proyecto_1);
         $p2 = Project::with('classGroup')->find($s->id_proyecto_2);
         if (!$p1 || !$p2) return false;
-        if ($p1->estado === 'rechazado' || $p2->estado === 'rechazado') return false;
+        if (in_array($p1->estado, ['rechazado', 'borrador'], true)
+            || in_array($p2->estado, ['rechazado', 'borrador'], true)) return false;
         if ($p1->estado !== 'aprobado' && $p2->estado !== 'aprobado') return false;
         if (optional($p1->classGroup)->id_programa !== optional($p2->classGroup)->id_programa) return false;
 

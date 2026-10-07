@@ -136,13 +136,19 @@ export default function FichasAdmin() {
     setCreando(true)
   }
 
+  const [exportando, setExportando] = useState(false)
+
   // Exporta el PDF con las credenciales iniciales de la ficha (solo admin).
   const exportarCredenciales = async (id) => {
+    if (exportando) return
     setAccionMsg(null)
+    setExportando(true)
     try {
       await fichas.exportarCredenciales(id)
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudieron exportar las credenciales.')
+    } finally {
+      setExportando(false)
     }
   }
 
@@ -592,6 +598,7 @@ export default function FichasAdmin() {
                             size="sm"
                             variant="ghost"
                             title="Exportar credenciales de la ficha"
+                            disabled={exportando}
                             onClick={() => exportarCredenciales(f.id)}
                           >
                             <DownloadSimple size={14} /> Credenciales

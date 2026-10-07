@@ -45,6 +45,7 @@ export default function DetalleFichaAdmin() {
   const [form, setForm] = useState(null)
   const [errores, setErrores] = useState({})
   const [guardado, setGuardado] = useState(false)
+  const [enviandoEdicion, setEnviandoEdicion] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
   const [modalEliminar, setModalEliminar] = useState(false)
   const [busquedaAprendiz, setBusquedaAprendiz] = useState('')
@@ -239,11 +240,13 @@ export default function DetalleFichaAdmin() {
 
   const guardarEdicion = async (e) => {
     e.preventDefault()
+    if (enviandoEdicion) return
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
       return
     }
+    setEnviandoEdicion(true)
     try {
       await fichas.actualizar(ficha.id, {
         codigo: ficha.codigo,
@@ -263,6 +266,8 @@ export default function DetalleFichaAdmin() {
         return
       }
       setErrores({ nombre: error2?.data?.message || 'No se pudo guardar la ficha en el servidor.' })
+    } finally {
+      setEnviandoEdicion(false)
     }
   }
 
@@ -393,7 +398,7 @@ export default function DetalleFichaAdmin() {
                 </Select>
               </FormField>
               <Actions form>
-                <Button type="submit">
+                <Button type="submit" disabled={enviandoEdicion}>
                   <CheckCircle size={14} /> Guardar cambios
                 </Button>
                 <Button type="button" variant="secondary" onClick={cancelarEdicion}>

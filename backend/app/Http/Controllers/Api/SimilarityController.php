@@ -17,6 +17,15 @@ class SimilarityController extends Controller
 
     public function index(Request $request)
     {
+        // Params inválidos (p. ej. arrays) se rechazan con 422, nunca 500.
+        $request->validate([
+            'proyecto_id' => 'nullable|integer',
+            'related_to' => 'nullable|string',
+            'search' => 'nullable|string',
+            'ficha_id' => 'nullable|string',
+            'programa' => 'nullable|string',
+        ]);
+
         $user = $request->user();
 
         // Vista de UNA propuesta (revisión, análisis, detalle): pares de esa
@@ -77,7 +86,10 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'Una propuesta no se puede comparar consigo misma.'], 422);
         }
 
-        $item = Similarity::create($request->all());
+        // Whitelist: el estado de vigencia lo controla el motor, no el cliente.
+        $item = Similarity::create($request->only([
+            'porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2',
+        ]));
         return response()->json($item, 201);
     }
 
@@ -110,7 +122,10 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'Una propuesta no se puede comparar consigo misma.'], 422);
         }
 
-        $similarity->update($request->all());
+        // Whitelist: el estado de vigencia lo controla el motor, no el cliente.
+        $similarity->update($request->only([
+            'porcentaje', 'detalles', 'fecha', 'id_proyecto_1', 'id_proyecto_2',
+        ]));
         return $similarity;
     }
 

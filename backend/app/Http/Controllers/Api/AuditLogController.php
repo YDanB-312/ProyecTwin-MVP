@@ -12,6 +12,15 @@ class AuditLogController extends Controller
     // borrado: la bitácora es inmutable desde la API.
     public function index(Request $request)
     {
+        // Filtros validados: una fecha o un id inválidos no rompen la consulta.
+        $request->validate([
+            'accion' => 'nullable|string',
+            'entidad' => 'nullable|string',
+            'id_usuario' => 'nullable|integer',
+            'desde' => 'nullable|date',
+            'hasta' => 'nullable|date',
+        ]);
+
         return AuditLog::included()
             ->when($request->query('accion'), fn ($q, $a) => $q->where('accion', $a))
             ->when($request->query('entidad'), fn ($q, $e) => $q->where('entidad', $e))

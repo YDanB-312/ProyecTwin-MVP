@@ -191,6 +191,7 @@ export default function DetalleUsuario() {
 
   const onSubmitEdicion = async (e) => {
     e.preventDefault()
+    if (accionOcupada) return
     const err = validar()
     if (Object.keys(err).length) {
       setErrores(err)
@@ -230,6 +231,8 @@ export default function DetalleUsuario() {
   }
 
   const guardarCambios = async (nuevoEmail) => {
+    if (accionOcupada) return
+    setAccionOcupada(true)
     try {
       // El correo propio nunca se cambia por aquí: solo con contraseña.
       const correoAEnviar = esMiCuenta ? usuario.correo : nuevoEmail
@@ -263,6 +266,8 @@ export default function DetalleUsuario() {
           ? 'Ya existe un usuario con este correo.'
           : (err2?.data?.message || 'No se pudo actualizar el usuario.'),
       })
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -284,12 +289,16 @@ export default function DetalleUsuario() {
   }
 
   const cambiarEstado = async (nuevo) => {
+    if (accionOcupada) return
     setAccionMsg(null)
+    setAccionOcupada(true)
     try {
       await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { estado: nuevo }))
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -335,7 +344,7 @@ export default function DetalleUsuario() {
               <PencilSimple size={14} /> Editar
             </Button>
             {estado === 'suspendido' ? (
-              <Button type="button" variant="secondary" onClick={() => cambiarEstado(true)}>
+              <Button type="button" variant="secondary" disabled={accionOcupada} onClick={() => cambiarEstado(true)}>
                 <CheckCircle size={14} /> Activar cuenta
               </Button>
             ) : (
@@ -343,7 +352,7 @@ export default function DetalleUsuario() {
                 type="button"
                 variant="secondary"
                 title={esMiCuenta ? 'No puedes suspender tu propia cuenta' : 'Suspender cuenta'}
-                disabled={esMiCuenta}
+                disabled={esMiCuenta || accionOcupada}
                 onClick={() => cambiarEstado(false)}
               >
                 <Prohibit size={14} /> Suspender
@@ -454,7 +463,7 @@ export default function DetalleUsuario() {
                 return <Alert>Este traslado {avisos.join(' · ')}.</Alert>
               })()}
               <Actions form>
-                <Button type="submit"><CheckCircle size={14} /> Guardar cambios</Button>
+                <Button type="submit" disabled={accionOcupada}><CheckCircle size={14} /> Guardar cambios</Button>
                 <Button type="button" variant="secondary" onClick={() => setEditando(false)}>Cancelar</Button>
               </Actions>
             </form>
