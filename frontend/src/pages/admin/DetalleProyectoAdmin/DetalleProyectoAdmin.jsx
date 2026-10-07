@@ -77,6 +77,7 @@ export default function DetalleProyectoAdmin() {
 
   const [nuevoEstado, setNuevoEstado] = useState('pendiente')
   const [guardado, setGuardado] = useState(false)
+  const [accionOcupada, setAccionOcupada] = useState(false)
   const [editando, setEditando] = useState(false)
   const [form, setForm] = useState({ titulo: '', resumen: '', palabras_clave: '' })
   const [errores, setErrores] = useState({})
@@ -139,8 +140,9 @@ export default function DetalleProyectoAdmin() {
 
   const guardarEstado = async (e) => {
     e.preventDefault()
-    if (nuevoEstado === proyecto.estado) return
+    if (accionOcupada || nuevoEstado === proyecto.estado) return
     setAccionMsg(null)
+    setAccionOcupada(true)
     try {
       // El backend registra historial y avisa al creador (F1/F3).
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, { estado: nuevoEstado }))
@@ -149,6 +151,8 @@ export default function DetalleProyectoAdmin() {
       setTimeout(() => setGuardado(false), 3000)
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado de la propuesta.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -164,8 +168,10 @@ export default function DetalleProyectoAdmin() {
 
   const agregarObservacion = async (e) => {
     e.preventDefault()
+    if (accionOcupada) return
     const texto = textoObs.trim()
     if (!texto) return
+    setAccionOcupada(true)
     try {
       await observaciones.crear({
         texto,
@@ -178,6 +184,8 @@ export default function DetalleProyectoAdmin() {
       setRespondiendoA(null)
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo publicar la observación.')
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -209,12 +217,14 @@ export default function DetalleProyectoAdmin() {
 
   const guardarEdicion = async (e) => {
     e.preventDefault()
+    if (accionOcupada) return
     const errs = {}
     if (form.titulo.trim().length < 5) errs.titulo = 'El título debe tener al menos 5 caracteres.'
     if (form.resumen.trim().length < 20) errs.resumen = 'La descripción debe tener al menos 20 caracteres.'
     setErrores(errs)
     if (Object.keys(errs).length > 0) return
     const eraAprobada = proyecto.estado === 'aprobado'
+    setAccionOcupada(true)
     try {
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, {
         titulo: form.titulo.trim(),
@@ -228,6 +238,8 @@ export default function DetalleProyectoAdmin() {
         : 'Contenido actualizado correctamente.')
     } catch (err) {
       setErrores({ titulo: err?.data?.message || 'No se pudo actualizar el contenido.' })
+    } finally {
+      setAccionOcupada(false)
     }
   }
 
@@ -271,7 +283,7 @@ export default function DetalleProyectoAdmin() {
                       </option>
                     ))}
                   </Select>
-                  <Button type="submit" disabled={nuevoEstado === proyecto.estado}>
+                  <Button type="submit" disabled={accionOcupada || nuevoEstado === proyecto.estado}>
                     <CheckCircle size={14} /> Guardar
                   </Button>
                   <Button
@@ -322,7 +334,7 @@ export default function DetalleProyectoAdmin() {
                       onChange={(e) => setForm((f) => ({ ...f, palabras_clave: e.target.value }))}
                     />
                   </FormField>
-                  <Button type="submit">
+                  <Button type="submit" disabled={accionOcupada}>
                     <CheckCircle size={14} /> Guardar contenido
                   </Button>
                 </form>
@@ -406,7 +418,7 @@ export default function DetalleProyectoAdmin() {
                   placeholder="Escribe una observación sobre esta propuesta…"
                   aria-label="Observación sobre esta propuesta"
                 />
-                <Button type="submit" disabled={!textoObs.trim()}>
+                <Button type="submit" disabled={!textoObs.trim() || accionOcupada}>
                   <Plus size={14} /> Agregar observación
                 </Button>
               </form>

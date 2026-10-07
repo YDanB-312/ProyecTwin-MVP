@@ -14,6 +14,8 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate(['id_usuario' => 'nullable|integer']);
+
         $user = $request->user();
 
         // Cada usuario solo ve sus propias notificaciones (antes se devolvían
@@ -38,7 +40,7 @@ class NotificationController extends Controller
             'descripcion' => 'nullable',
             'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
             'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
-            'leida' => 'nullable|boolean',
+            'leida' => 'sometimes|boolean',
             'fecha' => 'required|date',
             'id_usuario' => 'required|exists:general_users,id',
         ]);
@@ -75,7 +77,7 @@ class NotificationController extends Controller
             'descripcion' => 'nullable',
             'tipo' => 'sometimes|required|in:similitud,observacion,revision,mensaje,sistema',
             'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
-            'leida' => 'nullable|boolean',
+            'leida' => 'sometimes|boolean',
             'fecha' => 'sometimes|required|date',
             'id_usuario' => 'sometimes|required|exists:general_users,id',
         ]);

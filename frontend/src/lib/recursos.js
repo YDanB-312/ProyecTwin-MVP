@@ -70,13 +70,11 @@ export const programas = {
 export const instructores = {
   listar: (included = "generalUser") =>
     apiFetch(`/instructors${qs({ included })}`).then(lista),
-  crear: (body) => apiFetch("/instructors", { method: "POST", body }),
 };
 
 export const aprendices = {
   listar: (included = "generalUser,classGroup") =>
     apiFetch(`/apprentices${qs({ included })}`).then(lista),
-  crear: (body) => apiFetch("/apprentices", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/apprentices/${id}`, { method: "PUT", body }),
   // Mi ficha (aprendiz): siempre sobre el usuario del token.
@@ -165,11 +163,6 @@ export const similitudes = {
     ).then(lista),
   obtener: (id) =>
     apiFetch(`/similarities/${id}${qs({ included: INCLUDE_SIMILITUD })}`),
-  detectar: (idProyecto) =>
-    apiFetch("/similarities/detect", {
-      method: "POST",
-      body: { id_proyecto: idProyecto },
-    }),
   recalcular: () =>
     apiFetch("/similarities/recalculate", { method: "POST", body: {} }),
   eliminar: (id) => apiFetch(`/similarities/${id}`, { method: "DELETE" }),
@@ -200,7 +193,6 @@ export const demo = {
 export const notificaciones = {
   listar: (filtros = {}) =>
     apiFetch(`/notifications${qs(filtros)}`).then(lista),
-  crear: (body) => apiFetch("/notifications", { method: "POST", body }),
   // Recibe la notificación completa (el backend exige varios campos en el PUT).
   marcarLeida: (notificacion, leida = true) =>
     apiFetch(`/notifications/${notificacion.id}`, {

@@ -177,7 +177,7 @@ export async function apiFetch(
 
 // Descarga un archivo binario (p. ej. el PDF de credenciales) respetando la
 // sesión por cookie y el token CSRF. Dispara la descarga en el navegador.
-export async function apiDescargar(path, { method = "GET", body, nombre = "archivo.pdf" } = {}) {
+export async function apiDescargar(path, { method = "GET", body, nombre = "archivo.pdf", timeout = 15000 } = {}) {
   await asegurarCsrf();
 
   const headers = { Accept: "application/pdf" };
@@ -185,38 +185,60 @@ export async function apiDescargar(path, { method = "GET", body, nombre = "archi
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
   if (body) headers["Content-Type"] = "application/json";
 
-  const res = await fetch(`${BASE}${path.startsWith("/") ? "" : "/"}${path}`, {
-    method,
-    headers,
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(`${BASE}${path.startsWith("/") ? "" : "/"}${path}`, {
+      method,
+      headers,
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal,
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    let data;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
+    if (!res.ok) {
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = text;
+      }
+      // Mismo criterio que apiFetch: 401 en llamada autenticada avisa a la app.
+      if (res.status === 401) {
+        try {
+          window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA));
+        } catch {
+          /* entornos sin window */
+        }
+      }
+      const err = new Error(data?.message || `Error ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
     }
-    const err = new Error(data?.message || `Error ${res.status}`);
-    err.status = res.status;
-    err.data = data;
-    throw err;
-  }
 
-  const blob = await res.blob();
-  const disposition = res.headers.get("content-disposition") || "";
-  const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = match ? decodeURIComponent(match[1]) : nombre;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+    const blob = await res.blob();
+    const disposition = res.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = match ? decodeURIComponent(match[1]) : nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      const e = new Error("El servidor tardó demasiado en responder.");
+      e.status = 0;
+      throw e;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ---------------------------------------------------------------- Sesión

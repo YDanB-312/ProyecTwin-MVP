@@ -39,9 +39,15 @@ class VolumenSeeder extends Seeder
         // Una ficha por instructor.
         $fichas = [];
         foreach ($instructores as $idx => $ins) {
+            // Número libre y re-ejecutable: la primera corrida usa 9000+ y las
+            // siguientes avanzan de diez en diez (la columna numero es unique).
+            $numero = 9000 + $idx;
+            while (ClassGroup::where('numero', (string) $numero)->exists()) {
+                $numero += 10;
+            }
             $fichas[] = ClassGroup::create([
                 'codigo' => "vol-{$idx}-{$marca}",
-                'numero' => (string) (9000 + $idx),
+                'numero' => (string) $numero,
                 'nombre' => "Ficha Volumen {$idx} {$marca}",
                 'estado' => 'activo',
                 'id_programa' => 1, // ADSO

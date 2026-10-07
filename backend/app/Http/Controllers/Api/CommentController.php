@@ -13,6 +13,8 @@ class CommentController extends Controller
     // siempre llegan las más recientes primero.
     public function index(Request $request)
     {
+        $request->validate(['id_proyecto' => 'nullable|integer']);
+
         return Comment::included()
             ->paraUsuario($request->user())
             ->when($request->query('id_proyecto'), fn ($q, $id) => $q->where('id_proyecto', $id))
@@ -104,6 +106,14 @@ class CommentController extends Controller
         $user = $request->user();
         if ((int) $comment->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
             return response()->json(['message' => 'Solo puedes eliminar tus propias observaciones.'], 403);
+        }
+
+        // La regla Classroom también aplica al borrar: ficha activa y pertenencia.
+        if ($user->rol !== 'admin') {
+            $proyecto = Project::find($comment->id_proyecto);
+            if (!$proyecto || !$proyecto->puedeEscribir($user)) {
+                return response()->json(['message' => 'Solo lectura: ya no puedes eliminar esta observación.'], 403);
+            }
         }
 
         $comment->delete();

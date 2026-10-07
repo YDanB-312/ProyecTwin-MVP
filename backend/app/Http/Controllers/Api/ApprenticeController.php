@@ -121,7 +121,7 @@ class ApprenticeController extends Controller
         $request->validate([
             'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
             'id_class_group' => 'nullable|exists:class_groups,id',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')->ignore($apprentice->id)],
             // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
             'id_programa' => 'nullable|exists:training_programs,id',
         ]);

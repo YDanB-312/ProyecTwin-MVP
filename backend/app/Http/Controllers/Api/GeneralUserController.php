@@ -32,6 +32,15 @@ class GeneralUserController extends Controller
 
     public function index(Request $request)
     {
+        // Params inválidos (p. ej. arrays) se rechazan con 422, nunca 500.
+        $request->validate([
+            'search' => 'nullable|string',
+            'role' => 'nullable|string',
+            'estado' => 'nullable|string',
+            'ficha_id' => 'nullable|string',
+            'programa' => 'nullable|string',
+        ]);
+
         $query = GeneralUser::included()
             ->search($request->query('search'))
             ->byRol($request->query('role'))
@@ -41,7 +50,7 @@ class GeneralUserController extends Controller
 
         // Paginación opt-in para el panel de administración (miles de filas).
         if ($request->boolean('paginado')) {
-            $porPagina = min((int) $request->query('por_pagina', 10), 100);
+            $porPagina = max(1, min((int) $request->query('por_pagina', 10), 100));
             $pagina = $query->orderBy('id')->paginate($porPagina);
             $pagina->getCollection()->each->makeVisible(self::CAMPOS_CREDENCIALES);
             return $pagina;
@@ -66,7 +75,11 @@ class GeneralUserController extends Controller
         ]);
 
         // Alta compartida (cuenta + perfil + auditoría + correo de credenciales).
-        $alta = app(AltaUsuario::class)->crear($request->all());
+        // Whitelist: los campos internos de credenciales no se aceptan del cliente.
+        $alta = app(AltaUsuario::class)->crear($request->only([
+            'nombre', 'apellido', 'tipo_documento', 'numero_documento',
+            'correo', 'foto_url', 'rol', 'estado',
+        ]));
 
         return response()->json([
             'usuario' => $alta['usuario']->makeVisible(self::CAMPOS_CREDENCIALES),
@@ -189,7 +202,7 @@ class GeneralUserController extends Controller
             'correo' => 'sometimes|required|email|unique:general_users,correo,' . $general_user->id,
             'foto_url' => 'nullable',
             'rol' => 'sometimes|required|in:aprendiz,instructor,admin',
-            'estado' => 'sometimes|nullable|boolean',
+            'estado' => 'sometimes|boolean',
         ]);
 
         // Autorización: la propia cuenta, o cualquier cuenta si eres admin.

@@ -19,7 +19,7 @@ class AuthController extends Controller
             // compatibilidad con clientes/tests anteriores.
             'username' => 'required_without:correo|nullable|string',
             'correo' => 'required_without:username|nullable|email',
-            'password' => 'required',
+            'password' => 'required|string',
             'recordarme' => 'nullable|boolean',
         ]);
 
@@ -124,7 +124,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'password_actual' => 'required|string',
-            'password' => 'required|min:6|max:255|confirmed',
+            'password' => 'required|string|min:6|max:255|confirmed',
         ]);
 
         $user = $request->user();
@@ -188,7 +188,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required',
             'correo' => 'required|email',
-            'password' => 'required|min:6|max:255|confirmed',
+            'password' => 'required|string|min:6|max:255|confirmed',
         ]);
 
         $correo = strtolower(trim($request->correo));

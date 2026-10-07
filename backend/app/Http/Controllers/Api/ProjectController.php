@@ -21,6 +21,14 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
+        // Params inválidos (p. ej. arrays) se rechazan con 422, nunca 500.
+        $request->validate([
+            'search' => 'nullable|string',
+            'estado' => 'nullable|string',
+            'ficha_id' => 'nullable|string',
+            'programa' => 'nullable|string',
+        ]);
+
         return Project::included()
             ->paraUsuario($request->user())
             ->search($request->query('search'))
@@ -151,6 +159,15 @@ class ProjectController extends Controller
         }
 
         $item = DB::transaction(function () use ($project, $huella, $eraRechazada) {
+            // Lock de la fila: dos envíos concurrentes no pueden pasar la
+            // transición; el segundo espera y recibe 422 al re-validar.
+            $bloqueado = Project::whereKey($project->id)->lockForUpdate()->first();
+            if (!$bloqueado || !in_array($bloqueado->estado, ['borrador', 'rechazado'], true)) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json(['message' => 'La propuesta ya fue enviada y está en revisión.'], 422)
+                );
+            }
+
             $project->update(['estado' => 'pendiente', 'huella_envio' => $huella]);
 
             // Reenvío: la detección de la versión rechazada queda como evidencia

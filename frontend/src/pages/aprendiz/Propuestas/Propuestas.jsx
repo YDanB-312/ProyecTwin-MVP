@@ -577,7 +577,11 @@ export default function Propuestas() {
                   <div className={s.cardGrid}>
                     {visibles.map((p) => {
                       const info = infoSimilitud(todasSimilitudes, p.id)
-                      const editable = p.estado === 'borrador' || p.estado === 'rechazado'
+                      // Solo se puede enviar si la propuesta vive en la ficha
+                      // activa actual del aprendiz (el backend lo exige igual).
+                      const editable = (p.estado === 'borrador' || p.estado === 'rechazado')
+                        && Number(p.id_class_group) === Number(miFicha?.id)
+                        && p.classGroup?.estado === 'activo'
                       return (
                         <article key={p.id} className={`${s.card} ${s.cardClickable}`}>
                           <header className={s.cardHeader}>

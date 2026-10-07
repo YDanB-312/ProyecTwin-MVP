@@ -89,16 +89,6 @@
 
 
 
-.chevron {
-  transition: transform var(--dur-normal) var(--ease-out);
-}
-
-.chevron.open {
-  transform: rotate(180deg);
-}
-
-
-
 
 
 

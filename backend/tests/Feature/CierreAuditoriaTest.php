@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
+use App\Models\AuditLog;
 use App\Models\ClassGroup;
 use App\Models\Comment;
 use App\Models\GeneralUser;
@@ -11,6 +12,7 @@ use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\Notification;
 use App\Models\Project;
+use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -485,5 +487,236 @@ class CierreAuditoriaTest extends TestCase
 
         $this->assertSame('Original', $notif->fresh()->titulo);
         $this->assertTrue((bool) $notif->fresh()->leida);
+    }
+
+    // ---------------------------------------------------------------- F-01
+
+    public function test_password_como_array_produce_422_y_no_500(): void
+    {
+        $user = $this->usuario('aprendiz');
+
+        $this->postJson('/v1/auth/login', [
+            'username' => $user->username,
+            'password' => ['a', 'b', 'c', 'd', 'e', 'f'],
+        ])->assertStatus(422);
+
+        $this->postJson('/v1/auth/reset-password', [
+            'token' => 'token-invalido',
+            'correo' => $user->correo,
+            'password' => ['a', 'b', 'c', 'd', 'e', 'f'],
+            'password_confirmation' => ['a', 'b', 'c', 'd', 'e', 'f'],
+        ])->assertStatus(422);
+    }
+
+    // ---------------------------------------------------------------- F-03/F-05..F-08
+
+    private function propuestaCompleta(GeneralUser $creador, ClassGroup $ficha, string $estado, ?string $titulo = null): Project
+    {
+        return Project::create([
+            'titulo' => $titulo ?: 'Inventarios del almacén',
+            'resumen' => 'Herramienta web para controlar inventarios de almacén con alertas de stock y reportes de trazabilidad.',
+            'area_aplicacion' => 'Tecnología',
+            'objetivo_general' => 'Controlar los inventarios del almacén con alertas por stock mínimo.',
+            'objetivos_especificos' => [
+                'Registrar entradas y salidas de productos.',
+                'Generar reportes de trazabilidad por lote.',
+            ],
+            'estado' => $estado,
+            'id_creador' => $creador->id,
+            'id_class_group' => $ficha->id,
+        ]);
+    }
+
+    public function test_por_pagina_invalido_no_produce_500(): void
+    {
+        $admin = $this->usuario('admin');
+
+        $resp = $this->como($admin)
+            ->getJson('/v1/general-users?paginado=1&por_pagina=0')
+            ->assertOk()->json();
+
+        $this->assertSame(1, $resp['per_page']);
+    }
+
+    public function test_estado_null_produce_422(): void
+    {
+        $admin = $this->usuario('admin');
+        $objetivo = $this->usuario('aprendiz');
+
+        $this->como($admin)
+            ->putJson('/v1/general-users/' . $objetivo->id, ['estado' => null])
+            ->assertStatus(422);
+    }
+
+    public function test_leida_null_produce_422(): void
+    {
+        $admin = $this->usuario('admin');
+        $user = $this->usuario('aprendiz');
+
+        $this->como($admin)->postJson('/v1/notifications', [
+            'titulo' => 'Aviso',
+            'tipo' => 'sistema',
+            'fecha' => now()->toDateString(),
+            'id_usuario' => $user->id,
+            'leida' => null,
+        ])->assertStatus(422);
+
+        $notif = Notification::create([
+            'titulo' => 'Aviso',
+            'tipo' => 'sistema',
+            'enlace' => null,
+            'leida' => false,
+            'fecha' => now()->toDateString(),
+            'id_usuario' => $user->id,
+        ]);
+
+        $this->como($user)
+            ->putJson('/v1/notifications/' . $notif->id, ['leida' => null])
+            ->assertStatus(422);
+    }
+
+    public function test_aprendiz_con_usuario_duplicado_produce_422(): void
+    {
+        $admin = $this->usuario('admin');
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $a = $this->aprendizEn($ficha);
+        $b = $this->aprendizEn($ficha);
+        $filaB = Apprentice::where('id_usuario', $b->id)->firstOrFail();
+
+        $this->como($admin)->putJson('/v1/apprentices/' . $filaB->id, [
+            'codigo' => $filaB->codigo,
+            'id_usuario' => $a->id,
+            'id_class_group' => $ficha->id,
+        ])->assertStatus(422);
+    }
+
+    public function test_doble_envio_es_idempotente(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $a = $this->aprendizEn($ficha);
+        $proyecto = $this->propuestaCompleta($a, $ficha, 'borrador');
+        $id = $proyecto->id;
+
+        $this->como($a)->postJson('/v1/projects/' . $id . '/enviar')->assertOk();
+
+        // Segundo intento: rechazado por estado, sin efectos duplicados.
+        $this->como($a)->postJson('/v1/projects/' . $id . '/enviar')->assertStatus(422);
+
+        $this->assertSame(1, ProjectHistory::where('id_proyecto', $id)->where('accion', 'enviada')->count());
+        $this->assertSame(1, AuditLog::where('entidad', 'projects')->where('entidad_id', $id)
+            ->where('accion', 'enviar_propuesta')->count());
+        $this->assertSame(1, Notification::where('enlace', 'proyecto:' . $id)
+            ->where('id_usuario', $instructorUser->id)->where('tipo', 'revision')->count());
+    }
+
+    public function test_los_borradores_no_generan_similitudes_ni_notificaciones(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $a = $this->aprendizEn($ficha);
+        $b = $this->aprendizEn($ficha);
+
+        $this->propuestaCompleta($b, $ficha, 'aprobado', 'Inventarios del almacén');
+        $borrador = $this->propuestaCompleta($a, $ficha, 'borrador');
+
+        $motor = app(\App\Similarity\Recomputador::class);
+        $this->assertSame(0, $motor->detectar($borrador, false));
+
+        $motor->recalcular(false);
+
+        $pares = Similarity::where(function ($q) use ($borrador) {
+            $q->where('id_proyecto_1', $borrador->id)->orWhere('id_proyecto_2', $borrador->id);
+        });
+        $this->assertSame(0, $pares->count());
+        $this->assertSame(0, Notification::where('id_usuario', $a->id)->count());
+
+        // El flujo normal (enviar) sí detecta la coincidencia.
+        $this->como($a)->postJson('/v1/projects/' . $borrador->id . '/enviar')->assertOk();
+        $this->assertGreaterThan(0, Similarity::where(function ($q) use ($borrador) {
+            $q->where('id_proyecto_1', $borrador->id)->orWhere('id_proyecto_2', $borrador->id);
+        })->where('vigente', true)->count());
+    }
+
+    public function test_detectar_dos_veces_no_duplica_el_par(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $a = $this->aprendizEn($ficha);
+        $b = $this->aprendizEn($ficha);
+
+        $this->propuestaCompleta($b, $ficha, 'aprobado');
+        $pendiente = $this->propuestaCompleta($a, $ficha, 'pendiente');
+
+        $motor = app(\App\Similarity\Recomputador::class);
+        $motor->detectar($pendiente, false);
+        $motor->detectar($pendiente, false);
+
+        $this->assertSame(1, Similarity::where(function ($q) use ($pendiente) {
+            $q->where('id_proyecto_1', $pendiente->id)->orWhere('id_proyecto_2', $pendiente->id);
+        })->where('vigente', true)->count());
+    }
+
+    public function test_no_se_borra_un_comentario_en_ficha_finalizada(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser, 'finalizado');
+        $autor = $this->aprendizEn($ficha);
+        $proyecto = $this->propuestaCompleta($autor, $ficha, 'aprobado');
+        $comment = Comment::create([
+            'texto' => 'Observación original',
+            'id_proyecto' => $proyecto->id,
+            'id_usuario' => $autor->id,
+        ]);
+
+        $this->como($autor)->deleteJson('/v1/comments/' . $comment->id)->assertStatus(403);
+        $this->assertDatabaseHas('comments', ['id' => $comment->id]);
+    }
+
+    public function test_parametros_de_query_invalidos_producen_422(): void
+    {
+        $admin = $this->usuario('admin');
+
+        $this->como($admin)->getJson('/v1/general-users?search[]=x')->assertStatus(422);
+        $this->como($admin)->getJson('/v1/projects?estado[]=x')->assertStatus(422);
+        $this->como($admin)->getJson('/v1/audit-logs?desde[]=x')->assertStatus(422);
+    }
+
+    public function test_la_api_ignora_campos_internos(): void
+    {
+        $admin = $this->usuario('admin');
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $a = $this->aprendizEn($ficha);
+        $b = $this->aprendizEn($ficha);
+        $pA = $this->propuestaCompleta($a, $ficha, 'aprobado');
+        $pB = $this->propuestaCompleta($b, $ficha, 'pendiente');
+
+        $creada = $this->como($admin)->postJson('/v1/similarities', [
+            'porcentaje' => 50,
+            'id_proyecto_1' => $pA->id,
+            'id_proyecto_2' => $pB->id,
+            'vigente' => false,
+        ])->assertCreated()->json();
+        $this->assertTrue((bool) Similarity::find($creada['id'])->vigente);
+
+        $resp = $this->como($admin)->postJson('/v1/general-users', [
+            'nombre' => 'Prueba',
+            'apellido' => 'Interna',
+            'tipo_documento' => 'CC',
+            'numero_documento' => (string) random_int(1000000, 9999999),
+            'correo' => 'interna.' . uniqid() . '@test.local',
+            'rol' => 'aprendiz',
+            'credenciales_error' => 'inyectado',
+        ])->assertCreated();
+
+        $this->assertNull(GeneralUser::find($resp->json('usuario.id'))->credenciales_error);
     }
 }
