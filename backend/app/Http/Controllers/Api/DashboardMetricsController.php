@@ -96,7 +96,7 @@ class DashboardMetricsController extends Controller
                     : Apprentice::whereIn('id_class_group', $fichasIds)->count(),
             ],
             'propuestas' => $this->porEstado($proyectos),
-            'evolucion' => $this->evolucionRevisiones($idsProyectos, $periodo),
+            'evolucion' => $this->evolucionRevisiones($idsProyectos, $periodo, $user->id),
             'actividad' => $this->actividadProyectos($idsProyectos),
         ];
     }
@@ -190,8 +190,12 @@ class DashboardMetricsController extends Controller
         return $this->construirSerie($periodo, $tipo, $cantidad, $grupos);
     }
 
-    /** Revisiones del instructor en el periodo (historiales "revisar_propuesta"). */
-    private function evolucionRevisiones($idsProyectos, string $periodo): array
+    /**
+     * Decisiones tomadas por el instructor autenticado sobre propuestas de su
+     * ámbito. Las acciones del historial son las decisiones académicas reales,
+     * no el nombre de la acción de auditoría.
+     */
+    private function evolucionRevisiones($idsProyectos, string $periodo, int $idUsuario): array
     {
         [$inicio, $formato, $cantidad, $tipo] = $this->rango($periodo);
 
@@ -201,7 +205,8 @@ class DashboardMetricsController extends Controller
 
         $historiales = ProjectHistory::with('project:id,titulo')
             ->whereIn('id_proyecto', $idsProyectos)
-            ->where('accion', 'revisar_propuesta')
+            ->where('id_usuario', $idUsuario)
+            ->whereIn('accion', ['aprobada', 'rechazada'])
             ->where('created_at', '>=', $inicio)
             ->get(['id', 'id_proyecto', 'created_at']);
 
