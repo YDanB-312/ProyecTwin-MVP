@@ -1,11 +1,11 @@
 import { test, expect, login, CUENTAS } from './helpers'
 
-// BUG-019 (auditoría integral): las fechas que llegan de la API no deben
-// pintarse crudas (ISO o date-only). La UI las pasa por `fechaDesdeApi`
-// (src/utils/helpers.js), que produce el formato humano "d mmm aaaa"
-// (p. ej. "18 oct 2026"). El proyecto NO usa dd/mm/yyyy en pantalla: lo que
-// esta prueba protege es que el ISO crudo no vuelva a las vistas.
+// BUG-019: las fechas crudas de la API no deben mostrarse en las vistas.
+// La bitacora usa fechaHoraDesdeApi (dd/mm/aaaa, hh:mm a. m.).
+// Las vistas de fecha usan fechaDesdeApi (d mmm aaaa).
+// Esta prueba protege que el ISO crudo no vuelva a las vistas.
 const HUMANA = /^\d{1,2} (ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic) \d{4}$/
+const FECHA_HORA = /^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} [ap]\.\s*[mM]\.$/
 const ISO = /\d{4}-\d{2}-\d{2}/
 
 // Mismo orden que MESES_CORTOS en src/utils/helpers.js (para el esperado exacto).
@@ -39,23 +39,23 @@ test.describe('Formato de fechas: humano y sin ISO crudo', () => {
     const registros = Array.isArray(cuerpo) ? cuerpo : cuerpo?.data || []
     expect(registros.length).toBeGreaterThan(0)
     expect(registros[0].created_at).toBeTruthy()
-    const esperada = fechaHumana(registros[0].created_at)
+    const esperadaFecha = new Date(registros[0].created_at).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
     await login(page, 'admin')
     await page.goto('/admin/bitacora')
 
     // El seed registra auditoría de sobra (usuarios, fichas, propuestas…).
-    const fechas = page.locator('td[data-label="Fecha"]')
+    const fechas = page.locator('td[data-label="Fecha y hora"]')
     await expect(fechas.first()).toBeVisible()
 
     // Día exacto (no solo formato): la primera fila es el último registro.
-    expect((await fechas.first().innerText()).trim()).toBe(esperada)
+    expect((await fechas.first().innerText()).trim()).toContain(esperadaFecha)
 
     const total = await fechas.count()
     expect(total).toBeGreaterThan(0)
     for (let i = 0; i < total; i++) {
       const texto = (await fechas.nth(i).innerText()).trim()
-      expect(texto, `fecha de la fila ${i}`).toMatch(HUMANA)
+      expect(texto, `fecha de la fila ${i}`).toMatch(FECHA_HORA)
       expect(texto, `fecha de la fila ${i}`).not.toMatch(ISO)
       expect(texto, `fecha de la fila ${i}`).not.toContain('T')
     }
