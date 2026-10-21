@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -162,10 +164,14 @@ fun PlanoComparacion(
     val colorTexto = senaColors().text
     val colorTextoLight = senaColors().textLight
 
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(560f / 210f),
+            .aspectRatio(560f / 210f)
+            .semantics {
+                contentDescription = "Comparación A/B: $pct% de similitud. " +
+                    "A es la propuesta pendiente y B la propuesta de referencia aprobada."
+            },
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val s = size.width / 560f

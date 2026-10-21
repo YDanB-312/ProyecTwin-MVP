@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -158,8 +160,15 @@ fun DonaPropuestas(propuestas: PropuestasMetricas, modifier: Modifier = Modifier
                     color = senaColors().textSecondary,
                 )
             } else {
+                val resumenDona = "Propuestas por estado. Total $total. " +
+                    segmentos.joinToString(", ") { "${it.etiqueta}: ${it.valor}" } + "."
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(148.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(148.dp)
+                            .semantics { contentDescription = resumenDona },
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
                             val grosor = 22.dp.toPx()
                             val inset = grosor / 2f
@@ -330,7 +339,7 @@ fun EvolucionPropuestas(
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SenaChipRow {
                 listOf(
                     PeriodoMetricas.TRES_MESES to "3 meses",
                     PeriodoMetricas.TREINTA_DIAS to "30 días",
@@ -384,8 +393,18 @@ fun EvolucionPropuestas(
                         padSup + (alturaGrafica - padSup - padInf) * (1f - valor.toFloat() / maximo)
 
                     val puntoSeleccionado = seleccionado?.takeIf { it in puntos.indices }
+                    val resumenSerie = puntos.take(12).joinToString(", ") { "${it.label}: ${it.total}" } +
+                        if (puntos.size > 12) ", y ${puntos.size - 12} más" else ""
 
-                    Box(modifier = Modifier.fillMaxWidth().height(alturaGrafica)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(alturaGrafica)
+                            .semantics {
+                                contentDescription = "Gráfica de propuestas por periodo. " +
+                                    "$resumenSerie. Toca un punto para ver fecha, cantidad y propuestas."
+                            },
+                    ) {
                         Canvas(
                             modifier = Modifier
                                 .fillMaxSize()
