@@ -54,7 +54,7 @@ test.describe('Autorización: instructor vs recursos ajenos', () => {
     await page.goto('/instructor/detalle-similitud/1')
 
     // El contexto de la coincidencia SÍ es visible (tarjetas A/B)
-    await expect(page.getByText(/Propuesta A/).first()).toBeVisible()
+    await expect(page.getByText(/Proyecto A/).first()).toBeVisible()
 
     // Mismo programa → enlaces visibles hacia las propuestas (detalle en lectura)
     await expect(page.getByRole('link', { name: /Ver proyecto/i })).toHaveCount(2)
