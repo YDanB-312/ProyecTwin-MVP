@@ -31,7 +31,8 @@ test.describe('Traslados de ficha extendidos', () => {
     await expect(page.getByText('Usuario actualizado correctamente.')).toBeVisible()
 
     await page.goto('/admin/detalle-proyecto/4')
-    await expect(page.getByText(/xkp-mqwr/i).first()).toBeVisible()
+    // El detalle muestra el nombre de la ficha, no su código privado.
+    await expect(page.getByText(/Analisis y Desarrollo 2568/i).first()).toBeVisible()
   })
 })
 

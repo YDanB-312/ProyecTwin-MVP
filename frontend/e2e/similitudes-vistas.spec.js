@@ -38,7 +38,7 @@ test.describe('Aprendiz: mi propuesta siempre es la "A"', () => {
     // S5 = proyecto 9 (de Ana, pendiente) ↔ proyecto 10 (de Juan, aprobado).
     await page.goto('/aprendiz/detalle-similitud/5')
 
-    const cards = page.locator('[class*="projectCard"]')
+    const cards = page.locator('article[aria-label="Proyecto A"], article[aria-label="Proyecto B"]')
     await expect(cards).toHaveCount(2)
 
     // A = la suya (con marca "Tu propuesta"); B = la aprobada con la que coincidió.
@@ -81,7 +81,8 @@ test.describe('Evidencia histórica: la versión anterior se puede consultar', (
     await page.getByRole('link', { name: /Sistema de Gestión de Inventarios con trazabilidad/ }).click()
 
     await expect(page).toHaveURL(/\/aprendiz\/detalle-similitud\/6/)
-    await expect(page.getByRole('heading', { name: /Similitud #6/ })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByText('#6', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Comparaci.n de similitudes/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: /Similitud no autorizada/i })).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'Sistema de Gestión de Inventarios con trazabilidad' })).toBeVisible()
   })
@@ -93,9 +94,9 @@ test.describe('Detalle de similitud: sin señales del motor', () => {
     await login(page, 'aprendiz')
     await page.goto('/aprendiz/detalle-similitud/3')
 
-    await expect(page.getByRole('heading', { name: /Similitud #3/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Comparaci.n de similitudes/ })).toBeVisible()
     await expect(page.getByText(/¿Qué tienen en común\?/)).toHaveCount(0)
-    await expect(page.getByText('Índice de similitud').first()).toBeVisible()
+    await expect(page.getByRole('img', { name: /Comparaci.n A.B: [0-9]+% de similitud/ })).toBeVisible()
   })
 })
 
