@@ -10,7 +10,7 @@ export function BarChart({ data = [], ariaLabel = 'Gráfica de barras' }) {
   const resumen = data.map((d) => `${d.label}: ${d.value}`).join(', ')
 
   return (
-    <ul className={s.bars} role="img" aria-label={`${ariaLabel}. ${resumen}`}>
+    <ul className={s.bars} aria-label={`${ariaLabel}. ${resumen}`}>
       {data.map((d) => (
         <li key={d.label} className={s.barRow}>
           <span className={s.barLabel}>{d.label}</span>
@@ -186,8 +186,8 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
   const tooltipX = activo != null ? Math.min(Math.max(x(activo), 100), W - 100) : 0
 
   return (
-    <div className={s.lineWrap} ref={wrapRef} role="img" aria-label={`${ariaLabel}. ${resumen}`}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={s.lineSvg} aria-hidden="true">
+    <div className={s.lineWrap} ref={wrapRef} role="group" aria-label={`${ariaLabel}. ${resumen}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} className={s.lineSvg}>
         <defs>
           <linearGradient id={`area-${gid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#10b981" stopOpacity="0.4" />
