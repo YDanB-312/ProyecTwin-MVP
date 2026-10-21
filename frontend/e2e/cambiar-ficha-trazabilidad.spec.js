@@ -5,9 +5,10 @@ import { test, expect, login } from './helpers'
 test('tras cambiar de ficha, mis propuestas previas se marcan como de ficha anterior', async ({ page }) => {
   await login(page, 'aprendiz')
 
-  // En la ficha original, la tarjeta muestra su ficha.
+  // En la ficha original, la tarjeta muestra el nombre de su ficha.
+  // El código de ficha es privado y no se expone en el detalle de propuestas.
   await page.goto('/aprendiz/propuestas')
-  await expect(page.getByText('xkp-mqwr').first()).toBeVisible()
+  await expect(page.getByText('Analisis y Desarrollo 2568').first()).toBeVisible()
 
   // Salir de la ficha y unirse a otra por código.
   await page.goto('/aprendiz/ficha')

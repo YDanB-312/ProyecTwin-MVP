@@ -33,9 +33,10 @@ test.describe('Admin: gestión de fichas', () => {
     await expect(dialog.getByRole('button', { name: /Sí, eliminar/i })).toBeDisabled()
     await dialog.getByRole('button', { name: /Cancelar/i }).click()
 
-    // Desde una propuesta se llega a su ficha
+    // Desde una propuesta se llega a su ficha. El detalle muestra el nombre
+    // de la ficha; el código de unión se omite por privacidad.
     await page.goto('/admin/detalle-proyecto/4')
-    await page.getByRole('link', { name: /xkp-mqwr/i }).click()
+    await page.getByRole('link', { name: /Analisis y Desarrollo 2568/i }).click()
     await page.waitForURL('**/admin/detalle-ficha/**')
   })
 
