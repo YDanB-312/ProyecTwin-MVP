@@ -4,10 +4,11 @@
 //
 // El reseed SIEMPRE pasa por `php artisan e2e:reset --env=e2e`, que exige
 // autorización (E2E_ALLOW_RESET=1), APP_ENV=e2e, base `proyectwin_e2e`, host
-// loopback y lock anti-concurrencia. Cualquier otra configuración aborta sin
-// tocar datos.
+// loopback y lock anti-concurrencia.
 // Uso: npm run test:volumen
 import { spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { exigirEntornoE2E } from './guardas-e2e.mjs'
@@ -17,6 +18,10 @@ exigirEntornoE2E('volumen')
 const here = path.dirname(fileURLToPath(import.meta.url))
 const raiz = path.resolve(here, '..')
 const backend = path.resolve(raiz, '..', 'backend')
+const artifactRoot = path.resolve(process.env.E2E_ARTIFACT_ROOT
+  || path.join(os.tmpdir(), `proyectwin-e2e-volumen-${Date.now()}`))
+fs.mkdirSync(artifactRoot, { recursive: true })
+console.log(`[volumen] artefactos: ${artifactRoot}`)
 
 function reseedE2E(...extra) {
   const args = ['artisan', 'e2e:reset', '--env=e2e', ...extra]
@@ -36,6 +41,8 @@ console.log('[volumen] reseteando base E2E + volumen…')
 reseedE2E('--con-volumen')
 
 console.log('[volumen] corriendo spec…')
+const salida = path.join(artifactRoot, 'volumen')
+fs.mkdirSync(salida, { recursive: true })
 const r = spawnSync(
   'npx',
   [
@@ -45,11 +52,12 @@ const r = spawnSync(
     '--config=playwright.volumen.config.js',
     '--reporter=line',
     '--workers=1',
+    `--output=${salida}`,
   ],
-  { cwd: raiz, stdio: 'inherit', shell: true }
+  { cwd: raiz, stdio: 'inherit', shell: true, env: { ...process.env, E2E_ARTIFACT_ROOT: artifactRoot } }
 )
 
-console.log('[volumen] restaurando seed base E2E…')
+console.log('[volumen] restaurando seed base E2E.')
 reseedE2E()
 
 process.exit(r.status === 0 ? 0 : 1)

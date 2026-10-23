@@ -142,10 +142,13 @@ class E2eResetGuardasTest extends TestCase
 
     public function test_lock_presente_aborta_sin_ejecutar_el_reseed(): void
     {
-        $rutaLock = storage_path('framework/e2e-reset.lock');
+        $rutaLockPrevia = config('e2e.reset_lock_path');
+        $rutaLock = tempnam(sys_get_temp_dir(), 'proyectwin-e2e-lock-');
+        $this->assertNotFalse($rutaLock, 'premisa: se pudo crear un lock temporal exclusivo');
+        config(['e2e.reset_lock_path' => $rutaLock]);
         $bloqueo = fopen($rutaLock, 'c');
-        $this->assertIsResource($bloqueo, 'premisa: se pudo abrir el archivo de lock');
-        $this->assertTrue(flock($bloqueo, LOCK_EX | LOCK_NB), 'premisa: el test retiene el lock exclusivo');
+        $this->assertIsResource($bloqueo, 'premisa: se pudo abrir el archivo de lock temporal');
+        $this->assertTrue(flock($bloqueo, LOCK_EX | LOCK_NB), 'premisa: el test retiene el lock temporal');
 
         $conexionPrevia = (string) config('database.default');
 
@@ -172,8 +175,12 @@ class E2eResetGuardasTest extends TestCase
             });
         } finally {
             config(['database.default' => $conexionPrevia]);
-            flock($bloqueo, LOCK_UN);
-            fclose($bloqueo);
+            if (is_resource($bloqueo)) {
+                flock($bloqueo, LOCK_UN);
+                fclose($bloqueo);
+            }
+            config(['e2e.reset_lock_path' => $rutaLockPrevia]);
+            @unlink($rutaLock);
         }
     }
 }

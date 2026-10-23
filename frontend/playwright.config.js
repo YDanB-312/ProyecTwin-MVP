@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { API_E2E } from './e2e/guardas-e2e.mjs'
 
 export default defineConfig({
   testDir: './e2e',
@@ -19,6 +20,10 @@ export default defineConfig({
   webServer: {
     command: 'npm run preview -- --strictPort',
     url: 'http://localhost:4173',
+    // Forzar el destino E2E también en el proceso de preview. La guarda de
+    // globalSetup valida el valor del padre; esto evita que un preview herede
+    // un PROYECTWIN_API distinto o caiga en el fallback de desarrollo.
+    env: { ...process.env, PROYECTWIN_API: API_E2E },
     // Nunca reutilizar un preview ya abierto: podría apuntar a otro backend
     // (proxy PROYECTWIN_API) y ejecutar la suite E2E contra datos ajenos.
     reuseExistingServer: false,

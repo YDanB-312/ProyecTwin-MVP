@@ -93,6 +93,16 @@ Advertencias:
   - **Re-certificación (19-oct-2026, Lote 12):** `php artisan test` → **341/341 pruebas, 1985 aserciones** (exit 0, ~27 s), tras añadir C-02/C-03/C-06/C-09/M5; suite Android **169/169** + `assembleDebug` OK.
   - **Lote 13 (19-oct-2026):** `php artisan test` → **344/344 pruebas, 1998 aserciones** (exit 0, ~26 s; P-03/P-01); Android unit **175/175** + `assembleDebug` + `assembleDebugAndroidTest` OK; smoke instrumentado de arranque OK en dispositivo físico (componentes pendientes de corrida en dispositivo libre).
   - Gate E2E integral: **5/5 etapas, 347 pruebas** (53 archivos aislados + agentes/cobertura/negativos/volumen), con backend E2E en `:8001` y reseed contra `proyectwin_e2e`.
+  - **Gate E2E aprobado (22-oct-2026): 5/5 etapas OK, 26.4 min**, con artefactos externos en
+    `C:\Users\munoz\AppData\Local\Temp\proyectwin-e2e-gate-20261022-221818`.
+    - Etapa 1: E2E determinista + navegación, OK.
+    - Etapa 2: agentes de acción + simulaciones, OK.
+    - Etapa 3: cobertura de controles, OK.
+    - Etapa 4: negativos, OK.
+    - Etapa 5: volumen de datos, OK.
+    - Backend E2E temporal en `127.0.0.1:8001`; preview automático en `4173`; resets únicamente sobre `proyectwin_e2e`.
+    - La primera corrida detectó un dato incorrecto en el agente admin (usuario semilla con historial). Se corrigió el playbook para borrar el usuario temporal creado por el propio agente y se repitió el gate completo.
+    - Este resultado no resuelve C-07/BUG-037 (`TrustProxies`), que sigue pendiente de evidencia autorizada de Railway, ni autoriza operaciones sobre producción o `proyectwin_mvp`.
   - Los 4 specs E2E nuevos del Lote 2 (`doble-submit-completo`, `fechas-formato`, `notificacion-ficha-navegacion`, `red-evidencia-409`) se ejecutaron y aprobaron en el gate.
   - Guardas probadas en negativo: sin `E2E_ALLOW_RESET` o apuntando a `:8000` la corrida falla; PHPUnit aborta fuera de `testing` + `proyectwin_test`.
 - **Requiere autorización explícita:** volver a ejecutar el gate E2E integral (un único run completo) y cualquier `e2e:reset`/migración sobre las bases dedicadas. Nota: los refuerzos del Lote 3 a 2 specs E2E de frontend (`fechas-formato` y `notificacion-ficha-navegacion`) fueron ejecutados y aprobados el 18-oct con autorización focal (5 tests autorizados + 4 adicionales aprobados por coincidencia de filtro).

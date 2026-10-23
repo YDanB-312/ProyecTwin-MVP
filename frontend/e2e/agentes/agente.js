@@ -6,8 +6,8 @@
 // envía formularios ni ejecuta acciones destructivas, así que varios agentes
 // pueden correr en paralelo sin pisarse.
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { login } from '../helpers'
 import { RUTAS_POR_ROL } from '../rutas'
 
@@ -150,8 +150,11 @@ export async function recorrer(page, rol) {
     }
   }
 
-  // 3) Reporte por rol.
-  const salida = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'test-results', 'agentes')
+  // 3) Reporte por rol. En el gate se escribe bajo el directorio de artefactos
+  // de la etapa; el fallback conserva el comportamiento de las entradas manuales.
+  const salida = process.env.E2E_ARTIFACT_ROOT
+    ? path.join(process.env.E2E_ARTIFACT_ROOT, 'agentes')
+    : path.join(os.tmpdir(), 'proyectwin-e2e', 'agentes')
   fs.mkdirSync(salida, { recursive: true })
   fs.writeFileSync(
     path.join(salida, `${rol}.json`),

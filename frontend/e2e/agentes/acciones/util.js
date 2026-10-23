@@ -5,8 +5,8 @@
 // Es determinista: cada agente usa datos con sufijo único y opera sobre el seed
 // de forma controlada; el runner restaura el seed al terminar.
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 export function crearEjecutor(page, rol) {
   const sufijo = String(Date.now()).slice(-6)
@@ -160,12 +160,11 @@ export async function inventariar(page) {
 }
 
 export function escribirReporte(rol, h) {
-  // Fuera de test-results: Playwright borra ese directorio en cada invocación.
-  const salida = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..', '..', '..',
-    'agentes-reportes', 'acciones'
-  )
+  // En el gate los reportes van al directorio de artefactos de la etapa. El
+  // fallback conserva el comportamiento de las ejecuciones manuales.
+  const salida = process.env.E2E_ARTIFACT_ROOT
+    ? path.join(process.env.E2E_ARTIFACT_ROOT, 'agentes', 'acciones')
+    : path.join(os.tmpdir(), 'proyectwin-e2e', 'agentes', 'acciones')
   fs.mkdirSync(salida, { recursive: true })
   fs.writeFileSync(
     path.join(salida, `${rol}.json`),
