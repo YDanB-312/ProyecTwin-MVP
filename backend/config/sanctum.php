@@ -44,9 +44,14 @@ return [
     | considered expired. If this value is null, personal access tokens do
     | not expire. This won't tweak the lifetime of first-party sessions.
     |
+    | ProyecTwin usa tokens Bearer en la app móvil. Duración aprobada:
+    | 1440 minutos (24 h). Al vencer, el usuario debe iniciar sesión de nuevo;
+    | no hay renovación automática. La sesión del SPA se rige por
+    | SESSION_LIFETIME.
+    |
     */
 
-    'expiration' => env('SANCTUM_EXPIRATION'),
+    'expiration' => env('SANCTUM_EXPIRATION', 1440),
 
     /*
     |--------------------------------------------------------------------------

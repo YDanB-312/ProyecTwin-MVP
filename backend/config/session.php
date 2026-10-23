@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SeguridadSesion;
 use Illuminate\Support\Str;
 
 return [
@@ -168,7 +169,14 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // En producción Secure no puede desactivarse: false explícito, valor
+    // ausente o inválido producen Secure=true. En local/testing se conserva
+    // false para permitir HTTP.
+    'secure' => SeguridadSesion::cookieSegura(
+        env('APP_URL'),
+        env('SESSION_SECURE_COOKIE'),
+        env('APP_ENV')
+    ),
 
     /*
     |--------------------------------------------------------------------------
