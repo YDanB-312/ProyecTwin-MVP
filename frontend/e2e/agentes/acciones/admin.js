@@ -6,6 +6,7 @@ export async function admin(h) {
   const { page } = h
   const nombreFicha = `Ficha Admin Agente ${h.sufijo}`
   let fichaId = null
+  let usuarioCreadoId = null
 
   await h.paso('crear usuario instructor', async () => {
     await h.ir('/admin/usuarios')
@@ -26,6 +27,7 @@ export async function admin(h) {
       form.getByRole('button', { name: /Crear usuario/i }).click()
     )
     if (!creado?.usuario?.id) throw new Error('el usuario no se creó')
+    usuarioCreadoId = creado.usuario.id
     await h.esperar('creado.', 10000)
   })
 
@@ -177,7 +179,8 @@ export async function admin(h) {
   })
 
   await h.paso('borrar un usuario sin historial', async () => {
-    await h.ir('/admin/detalle-usuario/11') // Patricia Morales: sin propuestas ni equipo
+    if (!usuarioCreadoId) throw new Error('no se creó el usuario temporal para borrar')
+    await h.ir(`/admin/detalle-usuario/${usuarioCreadoId}`)
     h.usar('Eliminar')
     await page.getByRole('button', { name: /^Eliminar$/i }).click()
     await confirmarBorrado(page, 'ELIMINAR')
