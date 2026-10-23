@@ -2,8 +2,8 @@
 // debe quedar clasificado (cubierto por un playbook o justificado). Si algo
 // queda "sin cubrir", el test falla y lo lista para cerrarlo.
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { test, expect, login } from '../helpers'
 import { inventariar } from './acciones/util'
 import { clasificar } from './cobertura-catalogo'
@@ -52,12 +52,11 @@ for (const rol of ROLES) {
       resumen.push({ ruta, total: controles.length, cubiertos, justificados })
     }
 
-    // Reporte de cobertura.
-    const salida = path.resolve(
-      path.dirname(fileURLToPath(import.meta.url)),
-      '..', '..',
-      'agentes-reportes', 'cobertura'
-    )
+    // Reporte de cobertura. En el gate se escribe en el directorio de
+    // artefactos de la etapa; el fallback mantiene la ejecución manual.
+    const salida = process.env.E2E_ARTIFACT_ROOT
+      ? path.join(process.env.E2E_ARTIFACT_ROOT, 'agentes', 'cobertura')
+      : path.join(os.tmpdir(), 'proyectwin-e2e', 'agentes', 'cobertura')
     fs.mkdirSync(salida, { recursive: true })
     fs.writeFileSync(
       path.join(salida, `${rol}.json`),
