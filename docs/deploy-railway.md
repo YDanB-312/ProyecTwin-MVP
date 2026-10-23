@@ -60,13 +60,14 @@ el proxy de Vite.
 | `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
 | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
 | `SESSION_DRIVER` | `database` (las sesiones sobreviven a los redeploys) |
-| `SESSION_SECURE_COOKIE` | `true` |
+| `SESSION_LIFETIME` | `120` (minutos de inactividad de la sesión web) |
+| `SESSION_SECURE_COOKIE` | `true` (en producción `Secure` se fuerza; `false` solo tiene efecto en local/testing) |
 | `CACHE_DRIVER` | `file` |
 | `QUEUE_CONNECTION` | `sync` |
 | `BROADCAST_DRIVER` | `log` |
 | `FILESYSTEM_DISK` | `local` |
 | `SANCTUM_STATEFUL_DOMAINS` | `<dominio>.up.railway.app` (sin `https://`) |
-| `SANCTUM_EXPIRATION` | `1440` |
+| `SANCTUM_EXPIRATION` | `1440` (24 h, aprobado; no afecta a la sesión del SPA) |
 | `FRONTEND_URL` | `https://<dominio>.up.railway.app` |
 | `MAIL_MAILER` | `log` (los correos quedan en el log; la demo no envía emails) |
 | `RUN_SEED` | `true` **solo el primer deploy**; luego ponlo en `false` |
@@ -74,6 +75,21 @@ el proxy de Vite.
 > Las referencias `${{MySQL.*}}` las resuelve Railway; el servicio de la base de
 > datos debe llamarse `MySQL` (o ajusta el nombre en las referencias).
 > En PowerShell van entre comillas simples para que `$` no se interprete.
+
+> **Cookies y sesión:** con `APP_URL=https://...`, la cookie de sesión lleva
+> `Secure` por defecto aunque se omita `SESSION_SECURE_COOKIE`; en local
+> (`APP_URL=http://localhost`) sigue sin `Secure` para no romper HTTP.
+> Un valor no booleano en `SESSION_SECURE_COOKIE` no se interpreta como
+> `false`: se resuelve con `APP_URL`. Con `APP_ENV=production`, si `APP_URL`
+> falta o no es HTTPS, `Secure` permanece activo (fallo cerrado), pero
+> `APP_URL` debe corregirse porque el resto de URLs y la configuración
+> stateful dependen de ella. En producción, un `SESSION_SECURE_COOKIE=false`
+> explícito tampoco desactiva `Secure`; el valor solo se respeta en
+> local/testing. `HttpOnly` está siempre activo y `SameSite=Lax` es el valor
+> correcto porque el SPA y la API comparten origen. `SANCTUM_EXPIRATION` solo
+> rige los tokens Bearer de la app móvil; la sesión web usa
+> `SESSION_LIFETIME`. La duración aprobada es 1440 minutos (24 h): al vencer,
+> Android debe iniciar sesión de nuevo y no hay renovación automática.
 
 ## Pasos (PowerShell)
 
