@@ -451,18 +451,6 @@ fun SystemStatusPill(label: String, color: Color, icon: ImageVector, modifier: M
 }
 
 @Composable
-fun AdminMetricSquare(label: String, value: String, icon: ImageVector, color: Color) {
-    SenaCard(modifier = Modifier.width(160.dp), elevation = 4.dp) {
-        Column {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.height(16.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = senaColors().text)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-        }
-    }
-}
-
-@Composable
 fun ManagementActionCard(title: String, desc: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
