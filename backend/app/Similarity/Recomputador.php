@@ -20,7 +20,7 @@ class Recomputador
     // existentes, crea los nuevos (notificando) y purga los obsoletos.
     public function detectar(Project $propio, bool $notificar = true): int
     {
-        $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        $config = MotorConfig::actual();
         $umbral = (float) $config->umbral;
         $meses = (int) $config->meses;
 
@@ -76,7 +76,7 @@ class Recomputador
 
     public function recalcular(bool $notificar = true, bool $auditar = false): array
     {
-        $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        $config = MotorConfig::actual();
         $umbral = (float) $config->umbral;
         $meses = (int) $config->meses;
 

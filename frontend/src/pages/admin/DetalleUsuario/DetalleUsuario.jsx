@@ -638,7 +638,7 @@ export default function DetalleUsuario() {
       <ConfirmModal
         open={!!modalEliminar}
         titulo="Eliminar usuario"
-        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminarán su cuenta y todos sus registros asociados (propuestas, similitudes, observaciones, notificaciones y reportes). Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminarán su cuenta y los registros asociados: propuestas, historial de sus propuestas, observaciones, notificaciones, reportes, tokens y sesiones. Si es instructor, también se eliminarán sus fichas; los aprendices de esas fichas quedarán sin ficha. Si existen similitudes compartidas y la cuenta no es administradora, el backend impedirá la eliminación. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
         responsabilidad

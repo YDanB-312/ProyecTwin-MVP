@@ -26,6 +26,7 @@ class SimilarityController extends Controller
             'search' => 'nullable|string',
             'ficha_id' => 'nullable|string',
             'programa' => 'nullable|string',
+            'supervision' => 'nullable|boolean',
         ]);
 
         $user = $request->user();
@@ -69,15 +70,24 @@ class SimilarityController extends Controller
             return $this->responder($request, $consulta->get());
         }
 
+        // La supervisión global solo pertenece al admin: incluye todos los
+        // pares vigentes, sin la regla de "ambas aprobadas" del listado normal.
+        // El corpus de detección del motor sigue limitado a aprobadas.
+        $supervision = $request->boolean('supervision');
+        if ($supervision && optional($user)->rol !== 'admin') {
+            return response()->json(['message' => 'No tienes acceso a la supervisión de similitudes.'], 403);
+        }
+
         return $this->responder(
             $request,
             Similarity::included()
                 ->vigentes()
-                ->paraUsuario($user)
+                ->when(!$supervision, fn (Builder $q) => $q->paraUsuario($user))
                 ->relatedTo($request->query('related_to'))
                 ->search($request->query('search'))
                 ->byFicha($request->query('ficha_id'))
                 ->byPrograma($request->query('programa'))
+                ->orderByDesc('id')
                 ->get()
         );
     }
@@ -103,7 +113,7 @@ class SimilarityController extends Controller
         $item = DB::transaction(function () use ($request) {
             // Inicialización canónica (igual que Recomputador): garantiza la fila
             // del motor también en el arranque y toma SIEMPRE el mutex.
-            $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+            $config = MotorConfig::actual();
             MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
             return Similarity::create($request->only([
@@ -272,7 +282,7 @@ class SimilarityController extends Controller
     // Config global del motor (fila única).
     private function config(): MotorConfig
     {
-        return MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        return MotorConfig::actual();
     }
 
 }

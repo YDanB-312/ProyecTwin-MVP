@@ -9,13 +9,20 @@ use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 // Datos de VOLUMEN para probar listados, paginación y filtros con muchas filas.
-// Se aplica SOBRE el seed base (no lo reemplaza). Es determinista.
+// Se aplica SOBRE el seed base (no lo reemplaza). Usa una marca única por
+// ejecución; no es determinista, pero sí re-ejecutable.
 class VolumenSeeder extends Seeder
 {
     public function run(): void
+    {
+        DB::transaction(fn () => $this->sembrar());
+    }
+
+    private function sembrar(): void
     {
         $marca = uniqid();
 
@@ -68,7 +75,7 @@ class VolumenSeeder extends Seeder
 
             $ficha = $fichas[$i % count($fichas)];
             Apprentice::create([
-                'codigo' => 'VOL-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT) . '-' . substr($marca, -3),
+                'codigo' => 'VOL-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT) . '-' . $marca,
                 'id_usuario' => $u->id,
                 'id_class_group' => $ficha->id,
                 'id_programa' => $ficha->id_programa,
@@ -90,8 +97,8 @@ class VolumenSeeder extends Seeder
             }
         }
 
-        // 12 reportes de falla. El autor se asigna de forma determinista
-        // (round-robin por id) para que el seed sea reproducible.
+        // 12 reportes de falla. El autor se asigna mediante round-robin por id
+        // para repartir los reportes entre los aprendices existentes.
         $autores = GeneralUser::where('rol', 'aprendiz')->orderBy('id')->pluck('id')->all();
         $totalAutores = max(count($autores), 1);
         for ($i = 1; $i <= 12; $i++) {

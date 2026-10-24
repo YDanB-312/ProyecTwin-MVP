@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -226,6 +227,30 @@ class BorradoUsuarioEvidenciaTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('general_users', ['id' => $aprendiz->id]);
+    }
+
+    public function test_borrar_usuario_revoca_sus_sesiones_y_conserva_las_ajenas(): void
+    {
+        $aprendiz = $this->usuario('aprendiz');
+        $otro = $this->usuario('aprendiz');
+
+        foreach ([$aprendiz, $otro] as $usuario) {
+            DB::table('sessions')->insert([
+                'id' => 'sesion-' . uniqid(),
+                'user_id' => $usuario->id,
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'test',
+                'payload' => '',
+                'last_activity' => time(),
+            ]);
+        }
+
+        $this->como($this->usuario('admin'))
+            ->deleteJson('/v1/general-users/' . $aprendiz->id)
+            ->assertOk();
+
+        $this->assertDatabaseMissing('sessions', ['user_id' => $aprendiz->id]);
+        $this->assertDatabaseHas('sessions', ['user_id' => $otro->id]);
     }
 
     public function test_admin_objetivo_con_par_se_borra_por_exencion(): void

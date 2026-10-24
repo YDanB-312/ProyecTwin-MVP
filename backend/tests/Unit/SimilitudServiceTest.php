@@ -62,6 +62,22 @@ class SimilitudServiceTest extends TestCase
     }
 
     // El orden distinto de las palabras no debe hundir la similitud.
+    public function test_el_score_es_simetrico_al_invertir_el_orden(): void
+    {
+        $a = $this->proyecto(1, 'Control de Inventarios del Almacén', 'inventario, almacén',
+            'Registrar entradas y salidas de mercancía del almacén.');
+        $b = $this->proyecto(2, 'Almacén con Control de Inventarios', 'almacén, inventario',
+            'Registrar salidas y entradas de mercancía del almacén.');
+
+        $ab = SimilitudService::puntaje($a, [$a, $b])[0];
+        $ba = SimilitudService::puntaje($b, [$b, $a])[0];
+
+        $this->assertSame($ab['porcentaje'], $ba['porcentaje']);
+        $this->assertSame($ab['detalles']['palabras'], $ba['detalles']['palabras']);
+        $this->assertSame($ab['detalles']['caracteres'], $ba['detalles']['caracteres']);
+        $this->assertSame($ab['detalles']['cobertura'], $ba['detalles']['cobertura']);
+    }
+
     public function test_orden_no_afecta(): void
     {
         $a = $this->proyecto(1, 'Control de Inventarios del Almacén', 'inventario, almacén',

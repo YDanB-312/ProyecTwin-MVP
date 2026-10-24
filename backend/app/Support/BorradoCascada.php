@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Apprentice;
+use App\Models\BugReport;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
@@ -15,6 +16,7 @@ use App\Models\TrainingProgram;
 use App\Services\NotificacionesService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 // Borrado en cascada para el administrador (sin restricciones): elimina la
 // entidad y todo lo dependiente dentro de una transacción, respetando el orden
@@ -155,7 +157,7 @@ class BorradoCascada
             Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
 
             // Reportes del usuario: la FK los borra; limpia los avisos a admins.
-            $reportes = \App\Models\BugReport::where('id_usuario', $usuario->id)->pluck('id');
+            $reportes = BugReport::where('id_usuario', $usuario->id)->pluck('id');
             Notification::whereIn('enlace', $reportes->map(fn ($id) => 'reporte:' . $id))->delete();
 
             // Tokens de sesión y de recuperación (no tienen FK al usuario).
@@ -163,6 +165,11 @@ class BorradoCascada
             DB::table('password_reset_tokens')
                 ->where('email', strtolower((string) $usuario->correo))
                 ->delete();
+
+            // D-01: revocar también las sesiones de servidor de la cuenta.
+            if (Schema::hasTable('sessions')) {
+                DB::table('sessions')->where('user_id', $usuario->id)->delete();
+            }
 
             $usuario->delete();
         });
@@ -183,7 +190,7 @@ class BorradoCascada
         // Mutex del motor SIEMPRE primero: serializa contra todo creador de
         // pares (el motor, el alta manual y los flujos de propuestas lo toman
         // antes de escribir) y garantiza la fila del motor en el arranque.
-        $config = MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        $config = MotorConfig::actual();
         MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
         // Propuestas del subárbol (lectura de bloqueo: filas actuales).

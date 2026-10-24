@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
         $this->observaciones();
         $this->reportes();
         $this->fichaMovimiento();
-        MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+        MotorConfig::actual();
 
         // --- Causa → efecto: cada acción dispara sus reacciones ---
         $this->reacciones();
@@ -108,7 +108,7 @@ class DatabaseSeeder extends Seeder
         });
 
         // 6) El admin ajustó el motor → bitácora.
-        $cfg = MotorConfig::first();
+        $cfg = MotorConfig::actual();
         \App\Support\Auditoria::registrar('config_motor', 'motor_configs', $cfg?->id, [
             'umbral' => (float) optional($cfg)->umbral,
             'meses' => (int) optional($cfg)->meses,
