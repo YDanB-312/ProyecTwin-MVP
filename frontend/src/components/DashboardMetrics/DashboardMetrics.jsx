@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Books, ChartLineUp, ChartPieSlice, ClipboardText, Clock, FolderOpen, Student, UsersThree, ChalkboardTeacher } from 'phosphor-react'
+import { Books, ChartBar, ChartLineUp, ChartPieSlice, ClipboardText, Clock, FolderOpen, Sparkle, Student, UsersThree, ChalkboardTeacher } from 'phosphor-react'
 import SectionHeader from '../SectionHeader/SectionHeader'
 import MetricCard from '../MetricCard/MetricCard'
 import DataPanel from '../DataPanel/DataPanel'
 import ActivityList from '../ActivityList/ActivityList'
 import EmptyState from '../EmptyState/EmptyState'
+import QuickActions from '../QuickActions/QuickActions'
 import { BarChart, DonutChart, LineChart } from '../Charts/Charts'
 import { useApi } from '../../lib/useApi'
 import { metricas } from '../../lib/recursos'
@@ -26,9 +27,20 @@ const PERIODOS = [
   { valor: '7d', etiqueta: 'Últimos 7 días' },
 ]
 
+function tituloCorto(titulo) {
+  const texto = String(titulo || 'Propuesta')
+  return texto.length > 28 ? `${texto.slice(0, 28).trimEnd()}…` : texto
+}
+
+function colorSimilitud(maximo) {
+  if (maximo >= 70) return 'var(--c-danger)'
+  if (maximo >= 30) return 'var(--c-warning)'
+  return 'var(--c-success)'
+}
+
 // Panel de métricas reales según el rol. Se alimenta del endpoint
 // `/dashboard-metrics?periodo=…` (agregados calculados en el backend).
-export default function DashboardMetrics({ rol }) {
+export default function DashboardMetrics({ rol, acciones = [] }) {
   const [periodo, setPeriodo] = useState('3m')
 
   const { data } = useApi(
@@ -57,6 +69,25 @@ export default function DashboardMetrics({ rol }) {
     restantes: item.restantes || 0,
   }))
 
+  const propuestasFicha = (data.fichas?.detalle || [])
+    .filter((ficha) => Number(ficha.propuestas) > 0)
+    .sort((a, b) => Number(b.propuestas) - Number(a.propuestas))
+    .slice(0, 6)
+    .map((ficha) => ({
+      label: ficha.codigo,
+      value: Number(ficha.propuestas) || 0,
+      color: 'var(--c-primary)',
+    }))
+
+  const similitudesPropuestas = (data.similitudesPropuestas || []).map((item) => {
+    const maximo = Math.max(0, Math.min(100, Number(item.max) || 0))
+    return {
+      label: tituloCorto(item.titulo),
+      value: maximo,
+      color: colorSimilitud(maximo),
+    }
+  })
+
   const actividad = (data.actividad || []).map((item) => {
     const enlace = item.proyecto_id
       ? (rol === 'instructor'
@@ -78,10 +109,15 @@ export default function DashboardMetrics({ rol }) {
     }
   })
 
-  const tituloEvolucion =
-    rol === 'instructor' ? 'Revisiones por mes' : 'Propuestas por mes'
+  const porDia = periodo !== '3m'
+  const tituloEvolucion = rol === 'instructor'
+    ? (porDia ? 'Revisiones por día' : 'Revisiones por mes')
+    : (porDia ? 'Propuestas por día' : 'Propuestas por mes')
+  const unidadEvolucion = rol === 'instructor'
+    ? { singular: 'revisión', plural: 'revisiones' }
+    : { singular: 'propuesta', plural: 'propuestas' }
 
-  const selectorPeriodo = (
+  const selectorPeriodo = rol === 'aprendiz' ? null : (
     <div className={s.periodos} role="group" aria-label="Rango de tiempo de la gráfica">
       {PERIODOS.map((opcion) => (
         <button
@@ -99,7 +135,14 @@ export default function DashboardMetrics({ rol }) {
 
   return (
     <section className={s.section} aria-label="Métricas del panel">
-      <SectionHeader title="Métricas" hint="datos reales de la plataforma" />
+      <SectionHeader
+        title="Métricas"
+        hint={rol === 'instructor'
+          ? 'datos de tu gestión'
+          : rol === 'aprendiz'
+            ? 'datos de tus propuestas'
+            : 'datos reales de la plataforma'}
+      />
 
       {rol === 'admin' && (
         <div className={s.kpis}>
@@ -119,8 +162,11 @@ export default function DashboardMetrics({ rol }) {
         </div>
       )}
 
-      <div className={`${s.charts} ${rol !== 'admin' ? s.single : ''}`}>
-        <DataPanel title="Propuestas por estado" icon={<ChartPieSlice size={18} />}>
+      <div className={s.charts}>
+        <DataPanel
+          title={rol === 'aprendiz' ? 'Estado de mis propuestas' : 'Propuestas por estado'}
+          icon={<ChartPieSlice size={18} />}
+        >
           <DonutChart
             data={estados}
             centro="propuestas"
@@ -140,17 +186,49 @@ export default function DashboardMetrics({ rol }) {
             />
           </DataPanel>
         )}
+
+        {rol === 'instructor' && (
+          <DataPanel title="Propuestas por ficha" icon={<ChartBar size={18} />}>
+            <BarChart
+              ariaLabel="Propuestas por ficha"
+              data={propuestasFicha}
+              emptyMessage="Sin propuestas en tus fichas."
+            />
+          </DataPanel>
+        )}
+
+        {rol === 'aprendiz' && (
+          <DataPanel title="Similitud máxima por propuesta" icon={<ChartBar size={18} />}>
+            <BarChart
+              ariaLabel="Porcentaje máximo de similitud por propuesta"
+              data={similitudesPropuestas}
+              maximo={100}
+              valueSuffix="%"
+              emptyMessage="Sin similitudes visibles en tus propuestas."
+            />
+          </DataPanel>
+        )}
       </div>
 
-      {/* Grid 8/4: gráfica (izquierda) + actividad reciente (derecha). */}
       <div className={s.lower}>
-        <DataPanel
-          title={tituloEvolucion}
-          icon={<ChartLineUp size={18} />}
-          action={selectorPeriodo}
-        >
-          <LineChart data={evolucion} ariaLabel={`${tituloEvolucion} (${periodo})`} />
-        </DataPanel>
+        {rol === 'aprendiz' ? (
+          <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
+            <QuickActions items={acciones} />
+          </DataPanel>
+        ) : (
+          <DataPanel
+            title={tituloEvolucion}
+            icon={<ChartLineUp size={18} />}
+            action={selectorPeriodo}
+          >
+            <LineChart
+              data={evolucion}
+              ariaLabel={`${tituloEvolucion} (${periodo})`}
+              unidad={unidadEvolucion.singular}
+              unidadPlural={unidadEvolucion.plural}
+            />
+          </DataPanel>
+        )}
 
         <DataPanel
           title={rol === 'aprendiz' ? 'Observaciones recientes' : 'Actividad reciente'}

@@ -1,18 +1,24 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import s from './Charts.module.css'
 
-// Gráficas del dashboard con el tema visual de la app (sin cyberpunk).
+// GrÃ¡ficas del dashboard con el tema visual de la app (sin cyberpunk).
 
-export function BarChart({ data = [], ariaLabel = 'Gráfica de barras' }) {
-  const max = Math.max(1, ...data.map((d) => Number(d.value) || 0))
-  if (!data.length) return <p className={s.empty}>Sin datos para mostrar.</p>
+export function BarChart({
+  data = [],
+  ariaLabel = 'GrÃ¡fica de barras',
+  maximo = null,
+  valueSuffix = '',
+  emptyMessage = 'Sin datos para mostrar.',
+}) {
+  const max = Math.max(1, Number(maximo) || 0, ...data.map((d) => Number(d.value) || 0))
+  if (!data.length) return <p className={s.empty}>{emptyMessage}</p>
 
-  const resumen = data.map((d) => `${d.label}: ${d.value}`).join(', ')
+  const resumen = data.map((d) => `${d.label}: ${d.value}${valueSuffix}`).join(', ')
 
   return (
     <ul className={s.bars} aria-label={`${ariaLabel}. ${resumen}`}>
-      {data.map((d) => (
-        <li key={d.label} className={s.barRow}>
+      {data.map((d, index) => (
+        <li key={`${d.label}-${index}`} className={s.barRow}>
           <span className={s.barLabel}>{d.label}</span>
           <span className={s.barTrack}>
             <span
@@ -23,7 +29,7 @@ export function BarChart({ data = [], ariaLabel = 'Gráfica de barras' }) {
               }}
             />
           </span>
-          <span className={`mono ${s.barValue}`}>{d.value}</span>
+          <span className={`mono ${s.barValue}`}>{d.value}{valueSuffix}</span>
         </li>
       ))}
     </ul>
@@ -35,7 +41,7 @@ export function DonutChart({
   size = 176,
   thickness = 22,
   centro = '',
-  ariaLabel = 'Distribución',
+  ariaLabel = 'DistribuciÃ³n',
 }) {
   const total = data.reduce((acc, d) => acc + (Number(d.value) || 0), 0)
   if (!total) return <p className={s.empty}>Sin datos para mostrar.</p>
@@ -118,7 +124,7 @@ export function DonutChart({
   )
 }
 
-// Curva suave (Catmull-Rom → Bézier) para la gráfica de área.
+// Curva suave (Catmull-Rom â†’ BÃ©zier) para la grÃ¡fica de Ã¡rea.
 function curvaSuave(puntos) {
   if (puntos.length === 0) return ''
   if (puntos.length === 1) return `M ${puntos[0].x} ${puntos[0].y}`
@@ -138,10 +144,15 @@ function curvaSuave(puntos) {
 }
 
 /**
- * Gráfica de área compacta e interactiva: curva suave, degradado, tooltip con
+ * GrÃ¡fica de Ã¡rea compacta e interactiva: curva suave, degradado, tooltip con
  * fecha, total y nombres de propuestas del periodo (datos reales del backend).
  */
-export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
+export function LineChart({
+  data = [],
+  ariaLabel = 'EvoluciÃ³n mensual',
+  unidad = 'propuesta',
+  unidadPlural = 'propuestas',
+}) {
   const wrapRef = useRef(null)
   const [ancho, setAncho] = useState(640)
   const [activo, setActivo] = useState(null)
@@ -160,7 +171,7 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
 
   const valores = data.map((d) => Number(d.value) || 0)
   if (!data.length || valores.every((v) => v === 0)) {
-    return <p className={s.empty}>Sin datos en el período.</p>
+    return <p className={s.empty}>Sin datos en el perÃ­odo.</p>
   }
 
   const W = Math.max(320, ancho)
@@ -178,10 +189,11 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
     .map((f) => ({ valor: Math.round(max * f), y: y(max * f) }))
     .filter((t, i, arr) => arr.findIndex((u) => u.valor === t.valor) === i)
 
-  // En 30/7 días no se muestran todas las etiquetas para evitar solapamientos.
+  // En 30/7 dÃ­as no se muestran todas las etiquetas para evitar solapamientos.
   const salto = data.length > 12 ? Math.ceil(data.length / 8) : 1
   const resumen = data.map((d) => `${d.label}: ${d.value}`).join(', ')
   const puntoActivo = activo != null ? data[activo] : null
+  const textoCantidad = (cantidad) => `${cantidad} ${cantidad === 1 ? unidad : unidadPlural}`
 
   const tooltipX = activo != null ? Math.min(Math.max(x(activo), 100), W - 100) : 0
 
@@ -217,7 +229,7 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
               className={s.lineHit}
               tabIndex={0}
               role="button"
-              aria-label={`${data[i].fecha || data[i].label}: ${valores[i]} propuesta${valores[i] !== 1 ? 's' : ''}`}
+              aria-label={`${data[i].fecha || data[i].label}: ${textoCantidad(valores[i])}`}
               onMouseEnter={() => setActivo(i)}
               onMouseLeave={() => setActivo(null)}
               onFocus={() => setActivo(i)}
@@ -240,7 +252,7 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
         <div className={s.tooltip} style={{ left: `${tooltipX}px`, top: `${y(valores[activo])}px` }}>
           <p className={s.tipFecha}>{puntoActivo.fecha || puntoActivo.label}</p>
           <p className={s.tipTotal}>
-            {valores[activo]} propuesta{valores[activo] !== 1 ? 's' : ''}
+            {textoCantidad(valores[activo])}
           </p>
           {Array.isArray(puntoActivo.propuestas) && puntoActivo.propuestas.length > 0 && (
             <ul className={s.tipLista}>
@@ -250,7 +262,7 @@ export function LineChart({ data = [], ariaLabel = 'Evolución mensual' }) {
             </ul>
           )}
           {puntoActivo.restantes > 0 && (
-            <p className={s.tipMas}>y {puntoActivo.restantes} más…</p>
+            <p className={s.tipMas}>y {puntoActivo.restantes} mÃ¡sâ€¦</p>
           )}
         </div>
       )}

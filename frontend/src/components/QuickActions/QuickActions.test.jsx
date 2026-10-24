@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import QuickActions from './QuickActions'
 
@@ -42,5 +42,24 @@ describe('QuickActions', () => {
       </MemoryRouter>,
     )
     expect(container.querySelectorAll('a')).toHaveLength(0)
+  })
+
+  it('ejecuta acciones sin navegar', () => {
+    const onClick = vi.fn()
+    render(
+      <MemoryRouter>
+        <QuickActions
+          items={[{
+            icon: <span aria-hidden="true">✓</span>,
+            titulo: 'Marcar alertas leídas',
+            descripcion: 'Tienes 2 notificaciones sin leer.',
+            onClick,
+          }]}
+        />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Marcar alertas leídas/ }))
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 })

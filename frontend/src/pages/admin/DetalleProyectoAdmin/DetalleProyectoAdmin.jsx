@@ -342,6 +342,8 @@ export default function DetalleProyectoAdmin() {
                 <InformacionProyecto proyecto={proyecto} ficha={ficha} fichaHref={ficha ? `/admin/detalle-ficha/${ficha.id}` : null} />
               )}
             </DataPanel>
+
+            <HistorialProyecto projectId={proyecto.id} />
           </div>
 
           <aside className={s.rail} aria-label="Aprendiz, similitudes y observaciones">
@@ -423,8 +425,6 @@ export default function DetalleProyectoAdmin() {
                 </Button>
               </form>
             </DataPanel>
-
-            <HistorialProyecto projectId={proyecto.id} />
           </aside>
         </div>
       </div>

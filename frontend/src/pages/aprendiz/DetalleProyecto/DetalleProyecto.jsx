@@ -451,6 +451,8 @@ export default function DetalleProyecto() {
                 <InformacionProyecto proyecto={project} ficha={ficha} fichaHref={`/aprendiz/detalle-ficha/${project.id_class_group}`} />
               )}
             </DataPanel>
+
+            <HistorialProyecto projectId={project.id} />
           </div>
 
           {esPropio && (
@@ -518,8 +520,6 @@ export default function DetalleProyecto() {
                   <p className={s.muted}>Solo lectura: no puedes agregar observaciones.</p>
                 )}
               </DataPanel>
-
-              <HistorialProyecto projectId={project.id} />
 
               <DataPanel title="Equipo" icon={<UsersThree />}>
                 {equipoError && <Alert variant="danger">{equipoError}</Alert>}

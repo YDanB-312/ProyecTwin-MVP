@@ -11,6 +11,7 @@ use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
 use App\Models\ProjectHistory;
+use App\Models\Similarity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -30,6 +31,8 @@ class DashboardMetricsController extends Controller
     private const PERIODOS = ['3m', '30d', '7d'];
     private const MAX_TITULOS = 6;
     private const MAX_ACTIVIDAD = 12;
+    private const MAX_PROPUESTAS_SIMILITUD = 6;
+    private const RANGOS_ANTIGUEDAD = ['0–2 días', '3–7 días', '8–15 días', 'Más de 15 días'];
 
     public function show(Request $request)
     {
@@ -73,9 +76,11 @@ class DashboardMetricsController extends Controller
     {
         $instructorId = Instructor::where('id_usuario', $user->id)->value('id');
 
-        $fichasIds = ClassGroup::query()
+        $fichas = ClassGroup::query()
             ->where('id_instructor', $instructorId ?: 0)
-            ->pluck('id');
+            ->orderBy('codigo')
+            ->get(['id', 'codigo', 'nombre']);
+        $fichasIds = $fichas->pluck('id');
 
         $proyectos = Project::query()->where(function ($q) use ($instructorId, $fichasIds) {
             $q->where('id_instructor_asignado', $instructorId ?: 0);
@@ -86,16 +91,67 @@ class DashboardMetricsController extends Controller
 
         $idsProyectos = (clone $proyectos)->pluck('id');
 
+        $proyectosPorFicha = Project::query()
+            ->whereIn('id_class_group', $fichasIds)
+            ->selectRaw(
+                'id_class_group, count(*) as total, '
+                . 'sum(case when estado = ? then 1 else 0 end) as pendientes, '
+                . 'sum(case when estado = ? then 1 else 0 end) as aprobadas, '
+                . 'sum(case when estado = ? then 1 else 0 end) as rechazadas',
+                ['pendiente', 'aprobado', 'rechazado']
+            )
+            ->groupBy('id_class_group')
+            ->get()
+            ->keyBy('id_class_group');
+
+        $aprendicesPorFicha = Apprentice::query()
+            ->whereIn('id_class_group', $fichasIds)
+            ->selectRaw('id_class_group, count(*) as total')
+            ->groupBy('id_class_group')
+            ->pluck('total', 'id_class_group');
+
+        $detalleFichas = $fichas->map(function (ClassGroup $ficha) use ($proyectosPorFicha, $aprendicesPorFicha) {
+            $conteo = $proyectosPorFicha->get($ficha->id);
+            $total = (int) optional($conteo)->total;
+            $pendientes = (int) optional($conteo)->pendientes;
+            $aprobadas = (int) optional($conteo)->aprobadas;
+            $rechazadas = (int) optional($conteo)->rechazadas;
+            $borradores = max(0, $total - $pendientes - $aprobadas - $rechazadas);
+            $revisadas = $aprobadas + $rechazadas;
+            $revisables = $revisadas + $pendientes;
+
+            return [
+                'id' => (int) $ficha->id,
+                'codigo' => (string) $ficha->codigo,
+                'nombre' => (string) $ficha->nombre,
+                'aprendices' => (int) ($aprendicesPorFicha[$ficha->id] ?? 0),
+                'propuestas' => $total,
+                'borradores' => $borradores,
+                'pendientes' => $pendientes,
+                'aprobadas' => $aprobadas,
+                'rechazadas' => $rechazadas,
+                'revisables' => $revisables,
+                'revisadas' => $revisadas,
+                'cobertura' => $revisables > 0
+                    ? (int) round(($revisadas / $revisables) * 100)
+                    : null,
+            ];
+        })->values()->all();
+
         return [
             'rol' => 'instructor',
             'periodo' => $periodo,
-            'fichas' => ['total' => $fichasIds->count()],
+            'fichas' => [
+                'total' => $fichas->count(),
+                'detalle' => $detalleFichas,
+            ],
             'aprendices' => [
                 'total' => $fichasIds->isEmpty()
                     ? 0
                     : Apprentice::whereIn('id_class_group', $fichasIds)->count(),
             ],
             'propuestas' => $this->porEstado($proyectos),
+            'antiguedadPendientes' => $this->antiguedadPendientes($proyectos),
             'evolucion' => $this->evolucionRevisiones($idsProyectos, $periodo, $user->id),
             'actividad' => $this->actividadProyectos($idsProyectos),
         ];
@@ -104,7 +160,78 @@ class DashboardMetricsController extends Controller
     private function aprendiz(GeneralUser $user, string $periodo): array
     {
         $proyectos = Project::query()->deAutor($user);
-        $ids = (clone $proyectos)->pluck('id');
+        $propias = (clone $proyectos)->get(['id', 'titulo', 'estado', 'created_at']);
+        $ids = $propias->pluck('id');
+
+        $niveles = [
+            '0–29 %' => 0,
+            '30–49 %' => 0,
+            '50–69 %' => 0,
+            '70–89 %' => 0,
+            '90–100 %' => 0,
+        ];
+
+        $similitudesPorPropuesta = [];
+        foreach ($propias as $proyecto) {
+            $similitudesPorPropuesta[(int) $proyecto->id] = [
+                'id' => (int) $proyecto->id,
+                'titulo' => (string) $proyecto->titulo,
+                'max' => 0,
+                'count' => 0,
+            ];
+        }
+
+        if ($ids->isNotEmpty()) {
+            $pares = Similarity::query()
+                ->where(function ($q) use ($ids) {
+                    $q->whereIn('id_proyecto_1', $ids)
+                        ->orWhereIn('id_proyecto_2', $ids);
+                })
+                ->vigentes()
+                ->paraUsuario($user)
+                ->get(['id_proyecto_1', 'id_proyecto_2', 'porcentaje']);
+
+            foreach ($pares as $par) {
+                $porcentaje = max(0, min(100, (int) $par->porcentaje));
+
+                if ($porcentaje < 30) {
+                    $niveles['0–29 %']++;
+                } elseif ($porcentaje < 50) {
+                    $niveles['30–49 %']++;
+                } elseif ($porcentaje < 70) {
+                    $niveles['50–69 %']++;
+                } elseif ($porcentaje < 90) {
+                    $niveles['70–89 %']++;
+                } else {
+                    $niveles['90–100 %']++;
+                }
+
+                foreach ([(int) $par->id_proyecto_1, (int) $par->id_proyecto_2] as $idPropio) {
+                    if (!isset($similitudesPorPropuesta[$idPropio])) {
+                        continue;
+                    }
+
+                    $similitudesPorPropuesta[$idPropio]['count']++;
+                    $similitudesPorPropuesta[$idPropio]['max'] = max(
+                        $similitudesPorPropuesta[$idPropio]['max'],
+                        $porcentaje
+                    );
+                }
+            }
+        }
+
+        $similitudesPropuestas = array_values($similitudesPorPropuesta);
+        usort($similitudesPropuestas, function (array $a, array $b) {
+            return $b['max'] <=> $a['max']
+                ?: $b['count'] <=> $a['count']
+                ?: $b['id'] <=> $a['id'];
+        });
+        $similitudesPropuestas = array_slice($similitudesPropuestas, 0, self::MAX_PROPUESTAS_SIMILITUD);
+
+        $similitudesNiveles = [];
+        foreach ($niveles as $label => $value) {
+            $similitudesNiveles[] = ['label' => $label, 'value' => $value];
+        }
 
         $observaciones = $ids->isEmpty()
             ? []
@@ -129,10 +256,50 @@ class DashboardMetricsController extends Controller
                 ->values()
                 ->all();
 
+        $fechasEnvio = $this->fechasEnvioPorProyecto($ids);
+        $comentariosPorPropuesta = $ids->isEmpty()
+            ? collect()
+            : Comment::query()
+                ->whereIn('id_proyecto', $ids)
+                ->selectRaw('id_proyecto, count(*) as total')
+                ->groupBy('id_proyecto')
+                ->pluck('total', 'id_proyecto');
+
+        $propuestasDetalle = $propias->map(function (Project $proyecto) use ($fechasEnvio, $comentariosPorPropuesta, $similitudesPorPropuesta) {
+            $similitud = $similitudesPorPropuesta[(int) $proyecto->id] ?? ['max' => 0, 'count' => 0];
+            $diasEnRevision = null;
+
+            if ($proyecto->estado === 'pendiente') {
+                $fecha = $fechasEnvio->get($proyecto->id) ?? $proyecto->created_at;
+                $diasEnRevision = max(0, (int) Carbon::parse($fecha)->startOfDay()->diffInDays(now()->startOfDay()));
+            }
+
+            return [
+                'id' => (int) $proyecto->id,
+                'titulo' => (string) ($proyecto->titulo ?: 'Propuesta sin título'),
+                'estado' => (string) $proyecto->estado,
+                'diasEnRevision' => $diasEnRevision,
+                'maxSimilitud' => (int) ($similitud['max'] ?? 0),
+                'similitudes' => (int) ($similitud['count'] ?? 0),
+                'observaciones' => (int) ($comentariosPorPropuesta[$proyecto->id] ?? 0),
+            ];
+        })->values()->all();
+
+        $ordenEstado = ['pendiente' => 0, 'rechazado' => 1, 'aprobado' => 2, 'borrador' => 3];
+        usort($propuestasDetalle, function (array $a, array $b) use ($ordenEstado) {
+            return ($ordenEstado[$a['estado']] ?? 9) <=> ($ordenEstado[$b['estado']] ?? 9)
+                ?: ($b['diasEnRevision'] ?? -1) <=> ($a['diasEnRevision'] ?? -1)
+                ?: $b['id'] <=> $a['id'];
+        });
+
         return [
             'rol' => 'aprendiz',
             'periodo' => $periodo,
             'propuestas' => $this->porEstado($proyectos),
+            'similitudesNiveles' => $similitudesNiveles,
+            'similitudesPropuestas' => $similitudesPropuestas,
+            'propuestasDetalle' => $propuestasDetalle,
+            'antiguedadPendientes' => $this->antiguedadPendientes($proyectos),
             'evolucion' => $this->evolucionProyectos($proyectos, $periodo),
             'actividad' => $observaciones,
         ];
@@ -153,6 +320,64 @@ class DashboardMetricsController extends Controller
             'aprobado' => (int) ($conteo['aprobado'] ?? 0),
             'rechazado' => (int) ($conteo['rechazado'] ?? 0),
         ];
+    }
+
+    /** Fecha del último envío/reenvío (o devolución a revisión) por propuesta. */
+    private function fechasEnvioPorProyecto($ids)
+    {
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return ProjectHistory::query()
+            ->whereIn('id_proyecto', $ids)
+            ->whereIn('accion', ['enviada', 'reenviada', 'devuelta_revision'])
+            ->orderByDesc('id')
+            ->get(['id_proyecto', 'created_at'])
+            ->groupBy('id_proyecto')
+            ->map(fn ($historiales) => $historiales->first()->created_at);
+    }
+
+    /**
+     * Pendientes agrupados por tiempo de espera. La referencia es el último
+     * envío/reenvío (o la devolución administrativa a revisión); si no hay
+     * historial, se usa la fecha de creación.
+     */
+    private function antiguedadPendientes($proyectos): array
+    {
+        $pendientes = (clone $proyectos)
+            ->where('estado', 'pendiente')
+            ->get(['id', 'created_at']);
+
+        $conteo = array_fill_keys(self::RANGOS_ANTIGUEDAD, 0);
+
+        if ($pendientes->isNotEmpty()) {
+            $fechasEnvio = $this->fechasEnvioPorProyecto($pendientes->pluck('id'));
+
+            $hoy = now()->startOfDay();
+
+            foreach ($pendientes as $proyecto) {
+                $fecha = $fechasEnvio->get($proyecto->id) ?? $proyecto->created_at;
+                $dias = max(0, (int) Carbon::parse($fecha)->startOfDay()->diffInDays($hoy));
+
+                if ($dias <= 2) {
+                    $conteo[self::RANGOS_ANTIGUEDAD[0]]++;
+                } elseif ($dias <= 7) {
+                    $conteo[self::RANGOS_ANTIGUEDAD[1]]++;
+                } elseif ($dias <= 15) {
+                    $conteo[self::RANGOS_ANTIGUEDAD[2]]++;
+                } else {
+                    $conteo[self::RANGOS_ANTIGUEDAD[3]]++;
+                }
+            }
+        }
+
+        $serie = [];
+        foreach (self::RANGOS_ANTIGUEDAD as $label) {
+            $serie[] = ['label' => $label, 'value' => $conteo[$label]];
+        }
+
+        return $serie;
     }
 
     /** Rango real del periodo (inicio/fin) y claves de agrupación. */
