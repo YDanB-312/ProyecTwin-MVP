@@ -75,4 +75,24 @@ describe('BarChart', () => {
     expect(screen.getByText('Administradores')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
   })
+
+  it('permite fijar una escala y mostrar el sufijo del valor', () => {
+    render(
+      <BarChart
+        data={[{ label: 'Propuesta uno', value: 82 }]}
+        ariaLabel="Similitud por propuesta"
+        maximo={100}
+        valueSuffix="%"
+      />,
+    )
+
+    expect(screen.getByText('82%')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: /Similitud por propuesta.*82%/ })).toBeInTheDocument()
+  })
+
+  it('permite personalizar el mensaje cuando no hay datos', () => {
+    render(<BarChart data={[]} emptyMessage="No tienes propuestas pendientes." />)
+
+    expect(screen.getByText('No tienes propuestas pendientes.')).toBeInTheDocument()
+  })
 })

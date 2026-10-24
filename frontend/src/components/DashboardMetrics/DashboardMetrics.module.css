@@ -21,7 +21,7 @@
   grid-template-columns: minmax(0, 640px);
   justify-content: center;
 }
-/* Grid inferior 8/4: gráfica mensual + actividad reciente. */
+/* Grid inferior 8/4: gráfica de estado + actividad reciente. */
 .lower {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);

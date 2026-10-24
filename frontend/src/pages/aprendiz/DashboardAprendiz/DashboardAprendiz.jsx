@@ -1,13 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, CaretRight, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Sparkle, Tray } from 'phosphor-react'
+import { Bell, CaretRight, CheckCircle, Clock, FolderOpen, MagnifyingGlass, PlusCircle, Tray } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import DashboardHero from '../../../components/DashboardHero/DashboardHero'
 import DashboardMetrics from '../../../components/DashboardMetrics/DashboardMetrics'
-import DashboardGrid from '../../../components/DashboardGrid/DashboardGrid'
 import MetricCard from '../../../components/MetricCard/MetricCard'
 import DataPanel from '../../../components/DataPanel/DataPanel'
-import QuickActions from '../../../components/QuickActions/QuickActions'
 import ActivityList from '../../../components/ActivityList/ActivityList'
 import Badge from '../../../components/Badge/Badge'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
@@ -48,17 +46,25 @@ export default function DashboardAprendiz() {
     { inicial: [] }
   )
   const { data: todasSimilitudes } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
-  const { data: misNotificaciones } = useApi(
+  const {
+    data: misNotificaciones,
+    recargar: recargarNotificaciones,
+  } = useApi(
     // El backend ya acota las notificaciones al usuario autenticado: misma URL
     // que usa el layout, así se comparte una sola petición.
     () => notificaciones.listar(),
     [user.id],
     { inicial: [] }
   )
+  const [marcandoAlertas, setMarcandoAlertas] = useState(false)
 
   const misProyectos = useMemo(
     () => todosProyectos.filter((p) => esMio(p, user.id)),
     [todosProyectos, user.id]
+  )
+  const aprobadas = useMemo(
+    () => misProyectos.filter((p) => p.estado === 'aprobado').length,
+    [misProyectos]
   )
   const idsPropios = useMemo(() => new Set(misProyectos.map((p) => Number(p.id))), [misProyectos])
 
@@ -77,12 +83,40 @@ export default function DashboardAprendiz() {
   const recientes = useMemo(() => [...misProyectos].slice(0, RECIENTES), [misProyectos])
   const saludo = (user.nombre || '').split(' ')[0]
 
-  const acciones = [{
-    to: '/aprendiz/propuestas?crear=1',
-    icon: <PlusCircle size={24} weight="regular" />,
-    titulo: 'Nueva Propuesta',
-    descripcion: 'Crea tu propuesta y analízala al instante',
-  }]
+  async function marcarAlertasLeidas() {
+    if (marcandoAlertas || sinLeer === 0) return
+
+    setMarcandoAlertas(true)
+    try {
+      const pendientes = misNotificaciones.filter(
+        (n) => Number(n.id_usuario) === Number(user.id) && !n.leida
+      )
+      await Promise.allSettled(pendientes.map((n) => notificaciones.marcarLeida(n)))
+      await recargarNotificaciones()
+    } catch {
+      // Si falla una marca, el contador seguirá mostrando lo pendiente.
+    } finally {
+      setMarcandoAlertas(false)
+    }
+  }
+
+  const acciones = [
+    {
+      to: '/aprendiz/propuestas?crear=1',
+      icon: <PlusCircle size={24} weight="regular" />,
+      titulo: 'Nueva propuesta',
+      descripcion: 'Crea una propuesta y analízala al instante.',
+    },
+    {
+      icon: <CheckCircle size={24} weight="regular" />,
+      titulo: marcandoAlertas ? 'Marcando alertas...' : 'Marcar alertas leídas',
+      descripcion: sinLeer > 0
+        ? `Tienes ${sinLeer} notificación${sinLeer === 1 ? '' : 'es'} sin leer.`
+        : 'No tienes alertas pendientes.',
+      onClick: marcarAlertasLeidas,
+      disabled: marcandoAlertas || sinLeer === 0,
+    },
+  ]
 
   const items = recientes.map((p) => {
     const info = infoSimilitud(todasSimilitudes, p.id)
@@ -117,41 +151,33 @@ export default function DashboardAprendiz() {
 
         <section className={s.stats} aria-label="Resumen de actividad">
           <MetricCard to="/aprendiz/propuestas" icon={<FolderOpen size={22} />} label="Propuestas registradas" value={misProyectos.length} variant="primary" />
+          <MetricCard to="/aprendiz/propuestas" icon={<CheckCircle size={22} />} label="Propuestas aprobadas" value={aprobadas} variant="success" />
           <MetricCard to="/aprendiz/similitudes" icon={<MagnifyingGlass size={22} />} label="Similitudes detectadas" value={similitudesPropias} variant="warning" />
           <MetricCard to={RUTA_ALERTAS_POR_ROL.aprendiz} icon={<Bell size={22} />} label="Notificaciones sin leer" value={sinLeer} variant="info" />
         </section>
 
-        <DashboardMetrics rol="aprendiz" />
+        <DashboardMetrics rol="aprendiz" acciones={acciones} />
 
-        <DashboardGrid
-          left={
-            <DataPanel title="Acciones rápidas" icon={<Sparkle size={18} />}>
-              <QuickActions items={acciones} />
-            </DataPanel>
-          }
-          right={
-            <DataPanel
-              title="Propuestas recientes"
-              icon={<Clock size={18} />}
-              action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}
-            >
-              <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-                <ActivityList
-                  items={items}
-                  empty={
-                    <EmptyState
-                      icon={<Tray />}
-                      title="Aún no tienes propuestas"
-                      message="Registra tu primera propuesta y envíala para analizarla."
-                      actionLabel="Crear propuesta"
-                      onAction={() => navigate('/aprendiz/propuestas?crear=1')}
-                    />
-                  }
+        <DataPanel
+          title="Propuestas recientes"
+          icon={<Clock size={18} />}
+          action={<Link to="/aprendiz/propuestas" className={s.panelLink}>Ver todas</Link>}
+        >
+          <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+            <ActivityList
+              items={items}
+              empty={
+                <EmptyState
+                  icon={<Tray />}
+                  title="Aún no tienes propuestas"
+                  message="Registra tu primera propuesta y envíala para analizarla."
+                  actionLabel="Crear propuesta"
+                  onAction={() => navigate('/aprendiz/propuestas?crear=1')}
                 />
-              </ApiState>
-            </DataPanel>
-          }
-        />
+              }
+            />
+          </ApiState>
+        </DataPanel>
       </div>
     </DashboardLayout>
   )
