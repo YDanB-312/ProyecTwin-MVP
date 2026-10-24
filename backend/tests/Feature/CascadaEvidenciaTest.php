@@ -362,6 +362,17 @@ class CascadaEvidenciaTest extends TestCase
         $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
     }
 
+    public function test_red_sin_programas_se_borra(): void
+    {
+        $red = $this->red('Red vacía');
+
+        $this->como($this->usuario('admin'))
+            ->deleteJson('/v1/knowledge-networks/' . $red->id)
+            ->assertOk();
+
+        $this->assertDatabaseMissing('knowledge_networks', ['id' => $red->id]);
+    }
+
     public function test_ficha_con_propuestas_sin_pares_se_anula_sin_borrar_nada(): void
     {
         $red = $this->red();

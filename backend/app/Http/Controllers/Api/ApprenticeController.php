@@ -150,13 +150,19 @@ class ApprenticeController extends Controller
             }
         }
 
-        $data = $request->only(['codigo', 'id_class_group', 'id_usuario', 'id_programa']);
-        // Invariante: el programa del aprendiz es el de su ficha (o null sin ficha).
-        if ($request->filled('id_class_group')) {
-            $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
-        } elseif ($request->has('id_class_group')) {
-            $data['id_programa'] = null;
+        // El programa no se acepta del cliente: siempre se deriva de la ficha
+        // actual o de la ficha destino.
+        $data = $request->only(['codigo', 'id_class_group', 'id_usuario']);
+        if ($request->has('id_class_group')) {
+            $fichaDestino = $request->filled('id_class_group')
+                ? ClassGroup::findOrFail($request->id_class_group)
+                : null;
+        } else {
+            $fichaDestino = $apprentice->id_class_group
+                ? ClassGroup::findOrFail($apprentice->id_class_group)
+                : null;
         }
+        $data['id_programa'] = optional($fichaDestino)->id_programa;
 
         $fichaAnterior = $apprentice->id_class_group;
         $apprentice->update($data);

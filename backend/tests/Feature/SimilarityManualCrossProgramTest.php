@@ -323,6 +323,10 @@ class SimilarityManualCrossProgramTest extends TestCase
             $this->parCrossProgram->id,
             $this->idsListado($this->admin)
         );
+        $this->assertContains(
+            $this->parCrossProgram->id,
+            $this->idsListado($this->admin, ['supervision' => 1])
+        );
 
         $this->como($this->admin)
             ->getJson('/v1/similarities/' . $this->parCrossProgram->id)

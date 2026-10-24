@@ -44,7 +44,7 @@ export default function SimilitudesAdmin() {
   const { data, cargando, error, recargar } = useApi(
     async () => {
       const [listaSimilitudes, listaProyectos, listaProgramas, listaFichas, configMotor] = await Promise.all([
-        similitudes.listar(),
+        similitudes.listar({ supervision: 1 }),
         proyectos.listar(),
         programas.listar(),
         fichas.listar('program'),
@@ -166,6 +166,9 @@ export default function SimilitudesAdmin() {
         {errorAccion && <Alert variant="danger">{errorAccion}</Alert>}
 
         <ApiState cargando={cargando} error={error} onReintentar={recargar}>
+          <p className={s.info}>
+            La supervisión administrativa muestra todos los pares vigentes. El corpus del motor para detectar similitudes sigue limitado a propuestas aprobadas.
+          </p>
           <div className={local.tira} role="status" aria-label="Resumen de coincidencias">
             <StatChip label="Pares" value={listaSimilitudes.length} />
             <StatChip label={`Sobre ${umbralPct}%`} value={altas} />
@@ -195,7 +198,10 @@ export default function SimilitudesAdmin() {
                 }}
               >
                 <option value="todos">Todos</option>
+                <option value="borrador">{ESTADO_LABEL.borrador}</option>
+                <option value="pendiente">{ESTADO_LABEL.pendiente}</option>
                 <option value="aprobado">{ESTADO_LABEL.aprobado}</option>
+                <option value="rechazado">{ESTADO_LABEL.rechazado}</option>
               </Select>
             </label>
             <label className={s.field}>
@@ -273,7 +279,7 @@ export default function SimilitudesAdmin() {
               <EmptyState
                 icon={<MagnifyingGlass />}
                 title="Sin coincidencias con el umbral vigente"
-                message={`Ninguna propuesta del sistema alcanza el umbral de ${umbralPct}% en la ventana de ${motorConfig.meses} meses. Baja el umbral o amplía la ventana y recalibra.`}
+                message={`No hay pares vigentes que alcancen el umbral de ${umbralPct}% en la ventana de ${motorConfig.meses} meses. Baja el umbral o amplía la ventana y recalibra.`}
               />
             ) : (
               <EmptyState

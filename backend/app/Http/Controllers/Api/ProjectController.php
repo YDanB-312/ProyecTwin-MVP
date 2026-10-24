@@ -171,7 +171,7 @@ class ProjectController extends Controller
         $item = DB::transaction(function () use ($project, $huella, $eraRechazada) {
             // Orden global de bloqueos (D-2b): el mutex del motor se adquiere
             // SIEMPRE antes de tocar la propuesta (evita el AB-BA con destroy).
-            $config = \App\Models\MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+            $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
             // Lock de la fila: dos envíos concurrentes no pueden pasar la
@@ -369,7 +369,7 @@ class ProjectController extends Controller
         DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario) {
             // Orden global de bloqueos (D-2b): el mutex del motor se adquiere
             // SIEMPRE antes de tocar la propuesta (evita el AB-BA con destroy).
-            $config = \App\Models\MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+            $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
             $project->update($datos);
@@ -508,7 +508,7 @@ class ProjectController extends Controller
             // de adquirir el mutex y sus locks de rango cubren la ventana.
             // Inicialización canónica (igual que Recomputador): garantiza la fila
             // del motor también en el arranque y toma SIEMPRE el mutex.
-            $config = \App\Models\MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+            $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
             $paresBloqueados = Similarity::where('id_proyecto_1', $project->id)
                 ->orWhere('id_proyecto_2', $project->id)

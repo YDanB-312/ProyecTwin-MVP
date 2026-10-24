@@ -411,6 +411,12 @@ export default function RedesConocimiento() {
                   />
                 </FormField>
 
+                {modo === 'editar' && (
+                  <Alert variant="warning">
+                    Quitar un programa y guardar elimina en cascada sus fichas, aprendices y propuestas asociadas.
+                  </Alert>
+                )}
+
                 <Actions form>
                   <Button type="submit" disabled={guardando}>
                     <CheckCircle size={14} /> {modo === 'editar' ? 'Guardar cambios' : 'Crear red'}
@@ -531,7 +537,7 @@ export default function RedesConocimiento() {
           titulo="Eliminar red"
           mensaje={
             redAEliminar
-              ? `¿Eliminar la red "${redAEliminar.nombre}"? Se quitarán también sus programas asociados. Esta acción no se puede deshacer.`
+              ? `¿Eliminar la red "${redAEliminar.nombre}"? Se eliminarán también sus programas asociados y, en cascada, sus fichas, aprendices y propuestas. Esta acción no se puede deshacer.`
               : ''
           }
           textoConfirmar="Sí, eliminar"

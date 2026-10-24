@@ -37,29 +37,88 @@ class Pasajes
         $tb = array_map($tok, $sb);
 
         $res = [];
-        foreach ($sa as $i => $oracionA) {
-            if (!$ta[$i]) continue;
+        $agregar = function (int $i, int $j, float $score) use (&$res, $sa, $sb, $umbral) {
+            if ($score < $umbral) return;
+
+            $clave = $sa[$i] . "\0" . $sb[$j];
+            $porcentaje = (int) round($score * 100);
+
+            if (!isset($res[$clave]) || $porcentaje > $res[$clave]['score']) {
+                $res[$clave] = [
+                    'a' => $sa[$i],
+                    'b' => $sb[$j],
+                    'score' => $porcentaje,
+                ];
+            }
+        };
+
+        // Evalúa ambos sentidos y conserva la unión de pares con la mejor
+        // contención. La cobertura máxima es simétrica: A→B y B→A producen el
+        // mismo conjunto de fragmentos, sin importar el orden de los textos.
+        foreach ($ta as $i => $tokensA) {
+            if (!$tokensA) continue;
+
             $mejor = 0.0;
             $mejorJ = -1;
-            foreach ($sb as $j => $oracionB) {
-                if (!$tb[$j]) continue;
-                $inter = count(array_intersect($ta[$i], $tb[$j]));
-                $score = $inter / max(count($ta[$i]), 1);
+
+            foreach ($tb as $j => $tokensB) {
+                if (!$tokensB) continue;
+
+                $inter = count(array_intersect($tokensA, $tokensB));
+                if ($inter === 0) continue;
+
+                $score = max(
+                    $inter / max(count($tokensA), 1),
+                    $inter / max(count($tokensB), 1)
+                );
+
                 if ($score > $mejor) {
                     $mejor = $score;
                     $mejorJ = $j;
                 }
             }
-            if ($mejor >= $umbral && $mejorJ >= 0) {
-                $res[] = [
-                    'a' => $oracionA,
-                    'b' => $sb[$mejorJ],
-                    'score' => (int) round($mejor * 100),
-                ];
+
+            if ($mejorJ >= 0) {
+                $agregar($i, $mejorJ, $mejor);
             }
         }
 
-        usort($res, fn ($x, $y) => $y['score'] <=> $x['score']);
+        foreach ($tb as $j => $tokensB) {
+            if (!$tokensB) continue;
+
+            $mejor = 0.0;
+            $mejorI = -1;
+
+            foreach ($ta as $i => $tokensA) {
+                if (!$tokensA) continue;
+
+                $inter = count(array_intersect($tokensB, $tokensA));
+                if ($inter === 0) continue;
+
+                $score = max(
+                    $inter / max(count($tokensB), 1),
+                    $inter / max(count($tokensA), 1)
+                );
+
+                if ($score > $mejor) {
+                    $mejor = $score;
+                    $mejorI = $i;
+                }
+            }
+
+            if ($mejorI >= 0) {
+                $agregar($mejorI, $j, $mejor);
+            }
+        }
+
+        $res = array_values($res);
+
+        usort($res, function (array $x, array $y) {
+            $orden = $y['score'] <=> $x['score'];
+
+            return $orden !== 0 ? $orden : strcmp($x['a'] . "\0" . $x['b'], $y['a'] . "\0" . $y['b']);
+        });
+
         return array_slice($res, 0, $max);
     }
 }

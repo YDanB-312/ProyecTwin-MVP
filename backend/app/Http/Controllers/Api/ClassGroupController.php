@@ -334,7 +334,7 @@ class ClassGroupController extends Controller
             // transacción —antes de bloquear ficha/aprendices—; el recálculo por
             // cambio de programa lo reutiliza. Evita el ciclo de bloqueos con las
             // cascadas de BorradoCascada (que también empiezan por el mutex).
-            $config = \App\Models\MotorConfig::firstOrCreate([], ['umbral' => 0.30, 'meses' => 12]);
+            $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
             $class_group->update($datos);

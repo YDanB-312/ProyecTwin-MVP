@@ -183,6 +183,32 @@ class SimilarityPerspectiveTest extends TestCase
         );
     }
 
+    public function test_solo_el_admin_puede_supervisar_pares_con_pendientes(): void
+    {
+        $this->assertContains(
+            $this->par->id,
+            $this->idsListado($this->admin, ['supervision' => 1])
+        );
+
+        $this->como($this->instructorUser)
+            ->getJson('/v1/similarities?supervision=1')
+            ->assertStatus(403);
+
+        $this->como($this->pendiente)
+            ->getJson('/v1/similarities?supervision=1')
+            ->assertStatus(403);
+    }
+
+    public function test_el_admin_supervisa_tambien_pares_con_rechazadas(): void
+    {
+        $ficha = ClassGroup::findOrFail($this->projectPendiente->id_class_group);
+        $rechazada = $this->proyecto('Propuesta rechazada', $this->pendiente, $ficha, 'rechazado');
+        $par = $this->similaridad($this->projectAprobada, $rechazada);
+
+        $this->assertNotContains($par->id, $this->idsListado($this->admin));
+        $this->assertContains($par->id, $this->idsListado($this->admin, ['supervision' => 1]));
+    }
+
     public function test_si_ambas_son_mias_se_muestra(): void
     {
         // Mismo aprendiz con una aprobada y una pendiente, relacionadas.

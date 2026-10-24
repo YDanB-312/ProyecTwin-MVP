@@ -67,6 +67,39 @@ class DemoSimilitudPublicaTest extends TestCase
         $this->assertStringNotContainsString('ZZ987654ZZ', $cuerpo);
     }
 
+    public function test_demo_compara_solo_contra_aprobadas_del_corpus_global(): void
+    {
+        $aprobada = $this->propuestaAprobada();
+
+        $pendiente = Project::create([
+            'titulo' => 'Inventarios del almacén pendiente',
+            'resumen' => 'ZZ987654ZZ texto interno que jamás debe salir en la demo.',
+            'palabras_clave' => 'inventarios, stock, almacén, alertas',
+            'area_aplicacion' => 'Tecnología',
+            'estado' => 'pendiente',
+            'id_creador' => $aprobada->id_creador,
+        ]);
+        $rechazada = Project::create([
+            'titulo' => 'Inventarios del almacén rechazada',
+            'resumen' => 'ZZ987654ZZ texto interno que jamás debe salir en la demo.',
+            'palabras_clave' => 'inventarios, stock, almacén, alertas',
+            'area_aplicacion' => 'Tecnología',
+            'estado' => 'rechazado',
+            'id_creador' => $aprobada->id_creador,
+        ]);
+
+        $ids = array_column(
+            $this->postJson('/v1/public/demo-similitud', [
+                'texto' => 'Inventarios del almacén con alertas de stock',
+            ])->assertOk()->json('coincidencias'),
+            'id'
+        );
+
+        $this->assertContains($aprobada->id, $ids);
+        $this->assertNotContains($pendiente->id, $ids);
+        $this->assertNotContains($rechazada->id, $ids);
+    }
+
     public function test_demo_rechaza_texto_faltante_o_invalido(): void
     {
         // Sin texto.

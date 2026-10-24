@@ -1,5 +1,20 @@
 # Changelog — ProyecTwin MVP (Frontend)
 
+> **Nota de vigencia:** este documento es histórico (junio de 2026). Las rutas
+> `src/modules/...`, `Header.jsx` y `Sidebar*.jsx` corresponden a una etapa
+> anterior y ya no existen. El estado actual se consulta en
+> `../docs/inventario-pendientes.md` y `../docs/entorno-pruebas-seguro.md`.
+> Este changelog no implica una release ni un despliegue.
+
+## Sin publicar (árbol de trabajo)
+
+- `ProtectedRoute`: un usuario autenticado con rol incorrecto ve la página 403
+  `AccesoDenegado` en lugar de ser redirigido al login; se añadió su prueba
+  unitaria. Cambio local, sin commit ni publicación.
+- Administración de similitudes: supervisión global de pares vigentes para el
+  admin, con estados y filtros de propuestas pendientes/aprobadas/rechazadas.
+  Cambio local, sin commit ni publicación.
+
 ## Fase 1 — Sidebar Toggle (DashboardLayout)
 - DashboardLayout.jsx: `useState` for `sidebarOpen`, passed `onToggleSidebar` to Header, `isOpen`/`onClose` to Sidebars.
 - Header.jsx: hamburger `<a>` → `<button onClick={onToggleSidebar}>`.

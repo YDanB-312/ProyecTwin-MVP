@@ -79,4 +79,24 @@
 | D-10 | Perfiles de aprendices al borrar programas/redes | (a) conservar la fila con `id_class_group`/`id_programa` en null (consistente con la anulación de fichas); (b) ratificar la eliminación actual. Hoy: se elimina la fila | `docs/alcance-y-exclusiones.md:27-28`; `BorradoCascada::programaInterno:91` |
 
 ---
+
+## 5. Actualización Lotes 14-15 (23-oct-2026)
+
+| Ref | Estado tras el lote | Evidencia / límite |
+|---|---|---|
+| D-01 | **Sesiones corregidas y probadas**: se eliminan las sesiones del usuario dentro de la transacción; no se añadieron bloqueos nuevos por comentarios/reportes; se conserva la cascada existente | `BorradoCascada.php`; `BorradoUsuarioEvidenciaTest`; auditoría del 409, comentarios/reportes y callejón del creador siguen pendientes de decisión |
+| D-02 | **Conservado**: `actual()` selecciona la fila de menor `id`, crea `id = 1` si no existe y recupera la colisión con `lockForUpdate`; sin migración | `MotorConfig.php`; `MotorConfigUnicidadTest`; implementación local |
+| D-03 | **Aplicado**: `Pasajes::comunes` evalúa ambos sentidos, deduplica y usa cobertura máxima simétrica; el score completo ya era simétrico | `Pasajes.php`; `PasajesTest`; `SimilitudServiceTest`; no se infiere dirección de copia |
+| D-04 | **Aplicado**: la demo usa únicamente propuestas aprobadas del corpus global; prueba con pendiente/rechazada | `DemoSimilitudPublicaTest`; el contrato de privacidad se conserva |
+| D-05 | **Robustez corregida**: seeder transaccional, código de aprendiz sin colisión por sufijo, comentario y README; alcance opt-in documentado | `VolumenSeeder.php`; `VolumenSeederAisladoTest`; `README.md`; historial/motor/notificaciones siguen siendo decisión de alcance |
+| D-08 | **Conservado**: 403 para rol incorrecto, sin cambios funcionales | `ProtectedRoute` y `AccesoDenegado`; prueba 6/6 |
+| D-09 | **Aplicado**: el admin puede supervisar todos los pares vigentes con `supervision=1`; otros roles reciben 403; el corpus del motor sigue limitado a aprobadas | `SimilarityController`; `SimilitudesAdmin.jsx`; prueba de perspectiva y permisos |
+| D-10 | **Sin cambio de política**: se conserva la cascada administrativa existente; no se añadieron 409 por dependencias; se corrigió la invariante `id_programa` de la ficha | `BorradoCascada`; `ApprenticeController`; `ApprenticeFichaTest`; la política de conservar filas sigue pendiente |
+| C-05 | **Probado en base temporal desechable**: migración, rollback completo y re-migración | `RollbackAisladoTest`; no se toca `proyectwin_test` ni `proyectwin_mvp`; no hay CI versionado |
+| O5 | **Nota de vigencia y entrada local** en `frontend/CHANGELOG.md`; no se afirma release | Reconstrucción histórica completa sigue pendiente de decisión |
+| FE-7 | **Anclas y middleware corregidos** en `arquitectura.md`/`.html`; etiquetas de autenticación actualizadas en SVG y drawio (cookie httpOnly/CSRF) | Excalidraw queda fuera de este commit por el reformateo pendiente de revisión; los diagramas conservan su alcance de flujo GET |
+
+**Pruebas de cierre:** backend completo **433/433 (2600 aserciones)**, frontend unit **90/90**, rollback real y seeder de volumen en bases temporales desechables; `php -l` y ESLint focalizado verdes. Pint reporta reglas preexistentes en archivos legacy; los archivos nuevos se formatearon sin reformateo masivo. Las pruebas E2E no se repitieron.
+
+---
 *Los detalles completos (impacto, dependencias y pruebas por ítem) provienen de las matrices del Lote 3 (Agentes 3 y 4), las investigaciones del Lote 4 (D-01), las auditorías del gate y la ejecución de los Lotes 12-13 (19-oct-2026); este documento es el índice consolidado y trazable. Incorpora las correcciones de la revisión independiente (R3 del Lote 3) y los estados verificados de los Lotes 4-6, 12 y 13.*

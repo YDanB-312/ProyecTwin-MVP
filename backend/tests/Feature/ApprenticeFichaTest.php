@@ -268,6 +268,32 @@ class ApprenticeFichaTest extends TestCase
         ]);
     }
 
+    public function test_actualizar_sin_ficha_no_acepta_programa_del_payload(): void
+    {
+        $ficha = $this->ficha();
+        $otroPrograma = $this->programa($this->red());
+        $user = $this->usuarioAprendiz();
+        $aprendiz = Apprentice::create([
+            'codigo' => 'AP-' . uniqid(),
+            'id_usuario' => $user->id,
+            'id_class_group' => $ficha->id,
+            'id_programa' => $ficha->id_programa,
+        ]);
+
+        // Se omite id_class_group: la ficha actual debe conservarse y el
+        // programa debe seguir siendo el de esa ficha, no el del payload.
+        $this->withToken($this->token($ficha->instructor->generalUser))
+            ->putJson('/v1/apprentices/' . $aprendiz->id, [
+                'codigo' => $aprendiz->codigo,
+                'id_usuario' => $user->id,
+                'id_programa' => $otroPrograma->id,
+            ])
+            ->assertOk();
+
+        $this->assertSame((int) $ficha->id, (int) $aprendiz->fresh()->id_class_group);
+        $this->assertSame((int) $ficha->id_programa, (int) $aprendiz->fresh()->id_programa);
+    }
+
     public function test_borrar_la_ficha_con_datos_la_anula_y_libera_el_numero(): void
     {
         $ficha = $this->ficha();

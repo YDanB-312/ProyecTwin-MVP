@@ -48,6 +48,19 @@ Otros usuarios demo (aprendices/instructores/admin) también usan `123456`.
 Los usuarios creados por el flujo real reciben contraseña temporal y
 `must_change_password=true`.
 
+### Volumen opcional
+
+El escenario de volumen no forma parte del seed base. Se ejecuta únicamente
+cuando se pide explícitamente, después de `DatabaseSeeder`:
+
+```bash
+php artisan db:seed --class=VolumenSeeder
+```
+
+Crea 5 instructores, 5 fichas, 40 aprendices, 80 propuestas y 12 reportes
+adicionales. Está pensado para listados, paginación y filtros; no ejecuta el
+motor de similitudes ni genera notificaciones o historial para esas propuestas.
+
 ## Pruebas
 
 ```bash
@@ -70,6 +83,10 @@ cd ../frontend && npm run test:e2e
   ejecuta el motor**. Tras una intervención admin que devuelve a revisión se
   archiva y se re-detecta igual. Los pares históricos se conservan
   (`vigente=false`) y nunca se borran al rechazar/reenviar.
+- **Supervisión admin de similitudes:** `GET /similarities?supervision=1` está
+  reservado a administradores y muestra todos los pares vigentes, incluidos los
+  de propuestas pendientes o rechazadas y los manuales entre programas. El
+  corpus que usa el motor sigue limitado a propuestas aprobadas.
 - **Guarda de evidencia (D-2b × BUG-007):** `DELETE /projects/{id}` responde
   **409** si el proyecto tiene **cualquier** par de similitud (vigente o
   histórico): la evidencia es compartida con la contraparte. Las cascadas de
