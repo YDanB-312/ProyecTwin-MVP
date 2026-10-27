@@ -9,6 +9,7 @@ import Actions from '../Actions/Actions'
 import Button from '../Button/Button'
 import { Input, Textarea, Select } from '../Input/Input'
 import Alert from '../Alert/Alert'
+import { RUTA_POR_ROL } from '../../constants/routes'
 import s from './ReportarFallaBase.module.css'
 
 // Bandeja de soporte: conflictos con fichas (número, motivo), errores y dudas.
@@ -16,6 +17,11 @@ import s from './ReportarFallaBase.module.css'
 export default function ReportarFallaBase({ role, onSubmit }) {
   const [searchParams] = useSearchParams()
   const numeroInicial = (searchParams.get('numero') || '').trim()
+  const dashboard = RUTA_POR_ROL[role] || RUTA_POR_ROL.aprendiz
+  const breadcrumb = [
+    { label: 'Dashboard', to: dashboard },
+    { label: 'Soporte' },
+  ]
 
   const [form, setForm] = useState({
     titulo: '',
@@ -49,6 +55,13 @@ export default function ReportarFallaBase({ role, onSubmit }) {
   if (enviado) {
     return (
       <div className={s.wrapper}>
+        <PageHeader
+          title="Soporte"
+          subtitle={`Cuéntanos qué necesitas como ${role}: conflictos con fichas, errores o dudas.`}
+          icon={<Lifebuoy size={20} />}
+          breadcrumb={breadcrumb}
+        />
+
         <DataPanel title="Solicitud enviada" icon={<Lifebuoy size={18} />}>
           <div className={s.success}>
             <p className={s.successTitle}>¡Gracias por escribirnos!</p>
@@ -65,6 +78,7 @@ export default function ReportarFallaBase({ role, onSubmit }) {
         title="Soporte"
         subtitle={`Cuéntanos qué necesitas como ${role}: conflictos con fichas, errores o dudas.`}
         icon={<Lifebuoy size={20} />}
+        breadcrumb={breadcrumb}
       />
 
       <ConsoleCard title="Detalles de la solicitud" subtitle="Describe el caso con el mayor detalle posible" glow>

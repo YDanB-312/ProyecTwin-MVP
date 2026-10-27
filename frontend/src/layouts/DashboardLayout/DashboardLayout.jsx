@@ -22,7 +22,6 @@ const LINKS = {
     { to: '/aprendiz/ficha', icon: <GraduationCap size={20} weight="regular" />, label: 'Ficha', activeFor: ['/aprendiz/detalle-ficha'] },
     { to: RUTA_ALERTAS_POR_ROL.aprendiz, icon: <Bell size={20} weight="regular" />, label: 'Notificaciones' },
     { to: '/aprendiz/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
-    { to: RUTA_SOPORTE_POR_ROL.aprendiz, icon: <Bug size={20} weight="regular" />, label: 'Soporte' },
   ],
   instructor: [
     { to: RUTA_POR_ROL.instructor, icon: <House size={20} weight="regular" />, label: 'Dashboard' },
@@ -31,7 +30,6 @@ const LINKS = {
     { to: '/instructor/fichas', icon: <BookOpen size={20} weight="regular" />, label: 'Fichas', activeFor: ['/instructor/detalle-ficha', '/instructor/directorio-ficha'] },
     { to: RUTA_ALERTAS_POR_ROL.instructor, icon: <Bell size={20} weight="regular" />, label: 'Notificaciones' },
     { to: '/instructor/perfil', icon: <UserCircle size={20} weight="regular" />, label: 'Mi Perfil' },
-    { to: RUTA_SOPORTE_POR_ROL.instructor, icon: <Bug size={20} weight="regular" />, label: 'Soporte' },
   ],
   admin: [
     { to: RUTA_POR_ROL.admin, icon: <House size={20} weight="regular" />, label: 'Dashboard' },
@@ -81,7 +79,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
       />
       <div className={s.body}>
         <main className={s.main}>{children}</main>
-        <Footer />
+        <Footer role={role} />
       </div>
     </div>
   )
