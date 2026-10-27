@@ -276,6 +276,19 @@
   .cardGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Propuestas: todas las filas conservan la altura de la card más alta. */
+  .cardGridEqual {
+    grid-auto-rows: 1fr;
+  }
+
+  .cardGridEqual .card {
+    height: 100%;
+  }
+
+  .cardGridEqual .cardFooter {
+    margin-top: auto;
+  }
 }
 
 @media (min-width: 1024px) {

@@ -608,7 +608,7 @@ export default function Propuestas() {
                   {avisoEnvio && (
                     <Alert variant="warning">{avisoEnvio}</Alert>
                   )}
-                  <div className={s.cardGrid}>
+                  <div className={`${s.cardGrid} ${s.cardGridEqual}`}>
                     {visibles.map((p) => {
                       const info = infoSimilitud(todasSimilitudes, p.id)
                       // Solo se puede enviar si la propuesta vive en la ficha
