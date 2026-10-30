@@ -413,7 +413,7 @@ export default function RedesConocimiento() {
 
                 {modo === 'editar' && (
                   <Alert variant="warning">
-                    Quitar un programa y guardar elimina en cascada sus fichas, aprendices y propuestas asociadas.
+                    Quitar un programa y guardar elimina sus fichas. Los aprendices y las propuestas se conservan, pero quedan sin ficha ni programa.
                   </Alert>
                 )}
 
@@ -537,7 +537,7 @@ export default function RedesConocimiento() {
           titulo="Eliminar red"
           mensaje={
             redAEliminar
-              ? `¿Eliminar la red "${redAEliminar.nombre}"? Se eliminarán también sus programas asociados y, en cascada, sus fichas, aprendices y propuestas. Esta acción no se puede deshacer.`
+              ? `¿Eliminar la red "${redAEliminar.nombre}"? Se eliminarán también sus programas y fichas asociadas. Los aprendices y las propuestas se conservarán, pero quedarán sin ficha ni programa. Esta acción no se puede deshacer.`
               : ''
           }
           textoConfirmar="Sí, eliminar"

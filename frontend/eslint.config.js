@@ -26,4 +26,11 @@ export default defineConfig([
       globals: { ...globals.node, Buffer: 'off' },
     },
   },
+  // Configuración de Playwright: también es Node, no código del SPA.
+  {
+    files: ['playwright*.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

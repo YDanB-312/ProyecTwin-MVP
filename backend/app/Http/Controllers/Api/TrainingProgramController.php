@@ -44,8 +44,8 @@ class TrainingProgramController extends Controller
 
     public function destroy(TrainingProgram $training_program)
     {
-        // Admin sin restricciones: borra el programa y sus dependientes en
-        // cascada (fichas con propuestas/aprendices).
+        // Admin: elimina la estructura (programa y fichas) y conserva las
+        // propuestas y los aprendices, que quedan sin ficha ni programa.
         $impacto = [
             'fichas' => \App\Models\ClassGroup::where('id_programa', $training_program->id)->count(),
             'aprendices' => \App\Models\Apprentice::where('id_programa', $training_program->id)->count(),

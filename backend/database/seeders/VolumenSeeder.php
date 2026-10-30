@@ -8,6 +8,7 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
+use App\Models\TrainingProgram;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -25,6 +26,11 @@ class VolumenSeeder extends Seeder
     private function sembrar(): void
     {
         $marca = uniqid();
+        $programaAdso = TrainingProgram::where('nombre', 'ADSO')->first();
+
+        if (!$programaAdso) {
+            throw new \RuntimeException('VolumenSeeder requiere el programa base ADSO.');
+        }
 
         // 5 instructores.
         $instructores = [];
@@ -57,7 +63,7 @@ class VolumenSeeder extends Seeder
                 'numero' => (string) $numero,
                 'nombre' => "Ficha Volumen {$idx} {$marca}",
                 'estado' => 'activo',
-                'id_programa' => 1, // ADSO
+                'id_programa' => $programaAdso->id,
                 'id_instructor' => $ins->id,
             ]);
         }

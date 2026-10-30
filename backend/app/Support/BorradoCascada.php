@@ -16,18 +16,20 @@ use App\Models\TrainingProgram;
 use App\Services\NotificacionesService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
-// Borrado en cascada para el administrador (sin restricciones): elimina la
-// entidad y todo lo dependiente dentro de una transacción, respetando el orden
-// que exigen las claves foráneas. La responsabilidad del impacto la asume el
-// admin en la confirmación del cliente.
+// Borrado en cascada para el administrador: elimina la entidad y todo lo
+// dependiente dentro de una transacción, respetando el orden que exigen las
+// claves foráneas. La responsabilidad del impacto la asume el admin en la
+// confirmación del cliente; la evidencia de similitud compartida sigue
+// protegida por D-2b/D-01 salvo eliminación definitiva de usuario confirmada.
 //
-// D-2b × BUG-007: ninguna cascada puede destruir evidencia de similitud
-// compartida (una fila conecta dos propuestas). Antes de mutar nada se verifica
-// —con el mutex global del motor tomado primero (orden O1)— que ninguna
-// propuesta del subárbol esté referenciada por pares vigentes o históricos;
-// si lo está, se aborta con 409 y no se modifica nada.
+// D-2b/D-01/D-10: por defecto, las cascadas que destruyen propuestas
+// (instructor, usuario y ficha individual) verifican antes de mutar, con el
+// mutex global del motor tomado primero (orden O1), que ninguna propuesta del
+// subárbol esté referenciada por pares vigentes o históricos; si lo está, se
+// aborta con 409. Programas y redes no destruyen propuestas: las conservan sin
+// ficha. La eliminación definitiva de usuario con consentimiento explícito es
+// la única excepción y queda auditada por el controlador.
 //
 // Limitación documentada (fuera de este lote): la creación concurrente de una
 // ficha dentro del programa/red no está serializada por el mutex del motor; si
@@ -46,19 +48,28 @@ class BorradoCascada
         });
     }
 
-    // (interno: la guarda de evidencia ya se evaluó en el punto de entrada)
-    private static function fichaInterna(ClassGroup $ficha): void
+    // (interno: en el borrado individual la guarda se evalúa antes de entrar)
+    // `conservarPropuestas` se usa al borrar programas/redes: la ficha
+    // desaparece, pero las propuestas quedan sin ficha para no perder historia.
+    private static function fichaInterna(ClassGroup $ficha, bool $conservarPropuestas = false): void
     {
         $aprendices = Apprentice::where('id_class_group', $ficha->id)->get();
         $idUsuarios = $aprendices->pluck('id_usuario');
         $titulo = 'Tu ficha "' . $ficha->nombre . '" fue eliminada. Quedaste sin ficha.';
 
-        // Las propuestas de la ficha se eliminan: sus notificaciones con
-        // enlace al proyecto quedarían huérfanas.
-        $proyectos = Project::where('id_class_group', $ficha->id)->pluck('id');
-        Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
+        if ($conservarPropuestas) {
+            // D-10: no se eliminan propuestas ni su historial/similitudes;
+            // simplemente dejan de pertenecer a la ficha.
+            Project::where('id_class_group', $ficha->id)->update(['id_class_group' => null]);
+        } else {
+            // Las propuestas de la ficha se eliminan: sus notificaciones con
+            // enlace al proyecto quedarían huérfanas.
+            $proyectos = Project::where('id_class_group', $ficha->id)->pluck('id');
+            Notification::whereIn('enlace', $proyectos->map(fn ($id) => 'proyecto:' . $id))->delete();
 
-        Project::where('id_class_group', $ficha->id)->get()->each->delete();
+            Project::where('id_class_group', $ficha->id)->get()->each->delete();
+        }
+
         Notification::where('enlace', 'ficha:' . $ficha->id)->delete();
 
         // Desvincular antes de borrar la ficha (conserva fila y pivotes).
@@ -73,41 +84,41 @@ class BorradoCascada
         }
     }
 
-    // Programa: borra sus fichas (con su cascada) y los aprendices del programa,
-    // y luego el programa. Los aprendices se capturan antes porque ficha() los
-    // desvincula del programa.
+    // Programa: elimina sus fichas, conserva propuestas y aprendices (sin
+    // ficha ni programa) y luego borra el programa. Los aprendices se capturan
+    // antes porque fichaInterna() los desvincula.
     public static function programa(TrainingProgram $programa): void
     {
-        DB::transaction(function () use ($programa) {
-            $fichas = ClassGroup::where('id_programa', $programa->id)->pluck('id');
-            self::assertSinEvidencia($fichas, self::mensajeEvidencia('programa', $programa->nombre));
-            self::programaInterno($programa);
-        });
+        DB::transaction(fn () => self::programaInterno($programa));
     }
 
-    // (interno: la guarda de evidencia ya se evaluó en el punto de entrada)
+    // (interno: conserva propuestas y aprendices; solo elimina la estructura)
     private static function programaInterno(TrainingProgram $programa): void
     {
         $aprendices = Apprentice::where('id_programa', $programa->id)->pluck('id');
-        ClassGroup::where('id_programa', $programa->id)->get()->each(fn ($f) => self::fichaInterna($f));
-        Apprentice::whereIn('id', $aprendices)->delete();
+
+        ClassGroup::where('id_programa', $programa->id)->get()
+            ->each(fn ($f) => self::fichaInterna($f, true));
+
+        // D-10: se conservan los perfiles de aprendiz. La ficha ya los dejó sin
+        // grupo; este update cubre además los que tenían el programa pero no
+        // una ficha asociada.
+        Apprentice::whereIn('id', $aprendices)->update([
+            'id_class_group' => null,
+            'id_programa' => null,
+        ]);
+
         $programa->delete();
     }
 
-    // Red de conocimiento: borra sus programas (con su cascada) y luego la red.
+    // Red de conocimiento: borra sus programas (conservando propuestas y
+    // aprendices) y luego la red.
     public static function red(KnowledgeNetwork $red): void
     {
-        DB::transaction(function () use ($red) {
-            $fichas = ClassGroup::whereIn(
-                'id_programa',
-                TrainingProgram::where('knowledge_network_id', $red->id)->pluck('id')
-            )->pluck('id');
-            self::assertSinEvidencia($fichas, self::mensajeEvidencia('red', $red->nombre));
-            self::redInterna($red);
-        });
+        DB::transaction(fn () => self::redInterna($red));
     }
 
-    // (interno: la guarda de evidencia ya se evaluó en el punto de entrada)
+    // (interno: conserva propuestas y aprendices; solo elimina la estructura)
     private static function redInterna(KnowledgeNetwork $red): void
     {
         TrainingProgram::where('knowledge_network_id', $red->id)->get()
@@ -130,20 +141,24 @@ class BorradoCascada
     // Usuario: si es instructor con fichas, se borran esas fichas (con su
     // cascada); luego el borrado del usuario arrastra propuestas, notificaciones,
     // comentarios, reportes y filas de perfil (FK cascade).
-    // D-01 × BUG-007: antes de mutar nada se verifica la evidencia compartida
-    // de su subárbol (propuestas de sus fichas como instructor + propuestas
-    // propias) con el mutex del motor ya tomado (orden O1). Los usuarios con
-    // rol admin quedan exentos y conservan el borrado sin restricciones
-    // (exención documentada: su impacto lo asume el admin que confirma).
-    public static function usuario(GeneralUser $usuario): void
+    // D-01 × BUG-007: sin consentimiento explícito se verifica la evidencia
+    // compartida de su subárbol (propuestas de sus fichas como instructor +
+    // propuestas propias) con el mutex del motor ya tomado (orden O1). La
+    // guarda aplica también a cuentas admin.
+    //
+    // `$permitirEvidencia` solo se usa cuando el administrador confirmó la
+    // eliminación definitiva: se omite la guarda y las FK aplican las cascadas.
+    // La decisión y su contexto quedan en la auditoría del controlador.
+    public static function usuario(GeneralUser $usuario, bool $permitirEvidencia = false): void
     {
-        DB::transaction(function () use ($usuario) {
+        DB::transaction(function () use ($usuario, $permitirEvidencia) {
             $instructor = Instructor::where('id_usuario', $usuario->id)->first();
 
-            if ($usuario->rol !== 'admin') {
-                $fichas = $instructor
-                    ? ClassGroup::where('id_instructor', $instructor->id)->pluck('id')
-                    : collect();
+            $fichas = $instructor
+                ? ClassGroup::where('id_instructor', $instructor->id)->pluck('id')
+                : collect();
+
+            if (!$permitirEvidencia) {
                 self::assertSinEvidencia($fichas, self::mensajeEvidencia('usuario'), $usuario->id);
             }
 
@@ -160,16 +175,8 @@ class BorradoCascada
             $reportes = BugReport::where('id_usuario', $usuario->id)->pluck('id');
             Notification::whereIn('enlace', $reportes->map(fn ($id) => 'reporte:' . $id))->delete();
 
-            // Tokens de sesión y de recuperación (no tienen FK al usuario).
-            $usuario->tokens()->delete();
-            DB::table('password_reset_tokens')
-                ->where('email', strtolower((string) $usuario->correo))
-                ->delete();
-
-            // D-01: revocar también las sesiones de servidor de la cuenta.
-            if (Schema::hasTable('sessions')) {
-                DB::table('sessions')->where('user_id', $usuario->id)->delete();
-            }
+            // D-01: tokens, recuperación y sesiones de servidor.
+            SesionesUsuario::revocar($usuario);
 
             $usuario->delete();
         });
@@ -221,8 +228,6 @@ class BorradoCascada
     {
         return match ($tipo) {
             'ficha' => "No puedes eliminar la ficha «{$nombre}»: sus propuestas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.",
-            'programa' => "No puedes eliminar el programa «{$nombre}»: las propuestas de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.",
-            'red' => "No puedes eliminar la red «{$nombre}»: las propuestas de sus programas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.",
             'instructor' => 'No puedes eliminar al instructor: las propuestas de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.',
             'usuario' => 'No puedes eliminar al usuario: sus propuestas o las de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.',
             default => 'No puedes eliminar este elemento: sus propuestas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.',

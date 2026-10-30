@@ -41,6 +41,12 @@ class AuthController extends Controller
         if ($request->hasSession()) {
             auth('web')->login($user, $request->boolean('recordarme'));
             $request->session()->regenerate();
+            // D-01: versión de sesión para invalidar también las sesiones de
+            // archivo al desactivar/reactivar una cuenta.
+            $request->session()->put(
+                'auth_session_version',
+                (string) $user->remember_token
+            );
         }
 
         // El token Bearer solo se emite a clientes sin sesión (móvil/tests).

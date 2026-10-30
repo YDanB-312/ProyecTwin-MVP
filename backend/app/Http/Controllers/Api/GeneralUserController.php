@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
 use App\Models\Admin;
+use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
+use App\Models\BugReport;
 use App\Models\ClassGroup;
+use App\Models\Comment;
 use App\Models\Instructor;
 use App\Models\Project;
+use App\Models\ProjectHistory;
+use App\Models\Similarity;
 use App\Support\Auditoria;
 use App\Support\BorradoCascada;
 use App\Support\Credenciales;
@@ -16,7 +21,10 @@ use App\Services\AltaUsuario;
 use App\Services\CredencialesCorreo;
 use App\Services\NotificacionesService;
 use App\Support\Pii;
+use App\Support\SesionesUsuario;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -353,6 +361,12 @@ class GeneralUserController extends Controller
         // Actualización atómica: cuenta + perfiles + auditoría (todo o nada).
         DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre, $cambiaDocumento, $documentoAnterior) {
             $general_user->update($data);
+
+            // D-01: una suspensión debe cortar el acceso existente de inmediato.
+            if ($cambiaEstado && !$general_user->estado) {
+                SesionesUsuario::revocar($general_user);
+            }
+
             $documentoNuevo = $cambiaDocumento
                 ? Pii::documento($general_user->tipo_documento, $general_user->numero_documento)
                 : null;
@@ -393,6 +407,11 @@ class GeneralUserController extends Controller
 
     public function destroy(Request $request, GeneralUser $general_user)
     {
+        $request->validate([
+            'confirmar_eliminacion' => 'sometimes|boolean',
+            'confirmacion_hash' => 'sometimes|string|max:64',
+        ]);
+
         $yo = $request->user();
 
         // Autoprotección: nadie borra su propia cuenta.
@@ -410,23 +429,222 @@ class GeneralUserController extends Controller
             }
         }
 
-        // Admin sin restricciones: se borra el usuario y todo lo dependiente en
-        // cascada (el impacto se advierte en la confirmación del cliente).
-        $instructor = $general_user->instructor;
-        $impacto = [
-            'propuestas' => Project::where('id_creador', $general_user->id)->count(),
-            'fichas_a_cargo' => $instructor ? ClassGroup::where('id_instructor', $instructor->id)->count() : 0,
+        // Contexto del borrado: propuestas propias, propuestas de sus fichas,
+        // participaciones, observaciones, reportes, historial y similitudes que
+        // quedarían afectados. No incluye PII.
+        $impacto = $this->impactoUsuario($general_user);
+        $tieneHistorial = $this->tieneHistorial($impacto);
+
+        // Sin confirmación explícita, cualquier historial relevante exige una
+        // decisión: desactivar (conserva) o eliminar definitivamente (cascada).
+        if (!$request->boolean('confirmar_eliminacion')) {
+            if ($tieneHistorial) {
+                return $this->respuestaEliminacionConHistorial(
+                    $general_user,
+                    $impacto,
+                    $impacto['similitudes'] > 0
+                        ? 'No puedes eliminar al usuario: sus propuestas o las de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.'
+                        : 'El usuario tiene propuestas u otros registros históricos. Desactivar la cuenta conserva esos registros y la autoría; la eliminación definitiva los borra en cascada.',
+                    'registros_historicos'
+                );
+            }
+
+            try {
+                BorradoCascada::usuario($general_user);
+            } catch (HttpResponseException $e) {
+                // Carrera: apareció evidencia entre la lectura y el borrado.
+                $mensaje = 'No puedes eliminar al usuario: sus propuestas o las de sus fichas tienen similitudes compartidas.';
+                $respuesta = $e->getResponse();
+                if ($respuesta instanceof JsonResponse) {
+                    $mensaje = $respuesta->getData(true)['message'] ?? $mensaje;
+                }
+
+                return $this->respuestaEliminacionConHistorial(
+                    $general_user,
+                    $impacto,
+                    $mensaje,
+                    'evidencia_compartida'
+                );
+            }
+
+            // Sin historial no hace falta una segunda confirmación.
+            Auditoria::registrar('eliminar_usuario', 'general_users', $general_user->id, [
+                'rol' => $general_user->rol,
+                'impacto' => $impacto,
+            ]);
+
+            return $general_user;
+        }
+
+        // Confirmación explícita: se revalida el impacto con las filas
+        // relacionadas bloqueadas y la eliminación + auditoría se confirman
+        // en la misma transacción. Si la auditoría falla, se revierte todo.
+        $hashEsperado = (string) $request->input('confirmacion_hash', '');
+        $impactoConfirmado = $impacto;
+        $impactoCambiado = false;
+
+        try {
+            DB::transaction(function () use (
+                $general_user,
+                $yo,
+                $hashEsperado,
+                &$impactoConfirmado,
+                &$impactoCambiado
+            ) {
+                $this->bloquearUsuarioYRelaciones($general_user);
+                $impactoConfirmado = $this->impactoUsuario($general_user);
+                $hashActual = $this->hashImpacto($general_user, $impactoConfirmado);
+
+                if ($hashEsperado === '' || !hash_equals($hashActual, $hashEsperado)) {
+                    $impactoCambiado = true;
+                    throw new HttpResponseException(response()->json([
+                        'message' => 'El impacto del borrado cambió desde la primera confirmación. Revisa los registros actuales y vuelve a confirmar.',
+                        'requiere_confirmacion' => true,
+                        'puede_desactivar' => true,
+                        'accion_recomendada' => 'desactivar',
+                        'impacto' => $impactoConfirmado,
+                        'confirmacion_hash' => $hashActual,
+                    ], 409));
+                }
+
+                BorradoCascada::usuario($general_user, true);
+
+                Auditoria::registrarEstricto('eliminar_usuario_definitivo', 'general_users', $general_user->id, [
+                    'rol' => $general_user->rol,
+                    'impacto' => $impactoConfirmado,
+                    'confirmacion' => 'explicita',
+                    'tenia_historial' => $this->tieneHistorial($impactoConfirmado),
+                    'evidencia_compartida' => $impactoConfirmado['similitudes'] > 0,
+                    // Copia del actor en el detalle: la fila sobrevive aunque la
+                    // cuenta del administrador se elimine después (FK nullOnDelete).
+                    'actor_id' => $yo?->id,
+                ]);
+            });
+        } catch (HttpResponseException $e) {
+            if (!$impactoCambiado) {
+                throw $e;
+            }
+
+            return $this->respuestaEliminacionConHistorial(
+                $general_user,
+                $impactoConfirmado,
+                'El impacto del borrado cambió desde la primera confirmación. Revisa los registros actuales y vuelve a confirmar.',
+                'impacto_cambiado'
+            );
+        }
+
+        return $general_user;
+    }
+
+    // Censo de registros que se perderían. No incluye PII.
+    private function impactoUsuario(GeneralUser $general_user): array
+    {
+        $instructor = Instructor::where('id_usuario', $general_user->id)->first();
+        $fichas = $instructor
+            ? ClassGroup::where('id_instructor', $instructor->id)->pluck('id')
+            : collect();
+        $proyectosPropios = Project::where('id_creador', $general_user->id)->pluck('id');
+        $proyectosFichas = $fichas->isEmpty()
+            ? collect()
+            : Project::whereIn('id_class_group', $fichas)->pluck('id');
+        $proyectosSubarbol = $proyectosPropios->merge($proyectosFichas)->unique();
+
+        return [
+            'propuestas' => $proyectosPropios->count(),
+            'propuestas_fichas' => $proyectosFichas->count(),
+            'fichas_a_cargo' => $fichas->count(),
+            'similitudes' => $proyectosSubarbol->isEmpty()
+                ? 0
+                : Similarity::whereIn('id_proyecto_1', $proyectosSubarbol)
+                    ->orWhereIn('id_proyecto_2', $proyectosSubarbol)
+                    ->count(),
+            'observaciones' => Comment::where('id_usuario', $general_user->id)->count(),
+            'reportes' => BugReport::where('id_usuario', $general_user->id)->count(),
+            'historial' => ProjectHistory::where('id_usuario', $general_user->id)->count(),
+            'participaciones' => ApprenticeProject::whereHas(
+                'apprentice',
+                fn ($q) => $q->where('id_usuario', $general_user->id)
+            )->count(),
+            'asignaciones' => $instructor
+                ? Project::where('id_instructor_asignado', $instructor->id)->count()
+                : 0,
         ];
+    }
 
-        BorradoCascada::usuario($general_user);
+    private function tieneHistorial(array $impacto): bool
+    {
+        return $impacto['propuestas'] > 0
+            || $impacto['propuestas_fichas'] > 0
+            || $impacto['fichas_a_cargo'] > 0
+            || $impacto['similitudes'] > 0
+            || $impacto['observaciones'] > 0
+            || $impacto['reportes'] > 0
+            || $impacto['historial'] > 0
+            || $impacto['participaciones'] > 0
+            || $impacto['asignaciones'] > 0;
+    }
 
-        Auditoria::registrar('eliminar_usuario', 'general_users', $general_user->id, [
-            'correo' => $general_user->correo,
+    // Bloquea al usuario y sus relaciones antes de recalcular el impacto. Los
+    // FK de las tablas relacionadas toman locks compartidos sobre estas filas,
+    // por lo que las altas concurrentes quedan esperando hasta el commit.
+    private function bloquearUsuarioYRelaciones(GeneralUser $general_user): void
+    {
+        GeneralUser::whereKey($general_user->id)->lockForUpdate()->first();
+
+        $instructor = Instructor::where('id_usuario', $general_user->id)->lockForUpdate()->first();
+        $fichas = $instructor
+            ? ClassGroup::where('id_instructor', $instructor->id)->lockForUpdate()->pluck('id')
+            : collect();
+
+        Apprentice::where('id_usuario', $general_user->id)->lockForUpdate()->first();
+
+        $proyectosPropios = Project::where('id_creador', $general_user->id)->pluck('id');
+        $proyectosFichas = $fichas->isEmpty()
+            ? collect()
+            : Project::whereIn('id_class_group', $fichas)->pluck('id');
+        $proyectosAsignados = $instructor
+            ? Project::where('id_instructor_asignado', $instructor->id)->pluck('id')
+            : collect();
+        $proyectos = $proyectosPropios
+            ->merge($proyectosFichas)
+            ->merge($proyectosAsignados)
+            ->unique();
+
+        if ($proyectos->isNotEmpty()) {
+            Project::whereIn('id', $proyectos)->lockForUpdate()->pluck('id');
+        }
+    }
+
+    private function hashImpacto(GeneralUser $general_user, array $impacto): string
+    {
+        return hash('sha256', json_encode([
+            'usuario_id' => $general_user->id,
+            'impacto' => $impacto,
+        ]));
+    }
+
+    // Respuesta común del bloqueo D-01: registra el intento y devuelve las dos
+    // alternativas con el impacto (sin datos personales del usuario).
+    private function respuestaEliminacionConHistorial(
+        GeneralUser $general_user,
+        array $impacto,
+        string $mensaje,
+        string $motivo
+    ): JsonResponse {
+        Auditoria::registrar('eliminar_usuario_bloqueado', 'general_users', $general_user->id, [
             'rol' => $general_user->rol,
+            'motivo' => $motivo,
             'impacto' => $impacto,
         ]);
 
-        return $general_user;
+        return response()->json([
+            'message' => $mensaje,
+            'requiere_confirmacion' => true,
+            'puede_desactivar' => true,
+            'accion_recomendada' => 'desactivar',
+            'impacto' => $impacto,
+            'confirmacion_hash' => $this->hashImpacto($general_user, $impacto),
+        ], 409);
     }
 
     // Exporta en PDF las credenciales iniciales de los usuarios seleccionados

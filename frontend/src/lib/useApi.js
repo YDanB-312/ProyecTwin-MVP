@@ -22,12 +22,15 @@ export function useApi(fn, deps = [], { inicial = null } = {}) {
   // Evita actualizar estado tras desmontar (p. ej. al navegar con una recarga
   // en vuelo).
   const montadoRef = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // StrictMode ejecuta mount/cleanup/mount en desarrollo: hay que
+    // restablecer el flag al montar para que recargar() siga actualizando.
+    montadoRef.current = true;
+
+    return () => {
       montadoRef.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     let vivo = true;

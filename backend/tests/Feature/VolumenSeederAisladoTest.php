@@ -100,6 +100,19 @@ class VolumenSeederAisladoTest extends TestCase
         $this->assertCount(40, $codigos->unique());
         $this->assertSame(0, Apprentice::whereIn('codigo', $codigos)->whereNull('id_class_group')->count());
         $this->assertSame(0, Apprentice::whereIn('codigo', $codigos)->whereNull('id_programa')->count());
+
+        // D-05: una segunda ejecución debe sumar datos sin duplicar claves.
+        app(VolumenSeeder::class)->run();
+
+        $this->assertSame($antes['usuarios'] + 90, GeneralUser::count());
+        $this->assertSame($antes['instructores'] + 10, Instructor::count());
+        $this->assertSame($antes['fichas'] + 10, ClassGroup::count());
+        $this->assertSame($antes['aprendices'] + 80, Apprentice::count());
+        $this->assertSame($antes['propuestas'] + 160, Project::count());
+        $this->assertSame($antes['reportes'] + 24, BugReport::count());
+        $this->assertSame(80, Apprentice::where('codigo', 'like', 'VOL-%')->distinct()->count('codigo'));
+        $this->assertSame(0, Apprentice::where('codigo', 'like', 'VOL-%')->whereNull('id_class_group')->count());
+        $this->assertSame(0, Apprentice::where('codigo', 'like', 'VOL-%')->whereNull('id_programa')->count());
     }
 
     private function pdoSinBase(array $base): PDO

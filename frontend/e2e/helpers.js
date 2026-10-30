@@ -77,7 +77,7 @@ export async function crearUsuarioApi(request, {
   })
   expect(cambio.ok()).toBeTruthy()
 
-  return { username, password, correo: body.usuario.correo }
+  return { id: body.usuario.id, username, password, correo: body.usuario.correo }
 }
 
 export async function esperarDashboard(page, role) {

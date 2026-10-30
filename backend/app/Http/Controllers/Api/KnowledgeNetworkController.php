@@ -42,7 +42,8 @@ class KnowledgeNetworkController extends Controller
 
     public function destroy(KnowledgeNetwork $knowledge_network)
     {
-        // Admin sin restricciones: borra la red y sus programas en cascada.
+        // Admin: elimina la red y sus programas; conserva propuestas y
+        // aprendices, que quedan desvinculados de la estructura.
         $impacto = ['programas' => $knowledge_network->trainingPrograms()->count()];
 
         \App\Support\BorradoCascada::red($knowledge_network);

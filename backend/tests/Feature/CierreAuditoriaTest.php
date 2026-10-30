@@ -52,6 +52,19 @@ class CierreAuditoriaTest extends TestCase
         return $this->withToken($token);
     }
 
+    private function eliminarUsuarioDefinitivo(GeneralUser $admin, GeneralUser $target)
+    {
+        $inicial = $this->como($admin)
+            ->deleteJson('/v1/general-users/' . $target->id);
+        $inicial->assertStatus(409);
+
+        return $this->como($admin)
+            ->deleteJson('/v1/general-users/' . $target->id, [
+                'confirmar_eliminacion' => true,
+                'confirmacion_hash' => $inicial->json('confirmacion_hash'),
+            ]);
+    }
+
     private function programa(): TrainingProgram
     {
         $red = KnowledgeNetwork::create(['nombre' => 'Red ' . uniqid()]);
@@ -272,7 +285,7 @@ class CierreAuditoriaTest extends TestCase
         ]);
 
         $admin = $this->usuario('admin');
-        $this->como($admin)->deleteJson('/v1/general-users/' . $instructorUser->id)->assertOk();
+        $this->eliminarUsuarioDefinitivo($admin, $instructorUser)->assertOk();
 
         $filaX = Apprentice::where('id_usuario', $x->id)->first();
         $this->assertNotNull($filaX);
@@ -392,7 +405,7 @@ class CierreAuditoriaTest extends TestCase
         ]);
 
         $admin = $this->usuario('admin');
-        $this->como($admin)->deleteJson('/v1/general-users/' . $autor->id)->assertOk();
+        $this->eliminarUsuarioDefinitivo($admin, $autor)->assertOk();
 
         $this->assertSame(0, DB::table('personal_access_tokens')->where('tokenable_id', $autor->id)->count());
         $this->assertDatabaseMissing('notifications', ['id' => $aviso->id]);

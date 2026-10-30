@@ -190,9 +190,10 @@ class GeneralUserRolTest extends TestCase
             ->assertOk();
         $this->assertFalse($adminA->fresh()->estado);
 
-        // El token de A queda bloqueado por el middleware de cuenta activa…
+        // D-01: al suspender se revocan los tokens de A; su token deja de
+        // autenticar (401) y B conserva el suyo.
         $this->app['auth']->forgetGuards();
-        $this->withToken($tokenA)->getJson('/v1/auth/me')->assertStatus(403);
+        $this->withToken($tokenA)->getJson('/v1/auth/me')->assertStatus(401);
 
         // …y la sesión de B (quien gestionó) permanece intacta.
         $this->app['auth']->forgetGuards();

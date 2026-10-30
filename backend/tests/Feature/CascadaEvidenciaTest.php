@@ -17,11 +17,10 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
-// D-2b × BUG-007: ninguna cascada de catálogo (instructor, programa, red)
-// puede destruir evidencia de similitud compartida. Con cualquier par —
-// vigente o histórico, interno al subárbol o con contraparte externa— el
-// borrado responde 409 sin mutar nada; sin pares, el comportamiento actual
-// se conserva (incluida la anulación directa de fichas con datos).
+// D-2b/D-01/D-10: instructor, usuario y ficha individual no pueden destruir
+// evidencia de similitud compartida; con cualquier par (vigente o histórico,
+// interno o con contraparte externa) responden 409 sin mutar nada. Programas y
+// redes conservan las propuestas y sus pares, desvinculándolas de la ficha.
 class CascadaEvidenciaTest extends TestCase
 {
     use DatabaseTransactions;
@@ -124,16 +123,6 @@ class CascadaEvidenciaTest extends TestCase
         return "No puedes eliminar la ficha «{$nombre}»: sus propuestas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.";
     }
 
-    private function msgPrograma(string $nombre): string
-    {
-        return "No puedes eliminar el programa «{$nombre}»: las propuestas de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.";
-    }
-
-    private function msgRed(string $nombre): string
-    {
-        return "No puedes eliminar la red «{$nombre}»: las propuestas de sus programas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.";
-    }
-
     private function msgInstructor(): string
     {
         return 'No puedes eliminar al instructor: las propuestas de sus fichas tienen similitudes compartidas (vigentes o históricas). La evidencia pertenece también a las demás propuestas.';
@@ -228,7 +217,7 @@ class CascadaEvidenciaTest extends TestCase
         $this->assertDatabaseHas('similarities', ['id' => $par->id]);
     }
 
-    public function test_programa_con_par_interno_responde_409(): void
+    public function test_programa_con_par_interno_conserva_las_propuestas(): void
     {
         $red = $this->red();
         $programa = $this->programa($red, 'Programa con evidencia');
@@ -241,18 +230,17 @@ class CascadaEvidenciaTest extends TestCase
 
         $this->como($this->usuario('admin'))
             ->deleteJson('/v1/training-programs/' . $programa->id)
-            ->assertStatus(409)
-            ->assertJsonPath('message', $this->msgPrograma('Programa con evidencia'));
+            ->assertOk();
 
-        $this->assertDatabaseHas('training_programs', ['id' => $programa->id]);
-        $this->assertDatabaseHas('class_groups', ['id' => $fichaA->id]);
-        $this->assertDatabaseHas('class_groups', ['id' => $fichaB->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pA->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pB->id]);
+        $this->assertDatabaseMissing('training_programs', ['id' => $programa->id]);
+        $this->assertDatabaseMissing('class_groups', ['id' => $fichaA->id]);
+        $this->assertDatabaseMissing('class_groups', ['id' => $fichaB->id]);
+        $this->assertDatabaseHas('projects', ['id' => $pA->id, 'id_class_group' => null]);
+        $this->assertDatabaseHas('projects', ['id' => $pB->id, 'id_class_group' => null]);
         $this->assertDatabaseHas('similarities', ['id' => $par->id]);
     }
 
-    public function test_programa_con_par_cross_responde_409_y_conserva_la_contraparte(): void
+    public function test_programa_con_par_cross_conserva_ambas_propuestas(): void
     {
         $red = $this->red();
         $programaP = $this->programa($red, 'Programa P');
@@ -267,18 +255,17 @@ class CascadaEvidenciaTest extends TestCase
 
         $this->como($this->usuario('admin'))
             ->deleteJson('/v1/training-programs/' . $programaP->id)
-            ->assertStatus(409)
-            ->assertJsonPath('message', $this->msgPrograma('Programa P'));
+            ->assertOk();
 
-        $this->assertDatabaseHas('training_programs', ['id' => $programaP->id]);
+        $this->assertDatabaseMissing('training_programs', ['id' => $programaP->id]);
         $this->assertDatabaseHas('training_programs', ['id' => $programaQ->id]);
         $this->assertDatabaseHas('class_groups', ['id' => $fichaB->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pA->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pB->id]);
+        $this->assertDatabaseHas('projects', ['id' => $pA->id, 'id_class_group' => null]);
+        $this->assertDatabaseHas('projects', ['id' => $pB->id, 'id_class_group' => $fichaB->id]);
         $this->assertDatabaseHas('similarities', ['id' => $par->id]);
     }
 
-    public function test_red_con_par_responde_409_y_conserva_todo(): void
+    public function test_red_con_par_conserva_las_propuestas_y_sus_pares(): void
     {
         $red1 = $this->red('Red con evidencia');
         $red2 = $this->red('Red externa');
@@ -294,15 +281,14 @@ class CascadaEvidenciaTest extends TestCase
 
         $this->como($this->usuario('admin'))
             ->deleteJson('/v1/knowledge-networks/' . $red1->id)
-            ->assertStatus(409)
-            ->assertJsonPath('message', $this->msgRed('Red con evidencia'));
+            ->assertOk();
 
-        $this->assertDatabaseHas('knowledge_networks', ['id' => $red1->id]);
+        $this->assertDatabaseMissing('knowledge_networks', ['id' => $red1->id]);
         $this->assertDatabaseHas('knowledge_networks', ['id' => $red2->id]);
-        $this->assertDatabaseHas('training_programs', ['id' => $programa1->id]);
+        $this->assertDatabaseMissing('training_programs', ['id' => $programa1->id]);
         $this->assertDatabaseHas('training_programs', ['id' => $programa2->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pA->id]);
-        $this->assertDatabaseHas('projects', ['id' => $pB->id]);
+        $this->assertDatabaseHas('projects', ['id' => $pA->id, 'id_class_group' => null]);
+        $this->assertDatabaseHas('projects', ['id' => $pB->id, 'id_class_group' => $fichaB->id]);
         $this->assertDatabaseHas('similarities', ['id' => $par->id]);
     }
 
@@ -325,7 +311,7 @@ class CascadaEvidenciaTest extends TestCase
         $this->assertDatabaseHas('apprentices', ['id_usuario' => $ap->id, 'id_class_group' => null]);
     }
 
-    public function test_programa_sin_pares_se_borra_con_la_politica_actual(): void
+    public function test_programa_sin_pares_se_borra_y_conserva_el_aprendiz(): void
     {
         $red = $this->red();
         $programa = $this->programa($red);
@@ -340,10 +326,13 @@ class CascadaEvidenciaTest extends TestCase
 
         $this->assertDatabaseMissing('training_programs', ['id' => $programa->id]);
         $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
-        $this->assertDatabaseMissing('projects', ['id' => $proyecto->id]);
-        // Política vigente, sin cambios en este lote: los aprendices del
-        // programa se eliminan (la cuenta queda sin perfil).
-        $this->assertDatabaseMissing('apprentices', ['id_usuario' => $ap->id]);
+        $this->assertDatabaseHas('projects', ['id' => $proyecto->id, 'id_class_group' => null]);
+        // D-10: el perfil de aprendiz se conserva y queda sin estructura.
+        $this->assertDatabaseHas('apprentices', [
+            'id_usuario' => $ap->id,
+            'id_class_group' => null,
+            'id_programa' => null,
+        ]);
     }
 
     public function test_red_sin_pares_se_borra(): void

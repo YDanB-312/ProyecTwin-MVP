@@ -46,6 +46,16 @@ export const usuarios = {
       body: { correo, password_actual: passwordActual },
     }),
   eliminar: (id) => apiFetch(`/general-users/${id}`, { method: "DELETE" }),
+  // D-01: segunda confirmación explícita para destruir también la evidencia
+  // compartida cuando el administrador acepta perderla.
+  eliminarDefinitivo: (id, confirmacionHash) =>
+    apiFetch(`/general-users/${id}`, {
+      method: "DELETE",
+      body: {
+        confirmar_eliminacion: true,
+        confirmacion_hash: confirmacionHash,
+      },
+    }),
 };
 
 // ---------------------------------------------------------------- Catálogos

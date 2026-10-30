@@ -32,6 +32,9 @@ export default function DetalleUsuario() {
   const navigate = useNavigate()
   const { user: sesion, sincronizarSesion } = useAuth()
   const [modalEliminar, setModalEliminar] = useState(false)
+  const [decisionEvidencia, setDecisionEvidencia] = useState(null)
+  const [hashConfirmacion, setHashConfirmacion] = useState(null)
+  const [eliminarDefinitivo, setEliminarDefinitivo] = useState(false)
   const [modalRestablecer, setModalRestablecer] = useState(false)
   // Cambio del propio correo: exige la contraseña actual del admin.
   const [correoPendiente, setCorreoPendiente] = useState(null)
@@ -157,13 +160,87 @@ export default function DetalleUsuario() {
           { label: 'Credenciales', value: estadoCredenciales },
         ]
 
+  const impactoEvidencia = decisionEvidencia?.impacto
+  const avisoDecision = decisionEvidencia?.mensaje
+  const resumenImpacto = impactoEvidencia
+    ? [
+        impactoEvidencia.propuestas
+          ? `${impactoEvidencia.propuestas} propuesta(s) propia(s)`
+          : null,
+        impactoEvidencia.propuestas_fichas
+          ? `${impactoEvidencia.propuestas_fichas} propuesta(s) de sus fichas`
+          : null,
+        impactoEvidencia.fichas_a_cargo
+          ? `${impactoEvidencia.fichas_a_cargo} ficha(s) a cargo`
+          : null,
+        impactoEvidencia.similitudes
+          ? `${impactoEvidencia.similitudes} similitud(es)`
+          : null,
+        impactoEvidencia.observaciones
+          ? `${impactoEvidencia.observaciones} observación(es)`
+          : null,
+        impactoEvidencia.reportes
+          ? `${impactoEvidencia.reportes} reporte(s)`
+          : null,
+        impactoEvidencia.historial
+          ? `${impactoEvidencia.historial} registro(s) de historial`
+          : null,
+        impactoEvidencia.participaciones
+          ? `${impactoEvidencia.participaciones} participación(es) en equipos`
+          : null,
+        impactoEvidencia.asignaciones
+          ? `${impactoEvidencia.asignaciones} propuesta(s) asignada(s) como instructor`
+          : null,
+      ].filter(Boolean).join(', ')
+    : ''
+
   const confirmarEliminar = async () => {
     try {
       await usuarios.eliminar(usuario.id)
       navigate('/admin/usuarios')
     } catch (err) {
       setModalEliminar(false)
+
+      // D-01: con historial relacionado el backend pide una decisión explícita
+      // entre conservar los registros o eliminarlos junto con el usuario.
+      const requiereDecision = err?.status === 409 && (
+        err?.data?.requiere_confirmacion === true
+        || /similitudes compartidas/i.test(err?.data?.message || '')
+      )
+      if (requiereDecision) {
+        setAccionMsg(null)
+        setHashConfirmacion(err?.data?.confirmacion_hash || null)
+        setDecisionEvidencia({
+          impacto: err?.data?.impacto || null,
+          mensaje: null,
+        })
+        return
+      }
+
       setAccionMsg(err?.data?.message || 'No se pudo eliminar el usuario.')
+    }
+  }
+
+  const confirmarEliminarDefinitivo = async () => {
+    try {
+      await usuarios.eliminarDefinitivo(usuario.id, hashConfirmacion)
+      navigate('/admin/usuarios')
+    } catch (err) {
+      setEliminarDefinitivo(false)
+
+      // El impacto cambió entre la primera solicitud y la confirmación:
+      // se vuelve a pedir la decisión con los datos actuales.
+      if (err?.status === 409 && err?.data?.requiere_confirmacion) {
+        setAccionMsg(null)
+        setHashConfirmacion(err?.data?.confirmacion_hash || null)
+        setDecisionEvidencia({
+          impacto: err?.data?.impacto || null,
+          mensaje: err?.data?.message || 'El impacto cambió. Revisa los registros actuales.',
+        })
+        return
+      }
+
+      setAccionMsg(err?.data?.message || 'No se pudo eliminar definitivamente el usuario.')
     }
   }
 
@@ -337,14 +414,16 @@ export default function DetalleUsuario() {
   }
 
   const cambiarEstado = async (nuevo) => {
-    if (accionOcupada) return
+    if (accionOcupada) return false
     setAccionMsg(null)
     setAccionOcupada(true)
     try {
       await usuarios.actualizar(usuario.id, payloadCuenta(usuario, { estado: nuevo }))
       await recargar()
+      return true
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado.')
+      return false
     } finally {
       setAccionOcupada(false)
     }
@@ -638,13 +717,51 @@ export default function DetalleUsuario() {
       <ConfirmModal
         open={!!modalEliminar}
         titulo="Eliminar usuario"
-        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminarán su cuenta y los registros asociados: propuestas, historial de sus propuestas, observaciones, notificaciones, reportes, tokens y sesiones. Si es instructor, también se eliminarán sus fichas; los aprendices de esas fichas quedarán sin ficha. Si existen similitudes compartidas y la cuenta no es administradora, el backend impedirá la eliminación. Esta acción no se puede deshacer.`}
+        mensaje={`¿Seguro que deseas eliminar a "${nombre}"? Se eliminarán su cuenta y los registros asociados: propuestas, historial de sus propuestas, observaciones, notificaciones, reportes, tokens y sesiones. Si es instructor, también se eliminarán sus fichas; los aprendices de esas fichas quedarán sin ficha. Si tiene historial relacionado, se te pedirá elegir entre desactivar la cuenta o eliminar definitivamente todos sus registros. Esta acción no se puede deshacer.`}
         textoConfirmar="Sí, eliminar"
         textoCancelar="Cancelar"
         responsabilidad
         verificacion="ELIMINAR"
         onConfirmar={confirmarEliminar}
         onCancelar={() => setModalEliminar(false)}
+      />
+
+      <ConfirmModal
+        open={!!decisionEvidencia}
+        titulo="Usuario con historial"
+        mensaje={`${avisoDecision ? `${avisoDecision} ` : ''}No se puede eliminar a "${nombre}" sin una decisión explícita porque tiene historial relacionado${resumenImpacto ? ` (${resumenImpacto})` : ''}. Desactivar la cuenta (recomendado) conserva sus registros, la autoría y las relaciones históricas, pero bloquea su acceso. Eliminar definitivamente borra al usuario y sus registros en cascada, incluida la evidencia compartida.`}
+        textoConfirmar="Desactivar cuenta"
+        textoCancelar="Cancelar"
+        onConfirmar={async () => {
+          const ok = await cambiarEstado(false)
+          if (ok) setDecisionEvidencia(null)
+        }}
+        onCancelar={() => setDecisionEvidencia(null)}
+      >
+        <Button
+          type="button"
+          variant="danger"
+          fullWidth
+          onClick={() => {
+            setDecisionEvidencia(null)
+            setEliminarDefinitivo(true)
+          }}
+        >
+          <Trash size={14} /> Eliminar definitivamente…
+        </Button>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={eliminarDefinitivo}
+        titulo="Eliminar definitivamente"
+        mensaje={`Se eliminará la cuenta de "${nombre}" y, en cascada, sus propuestas, historial, observaciones, notificaciones, reportes, tokens y sesiones. Si es instructor, también se eliminarán sus fichas y las propuestas de esas fichas; los aprendices quedarán sin ficha. Las similitudes que involucren sus propuestas también se eliminarán. Las propuestas de otras personas se conservan; si era instructor asignado, quedarán sin instructor. Esta acción no se puede deshacer.`}
+        textoConfirmar="Eliminar definitivamente"
+        textoCancelar="Cancelar"
+        responsabilidad
+        textoResponsabilidad="Entiendo que se perderán el usuario y sus registros asociados, incluida la evidencia compartida, y asumo la responsabilidad."
+        verificacion="ELIMINAR DEFINITIVAMENTE"
+        onConfirmar={confirmarEliminarDefinitivo}
+        onCancelar={() => setEliminarDefinitivo(false)}
       />
 
       <ConfirmModal

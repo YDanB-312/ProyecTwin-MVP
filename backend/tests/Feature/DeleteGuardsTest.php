@@ -15,9 +15,10 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
-// Admin sin restricciones: puede borrar entidades con dependientes (cascada
-// transaccional). Solo se conservan dos salvaguardas de sistema: nadie borra su
-// propia cuenta y no se puede dejar el sistema sin administradores activos.
+// Admin: puede borrar entidades con dependientes (cascada transaccional), pero
+// se conservan las salvaguardas de sistema: nadie borra su propia cuenta, no se
+// puede dejar el sistema sin administradores activos y la evidencia compartida
+// bloquea la eliminación también para cuentas admin (D-01).
 class DeleteGuardsTest extends TestCase
 {
     use DatabaseTransactions;
@@ -47,6 +48,19 @@ class DeleteGuardsTest extends TestCase
         $token = $this->token($user);
         $this->app['auth']->forgetGuards();
         return $this->withToken($token);
+    }
+
+    private function eliminarUsuarioDefinitivo(GeneralUser $admin, GeneralUser $target)
+    {
+        $inicial = $this->como($admin)
+            ->deleteJson('/v1/general-users/' . $target->id);
+        $inicial->assertStatus(409);
+
+        return $this->como($admin)
+            ->deleteJson('/v1/general-users/' . $target->id, [
+                'confirmar_eliminacion' => true,
+                'confirmacion_hash' => $inicial->json('confirmacion_hash'),
+            ]);
     }
 
     private function programa(): TrainingProgram
@@ -112,7 +126,7 @@ class DeleteGuardsTest extends TestCase
         $autor = $this->usuario('aprendiz');
         $proyecto = $this->proyecto($autor);
 
-        $this->como($admin)->deleteJson('/v1/general-users/' . $autor->id)->assertOk();
+        $this->eliminarUsuarioDefinitivo($admin, $autor)->assertOk();
 
         $this->assertDatabaseMissing('general_users', ['id' => $autor->id]);
         $this->assertDatabaseMissing('projects', ['id' => $proyecto->id]);
@@ -126,7 +140,7 @@ class DeleteGuardsTest extends TestCase
         $ficha = $this->ficha();
         $ficha->update(['id_instructor' => $instructor->id]);
 
-        $this->como($admin)->deleteJson('/v1/general-users/' . $instructorUser->id)->assertOk();
+        $this->eliminarUsuarioDefinitivo($admin, $instructorUser)->assertOk();
 
         $this->assertDatabaseMissing('general_users', ['id' => $instructorUser->id]);
         $this->assertDatabaseMissing('class_groups', ['id' => $ficha->id]);
@@ -164,7 +178,7 @@ class DeleteGuardsTest extends TestCase
             'id_usuario' => $admin->id,
         ]);
 
-        $this->como($admin)->deleteJson('/v1/general-users/' . $autor->id)->assertOk();
+        $this->eliminarUsuarioDefinitivo($admin, $autor)->assertOk();
 
         // Sin proyecto, la notificación con enlace no queda huérfana.
         $this->assertDatabaseMissing('notifications', ['enlace' => 'proyecto:' . $proyecto->id]);

@@ -127,7 +127,12 @@ class ReglasNegocioFase2Test extends TestCase
 
         $this->como($admin)->deleteJson('/v1/training-programs/' . $programa->id)->assertOk();
         $this->assertDatabaseMissing('training_programs', ['id' => $programa->id]);
-        $this->assertDatabaseMissing('apprentices', ['id' => $aprendiz->id]);
+        // D-10: el perfil se conserva sin ficha ni programa.
+        $this->assertDatabaseHas('apprentices', [
+            'id' => $aprendiz->id,
+            'id_class_group' => null,
+            'id_programa' => null,
+        ]);
     }
 
     public function test_se_borra_un_programa_vacio(): void
