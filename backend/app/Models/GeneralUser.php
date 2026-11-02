@@ -33,11 +33,21 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         'password', 'remember_token',
         'tipo_documento', 'numero_documento', 'username',
         'email_verified_at',
+        // Columnas heredadas de instalaciones anteriores al flujo de
+        // activación. Ya no forman parte del contrato actual; además,
+        // `must_change_password` se guarda como 0/1 y rompía la
+        // deserialización booleana de Android. `password_temporal` nunca
+        // debe salir en una respuesta.
+        'must_change_password', 'password_temporal',
+        'credenciales_enviadas_en', 'credenciales_error',
     ];
 
     protected $casts = [
         'estado' => 'boolean',
         'email_verified_at' => 'datetime',
+        // Defensa adicional por si alguna consulta antigua hace visible el
+        // campo: el contrato JSON debe ser booleano, no 0/1.
+        'must_change_password' => 'boolean',
     ];
 
     // El correo es el identificador de acceso (no existe columna `email`).
