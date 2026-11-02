@@ -91,9 +91,11 @@ export default function ProyectosAdmin() {
       && coincideInstructor && coincideArea && coincideSim && coincideFecha
   })
 
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / ITEMS_POR_PAGINA))
+  const paginaSegura = Math.min(pagina, totalPaginas)
   const paginados = filtrados.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+    (paginaSegura - 1) * ITEMS_POR_PAGINA,
+    paginaSegura * ITEMS_POR_PAGINA
   )
 
   const limpiarFiltros = () => {

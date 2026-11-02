@@ -107,9 +107,11 @@ export default function RevisionPropuestas() {
     return lista
   }, [proyectosMios, filtroEstado, filtroFicha, busqueda])
 
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / ITEMS_POR_PAGINA))
+  const paginaSegura = Math.min(pagina, totalPaginas)
   const paginados = filtrados.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+    (paginaSegura - 1) * ITEMS_POR_PAGINA,
+    paginaSegura * ITEMS_POR_PAGINA
   )
 
   const seleccionada = paginados.find((p) => p.id === selId) || paginados[0] || null
@@ -140,6 +142,7 @@ export default function RevisionPropuestas() {
       await proyectos.actualizar(proyecto.id, {
         ...proyecto,
         estado: accion,
+        version: proyecto.updated_at,
         observacion: accion === 'rechazado' ? (observacion.trim() || undefined) : undefined,
       })
 

@@ -52,21 +52,6 @@
   width: auto;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--r-md);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-decoration: none;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-
-
-
-
 
 @media (max-width: 640px) {
   .container {
@@ -75,10 +60,5 @@
 
   .senaWrap {
     display: none;
-  }
-
-  .btn {
-    padding: var(--sp-1_5) var(--sp-3);
-    font-size: var(--text-xs);
   }
 }

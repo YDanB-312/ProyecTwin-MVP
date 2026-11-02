@@ -20,6 +20,7 @@ import SimilitudesHistoricas from '../../../components/SimilitudesHistoricas/Sim
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
+import { esConflictoVersion } from '../../../lib/errores'
 import { proyectos, similitudes, observaciones } from '../../../lib/recursos'
 import { agruparObservaciones, fechaDesdeApi, nombreCompleto } from '../../../utils/helpers'
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
@@ -44,6 +45,7 @@ function payloadProyecto(proyecto, extra = {}) {
     id_creador: proyecto.id_creador,
     id_instructor_asignado: proyecto.id_instructor_asignado,
     id_class_group: proyecto.id_class_group,
+    version: proyecto.updated_at,
     ...extra,
   }
 }
@@ -212,6 +214,7 @@ export default function DetalleProyectoAdmin() {
     })
     setErrores({})
     setEditMsg(null)
+    setAccionMsg(null)
     setEditando(true)
   }
 
@@ -224,6 +227,7 @@ export default function DetalleProyectoAdmin() {
     setErrores(errs)
     if (Object.keys(errs).length > 0) return
     const eraAprobada = proyecto.estado === 'aprobado'
+    setAccionMsg(null)
     setAccionOcupada(true)
     try {
       await proyectos.actualizar(proyecto.id, payloadProyecto(proyecto, {
@@ -237,7 +241,11 @@ export default function DetalleProyectoAdmin() {
         ? 'Contenido actualizado. La propuesta volvió a En revisión por intervención administrativa.'
         : 'Contenido actualizado correctamente.')
     } catch (err) {
-      setErrores({ titulo: err?.data?.message || 'No se pudo actualizar el contenido.' })
+      if (esConflictoVersion(err)) {
+        setAccionMsg(err?.data?.message || 'La propuesta fue modificada por otra sesión. Recarga los datos e inténtalo de nuevo.')
+      } else {
+        setErrores({ titulo: err?.data?.message || 'No se pudo actualizar el contenido.' })
+      }
     } finally {
       setAccionOcupada(false)
     }

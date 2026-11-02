@@ -103,12 +103,6 @@
   color: var(--c-text);
 }
 
-/* ── Email text ── */
-.email {
-  color: var(--c-text-2);
-  overflow-wrap: anywhere;
-}
-
 /* ── Secondary text below main text ── */
 .subText {
   display: block;
@@ -117,20 +111,9 @@
   color: var(--c-text-3);
 }
 
-/* ── Date formatting ── */
-.date {
-  white-space: nowrap;
-  color: var(--c-text-2);
-}
-
 /* ── Muted text ── */
 .muted {
   color: var(--c-text-3);
-}
-
-/* ── Whitespace nowrap text ── */
-.text {
-  white-space: nowrap;
 }
 
 /* ── Actions column ── */

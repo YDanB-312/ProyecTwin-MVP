@@ -35,7 +35,7 @@ export default function RecuperarContrasena() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [enviado, setEnviado] = useState(null) // { resetUrl }
+  const [enviado, setEnviado] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -48,8 +48,8 @@ export default function RecuperarContrasena() {
 
     setEnviando(true)
     try {
-      const res = await apiForgotPassword(email.trim().toLowerCase())
-      setEnviado({ resetUrl: res?.reset_url || null })
+      await apiForgotPassword(email.trim().toLowerCase())
+      setEnviado(true)
     } catch (err) {
       setError(err?.data?.message || 'No se pudo procesar la solicitud. Intenta de nuevo.')
     } finally {
@@ -78,7 +78,7 @@ export default function RecuperarContrasena() {
               type="button"
               variant="secondary"
               onClick={() => {
-                setEnviado(null)
+                setEnviado(false)
                 setEmail('')
               }}
             >

@@ -16,11 +16,6 @@
   gap: var(--sp-4);
   align-items: stretch;
 }
-/* Roles sin gráfica de barras: la dona queda centrada y compacta. */
-.single {
-  grid-template-columns: minmax(0, 640px);
-  justify-content: center;
-}
 /* Grid inferior 8/4: gráfica de estado + actividad reciente. */
 .lower {
   display: grid;
@@ -77,10 +72,6 @@
 @media (max-width: 900px) {
   .charts,
   .lower {
-    grid-template-columns: 1fr;
-  }
-  .single {
-    justify-content: stretch;
     grid-template-columns: 1fr;
   }
   .actividadScroll {

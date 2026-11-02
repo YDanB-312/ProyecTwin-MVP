@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning, Camera } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
@@ -21,7 +21,7 @@ import { usuarios, aprendices, fichas, proyectos, similitudes } from '../../../l
 import { esEmailValido } from '../../../utils/validation'
 import { resolverFotoPerfil } from '../../../utils/foto'
 import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as PROYECTO_ESTADO_LABEL, ROL_LABEL } from '../../../constants/badgeVariants'
-import { fechaDesdeApi, infoSimilitud, nombreCompleto, payloadCuenta } from '../../../utils/helpers'
+import { fechaDesdeApi, nombreCompleto, payloadCuenta } from '../../../utils/helpers'
 
 import s from '../../../components/PersonaDetalleBase/PersonaDetalleBase.module.css'
 import formStyles from '../../../components/FormularioBase/FormularioBase.module.css'
@@ -75,6 +75,26 @@ export default function DetalleUsuario() {
     { inicial: null }
   )
 
+  const listaSimilitudes = data?.listaSimilitudes
+  const similitudPorProyecto = useMemo(() => {
+    const mapa = new Map()
+
+    for (const par of listaSimilitudes || []) {
+      const p1 = Number(par.id_proyecto_1)
+      const p2 = Number(par.id_proyecto_2)
+      const ids = p1 === p2 ? [p1] : [p1, p2]
+
+      for (const projectId of ids) {
+        const actual = mapa.get(projectId) || { pct: 0, count: 0 }
+        actual.pct = Math.max(actual.pct, Math.round(Number(par.porcentaje) || 0))
+        actual.count += 1
+        mapa.set(projectId, actual)
+      }
+    }
+
+    return mapa
+  }, [listaSimilitudes])
+
   if (cargando || error || !data?.usuario) {
     return (
       <DashboardLayout role="admin" titulo="Detalle de Usuario">
@@ -105,7 +125,6 @@ export default function DetalleUsuario() {
 
   const usuario = data.usuario
   const listaFichas = data.listaFichas || []
-  const listaSimilitudes = data.listaSimilitudes || []
   const nombre = nombreCompleto(usuario)
 
   // Perfil de aprendiz (si aplica) y su ficha dentro del catálogo.
@@ -130,8 +149,9 @@ export default function DetalleUsuario() {
     return coincideQ && coincideEstado
   })
 
-  // Máximo porcentaje y conteo de coincidencias de una propuesta.
-  const similitudInfoDe = (projectId) => infoSimilitud(listaSimilitudes, projectId)
+  // Índice proyecto -> { pct, count }: evita recorrer todas las similitudes
+  // por cada fila de la tabla en cada render.
+  const similitudInfoDe = (projectId) => similitudPorProyecto.get(Number(projectId)) || null
 
   const estado = usuario.estado === false ? 'suspendido' : 'activo'
   const esMiCuenta = Number(sesion?.id) === Number(usuario.id)
@@ -361,8 +381,11 @@ export default function DetalleUsuario() {
       // La foto solo viaja si cambió (evita reenviar el base64 sin motivo).
       if ((form.fotoUrl || null) !== (usuario.foto_url || null)) cambios.foto_url = form.fotoUrl
       await usuarios.actualizar(usuario.id, payloadCuenta(usuario, cambios))
-      // 2) Ficha del aprendiz: solo si ya tiene perfil y cambió la selección.
-      if (usuario.rol === 'aprendiz' && perfilAprendiz) {
+      // 2) Ficha del aprendiz: solo si el NUEVO rol sigue siendo aprendiz, ya
+      // tiene perfil y cambió la selección. Usar `usuario.rol` aquí es un error:
+      // si el mismo guardado cambia el rol, el backend ya eliminó el perfil y
+      // la segunda petición fallaría con 422/404.
+      if (form.role === 'aprendiz' && perfilAprendiz) {
         const actual = perfilAprendiz.id_class_group ? String(perfilAprendiz.id_class_group) : ''
         const destino = form.fichaId ? listaFichas.find((f) => Number(f.id) === Number(form.fichaId)) : null
         if (form.fichaId !== actual) {
@@ -579,7 +602,7 @@ export default function DetalleUsuario() {
                   <option value="admin">Administrador</option>
                 </Select>
               </FormField>
-              {usuario.rol === 'aprendiz' && perfilAprendiz && (
+              {form.role === 'aprendiz' && perfilAprendiz && (
                 <FormField
                   label="Ficha"
                   help="Solo fichas activas. Las propuestas conservan su ficha original."
@@ -595,7 +618,7 @@ export default function DetalleUsuario() {
                 </FormField>
               )}
               {/* Aviso de traslado: qué cambia al mover al aprendiz de ficha */}
-              {usuario.rol === 'aprendiz' && perfilAprendiz && form.fichaId !== '' && (() => {
+              {form.role === 'aprendiz' && perfilAprendiz && form.fichaId !== '' && (() => {
                 const destino = listaFichas.find((f) => Number(f.id) === Number(form.fichaId))
                 const actual = perfilAprendiz.id_class_group
                   ? listaFichas.find((f) => Number(f.id) === Number(perfilAprendiz.id_class_group))

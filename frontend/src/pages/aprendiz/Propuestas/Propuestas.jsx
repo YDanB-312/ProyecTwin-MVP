@@ -17,6 +17,8 @@ import { CalendarBlank, ChartBar, FolderOpen, GraduationCap, PaperPlaneRight, Pl
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
 import { toFieldErrors } from '../../../lib/api'
+// `INCLUDE_PROYECTOS` trae las relaciones necesarias para detectar al equipo
+// (pivote) sin una petición adicional por propuesta.
 import { proyectos, aprendices, fichas, similitudes as similitudesApi, INCLUDE_PROYECTOS } from '../../../lib/recursos'
 import { PROJECT_ESTADO_VARIANT, PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 import { fechaDesdeApi, norm, esPropietarioProyecto, infoSimilitud } from '../../../utils/helpers'
@@ -27,8 +29,6 @@ import s from '../../../components/ListaBase/ListaBase.module.css'
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 
 const ITEMS_POR_PAGINA = PAGINA_TARJETAS
-
-// Relaciones necesarias para detectar al equipo (pivote) en la lista.
 
 const AREAS = [
   'Desarrollo Web',
@@ -276,6 +276,7 @@ export default function Propuestas() {
       } else {
         // W-01: reintento tras un fallo. Antes de reenviar se persisten las
         // correcciones del formulario y el equipo, y se CONFIRMAN leyendo.
+        const actual = await proyectos.obtener(id)
         await proyectos.actualizar(id, {
           titulo: form.title.trim(),
           resumen: form.description.trim(),
@@ -283,6 +284,7 @@ export default function Propuestas() {
           area_aplicacion: form.areaAplicacion,
           objetivo_general: form.objetivoGeneral.trim(),
           objetivos_especificos: objetivosValidos,
+          version: actual?.updated_at,
         })
 
         const fresco = await proyectos.obtener(id)
@@ -460,7 +462,6 @@ export default function Propuestas() {
                     onChange={(e) => set('objetivoGeneral', e.target.value)}
                     placeholder="Ej: Optimizar el riego de cultivos pequeños mediante monitoreo automatizado de humedad del suelo."
                     maxLength={MAX_DESCRIPCION_CORTA}
-                    autoFocus
                   />
                 </FormField>
 

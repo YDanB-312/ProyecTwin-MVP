@@ -6,6 +6,7 @@ import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input, PasswordInput } from '../../../components/Input/Input'
 import { apiActivarCuenta, apiValidarActivacion, toFieldErrors } from '../../../lib/api'
+import { esErrorEnlaceInvalido, mensajeErrorEnlace } from '../../../lib/errores'
 import { esPasswordValida, MIN_PASSWORD_LENGTH } from '../../../utils/validation'
 import { leerParametrosDeEnlace, urlSinToken } from '../../../utils/enlacesToken'
 import s from './ActivarCuenta.module.css'
@@ -30,8 +31,10 @@ export default function ActivarCuenta() {
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [error, setError] = useState('')
+  const [errorValidacion, setErrorValidacion] = useState('')
   const [errores, setErrores] = useState({})
   const [enviando, setEnviando] = useState(false)
+  const [reintento, setReintento] = useState(0)
 
   useEffect(() => {
     let vivo = true
@@ -46,13 +49,19 @@ export default function ActivarCuenta() {
         setDatos(respuesta)
         setEstado('formulario')
       })
-      .catch(() => {
+      .catch((err) => {
         if (!vivo) return
-        setEstado('invalido')
+
+        if (esErrorEnlaceInvalido(err)) {
+          setEstado('invalido')
+        } else {
+          setErrorValidacion(mensajeErrorEnlace(err))
+          setEstado('error')
+        }
       })
 
     return () => { vivo = false }
-  }, [token])
+  }, [token, reintento])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -87,7 +96,7 @@ export default function ActivarCuenta() {
       if (campos.token) {
         setEstado('invalido')
       } else if (Object.keys(campos).length === 0) {
-        setError(err?.data?.message || 'No se pudo activar la cuenta. Intenta de nuevo.')
+        setError(mensajeErrorEnlace(err))
       }
     } finally {
       setEnviando(false)
@@ -102,6 +111,33 @@ export default function ActivarCuenta() {
             <h1 className={s.title}>Validando enlace…</h1>
             <p className={s.subtitle}>Estamos comprobando que el enlace de activación siga vigente.</p>
           </header>
+        </div>
+      </AuthLayout>
+    )
+  }
+
+  if (estado === 'error') {
+    return (
+      <AuthLayout>
+        <div className={s.wrapper}>
+          <Warning size={48} weight="light" className={s.warningIcon} />
+          <header className={s.header}>
+            <h1 className={s.title}>No pudimos validar el enlace</h1>
+            <p className={s.subtitle}>{errorValidacion}</p>
+          </header>
+          <div className={s.actions}>
+            <Button
+              type="button"
+              onClick={() => {
+                setErrorValidacion('')
+                setEstado('verificando')
+                setReintento((n) => n + 1)
+              }}
+            >
+              Reintentar
+            </Button>
+            <Button as="link" to="/login" variant="secondary">Volver al login</Button>
+          </div>
         </div>
       </AuthLayout>
     )

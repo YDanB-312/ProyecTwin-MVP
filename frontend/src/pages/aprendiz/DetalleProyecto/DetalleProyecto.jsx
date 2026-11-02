@@ -19,6 +19,7 @@ import HistorialProyecto from '../../../components/HistorialProyecto/HistorialPr
 import SimilitudesHistoricas from '../../../components/SimilitudesHistoricas/SimilitudesHistoricas'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
+import { esConflictoVersion } from '../../../lib/errores'
 import { proyectos, similitudes as similitudesApi, observaciones as observacionesApi, aprendices } from '../../../lib/recursos'
 import { toFieldErrors } from '../../../lib/api'
 import { agruparObservaciones, fechaDesdeApi, esPropietarioProyecto, nombreCompleto } from '../../../utils/helpers'
@@ -229,6 +230,7 @@ export default function DetalleProyecto() {
     if (Object.keys(errs).length > 0) return
 
     setGuardando(true)
+    setAvisoError('')
     try {
       const objetivosValidos = form.objetivos_especificos.split('\n').map((l) => l.trim()).filter(Boolean)
       await proyectos.actualizar(project.id, {
@@ -241,9 +243,9 @@ export default function DetalleProyecto() {
         id_creador: project.id_creador,
         id_instructor_asignado: project.id_instructor_asignado,
         id_class_group: project.id_class_group,
+        version: project.updated_at,
       })
-      await recargar()
-      await recargarSimilitudes()
+      await Promise.all([recargar(), recargarSimilitudes()])
       setEditando(false)
       setAviso(project.estado === 'rechazado'
         ? 'Propuesta actualizada. Revísala y envíala de nuevo cuando estés listo.'
@@ -251,16 +253,20 @@ export default function DetalleProyecto() {
           ? 'Propuesta actualizada. Sigue en revisión; el instructor verá los cambios.'
           : 'Propuesta actualizada correctamente.')
     } catch (err) {
-      // Errores 422 por campo (mismas claves que el formulario). Si el 422 solo
-      // trae claves sin campo visible, se conserva el mensaje general bajo el
-      // título; si trae alguna clave visible, se comporta como antes.
-      const campos = toFieldErrors(err?.data)
-      const hayCampoVisible = CAMPOS_CON_ERROR.some((k) => campos[k])
-      setErrores(
-        hayCampoVisible
-          ? campos
-          : { titulo: err?.data?.message || 'No se pudo actualizar la propuesta.' }
-      )
+      if (esConflictoVersion(err)) {
+        setAvisoError(err?.data?.message || 'La propuesta fue modificada por otra sesión. Recarga los datos e inténtalo de nuevo.')
+      } else {
+        // Errores 422 por campo (mismas claves que el formulario). Si el 422
+        // solo trae claves sin campo visible, se conserva el mensaje general
+        // bajo el título; si trae alguna clave visible, se comporta como antes.
+        const campos = toFieldErrors(err?.data)
+        const hayCampoVisible = CAMPOS_CON_ERROR.some((k) => campos[k])
+        setErrores(
+          hayCampoVisible
+            ? campos
+            : { titulo: err?.data?.message || 'No se pudo actualizar la propuesta.' }
+        )
+      }
     } finally {
       setGuardando(false)
     }

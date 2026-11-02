@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -79,9 +79,18 @@ function ProgramasCell({ programas: lista }) {
 }
 
 // Editor de programas como objetos { id, nombre }: id null = aún no creado.
-function ProgramasInput({ programas: lista, setProgramas, error }) {
+export function ProgramasInput({
+  programas: lista,
+  setProgramas,
+  id,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedby,
+  'aria-required': ariaRequired,
+}) {
   const [nuevo, setNuevo] = useState('')
   const [localErr, setLocalErr] = useState('')
+  const localErrId = useId()
+  const descrito = [ariaDescribedby, localErr ? localErrId : null].filter(Boolean).join(' ') || undefined
   const tempId = useRef(0)
 
   const agregar = () => {
@@ -137,10 +146,14 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
 
       <div className={cs.addRow}>
         <Input
+          id={id}
           value={nuevo}
           onChange={(e) => { setNuevo(e.target.value); setLocalErr('') }}
           placeholder="Nuevo programa… ej. ADSO"
           aria-label="Nuevo programa"
+          aria-invalid={ariaInvalid || (localErr ? true : undefined)}
+          aria-describedby={descrito}
+          aria-required={ariaRequired}
           maxLength={MAX_PROGRAMA}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar() } }}
         />
@@ -148,7 +161,7 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
           <Plus size={14} /> Agregar
         </Button>
       </div>
-      {(error || localErr) && <p className={cs.error}>{error || localErr}</p>}
+      {localErr && <p id={localErrId} className={cs.error} role="alert">{localErr}</p>}
       <p className={nu.hint}>Mínimo 1 programa. Los nombres no pueden repetirse dentro de la red ni en otra red.</p>
     </div>
   )
@@ -409,7 +422,6 @@ export default function RedesConocimiento() {
                   <ProgramasInput
                     programas={formProgramas}
                     setProgramas={(v) => { setFormProgramas(v); setErrores((e2) => ({ ...e2, programas: undefined })) }}
-                    error={errores.programas}
                   />
                 </FormField>
 
@@ -461,7 +473,11 @@ export default function RedesConocimiento() {
                       : 'Ninguna red coincide con la búsqueda.'
                   }
                   actionLabel={redesConProgramas.length === 0 ? 'Crear primera red' : 'Limpiar filtros'}
-                  onAction={redesConProgramas.length === 0 ? abrirCrear : () => { setBusqueda('') }}
+                  onAction={redesConProgramas.length === 0 ? abrirCrear : () => {
+                    setBusqueda('')
+                    setFiltroUso('todos')
+                    setPagina(1)
+                  }}
                 />
               ) : (
                 <>

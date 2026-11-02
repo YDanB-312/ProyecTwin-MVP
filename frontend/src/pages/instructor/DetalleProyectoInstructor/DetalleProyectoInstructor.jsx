@@ -157,7 +157,7 @@ export default function DetalleProyectoInstructor() {
     setAccionError('')
     try {
       // El backend registra historial/notifica; el motor ya corrió al enviar.
-      await proyectos.actualizar(proyecto.id, { ...proyecto, estado })
+      await proyectos.actualizar(proyecto.id, { ...proyecto, estado, version: proyecto.updated_at })
       await Promise.all([recargarProyecto(), recargarSims()])
     } catch (err) {
       // El error se muestra al usuario; la propuesta queda como estaba.

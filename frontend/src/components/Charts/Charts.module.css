@@ -133,10 +133,6 @@
   font-size: 11px;
   font-family: var(--mono);
 }
-.lineArea {
-  fill: #10b981;
-  opacity: .08;
-}
 .linePath {
   fill: none;
   stroke: #10b981;

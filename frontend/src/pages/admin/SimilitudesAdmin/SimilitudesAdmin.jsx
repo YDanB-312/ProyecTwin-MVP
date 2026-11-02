@@ -120,9 +120,11 @@ export default function SimilitudesAdmin() {
       && coincideInstructor && coincideSim && coincideFecha
   })
 
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ITEMS_POR_PAGINA))
+  const paginaSegura = Math.min(pagina, totalPaginas)
   const paginadas = filtradas.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+    (paginaSegura - 1) * ITEMS_POR_PAGINA,
+    paginaSegura * ITEMS_POR_PAGINA
   )
 
   const limpiarFiltros = () => {

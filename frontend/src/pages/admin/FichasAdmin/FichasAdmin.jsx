@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -33,6 +33,7 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 
 
 export default function FichasAdmin() {
+  const idBusquedaAprendiz = useId()
   const [searchParams] = useSearchParams()
   const [creando, setCreando] = useState(() => searchParams.get('crear') === '1')
   const [creadaMsg, setCreadaMsg] = useState(false)
@@ -103,9 +104,11 @@ export default function FichasAdmin() {
     return coincideEstado && coincideInstructor && coincidePrograma && coincideRed && coincideFecha
   })
 
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ITEMS_POR_PAGINA))
+  const paginaSegura = Math.min(pagina, totalPaginas)
   const paginadas = filtradas.slice(
-    (pagina - 1) * ITEMS_POR_PAGINA,
-    pagina * ITEMS_POR_PAGINA
+    (paginaSegura - 1) * ITEMS_POR_PAGINA,
+    paginaSegura * ITEMS_POR_PAGINA
   )
 
   const limpiarFiltros = () => {
@@ -162,7 +165,8 @@ export default function FichasAdmin() {
     }
   }
 
-  const confirmarEliminar = async () => {    if (!aEliminar) return
+  const confirmarEliminar = async () => {
+    if (!aEliminar) return
     setAccionMsg(null)
     try {
       const resp = await fichas.eliminar(aEliminar.id)
@@ -349,11 +353,17 @@ export default function FichasAdmin() {
                 </Select>
               </FormField>
 
-              <FormField
-                label={`Aprendices de la ficha${aprendicesSel.length ? ` (${aprendicesSel.length})` : ''}`}
-                help="Marca los aprendices que pertenecen a esta ficha. Se pueden agregar o retirar después."
-              >
+              <fieldset className={c.grupoAprendices}>
+                <legend className={c.leyendaAprendices}>
+                  Aprendices de la ficha{aprendicesSel.length ? ` (${aprendicesSel.length})` : ''}
+                </legend>
+                <p id={`${idBusquedaAprendiz}-ayuda`} className={c.ayudaAprendices}>
+                  Marca los aprendices que pertenecen a esta ficha. Se pueden agregar o retirar después.
+                </p>
+                <label htmlFor={idBusquedaAprendiz} className="sr-only">Buscar aprendices</label>
                 <Input
+                  id={idBusquedaAprendiz}
+                  aria-describedby={`${idBusquedaAprendiz}-ayuda`}
                   value={busquedaAprendiz}
                   onChange={(e) => setBusquedaAprendiz(e.target.value)}
                   placeholder="Buscar por nombre, usuario o documento…"
@@ -377,7 +387,7 @@ export default function FichasAdmin() {
                     ))
                   )}
                 </div>
-              </FormField>
+              </fieldset>
 
               <FormField label="Nombre de la ficha" required error={errores.nombre}>
                 <Input

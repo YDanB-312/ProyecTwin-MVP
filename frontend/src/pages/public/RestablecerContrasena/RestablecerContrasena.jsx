@@ -6,6 +6,7 @@ import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input, PasswordInput } from '../../../components/Input/Input'
 import { apiResetPassword, toFieldErrors } from '../../../lib/api'
+import { esErrorEnlaceInvalido, mensajeErrorEnlace } from '../../../lib/errores'
 import { esPasswordValida, MIN_PASSWORD_LENGTH } from '../../../utils/validation'
 import { leerParametrosDeEnlace, urlSinToken } from '../../../utils/enlacesToken'
 import s from './RestablecerContrasena.module.css'
@@ -49,11 +50,13 @@ export default function RestablecerContrasena() {
       setExito(true)
     } catch (err) {
       const campos = toFieldErrors(err?.data)
+      const errorDeEnlace = esErrorEnlaceInvalido(err)
       setError(
         campos.password
         || campos.password_confirmation
-        || err?.data?.message
-        || 'El enlace es inválido o venció. Solicita uno nuevo.'
+        || (errorDeEnlace
+          ? 'El enlace es inválido o venció. Solicita uno nuevo.'
+          : mensajeErrorEnlace(err))
       )
     } finally {
       setEnviando(false)

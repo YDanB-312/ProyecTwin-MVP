@@ -32,7 +32,12 @@ export default function Similitudes() {
     [],
     { inicial: [] }
   )
-  const { data: todasSimilitudesApi } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
+  const {
+    data: todasSimilitudesApi,
+    cargando: cargandoSimilitudes,
+    error: errorSimilitudes,
+    recargar: recargarSimilitudes,
+  } = useApi(() => similitudesApi.listar(), [], { inicial: [] })
 
   const misProyectos = useMemo(
     () => todosProyectos.filter((p) => esMia(p, user.id)),
@@ -50,20 +55,24 @@ export default function Similitudes() {
     return mapa
   }, [todosProyectos, todasSimilitudesApi])
 
+  const simsPropias = useMemo(
+    () => todasSimilitudesApi
+      .filter((x) => idsPropios.has(Number(x.id_proyecto_1)) || idsPropios.has(Number(x.id_proyecto_2)))
+      .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje)),
+    [todasSimilitudesApi, idsPropios]
+  )
+
   const sims = useMemo(() => {
     const q = norm(busqueda.trim())
-    return todasSimilitudesApi
-      .filter((x) => idsPropios.has(Number(x.id_proyecto_1)) || idsPropios.has(Number(x.id_proyecto_2)))
-      .filter((x) => {
-        if (minSim && Math.round(Number(x.porcentaje) || 0) < Number(minSim)) return false
-        if (!q) return true
-        const propioId = idsPropios.has(Number(x.id_proyecto_1)) ? Number(x.id_proyecto_1) : Number(x.id_proyecto_2)
-        const otroId = propioId === Number(x.id_proyecto_1) ? Number(x.id_proyecto_2) : Number(x.id_proyecto_1)
-        return norm(mapaProyectos.get(propioId)?.titulo).includes(q)
-          || norm(mapaProyectos.get(otroId)?.titulo).includes(q)
-      })
-      .sort((a, b) => Number(b.porcentaje) - Number(a.porcentaje))
-  }, [todasSimilitudesApi, idsPropios, minSim, busqueda, mapaProyectos])
+    return simsPropias.filter((x) => {
+      if (minSim && Math.round(Number(x.porcentaje) || 0) < Number(minSim)) return false
+      if (!q) return true
+      const propioId = idsPropios.has(Number(x.id_proyecto_1)) ? Number(x.id_proyecto_1) : Number(x.id_proyecto_2)
+      const otroId = propioId === Number(x.id_proyecto_1) ? Number(x.id_proyecto_2) : Number(x.id_proyecto_1)
+      return norm(mapaProyectos.get(propioId)?.titulo).includes(q)
+        || norm(mapaProyectos.get(otroId)?.titulo).includes(q)
+    })
+  }, [simsPropias, idsPropios, minSim, busqueda, mapaProyectos])
 
   // Agrupa por propuesta propia: una propuesta puede coincidir con muchas.
   const grupos = useMemo(() => {
@@ -99,6 +108,11 @@ export default function Similitudes() {
     })
   }
 
+  function limpiarFiltros() {
+    setBusqueda('')
+    setMinSim('')
+  }
+
   return (
     <DashboardLayout role="aprendiz" titulo="Similitudes">
       <div>
@@ -109,8 +123,12 @@ export default function Similitudes() {
           breadcrumb={[{ label: 'Dashboard', to: '/aprendiz/dashboard' }, { label: 'Similitudes' }]}
         />
 
-        <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-          {sims.length === 0 ? (
+        <ApiState
+          cargando={cargando || cargandoSimilitudes}
+          error={error || errorSimilitudes}
+          onReintentar={() => { recargar(); recargarSimilitudes() }}
+        >
+          {simsPropias.length === 0 ? (
             misProyectos.length === 0 ? (
               <EmptyState
                 icon={<MagnifyingGlass />}
@@ -149,8 +167,18 @@ export default function Similitudes() {
                   />
                 </label>
               </FilterBar>
-              <SectionHeader title="Ranking de coincidencias" count={sims.length} hint="agrupadas por tu propuesta" />
-              <div className={s.grupos}>
+              {sims.length === 0 ? (
+                <EmptyState
+                  icon={<MagnifyingGlass />}
+                  title="Sin coincidencias con esos filtros"
+                  message="Ninguna coincidencia coincide con la búsqueda o el porcentaje mínimo. Prueba con otros filtros."
+                  actionLabel="Limpiar filtros"
+                  onAction={limpiarFiltros}
+                />
+              ) : (
+                <>
+                  <SectionHeader title="Ranking de coincidencias" count={sims.length} hint="agrupadas por tu propuesta" />
+                  <div className={s.grupos}>
                 {grupos.map((g) => {
                   const abierto = abiertos.has(g.propioId)
                   return (
@@ -205,7 +233,9 @@ export default function Similitudes() {
                     </section>
                   )
                 })}
-              </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </ApiState>

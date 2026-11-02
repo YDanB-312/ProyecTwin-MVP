@@ -16,21 +16,21 @@ export default function GovernmentBar() {
     : umbralPct != null
       ? `MOTOR · UMBRAL ${umbralPct}% · CORPUS ${motor.meses}M`
       : 'MOTOR · CONECTANDO…'
+  // El <p> no admite aria-label sin rol. El texto visible es decorativo y la
+  // descripción accesible viaja en un span solo para lectores de pantalla.
+  const descripcionMotor =
+    umbralPct != null
+      ? `Motor de similitud: umbral ${umbralPct} por ciento, corpus de ${motor.meses} meses`
+      : 'Motor de similitud'
 
   return (
     <div className={s.bar}>
       <div className={s.container}>
         <p className={s.accessibility}>Portal del SENA - República de Colombia</p>
-        <p
-          className={`mono ${s.motor}`}
-          aria-label={
-            umbralPct != null
-              ? `Motor de similitud: umbral ${umbralPct} por ciento, corpus de ${motor.meses} meses`
-              : 'Motor de similitud'
-          }
-        >
+        <p className={`mono ${s.motor}`}>
+          <span className="sr-only">{descripcionMotor}</span>
           <span className={s.dot} aria-hidden="true" />
-          <span className={s.motorFull}>{etiquetaMotor}</span>
+          <span className={s.motorFull} aria-hidden="true">{etiquetaMotor}</span>
           <span className={s.motorCorto} aria-hidden="true">
             {umbralPct != null ? `UMBRAL ${umbralPct}%` : 'MOTOR'}
           </span>

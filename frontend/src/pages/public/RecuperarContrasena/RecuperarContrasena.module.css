@@ -47,10 +47,6 @@
   text-align: left;
 }
 
-.input::placeholder {
-  color: var(--c-text-3);
-}
-
 .error {
   margin: 0;
   padding: var(--sp-3);

@@ -346,8 +346,3 @@
 @media (max-width: 640px) {
   .altaGrid { grid-template-columns: 1fr; }
 }
-
-.altaCred {
-  margin-top: var(--sp-2);
-  font-size: var(--text-sm);
-}

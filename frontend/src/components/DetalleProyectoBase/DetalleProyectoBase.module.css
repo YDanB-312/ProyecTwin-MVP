@@ -7,20 +7,6 @@
   gap: var(--sp-5);
 }
 
-/* Two-column responsive grid */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-5);
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-  min-width: 0;
-}
-
 /* Dossier de lectura (detalle aprendiz): contenido + rail derecho */
 .dossier {
   display: grid;
@@ -168,11 +154,8 @@
   font-weight: 700;
 }
 
-/* Pre-formatted code/text blocks */
-
 /* Keyword chips container */
-.chips,
-.keywords {
+.chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
@@ -254,15 +237,6 @@
   gap: var(--sp-3);
 }
 
-.pct {
-  font-family: var(--mono);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-width: 48px;
-  text-align: right;
-}
-
-
 /* ── Person/Student card (instructor + admin) ── */
 .personCard {
   display: flex;
@@ -342,14 +316,6 @@
   gap: var(--sp-3);
 }
 
-/* ── Admin description text (legacy, se mantiene por compat.) ── */
-.description {
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  color: var(--c-text-2);
-  margin: 0 0 var(--sp-5) 0;
-}
-
 /* ── Estado form (DataPanel action — admin) ── */
 .stateForm {
   display: flex;
@@ -364,9 +330,6 @@
   flex: 1;
 }
 
-/* ── Admin objective blocks ── */
-
-
 /* ── Responsive breakpoints ── */
 @media (min-width: 768px) {
   .stateForm {
@@ -376,11 +339,5 @@
   .stateForm :global(select),
   .stateForm select {
     max-width: 260px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: 3fr 2fr;
   }
 }

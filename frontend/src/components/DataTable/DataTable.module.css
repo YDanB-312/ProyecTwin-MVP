@@ -7,9 +7,11 @@
 .table tbody tr{transition:background var(--dur-fast) var(--ease-out)}
 .table tbody tr:hover{background:var(--c-surface-alt)}
 .align-start{text-align:left}.align-center{text-align:center}.align-end{text-align:right}
-.table thead th.stickyCol{position:sticky;right:0;z-index:2}
-.table tbody td.stickyCol{position:sticky;right:0;z-index:1;background:var(--c-surface);transition:background var(--dur-fast) var(--ease-out);box-shadow:-12px 0 12px -12px rgba(0,0,0,.5)}
-.table tbody tr:hover td.stickyCol{background:var(--c-surface-alt)}
+@media (min-width:901px){
+  .table thead th.stickyCol{position:sticky;right:0;z-index:2}
+  .table tbody td.stickyCol{position:sticky;right:0;z-index:1;background:var(--c-surface);transition:background var(--dur-fast) var(--ease-out);box-shadow:-12px 0 12px -12px rgba(0,0,0,.5)}
+  .table tbody tr:hover td.stickyCol{background:var(--c-surface-alt)}
+}
 .empty{padding:var(--sp-6);text-align:center;color:var(--c-text-3);border:1px dashed var(--c-border);border-radius:var(--r-xl)}
 .expandRow td{background:var(--c-surface-alt);border-top:1px dashed var(--c-border);padding:var(--sp-4)}
 @media (max-width:640px){

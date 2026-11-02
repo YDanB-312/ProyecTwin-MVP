@@ -52,13 +52,9 @@
   .pasajeSep{display:none}
 }
 
-/* Shared hint text (actions / estado panels) */
-.hint{margin:0;font-size:var(--text-sm);line-height:var(--leading-relaxed);color:var(--c-text-2);margin-bottom:var(--sp-4)}
-
 /* Observations flat list (aprendiz + admin detail pages) */
 .obsForm{display:flex;flex-direction:column;gap:var(--sp-3);margin-bottom:var(--sp-5)}
 .obsControls{display:flex;flex-direction:column;gap:var(--sp-3)}
-.obsForm .btn{align-self:flex-start}
 .obsList{display:flex;flex-direction:column;gap:var(--sp-3);margin:0;padding:0;list-style:none}
 .obsItem{background:var(--c-surface-alt);border:1px solid var(--c-border-2);border-left:3px solid var(--c-primary);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4)}
 .obsHead,.obsHeader{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-1)}

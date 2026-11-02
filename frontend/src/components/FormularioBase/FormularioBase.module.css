@@ -1,14 +1,6 @@
 /* ═══════════════════════════════════════════════
-   FormularioBase.module.css — Shared form patterns
-   Extracted from: CrearFicha, NuevoProyecto, NuevoUsuario
+   FormularioBase.module.css — patrones de formulario compartidos
    ═══════════════════════════════════════════════ */
-
-/* ── Page wrapper ── */
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-6);
-}
 
 /* ── Form container ── */
 .form {
@@ -83,21 +75,6 @@
   color: var(--c-on-primary);
 }
 
-/* ── Code display row (ficha code, generated ID) ── */
-
-.codigo {
-  font-family: var(--mono);
-  font-size: var(--text-base);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--c-primary);
-  background: var(--c-primary-light);
-  border: 1px dashed var(--c-primary);
-  border-radius: var(--r-md);
-  padding: var(--sp-2_5) var(--sp-4);
-  box-shadow: var(--glow-soft);
-}
-
 @media (min-width: 768px) {
   .grid2 {
     grid-template-columns: 1fr 1fr;
@@ -105,12 +82,38 @@
 }
 
 /* Selección de aprendices al crear una ficha (admin) */
+.grupoAprendices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1_5);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.leyendaAprendices {
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: var(--leading-normal);
+}
+
+.ayudaAprendices {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--c-text-3);
+  line-height: var(--leading-normal);
+}
+
 .listaAprendices {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  max-height: 220px;
+  max-height: 280px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   padding: var(--sp-2);

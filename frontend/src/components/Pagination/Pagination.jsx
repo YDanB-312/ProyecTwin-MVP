@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import Tooltip from '../Tooltip/Tooltip'
 import s from './Pagination.module.css'
 
@@ -12,9 +13,19 @@ export default function Pagination({
 }) {
   const count = filteredCount ?? totalItems
   const totalPages = Math.max(1, Math.ceil(count / itemsPerPage))
+
+  // Si el total encoge (por ejemplo, al borrar el último elemento de la última
+  // página), corrige también el estado del padre. Sin esto, el componente
+  // mostraba la página recortada pero el padre seguía cortando una página vacía.
+  useEffect(() => {
+    if (paginaActual > totalPages) {
+      setPaginaActual?.(totalPages)
+    }
+  }, [paginaActual, totalPages, setPaginaActual])
+
   if (count === 0) return null
 
-  // Clamp: si el filtro encogió la lista, no mostrar rangos imposibles (9–8 de 8)
+  // Clamp defensivo para el render actual.
   const pagina = Math.min(Math.max(1, paginaActual), totalPages)
   const start = (pagina - 1) * itemsPerPage + 1
   const end = Math.min(pagina * itemsPerPage, count)
