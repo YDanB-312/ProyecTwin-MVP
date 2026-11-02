@@ -71,6 +71,5 @@ data class AgregarAprendizResponse(
     val usuario: GeneralUserDto? = null,
     val aprendiz: ApprenticeDto? = null,
     val creada: Boolean = false,
-    @SerialName("credenciales_enviadas") val credencialesEnviadas: Boolean = false,
-    val credenciales: CredencialesDto? = null,
+    val activacion: ActivacionDto? = null,
 )

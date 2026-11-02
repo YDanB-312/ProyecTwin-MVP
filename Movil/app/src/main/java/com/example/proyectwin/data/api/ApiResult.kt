@@ -1,8 +1,12 @@
 package com.example.proyectwin.data.api
 
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -10,9 +14,17 @@ import java.net.SocketTimeoutException
 @Serializable
 private data class ErrorPayload(
     val message: String? = null,
+    val code: String? = null,
     val errors: Map<String, List<String>>? = null,
-    @kotlinx.serialization.SerialName("must_change_password")
+    @SerialName("must_change_password")
     val mustChangePassword: Boolean? = null,
+    @SerialName("requiere_confirmacion")
+    val requiereConfirmacion: Boolean? = null,
+    @SerialName("puede_desactivar")
+    val puedeDesactivar: Boolean? = null,
+    @SerialName("confirmacion_hash")
+    val confirmacionHash: String? = null,
+    val impacto: JsonObject? = null,
 )
 
 private val errorJson = Json { ignoreUnknownKeys = true }
@@ -53,10 +65,17 @@ sealed class ApiException(
         status: Int,
         message: String,
         val fieldErrors: Map<String, String> = emptyMap(),
+        /** Código estable del backend; p. ej. `cuenta_no_activada`. */
+        val code: String? = null,
         /** El backend bloquea la API hasta cambiar la contraseña temporal. */
         val mustChangePassword: Boolean = false,
         /** 403 del middleware `cuenta.activa`: la sesión ya no es válida. */
         val cuentaSuspendida: Boolean = false,
+        val cuentaNoActivada: Boolean = false,
+        val requiereConfirmacion: Boolean = false,
+        val puedeDesactivar: Boolean = false,
+        val confirmacionHash: String? = null,
+        val impacto: Map<String, Int> = emptyMap(),
     ) : ApiException(message, status)
 
     class Formato(cause: Throwable) : ApiException(
@@ -79,7 +98,7 @@ fun Throwable.toApiException(): ApiException = when (this) {
 }
 
 private fun HttpException.toApiException(): ApiException {
-    val code = code()
+    val httpStatus = code()
     val body = runCatching { response()?.errorBody()?.string() }.getOrNull()
     val payload = body?.let { runCatching { errorJson.decodeFromString<ErrorPayload>(it) }.getOrNull() }
 
@@ -87,21 +106,30 @@ private fun HttpException.toApiException(): ApiException {
     val message = when {
         // El backend responde "Unauthenticated." en inglés; para el usuario se
         // muestra un mensaje claro de sesión vencida (como hace el frontend).
-        code == 401 -> "Tu sesión expiró. Inicia sesión nuevamente."
+        httpStatus == 401 -> "Tu sesión expiró. Inicia sesión nuevamente."
         !mensajeServidor.isNullOrBlank() -> mensajeServidor
-        else -> "Error del servidor ($code)."
+        else -> "Error del servidor ($httpStatus)."
     }
     val fieldErrors = payload?.errors
         .orEmpty()
         .mapValues { (_, mensajes) -> mensajes.firstOrNull().orEmpty() }
+    val impacto = payload?.impacto
+        .orEmpty()
+        .mapValues { (_, valor) -> valor.jsonPrimitive.intOrNull ?: 0 }
 
     return ApiException.Http(
-        status = code,
+        status = httpStatus,
         message = message,
         fieldErrors = fieldErrors,
+        code = payload?.code,
         mustChangePassword = payload?.mustChangePassword == true,
         // Solo este 403 invalida la sesión; los demás son permisos puntuales.
-        cuentaSuspendida = code == 403 && mensajeServidor == MENSAJE_CUENTA_SUSPENDIDA,
+        cuentaSuspendida = httpStatus == 403 && mensajeServidor == MENSAJE_CUENTA_SUSPENDIDA,
+        cuentaNoActivada = httpStatus == 403 && payload?.code == "cuenta_no_activada",
+        requiereConfirmacion = payload?.requiereConfirmacion == true,
+        puedeDesactivar = payload?.puedeDesactivar == true,
+        confirmacionHash = payload?.confirmacionHash,
+        impacto = impacto,
     )
 }
 

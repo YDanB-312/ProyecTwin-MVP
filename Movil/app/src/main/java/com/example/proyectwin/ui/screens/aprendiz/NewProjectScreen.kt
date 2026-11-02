@@ -50,7 +50,7 @@ fun NewProjectScreen(
     projectId: String = "",
     onBack: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
-    onSaved: (Int) -> Unit = {},
+    onSaved: (Int, Boolean, Int) -> Unit = { _, _, _ -> },
     projectsViewModel: ProjectsViewModel = hiltViewModel(),
     teamSelectionViewModel: TeamSelectionViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
@@ -157,7 +157,7 @@ fun NewProjectScreen(
         if (estado is ProjectsViewModel.SaveState.Success) {
             projectsViewModel.resetSaveState()
             projectsViewModel.resetEdicion()
-            onSaved(estado.projectId)
+            onSaved(estado.projectId, estado.enviado, estado.miembrosFallidos.size)
         }
     }
 
@@ -375,7 +375,7 @@ fun NewProjectScreen(
                 if (estado.projectId != null) {
                     SenaButton(
                         text = "IR A LA PROPUESTA",
-                        onClick = { onSaved(estado.projectId) },
+                        onClick = { onSaved(estado.projectId, false, 0) },
                         isPrimary = false,
                         icon = Icons.Default.OpenInNew
                     )

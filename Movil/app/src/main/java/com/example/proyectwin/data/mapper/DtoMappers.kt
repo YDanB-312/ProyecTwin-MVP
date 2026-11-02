@@ -76,6 +76,7 @@ fun GeneralUserDto.toDomain(): GeneralUser = GeneralUser(
     estado = estado,
     username = username,
     mustChangePassword = mustChangePassword,
+    emailVerifiedAt = emailVerifiedAt,
     credencialesEnviadasEn = credencialesEnviadasEn,
     credencialesError = credencialesError,
 )
@@ -91,6 +92,9 @@ fun GeneralUser.toUpdateRequest(): UserUpdateRequest = UserUpdateRequest(
     correo = email,
     rol = role,
     estado = estado,
+    tipoDocumento = tipoDocumento,
+    numeroDocumento = documentoIdentidad,
+    fotoUrl = fotoPerfil,
 )
 
 /** Divide un nombre completo en (nombre, apellido) como fallback de cuentas antiguas. */
@@ -136,6 +140,7 @@ fun ClassGroupDto.toDomain(): Ficha = Ficha(
     programa = program?.nombre ?: "",
     estado = estado,
     instructorId = idInstructor.takeIf { it != 0 },
+    instructorUserId = instructor?.idUsuario?.takeIf { it != 0 },
     instructorName = instructor?.nombreUsuario(),
     createdAt = createdAt,
     estudiantes = apprentices?.mapNotNull { it.toGeneralUser() } ?: emptyList(),

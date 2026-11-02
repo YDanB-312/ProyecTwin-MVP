@@ -18,6 +18,8 @@ data class GeneralUser(
     val estado: Boolean = true,
     val username: String = "",
     val mustChangePassword: Boolean = false,
+    /** Null = cuenta pendiente de activación por correo. */
+    val emailVerifiedAt: String? = null,
     /** ISO de envío de credenciales (admin); null = aún no enviadas. */
     val credencialesEnviadasEn: String? = null,
     /** Error del último envío de credenciales, si lo hubo. */

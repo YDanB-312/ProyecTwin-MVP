@@ -1,6 +1,6 @@
 package com.example.proyectwin.domain.repository
 
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.PaginaUsuarios
 
@@ -36,7 +36,7 @@ interface UsersRepository {
     /** Cuenta del token con ficha/perfil incluidos; refresca la sesión local. */
     suspend fun miCuenta(): Result<GeneralUser>
 
-    /** Alta (admin): el backend genera username y contraseña temporal. */
+    /** Alta (admin): cuenta pendiente + enlace de activación por correo. */
     suspend fun crear(
         nombre: String,
         apellido: String,
@@ -44,18 +44,22 @@ interface UsersRepository {
         numeroDocumento: String,
         correo: String,
         rol: String,
-    ): Result<CredencialesUsuario>
+    ): Result<ActivacionUsuario>
 
     /** PUT parcial: [datos] aporta nombre/apellido/correo/rol/estado. */
     suspend fun actualizar(id: Int, datos: GeneralUser): Result<GeneralUser>
 
-    suspend fun eliminar(id: Int): Result<Unit>
+    /**
+     * Borrado normal ([confirmar] = false). Con historial, el backend responde
+     * 409 con `requiere_confirmacion`, `impacto` y `confirmacion_hash`.
+     */
+    suspend fun eliminar(id: Int, confirmar: Boolean = false, hash: String? = null): Result<Unit>
 
-    /** Nuevas credenciales temporales (no envía correo; lo reenvía el admin). */
-    suspend fun restablecerCredenciales(id: Int): Result<CredencialesUsuario>
+    /** Envía un enlace de restablecimiento (o reenvía activación si está pendiente). */
+    suspend fun restablecerCredenciales(id: Int): Result<String>
 
-    /** Reenvía por correo la contraseña temporal vigente. */
-    suspend fun reenviarCredenciales(id: Int): Result<GeneralUser>
+    /** Reenvía el enlace de activación vigente. */
+    suspend fun reenviarActivacion(id: Int): Result<String>
 
     /** PDF binario con las credenciales de los usuarios indicados. */
     suspend fun descargarCredencialesPdf(ids: List<Int>): Result<ByteArray>

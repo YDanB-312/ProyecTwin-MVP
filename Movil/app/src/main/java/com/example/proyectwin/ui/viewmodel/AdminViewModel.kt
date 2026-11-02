@@ -158,7 +158,7 @@ class AdminViewModel @Inject constructor(
         numeroDocumento: String,
         correo: String,
         rol: String,
-        onResult: (Result<com.example.proyectwin.data.model.CredencialesUsuario>) -> Unit,
+        onResult: (Result<com.example.proyectwin.data.model.ActivacionUsuario>) -> Unit,
     ) {
         viewModelScope.launch {
             usersRepository.crear(
@@ -192,6 +192,13 @@ class AdminViewModel @Inject constructor(
             } finally {
                 _descargandoPdf.value = false
             }
+        }
+    }
+
+    /** Reenvía la activación de una cuenta pendiente desde el alta. */
+    fun reenviarActivacion(id: Int, onResult: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            onResult(usersRepository.reenviarActivacion(id))
         }
     }
 

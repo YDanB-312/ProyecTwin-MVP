@@ -17,7 +17,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.data.model.UserRole
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -63,7 +63,7 @@ fun CrearFichaScreen(
     var aprendicesSeleccionados by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var mostrarCandidatos by remember { mutableStateOf(false) }
     var dialogoCrearAprendiz by remember { mutableStateOf(false) }
-    var credencialesAprendiz by remember { mutableStateOf<CredencialesUsuario?>(null) }
+    var activacionAprendiz by remember { mutableStateOf<ActivacionUsuario?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
@@ -494,10 +494,10 @@ fun CrearFichaScreen(
                 dialogoCrearAprendiz = false
                 fichaFormViewModel.crearAprendizEnFicha(idEdicion, nombreA, apellidoA, tipoDoc, numDoc, correo) { resultado ->
                     resultado.fold(
-                        onSuccess = { credenciales ->
-                            if (credenciales != null) {
-                                aprendicesSeleccionados = aprendicesSeleccionados + credenciales.usuario.id
-                                credencialesAprendiz = credenciales
+                        onSuccess = { activacion ->
+                            if (activacion != null) {
+                                aprendicesSeleccionados = aprendicesSeleccionados + activacion.usuario.id
+                                activacionAprendiz = activacion
                             } else {
                                 scope.launch { snackbarHostState.showSnackbar("Aprendiz matriculado en la ficha.") }
                             }
@@ -511,30 +511,37 @@ fun CrearFichaScreen(
         )
     }
 
-    credencialesAprendiz?.let { datos ->
+    activacionAprendiz?.let { datos ->
         AlertDialog(
-            onDismissRequest = { credencialesAprendiz = null },
-            icon = { Icon(Icons.Default.Key, contentDescription = null, tint = senaColors().green) },
-            title = { Text("Credenciales del aprendiz", fontWeight = FontWeight.Bold) },
+            onDismissRequest = { activacionAprendiz = null },
+            icon = {
+                Icon(
+                    if (datos.enviada) Icons.Default.CheckCircle else Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = if (datos.enviada) senaColors().success else senaColors().warning,
+                )
+            },
+            title = { Text("Aprendiz matriculado", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Usuario: ${datos.username}", fontWeight = FontWeight.Bold)
-                    Text("Contraseña temporal: ${datos.passwordTemporal}", fontWeight = FontWeight.Bold)
+                    Text("La cuenta de ${datos.usuario.name} quedó pendiente de activación.", fontWeight = FontWeight.Bold)
                     Text(
-                        if (datos.enviadas) "El correo fue enviado." else "El correo no pudo enviarse; reenvíalo desde Usuarios.",
+                        if (datos.enviada) "Enviamos el enlace de activación a ${datos.correo}."
+                        else "El correo no pudo enviarse; reenvía la activación desde Usuarios.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (datos.enviadas) senaColors().success else senaColors().warning,
+                        color = if (datos.enviada) senaColors().success else senaColors().warning,
                     )
+                    if (datos.mensaje.isNotBlank()) {
+                        Text(datos.mensaje, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    }
                 }
             },
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = {
-                        clipboard.setText(
-                            AnnotatedString("Usuario: ${datos.username}\nContraseña: ${datos.passwordTemporal}"),
-                        )
-                    }) { Text("Copiar", color = senaColors().green) }
-                    TextButton(onClick = { credencialesAprendiz = null }) {
+                        clipboard.setText(AnnotatedString(datos.correo))
+                    }) { Text("Copiar correo", color = senaColors().green) }
+                    TextButton(onClick = { activacionAprendiz = null }) {
                         Text("Entendido", color = senaColors().green, fontWeight = FontWeight.Bold)
                     }
                 }

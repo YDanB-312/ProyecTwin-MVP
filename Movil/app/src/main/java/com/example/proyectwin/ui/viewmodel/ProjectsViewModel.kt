@@ -36,6 +36,8 @@ class ProjectsViewModel @Inject constructor(
         data class Success(
             val projectId: Int,
             val miembrosFallidos: List<Int> = emptyList(),
+            /** `true` si además se envió a revisión y el motor ya corrió. */
+            val enviado: Boolean = false,
         ) : SaveState()
         data class Error(
             val message: String,
@@ -123,7 +125,7 @@ class ProjectsViewModel @Inject constructor(
                     } else {
                         projectsRepository.enviar(proyecto.id).fold(
                             onSuccess = { enviado ->
-                                _saveState.value = SaveState.Success(enviado.id, fallidos)
+                                _saveState.value = SaveState.Success(enviado.id, fallidos, enviado = true)
                                 load()
                             },
                             onFailure = { e ->

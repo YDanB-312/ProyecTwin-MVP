@@ -1,6 +1,6 @@
 package com.example.proyectwin.domain.repository
 
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.ResultadoFichaEliminada
 
@@ -46,7 +46,7 @@ interface FichasRepository {
         tipoDocumento: String,
         numeroDocumento: String,
         correo: String,
-    ): Result<CredencialesUsuario?>
+    ): Result<ActivacionUsuario?>
 
     /** PDF de credenciales de la ficha (solo admin). */
     suspend fun descargarCredencialesPdf(fichaId: Int): Result<ByteArray>

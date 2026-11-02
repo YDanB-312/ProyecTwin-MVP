@@ -177,7 +177,19 @@ fun FichaDetailScreen(
 
                         item {
                             SenaSectionHeader(title = "Instructor Encargado")
-                            SenaCard(elevation = 1.dp) {
+                            SenaCard(
+                                elevation = 1.dp,
+                                onClick = ficha.instructorUserId?.let { instructorId ->
+                                    {
+                                        onNavigate(
+                                            AppNavigation.APRENDIZ_INSTRUCTOR_DETAIL.replace(
+                                                "{userId}",
+                                                instructorId.toString(),
+                                            ),
+                                        )
+                                    }
+                                },
+                            ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Surface(
                                         modifier = Modifier.size(48.dp),

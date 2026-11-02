@@ -47,6 +47,8 @@ fun ProjectDetailScreen(
     editarRoute: String = AppNavigation.APRENDIZ_NEW_PROJECT,
     similitudesRoute: String = AppNavigation.APRENDIZ_SIMILITUDES,
     similarityRoute: String = AppNavigation.APRENDIZ_SIMILARITY,
+    /** Solo el aprendiz navega al resultado; instructor/admin recargan. */
+    onEnviado: ((Int) -> Unit)? = null,
     projectDetailViewModel: ProjectDetailViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
@@ -80,6 +82,10 @@ fun ProjectDetailScreen(
             is ProjectActionState.Deleted -> {
                 projectDetailViewModel.resetAccion()
                 onBack()
+            }
+            is ProjectActionState.Enviado -> {
+                projectDetailViewModel.resetAccion()
+                if (onEnviado != null) onEnviado(estado.projectId) else projectDetailViewModel.recargar()
             }
             else -> Unit
         }
