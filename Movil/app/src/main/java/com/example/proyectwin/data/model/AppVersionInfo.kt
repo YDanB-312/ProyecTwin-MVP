@@ -8,4 +8,11 @@ data class AppVersionInfo(
     val obligatoria: Boolean,
     val urlDescarga: String?,
     val notas: String?,
+    /** Identificador monótono usado como criterio principal de actualización. */
+    val versionCode: Int? = null,
+    val versionMinimaCode: Int? = null,
+    /** Integridad del APK publicada por el backend (hex SHA-256). */
+    val sha256: String? = null,
+    val tamanoBytes: Long? = null,
+    val fechaPublicacion: String? = null,
 )

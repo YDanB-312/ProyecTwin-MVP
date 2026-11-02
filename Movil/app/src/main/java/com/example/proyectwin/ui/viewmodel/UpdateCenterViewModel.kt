@@ -20,12 +20,14 @@ import com.example.proyectwin.domain.util.evaluarActualizacion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -73,6 +75,8 @@ class UpdateCenterViewModel @Inject constructor(
     val uiState: StateFlow<UpdateCenterUiState> = _uiState.asStateFlow()
 
     private var archivoDescargado: File? = null
+    private var trabajoDescarga: Job? = null
+    private var llamadaDescarga: Call? = null
 
     init {
         verificar()
@@ -92,7 +96,11 @@ class UpdateCenterViewModel @Inject constructor(
         viewModelScope.launch {
             repository.versionPublicada().fold(
                 onSuccess = { info ->
-                    val evaluacion = evaluarActualizacion(info, BuildConfig.VERSION_NAME)
+                    val evaluacion = evaluarActualizacion(
+                        info,
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE,
+                    )
                     if (!evaluacion.valida) {
                         _uiState.update {
                             it.copy(
@@ -150,7 +158,7 @@ class UpdateCenterViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
+        trabajoDescarga = viewModelScope.launch {
             _uiState.update {
                 it.copy(
                     descargando = true,
@@ -162,7 +170,7 @@ class UpdateCenterViewModel @Inject constructor(
                     requierePermisoInstalacion = false,
                 )
             }
-            runCatching { descargarYValidar(url, info.versionPublicada) }
+            runCatching { descargarYValidar(url, info) }
                 .onSuccess { archivo ->
                     archivoDescargado = archivo
                     _uiState.update {
@@ -184,6 +192,25 @@ class UpdateCenterViewModel @Inject constructor(
                         )
                     }
                 }
+            trabajoDescarga = null
+            llamadaDescarga = null
+        }
+    }
+
+    /** Cancela la descarga en curso y descarta el archivo parcial. */
+    fun cancelarDescarga() {
+        llamadaDescarga?.cancel()
+        trabajoDescarga?.cancel()
+        llamadaDescarga = null
+        trabajoDescarga = null
+        File(context.cacheDir, "updates").listFiles()?.forEach { it.delete() }
+        _uiState.update {
+            it.copy(
+                descargando = false,
+                progresoDescarga = 0,
+                archivoListo = false,
+                errorDescarga = "Descarga cancelada.",
+            )
         }
     }
 
@@ -248,8 +275,9 @@ class UpdateCenterViewModel @Inject constructor(
 
     // ------------------------------------------------------------ Internos
 
-    private suspend fun descargarYValidar(url: String, versionEsperada: String): File =
+    private suspend fun descargarYValidar(url: String, info: AppVersionInfo): File =
         withContext(Dispatchers.IO) {
+            val versionEsperada = info.versionPublicada
             val directorio = File(context.cacheDir, "updates").apply { mkdirs() }
             directorio.listFiles()?.forEach { it.delete() }
             val archivo = File(directorio, "ProyecTwin-$versionEsperada.apk")
@@ -263,12 +291,18 @@ class UpdateCenterViewModel @Inject constructor(
                 .followRedirects(true)
                 .build()
 
-            cliente.newCall(Request.Builder().url(url).get().build()).execute().use { respuesta ->
+            val llamada = cliente.newCall(Request.Builder().url(url).get().build())
+            llamadaDescarga = llamada
+            llamada.execute().use { respuesta ->
                 if (!respuesta.isSuccessful) {
                     error("La descarga falló (HTTP ${respuesta.code}). Intenta de nuevo más tarde.")
                 }
                 val cuerpo = respuesta.body ?: error("El servidor devolvió una descarga vacía.")
                 val longitud = cuerpo.contentLength()
+                val tamanoEsperado = info.tamanoBytes?.takeIf { it > 0 }
+                if (tamanoEsperado != null && longitud > 0 && longitud != tamanoEsperado) {
+                    error("El tamaño anunciado no coincide con la descarga.")
+                }
                 if (longitud > MAX_APK_BYTES) error("El archivo de actualización es demasiado grande.")
 
                 cuerpo.byteStream().use { entrada ->
@@ -292,7 +326,20 @@ class UpdateCenterViewModel @Inject constructor(
                 }
             }
 
-            verificarApk(archivo, versionEsperada)
+            val esperado = info.tamanoBytes?.takeIf { it > 0 }
+            if (esperado != null && archivo.length() != esperado) {
+                archivo.delete()
+                error("La descarga quedó incompleta (tamaño distinto al anunciado).")
+            }
+            val hashEsperado = info.sha256?.lowercase()
+            if (hashEsperado != null) {
+                val hashReal = sha256(archivo)
+                if (!hashReal.equals(hashEsperado, ignoreCase = true)) {
+                    archivo.delete()
+                    error("El APK descargado no coincide con el SHA-256 publicado.")
+                }
+            }
+            verificarApk(archivo, info)
             archivo
         }
 
@@ -300,7 +347,21 @@ class UpdateCenterViewModel @Inject constructor(
      * El APK debe ser de este paquete, declarar la versión anunciada y estar
      * firmado con el mismo certificado que la app instalada.
      */
-    private fun verificarApk(archivo: File, versionEsperada: String) {
+    private fun sha256(archivo: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        archivo.inputStream().use { entrada ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val leidos = entrada.read(buffer)
+                if (leidos < 0) break
+                digest.update(buffer, 0, leidos)
+            }
+        }
+        return digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+    }
+
+    private fun verificarApk(archivo: File, info: AppVersionInfo) {
+        val versionEsperada = info.versionPublicada
         val pm = context.packageManager
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             PackageManager.GET_SIGNING_CERTIFICATES
@@ -313,6 +374,18 @@ class UpdateCenterViewModel @Inject constructor(
             ?: error("El archivo descargado no es un APK válido.")
         if (paquete.packageName != context.packageName) {
             error("El APK descargado no corresponde a ProyecTwin.")
+        }
+        val versionCodeEsperada = info.versionCode?.takeIf { it > 0 }
+        if (versionCodeEsperada != null) {
+            val versionCodeApk = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                paquete.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                paquete.versionCode
+            }
+            if (versionCodeApk != versionCodeEsperada) {
+                error("El APK descargado no corresponde al versionCode anunciado.")
+            }
         }
         if (paquete.versionName.isNullOrBlank() ||
             VersionComparator.comparar(paquete.versionName, versionEsperada) != 0

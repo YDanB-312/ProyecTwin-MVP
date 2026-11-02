@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Brain, FolderOpen, ChartBar, CheckCircle, Database, Gauge } from 'phosphor-react'
+import { Brain, FolderOpen, ChartBar, CheckCircle, Database, DownloadSimple, Gauge } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
@@ -10,7 +10,7 @@ import Button from '../../../components/Button/Button'
 import TextType from '../../../components/TextType/TextType'
 import { useApi } from '../../../lib/useApi'
 import { useDebounced } from '../../../lib/useDebounced'
-import { demo } from '../../../lib/recursos'
+import { appVersion, demo } from '../../../lib/recursos'
 import s from './Home.module.css'
 
 const FEATURES = [
@@ -63,6 +63,11 @@ const FRASES_DEMO = [
 export default function Home() {
   // Resumen público (conteos agregados) para los chips del hero.
   const { data: resumen } = useApi(() => demo.resumen(), [])
+  // Descarga Android: solo se muestra si el backend publica una URL HTTPS
+  // real. Si aún no hay versión, no se ofrece un enlace roto.
+  const { data: versionAndroid } = useApi(() => appVersion.android(), [], { inicial: null })
+  const urlAndroid = String(versionAndroid?.download_url || '').trim()
+  const androidDisponible = urlAndroid.startsWith('https://')
 
   /* ---------- Demo en vivo: escribe una idea y el motor la compara ---------- */
   const [ideaViva, setIdeaViva] = useState('')
@@ -117,7 +122,25 @@ export default function Home() {
             </ul>
             <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
               <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
+              {androidDisponible ? (
+                <Button
+                  as="a"
+                  href={urlAndroid}
+                  download
+                  variant="secondary"
+                  aria-label="Descargar aplicación Android"
+                >
+                  <DownloadSimple size={16} aria-hidden="true" /> Descargar aplicación Android
+                </Button>
+              ) : versionAndroid ? (
+                <span className={s.heroHint}>La aplicación Android estará disponible próximamente.</span>
+              ) : null}
             </div>
+            {androidDisponible && (
+              <p className={s.heroNote}>
+                Descarga el APK y confirma la instalación desde Android.
+              </p>
+            )}
           </div>
 
           <div className={s.terminal}>

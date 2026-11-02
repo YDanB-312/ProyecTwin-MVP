@@ -26,6 +26,25 @@ fun apiBaseUrl(buildType: String): String =
         ?: (project.findProperty("proyectwin.apiBaseUrl") as String?)
         ?: "http://10.0.2.2:8000/v1/"
 
+// ------------------------------------------------------------------ FIRMA
+// La keystore y sus contraseñas nunca se versionan. La ruta se puede cambiar
+// con PROYECTTWIN_KEYSTORE_PROPERTIES; cada valor admite override por entorno.
+val keystoreProperties = Properties().apply {
+    val ruta = System.getenv("PROYECTTWIN_KEYSTORE_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.proyecttwin/keystore.properties"
+    val archivo = rootProject.file(ruta)
+    if (archivo.isFile) archivo.inputStream().use { load(it) }
+}
+
+fun signingValue(env: String, prop: String): String? =
+    System.getenv(env)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(prop)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("PROYECTTWIN_STORE_FILE", "storeFile")
+val releaseStorePassword = signingValue("PROYECTTWIN_STORE_PASSWORD", "storePassword")
+val releaseKeyAlias = signingValue("PROYECTTWIN_KEY_ALIAS", "keyAlias")
+val releaseKeyPassword = signingValue("PROYECTTWIN_KEY_PASSWORD", "keyPassword")
+
 android {
     namespace = "com.example.proyectwin"
     compileSdk {
@@ -38,10 +57,23 @@ android {
         applicationId = "com.example.proyectwin"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = releaseStoreFile?.let { file(it) }
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+            enableV1Signing = false
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = false
+        }
     }
 
     buildTypes {
@@ -49,7 +81,10 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl("debug")}\"")
         }
         release {
+            signingConfig = signingConfigs.getByName("release")
+            isDebuggable = false
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

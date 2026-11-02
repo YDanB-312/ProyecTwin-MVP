@@ -46,12 +46,16 @@ class AppUpdateViewModelTest {
         obligatoria: Boolean = false,
         url: String? = "https://example.test/apk/proyecttwin.apk",
         notas: String? = "Mejoras y ajustes",
+        codigo: Int? = null,
+        codigoMinimo: Int? = null,
     ) = AppVersionInfo(
         versionPublicada = version,
         versionMinima = minima,
         obligatoria = obligatoria,
         urlDescarga = url,
         notas = notas,
+        versionCode = codigo,
+        versionMinimaCode = codigoMinimo,
     )
 
     @Before
@@ -240,6 +244,31 @@ class AppUpdateViewModelTest {
 
         assertTrue(vm.uiState.value.mostrar)
         assertFalse(vm.uiState.value.obligatoria)
+    }
+
+    @Test
+    fun `usa versionCode aunque el versionName no sea mayor`() = runTest(dispatcher) {
+        coEvery { repo.versionPublicada() } returns
+            Result.success(info(version = "1.4.0", codigo = 5))
+
+        val vm = viewModel()
+        vm.verificar("9.9.9", 4, ahora)
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.mostrar)
+        assertEquals("1.4.0", vm.uiState.value.versionNueva)
+    }
+
+    @Test
+    fun `no avisa si el versionCode publicado es igual`() = runTest(dispatcher) {
+        coEvery { repo.versionPublicada() } returns
+            Result.success(info(version = "1.4.0", codigo = 5))
+
+        val vm = viewModel()
+        vm.verificar("1.4.0", 5, ahora)
+        advanceUntilIdle()
+
+        assertFalse(vm.uiState.value.mostrar)
     }
 
     // 5b. Una sola consulta de red por proceso.

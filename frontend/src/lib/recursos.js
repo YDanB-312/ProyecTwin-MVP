@@ -208,8 +208,8 @@ export const demo = {
 };
 
 // ---------------------------------------------------------------- App Android
-// Metadatos de versión para la app móvil. El APK histórico no se anuncia:
-// `download_url` permanece vacío y no se muestra una descarga en la web.
+// Metadatos públicos de versión y URL HTTPS del APK publicado. La Home solo
+// muestra la descarga si el backend devuelve una URL válida.
 export const appVersion = {
   android: () => apiFetch("/app-version/android", { auth: false }),
 };

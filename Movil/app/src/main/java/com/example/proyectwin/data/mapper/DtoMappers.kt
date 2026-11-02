@@ -427,6 +427,11 @@ fun com.example.proyectwin.data.api.dto.AppVersionDto.toDomain(
         obligatoria = enforceMinimum,
         urlDescarga = downloadUrl?.trim()?.takeIf { it.isNotEmpty() },
         notas = releaseNotes?.trim()?.takeIf { it.isNotEmpty() },
+        versionCode = latestVersionCode?.takeIf { it > 0 },
+        versionMinimaCode = minimumSupportedVersionCode?.takeIf { it > 0 },
+        sha256 = apkSha256?.trim()?.lowercase()?.takeIf { it.length == 64 },
+        tamanoBytes = apkSize?.takeIf { it > 0 },
+        fechaPublicacion = publishedAt?.trim()?.takeIf { it.isNotEmpty() },
     )
 
 // ------------------------------------------------------- Dashboard
