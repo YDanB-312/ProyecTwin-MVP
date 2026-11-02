@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning, ArrowCounterClockwise, Camera } from 'phosphor-react'
+import { FolderOpen, MagnifyingGlass, ChartBar, Users, PencilSimple, Prohibit, Key, Trash, CheckCircle, Warning, Camera } from 'phosphor-react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PerfilBase from '../../../components/PerfilBase/PerfilBase'
 import Avatar from '../../../components/Avatar/Avatar'
@@ -54,8 +54,7 @@ export default function DetalleUsuario() {
   const fileRef = useRef(null)
   const [guardado, setGuardado] = useState(false)
   const [accionMsg, setAccionMsg] = useState(null)
-  const [claveTemporal, setClaveTemporal] = useState(null)
-  const [avisoCredenciales, setAvisoCredenciales] = useState('')
+  const [avisoAcceso, setAvisoAcceso] = useState('')
   const [accionOcupada, setAccionOcupada] = useState(false)
   const [filtroProp, setFiltroProp] = useState('todos')
   const [busquedaProp, setBusquedaProp] = useState('')
@@ -136,13 +135,14 @@ export default function DetalleUsuario() {
 
   const estado = usuario.estado === false ? 'suspendido' : 'activo'
   const esMiCuenta = Number(sesion?.id) === Number(usuario.id)
+  const esPendienteActivacion = usuario.rol !== 'admin' && !usuario.email_verified_at
 
-  // Estado del envío de credenciales temporales (solo mientras sean vigentes).
-  const estadoCredenciales = usuario.must_change_password
-    ? (usuario.credenciales_error
-      ? 'Falló el envío'
-      : (usuario.credenciales_enviadas_en ? 'Enviadas al correo' : 'Pendiente de envío'))
-    : 'Contraseña ya establecida'
+  // Estado de acceso: activación pendiente o contraseña ya establecida.
+  const estadoCredenciales = usuario.rol === 'admin'
+    ? '—'
+    : esPendienteActivacion
+      ? 'Pendiente de activación'
+      : 'Contraseña establecida'
 
   const detalles =
     usuario.rol === 'aprendiz'
@@ -151,13 +151,13 @@ export default function DetalleUsuario() {
           { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
           { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
           { label: 'Programa', value: perfilAprendiz?.program?.nombre || ficha?.program?.nombre || 'No asignado' },
-          { label: 'Credenciales', value: estadoCredenciales },
+          { label: 'Acceso', value: estadoCredenciales },
         ]
       : [
           { label: 'Rol', value: ROL_LABEL[usuario.rol] || usuario.rol },
           { label: 'Estado', value: estado === 'suspendido' ? 'Suspendido' : 'Activo' },
           { label: 'Ficha', value: ficha ? `${ficha.nombre} (${ficha.codigo})` : 'Sin ficha asignada' },
-          { label: 'Credenciales', value: estadoCredenciales },
+          { label: 'Acceso', value: estadoCredenciales },
         ]
 
   const impactoEvidencia = decisionEvidencia?.impacto
@@ -258,7 +258,6 @@ export default function DetalleUsuario() {
     setFotoError('')
     setErrores({})
     setGuardado(false)
-    setClaveTemporal(null)
     setAccionMsg(null)
     setEditando(true)
   }
@@ -399,12 +398,11 @@ export default function DetalleUsuario() {
   const restablecerClave = async () => {
     if (accionOcupada) return
     setAccionOcupada(true)
+    setAccionMsg(null)
+    setAvisoAcceso('')
     try {
-      // La temporal la genera el servidor con el formato institucional único.
       const resp = await usuarios.restablecerCredenciales(usuario.id)
-      setClaveTemporal(resp.credenciales.password_temporal)
-      setGuardado(false)
-      setAccionMsg(null)
+      setAvisoAcceso(resp?.message || 'Se actualizó el acceso del usuario.')
       await recargar()
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo restablecer la contraseña.')
@@ -424,23 +422,6 @@ export default function DetalleUsuario() {
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado.')
       return false
-    } finally {
-      setAccionOcupada(false)
-    }
-  }
-
-  // Reenvía las credenciales temporales (solo mientras la contraseña no cambie).
-  const reenviarCredenciales = async () => {
-    if (accionOcupada) return
-    setAccionMsg(null)
-    setAvisoCredenciales('')
-    setAccionOcupada(true)
-    try {
-      await usuarios.reenviarCredenciales(usuario.id)
-      setAvisoCredenciales('Credenciales reenviadas al correo personal.')
-      await recargar()
-    } catch (err) {
-      setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
     } finally {
       setAccionOcupada(false)
     }
@@ -487,18 +468,7 @@ export default function DetalleUsuario() {
             )}
             {usuario.rol !== 'admin' && (
               <Button type="button" variant="secondary" disabled={accionOcupada} onClick={() => setModalRestablecer(true)}>
-                <Key size={14} /> Restablecer contraseña
-              </Button>
-            )}
-            {usuario.rol !== 'admin' && usuario.must_change_password && (
-              <Button
-                type="button"
-                variant="secondary"
-                title="Reenviar las credenciales temporales al correo personal"
-                disabled={accionOcupada}
-                onClick={reenviarCredenciales}
-              >
-                <ArrowCounterClockwise size={14} /> Reenviar credenciales
+                <Key size={14} /> {esPendienteActivacion ? 'Reenviar activación' : 'Enviar enlace de contraseña'}
               </Button>
             )}
             <Button
@@ -513,14 +483,8 @@ export default function DetalleUsuario() {
           </Actions>
         </div>
 
-        {claveTemporal && (
-          <Alert>
-            <Key size={14} /> Nueva contraseña temporal: <strong>{claveTemporal}</strong>. Compártela con el usuario por un canal seguro.
-          </Alert>
-        )}
-
-        {avisoCredenciales && (
-          <Alert><CheckCircle size={14} /> {avisoCredenciales}</Alert>
+        {avisoAcceso && (
+          <Alert><CheckCircle size={14} /> {avisoAcceso}</Alert>
         )}
 
         {accionMsg && (
@@ -766,9 +730,11 @@ export default function DetalleUsuario() {
 
       <ConfirmModal
         open={modalRestablecer}
-        titulo="Restablecer contraseña"
-        mensaje={`Se generará una contraseña temporal para "${nombre}" y deberá cambiarla al ingresar. ¿Continuar?`}
-        textoConfirmar="Sí, restablecer"
+        titulo={esPendienteActivacion ? 'Reenviar activación' : 'Enviar enlace de contraseña'}
+        mensaje={esPendienteActivacion
+          ? `Se generará un nuevo enlace de activación para "${nombre}" y el anterior dejará de servir. ¿Continuar?`
+          : `Se cerrarán las sesiones de "${nombre}" y se enviará un enlace para restablecer su contraseña. ¿Continuar?`}
+        textoConfirmar={esPendienteActivacion ? 'Sí, reenviar' : 'Sí, enviar'}
         textoCancelar="Cancelar"
         onConfirmar={async () => { await restablecerClave(); setModalRestablecer(false) }}
         onCancelar={() => setModalRestablecer(false)}

@@ -50,8 +50,8 @@ export default function RecuperarContrasena() {
     try {
       const res = await apiForgotPassword(email.trim().toLowerCase())
       setEnviado({ resetUrl: res?.reset_url || null })
-    } catch {
-      setError('No se pudo procesar la solicitud. Intenta de nuevo.')
+    } catch (err) {
+      setError(err?.data?.message || 'No se pudo procesar la solicitud. Intenta de nuevo.')
     } finally {
       setEnviando(false)
     }
@@ -65,18 +65,10 @@ export default function RecuperarContrasena() {
           <header className={s.header}>
             <h1 className={s.title}>Revisa tu correo</h1>
             <p className={s.subtitle}>
-              Si <strong>{email.trim()}</strong> está registrado, te enviamos un enlace para restablecer tu
-              contraseña. El enlace vence en 60 minutos.
+              Si <strong>{email.trim()}</strong> está registrado, te enviamos un enlace de acceso.
+              Revisa tu correo y sigue las instrucciones.
             </p>
           </header>
-
-          {/* En local no hay servidor de correo: se muestra el enlace para probar. */}
-          {enviado.resetUrl && (
-            <p className={s.subtitle}>
-              <strong>Modo local:</strong>{' '}
-              <a className={s.link} href={enviado.resetUrl}>abrir enlace de restablecimiento</a>
-            </p>
-          )}
 
           <div className={s.actions}>
             <Button as="link" to="/login">

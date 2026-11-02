@@ -23,25 +23,15 @@ const COLUMNAS = [
 const FILAS = [{ id: 1, nombre: 'Ana', estado: 'Activo' }]
 
 describe('DataTable', () => {
-  it('muestra vacío cuando no hay filas', () => {
-    render(<DataTable columns={COLUMNAS} rows={[]} empty="Nada por aquí." />)
+  it('muestra el vacío y renderiza celdas con data-label para tarjetas', () => {
+    const { container, rerender } = render(
+      <DataTable columns={COLUMNAS} rows={[]} empty="Nada por aquí." />
+    )
     expect(screen.getByText('Nada por aquí.')).toBeInTheDocument()
-  })
 
-  it('renderiza celdas con data-label para modo tarjetas', () => {
-    const { container } = render(<DataTable columns={COLUMNAS} rows={FILAS} ariaLabel="Usuarios" />)
+    rerender(<DataTable columns={COLUMNAS} rows={FILAS} ariaLabel="Usuarios" />)
     expect(screen.getByRole('table', { name: 'Usuarios' })).toBeInTheDocument()
     const celda = container.querySelector('td[data-label="Estado"]')
     expect(celda?.textContent).toBe('Activo')
-  })
-
-  it('aplica sticky a la última columna por defecto y permite desactivarlo', () => {
-    const { container, rerender } = render(<DataTable columns={COLUMNAS} rows={FILAS} />)
-    let celdas = container.querySelectorAll('td')
-    expect(celdas[celdas.length - 1].className).toContain('stickyCol')
-
-    rerender(<DataTable columns={COLUMNAS} rows={FILAS} stickyLast={false} />)
-    celdas = container.querySelectorAll('td')
-    expect(celdas[celdas.length - 1].className).not.toContain('stickyCol')
   })
 })

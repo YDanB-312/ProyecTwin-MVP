@@ -386,7 +386,7 @@ class DashboardMetricsController extends Controller
         return match ($periodo) {
             '7d' => [now()->subDays(6)->startOfDay(), 'Y-m-d', 7, 'dia'],
             '30d' => [now()->subDays(29)->startOfDay(), 'Y-m-d', 30, 'dia'],
-            default => [now()->subMonths(2)->startOfMonth(), 'Y-m', 3, 'mes'],
+            default => [now()->startOfMonth()->subMonths(2), 'Y-m', 3, 'mes'],
         };
     }
 
@@ -412,7 +412,7 @@ class DashboardMetricsController extends Controller
             }
         }
 
-        return $this->construirSerie($periodo, $tipo, $cantidad, $grupos);
+        return $this->construirSerie($tipo, $cantidad, $grupos);
     }
 
     /**
@@ -425,7 +425,7 @@ class DashboardMetricsController extends Controller
         [$inicio, $formato, $cantidad, $tipo] = $this->rango($periodo);
 
         if ($idsProyectos->isEmpty()) {
-            return $this->construirSerie($periodo, $tipo, $cantidad, []);
+            return $this->construirSerie($tipo, $cantidad, []);
         }
 
         $historiales = ProjectHistory::with('project:id,titulo')
@@ -448,15 +448,21 @@ class DashboardMetricsController extends Controller
             }
         }
 
-        return $this->construirSerie($periodo, $tipo, $cantidad, $grupos);
+        return $this->construirSerie($tipo, $cantidad, $grupos);
     }
 
     /** Genera los buckets completos (incluye periodos sin registros). */
-    private function construirSerie(string $periodo, string $tipo, int $cantidad, array $grupos): array
+    private function construirSerie(string $tipo, int $cantidad, array $grupos): array
     {
         $serie = [];
+        $base = $tipo === 'mes'
+            ? now()->startOfMonth()
+            : now()->startOfDay();
+
         for ($i = $cantidad - 1; $i >= 0; $i--) {
-            $fecha = $tipo === 'mes' ? now()->subMonths($i) : now()->subDays($i);
+            $fecha = $tipo === 'mes'
+                ? $base->copy()->subMonths($i)
+                : $base->copy()->subDays($i);
             $clave = $fecha->format($tipo === 'mes' ? 'Y-m' : 'Y-m-d');
             $datos = $grupos[$clave] ?? ['total' => 0, 'titulos' => []];
 

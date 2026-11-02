@@ -3,16 +3,21 @@
 Guía del despliegue del MVP completo (**SPA React + API Laravel**) en un solo
 servicio de Railway, con MySQL como base de datos.
 
-> **Aviso sobre el APK Android (19-oct-2026):** el APK servido actualmente en
-> `/apk/ProyecTWin.apk` es un **build de pruebas (debug)** —`versionName` 1.2.0,
-> `versionCode` 3, marcado `application-debuggable` y firmado con la clave
-> debug—, **no** una distribución oficial. Para publicar una versión firmada
-> sigue [`release-android.md`](release-android.md); `assembleDebug` no es un
-> artefacto publicable.
+> **Estado del APK (Fase 6C).** El artefacto actual es `ProyecTWin.apk`
+> versión **1.3.0 / versionCode 4**, firmado con el certificado
+> `CN=Oscar`, sin `application-debuggable`.
+> SHA-256 del APK:
+> `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E`.
+>
+> La imagen web **no incluye el APK** mientras no exista autorización escrita
+> de Oscar. Nginx responde `404` en `/apk/ProyecTWin.apk` y el botón del Home
+> permanece oculto. Para publicarlo, sigue
+> [`release-android.md`](release-android.md) y la sección
+> [APK en Railway](#apk-en-railway). No re-firmes ni modifiques el APK actual.
 
 ## Arquitectura
 
-```
+```text
 Internet ── HTTPS ──► Railway (proxy TLS)
                         │
                         ▼
@@ -22,26 +27,28 @@ Internet ── HTTPS ──► Railway (proxy TLS)
               │  ├─ /v1/**  → Laravel │      └──────────────┘
               │  ├─ /sanctum/**       │
               │  ├─ /up     → health  │
+              │  ├─ /apk/ProyecTWin.apk (opcional, autorizado)
               │  └─ resto   → SPA     │
               └───────────────────────┘
 ```
 
 **Un solo servicio** porque el SPA usa cookie de sesión httpOnly y CSRF
 (`/sanctum/csrf-cookie`), con `/v1` relativo. Al compartir dominio y origen no
-hay CORS ni cookies cross-site: exactamente el mismo esquema que en local con
-el proxy de Vite.
+hay CORS entre sitios ni cookies cross-site.
 
 ## Archivos del despliegue
 
 | Archivo | Para qué |
 |---|---|
 | `Dockerfile` | Compila el SPA (Vite), instala Composer y arma nginx + php-fpm |
-| `docker/nginx.conf` | Rutas: API → PHP, resto → SPA con fallback `index.html`; escucha en `$PORT` |
-| `docker/entrypoint.sh` | Espera MySQL, migra, siembra (opcional), cachea y arranca |
+| `docker/nginx.conf` | Rutas: API → PHP, SPA con fallback `index.html` y APK opcional |
+| `docker/entrypoint.sh` | Espera MySQL, migra, cachea y arranca; el seed demo no corre en producción |
 | `railway.json` | Builder Dockerfile + healthcheck `/up` |
-| `.dockerignore` / `.railwayignore` | Suben solo lo necesario (sin `Movil/`, `node_modules`, `vendor`) |
+| `.dockerignore` / `.railwayignore` | Excluyen secretos, dependencias, `Movil/` y el APK no autorizado |
 
-## Variables de entorno (servicio web)
+## Variables de entorno
+
+### Obligatorias
 
 | Variable | Valor |
 |---|---|
@@ -49,216 +56,280 @@ el proxy de Vite.
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
 | `APP_KEY` | salida de `php artisan key:generate --show` |
-| `APP_URL` | `https://<dominio>.up.railway.app` |
+| `APP_URL` | `https://<dominio>` (sin barra final) |
 | `APP_TIMEZONE` | `America/Bogota` |
 | `LOG_CHANNEL` | `stderr` |
-| `API_RATE_LIMIT` | `300` (evita throttling en la demo con varias sesiones) |
+| `LOG_LEVEL` | `warning` |
 | `DB_CONNECTION` | `mysql` |
-| `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
-| `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
-| `DB_DATABASE` | `${{MySQL.MYSQLDATABASE}}` |
-| `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
-| `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-| `SESSION_DRIVER` | `database` (las sesiones sobreviven a los redeploys) |
+| `DB_HOST` | host del plugin MySQL |
+| `DB_PORT` | puerto del plugin MySQL |
+| `DB_DATABASE` | base del plugin MySQL |
+| `DB_USERNAME` | usuario del plugin MySQL |
+| `DB_PASSWORD` | contraseña del plugin MySQL |
+| `SESSION_DRIVER` | `database` |
+| `FRONTEND_URL` | `https://<dominio>` (sin barra final) |
+| `SANCTUM_STATEFUL_DOMAINS` | `<dominio>` sin `https://` ni barra final |
+| `MAIL_MAILER` | `brevo` |
+| `BREVO_API_KEY` | clave API v3 de Brevo |
+| `MAIL_FROM_ADDRESS` | remitente verificado en Brevo |
+
+Puedes usar las referencias `${{MySQL.*}}` del plugin de Railway o una única
+`DATABASE_URL` proporcionada por el plugin. **No mezcles ambas formas.** No
+inventes nombres de servicios: ajusta las referencias al nombre real del plugin.
+
+### Opcionales o con valor predeterminado seguro
+
+| Variable | Valor recomendado |
+|---|---|
+| `MAIL_FROM_NAME` | `ProyecTwin` |
 | `SESSION_LIFETIME` | `120` (minutos de inactividad de la sesión web) |
-| `SESSION_SECURE_COOKIE` | `true` (en producción `Secure` se fuerza; `false` solo tiene efecto en local/testing) |
-| `CACHE_DRIVER` | `file` |
+| `SESSION_SECURE_COOKIE` | `true`; en producción `Secure` se fuerza igualmente |
+| `SANCTUM_EXPIRATION` | `1440` (24 h para tokens Bearer móviles) |
+| `CACHE_DRIVER` | `file` (aceptable con una réplica) |
 | `QUEUE_CONNECTION` | `sync` |
-| `BROADCAST_DRIVER` | `log` |
 | `FILESYSTEM_DISK` | `local` |
-| `SANCTUM_STATEFUL_DOMAINS` | `<dominio>.up.railway.app` (sin `https://`) |
-| `SANCTUM_EXPIRATION` | `1440` (24 h, aprobado; no afecta a la sesión del SPA) |
-| `FRONTEND_URL` | `https://<dominio>.up.railway.app` |
-| `MAIL_MAILER` | `log` (los correos quedan en el log; la demo no envía emails) |
-| `RUN_SEED` | `true` **solo el primer deploy**; luego ponlo en `false` |
+| `API_RATE_LIMIT` | `300` para la demo; el valor por defecto es `60` |
+| `ANDROID_APP_*` | Solo si se publica el APK; ver más abajo |
 
-> Las referencias `${{MySQL.*}}` las resuelve Railway; el servicio de la base de
-> datos debe llamarse `MySQL` (o ajusta el nombre en las referencias).
-> En PowerShell van entre comillas simples para que `$` no se interprete.
+### Temporal
 
-> **Cookies y sesión:** con `APP_URL=https://...`, la cookie de sesión lleva
-> `Secure` por defecto aunque se omita `SESSION_SECURE_COOKIE`; en local
-> (`APP_URL=http://localhost`) sigue sin `Secure` para no romper HTTP.
-> Un valor no booleano en `SESSION_SECURE_COOKIE` no se interpreta como
-> `false`: se resuelve con `APP_URL`. Con `APP_ENV=production`, si `APP_URL`
-> falta o no es HTTPS, `Secure` permanece activo (fallo cerrado), pero
-> `APP_URL` debe corregirse porque el resto de URLs y la configuración
-> stateful dependen de ella. En producción, un `SESSION_SECURE_COOKIE=false`
-> explícito tampoco desactiva `Secure`; el valor solo se respeta en
-> local/testing. `HttpOnly` está siempre activo y `SameSite=Lax` es el valor
-> correcto porque el SPA y la API comparten origen. `SANCTUM_EXPIRATION` solo
-> rige los tokens Bearer de la app móvil; la sesión web usa
-> `SESSION_LIFETIME`. La duración aprobada es 1440 minutos (24 h): al vencer,
-> Android debe iniciar sesión de nuevo y no hay renovación automática.
+| Variable | Uso |
+|---|---|
+| `ADMIN_BOOTSTRAP_ALLOW=1` | Solo durante la ejecución de `admin:inicial`; retirar inmediatamente después |
 
-## Pasos (PowerShell)
+No definas `RUN_SEED=true` en producción: el entrypoint lo ignora y
+`DemoSeeder` está bloqueado. No uses `MAIL_MAILER=log` para cuentas reales:
+`admin:inicial` lo rechaza y la activación no llegaría.
+
+## Cookies, sesiones y tokens
+
+- `SESSION_LIFETIME=120` es el **TTL de inactividad de la sesión web** y de su
+  cookie. No es la vida del token móvil.
+- `SANCTUM_EXPIRATION=1440` es la **edad absoluta de los tokens Bearer de la
+  app móvil** (24 h, sin renovación automática). No aplica a la sesión por
+  cookie del SPA.
+- "Recordarme" usa la cookie persistente de Laravel (recaller). Su duración por
+  defecto es de 400 días, aunque la sesión inactiva siga venciendo a los 120
+  minutos. Si la política debe ser más estricta, decide y configura
+  `auth.guards.web.remember` en una fase separada.
+- `SESSION_DRIVER=database` requiere la migración de `sessions` y permite que
+  la sesión sobreviva a un redeploy. `SESSION_DOMAIN` debe quedar vacío
+  (cookie host-only). `SameSite=Lax` y `HttpOnly` están fijados.
+- `Referrer-Policy: same-origin` es necesario para que Sanctum reconozca las
+  peticiones GET del SPA como stateful. No la cambies a `no-referrer`.
+- `SANCTUM_STATEFUL_DOMAINS` reemplaza los valores por defecto; si falta el
+  dominio real, el login puede responder 200 sin sesión y `/auth/me` fallar
+  tras recargar.
+
+## Pasos iniciales (PowerShell)
 
 ```powershell
 # 1. CLI de Railway
 npm i -g @railway/cli
 
-# 2. Autenticación. Con token de cuenta:
-railway login --browserless     # pega el token de railway.com/account/tokens
-# (o abre el navegador simplemente con: railway login)
+# 2. Autenticación
+railway login --browserless
 
-# 3. Crear el proyecto y vincularlo
+# 3. Proyecto y base MySQL
 railway init -n proyecttwin
-
-# 4. Base de datos MySQL (o desde el dashboard: New → Database → MySQL)
 railway add --database mysql
 
-# 5. Definir variables del servicio (o desde el dashboard → Variables)
-#    Ejemplo con algunas:
+# 4. Variables (ajusta las referencias al nombre real del plugin)
+#    Define también APP_KEY, APP_URL, FRONTEND_URL, SANCTUM_STATEFUL_DOMAINS,
+#    SESSION_DRIVER=database y las variables de Brevo antes del primer uso real.
 railway variables --set 'APP_ENV=production' --set 'APP_DEBUG=false' `
-                  --set 'DB_CONNECTION=mysql' `
-                  --set 'DB_HOST=${{MySQL.MYSQLHOST}}' `
-                  --set 'DB_PORT=${{MySQL.MYSQLPORT}}' `
-                  --set 'DB_DATABASE=${{MySQL.MYSQLDATABASE}}' `
-                  --set 'DB_USERNAME=${{MySQL.MYSQLUSER}}' `
-                  --set 'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}' `
-                  --set 'RUN_SEED=true'
+  --set 'APP_KEY=<clave-generada>' `
+  --set 'DB_CONNECTION=mysql' `
+  --set 'DB_HOST=${{MySQL.MYSQLHOST}}' `
+  --set 'DB_PORT=${{MySQL.MYSQLPORT}}' `
+  --set 'DB_DATABASE=${{MySQL.MYSQLDATABASE}}' `
+  --set 'DB_USERNAME=${{MySQL.MYSQLUSER}}' `
+  --set 'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}'
 
-# 6. Desplegar (Railway construye el Dockerfile en la nube)
+# 5. Desplegar el Dockerfile de la raíz
 railway up
 
-# 7. Dominio público HTTPS
+# 6. Dominio público HTTPS
 railway domain
 ```
 
-Tras generar el dominio, define `APP_URL`, `FRONTEND_URL` y
-`SANCTUM_STATEFUL_DOMAINS` con ese valor; Railway redespliega automáticamente.
+Después de crear el dominio, define `APP_URL`, `FRONTEND_URL` y
+`SANCTUM_STATEFUL_DOMAINS` con ese valor. Railway redespliega al cambiar
+variables; usa `--skip-deploys` si necesitas agrupar cambios.
 
-## Verificación
+## Primer administrador
 
-- `https://<dominio>.up.railway.app/up` → `{"status":"ok"}`.
-- La raíz `/` carga el SPA; recargar cualquier ruta interna (p. ej.
-  `/iniciar-sesion`) no da 404.
-- Login con las credenciales demo (sembradas por el seeder):
+Requisitos: base migrada y vacía de usuarios, `APP_ENV=production`,
+`APP_URL`/`FRONTEND_URL` HTTPS y Brevo con remitente verificado.
 
-| Rol | Usuario | Contraseña |
-|---|---|---|
-| Aprendiz | `mgonzalez` | `123456` |
-| Instructor | `cruiz` | `123456` |
-| Admin | `a` | `admin123` |
+```sh
+cd /app
+php artisan admin:inicial --check-only
 
-- Logs en vivo: `railway logs -d`.
+ADMIN_BOOTSTRAP_ALLOW=1 php artisan admin:inicial \
+  --correo="admin@dominio.com" \
+  --nombre="..." \
+  --apellido="..." \
+  --tipo-documento=CC \
+  --documento="..." \
+  --confirmar-base="<nombre-exacto-de-la-base>"
+```
 
-## Después del primer deploy
+El comando crea una cuenta pendiente, sin contraseña temporal, y envía el
+enlace de activación. No imprime tokens ni contraseñas.
 
-1. Pon `RUN_SEED=false` (el entrypoint ya se protege sembrando solo si la base
-   está vacía, pero así evitas el chequeo extra).
-2. Re-deploys: `railway up` de nuevo. Las sesiones viven en la tabla
-   `sessions` (`SESSION_DRIVER=database`), así que sobreviven a los redeploys.
-   Si el navegador conservara un token CSRF viejo, el SPA lo renueva y
-   reintenta solo ante un 419.
+1. Activa la cuenta desde el correo con una contraseña de 12+ caracteres.
+2. Verifica el login y `/v1/auth/me`.
+3. Retira `ADMIN_BOOTSTRAP_ALLOW` de Railway.
+4. Comprueba con `--check-only` que existe 1 administrador.
+
+Si el correo falla, la cuenta queda pendiente:
+
+```sh
+ADMIN_BOOTSTRAP_ALLOW=1 php artisan admin:inicial \
+  --correo="admin@dominio.com" \
+  --reenviar \
+  --confirmar-base="<nombre-exacto-de-la-base>"
+```
+
+No ejecutes el alta dos veces en paralelo; el procedimiento está pensado para
+una ejecución única del owner.
+
+## Verificación posterior al despliegue
+
+- `https://<dominio>/up` → `{"status":"ok"}`.
+- `/` carga el SPA y las rutas internas no dan 404 al recargar.
+- Login con cookie, recarga del SPA, `/v1/auth/me` y logout.
+- Activación de una cuenta nueva y recuperación de contraseña.
+- `/v1/app-version/android` responde y `download_url` está vacío mientras no
+  haya APK autorizado.
+- `/apk/ProyecTWin.apk` responde 404 mientras no se publique el APK.
+- `/apk/otro.apk`, `/apk/` y `/apk/ProyecTWin.apk.php` también responden 404.
+- Logs sin tokens, query strings sensibles ni credenciales.
+
+## Correo real con Brevo
+
+El backend envía activación, recuperación y avisos por la API HTTP de Brevo.
+Variables:
+
+```text
+MAIL_MAILER=brevo
+BREVO_API_KEY=<clave API v3>
+MAIL_FROM_ADDRESS=<remitente verificado>
+MAIL_FROM_NAME=ProyecTwin
+```
+
+Requisitos:
+
+1. Remitente verificado en Brevo.
+2. Si la seguridad por IP está activa, autorizar la salida de Railway o
+   desactivar la restricción en `app.brevo.com/security/authorised_ips`.
+3. Probar activación y reset reales; abrir el enlace en Gmail/Outlook y
+   comprobar que el fragmento `#token=...` se conserva tras el click tracking.
+4. Revisar que `account_activations.sent_at` tenga valor y `error` esté vacío.
+
+Los errores de Brevo se registran en `railway logs` (401/400, remitente no
+verificado, IP no autorizada). No se registra la clave.
+
+## APK en Railway
+
+**Estado actual:** el APK no está incluido en la imagen. `docker/nginx.conf`
+tiene una ruta dedicada que responde 404 si el archivo no existe, y
+`.dockerignore`/`.railwayignore` excluyen `backend/public/apk` y `*.apk`.
+El botón del Home se oculta porque `ANDROID_APP_DOWNLOAD_URL` debe permanecer
+vacío hasta que la descarga esté verificada.
+
+Para publicar, **solo con autorización escrita de Oscar**:
+
+1. Recibe el APK release firmado (no debug) y valida versión, firma y SHA-256
+   según [`release-android.md`](release-android.md).
+2. Coloca únicamente `backend/public/apk/ProyecTWin.apk`.
+3. Re-incluye solo ese archivo en `.dockerignore` y `.railwayignore`, en este
+   orden y al final de las reglas:
+   ```text
+   !backend/public/apk/
+   !backend/public/apk/ProyecTWin.apk
+   ```
+4. Reconstruye y despliega. Verifica:
+   - `GET /apk/ProyecTWin.apk` → 200.
+   - `Content-Type: application/vnd.android.package-archive`.
+   - `Content-Disposition: attachment; filename="ProyecTWin.apk"`.
+   - SHA-256 remoto idéntico al local.
+5. Solo entonces define:
+   ```text
+   ANDROID_APP_VERSION=1.3.0
+   ANDROID_APP_MIN_VERSION=1.0.0
+   ANDROID_APP_ENFORCE_MINIMUM=false
+   ANDROID_APP_DOWNLOAD_URL=https://<dominio>/apk/ProyecTWin.apk
+   ANDROID_APP_RELEASE_NOTES=...
+   ```
+6. El botón "Descargar APK de ProyecTWIN" del Home aparecerá
+   automáticamente al leer `download_url` desde `/v1/app-version/android`.
+
+Si no hay autorización, no cambies las exclusiones, no definas
+`ANDROID_APP_DOWNLOAD_URL` y mantén la ruta en 404. La app Android no debe
+anunciar una actualización que no existe.
+
+## Una sola réplica y migraciones
+
+El entrypoint ejecuta `php artisan migrate --force` en cada arranque. La
+migración de compatibilidad `2026_11_01_000001` añade `email_verified_at` si una
+base anterior no lo tiene; con una réplica y despliegues serializados el riesgo
+es bajo. **No escales a varias réplicas** mientras las migraciones se ejecuten
+automáticamente: MySQL no hace DDL transaccional y dos procesos pueden competir
+por la misma tabla. Si más adelante se necesita escalar, mueve las migraciones a
+un paso único o usa un lock compartido; no actives `--isolated` con
+`CACHE_DRIVER=file`.
+
+No expongas el contenedor con un puerto TCP directo: `TrustProxies='*'` asume
+que todo el tráfico entra por el proxy de Railway. Si se abre un acceso directo,
+configura los proxies confiables antes de permitirlo.
+
+`CACHE_DRIVER=file` tampoco se comparte entre réplicas. Con una réplica es
+suficiente para el MVP.
+
+## Checklist de staging
+
+1. Crear un proyecto/servicio Railway **separado** de producción y un plugin
+   MySQL propio.
+2. Configurar todas las variables obligatorias de la tabla anterior; usar
+   `APP_ENV=production`, `SESSION_DRIVER=database` y Brevo de staging.
+3. Desplegar el Dockerfile con una sola réplica y verificar `/up`.
+4. Ejecutar `php artisan admin:inicial --check-only`; después, el alta con
+   `ADMIN_BOOTSTRAP_ALLOW=1` y `--confirmar-base`.
+5. Activar el administrador desde el correo, iniciar sesión y retirar
+   `ADMIN_BOOTSTRAP_ALLOW`.
+6. Probar recuperación de contraseña y activación de una cuenta nueva.
+7. Verificar la sesión: login, recarga del SPA, `/v1/auth/me`, logout y 419/CSRF.
+8. Dejar `/apk/ProyecTWin.apk` en 404 y `ANDROID_APP_DOWNLOAD_URL` vacío hasta
+   que Oscar autorice el APK y se verifique el 200.
+9. Revisar logs de Railway: sin tokens, sin query strings sensibles, sin errores
+   de Brevo ni de migraciones.
+10. Solo entonces declarar staging validado; producción requiere repetir el
+    smoke con sus propios secretos y base.
 
 ## Solución de problemas
 
 | Síntoma | Causa probable |
 |---|---|
-| Healthcheck falla, migraciones en loop | `DB_*` mal referenciadas o MySQL aún creándose; revisa `railway logs -d` |
+| Healthcheck falla o migraciones en loop | `DB_*`/`DATABASE_URL` incorrectos o MySQL aún creándose; revisa `railway logs` |
 | `No application encryption key` | Falta `APP_KEY` |
-| Login responde 419/CSRF | `SANCTUM_STATEFUL_DOMAINS` sin el dominio real (sin `https://`). El SPA renueva el token y reintenta una vez ante 419; si persiste, revisa esa variable |
-| Las rutas internas dan 404 al recargar | nginx no sirvió `docker/nginx.conf`; verifica que `docker/` se haya subido |
-| Error 500 al exportar PDF | Faltó alguna extensión PHP en el Dockerfile (`dom`, `mbstring`) |
+| Login 200 pero `/auth/me` 401 tras recargar | `SANCTUM_STATEFUL_DOMAINS`, `FRONTEND_URL` o `Referrer-Policy` incorrectos |
+| 419/CSRF | Dominio stateful mal configurado; el SPA reintenta una vez renovando el token |
+| No llega el correo de activación | Mailer en `log`, Brevo sin remitente/IP o `FRONTEND_URL` inválida |
+| `/apk/ProyecTWin.apk` da 404 | APK no autorizado/incluido; es el comportamiento esperado hasta publicar |
+| Error 500 al exportar PDF | Revisar fuentes/permisos de dompdf; `dom` y `mbstring` ya están incluidas en la imagen |
 
 ## Notas
 
-- **App Android (`Movil/`)**: no se despliega en Railway. El APK servido en
-  `/apk/ProyecTWin.apk` es un build de pruebas (debug) y **no** una distribución
-  oficial. Para el APK de distribución define en `Movil/local.properties`
-  `proyectwin.apiBaseUrl.release=https://<dominio>/v1/` y sigue el plan de firma,
-  validación y publicación de [`release-android.md`](release-android.md)
-  (`assembleRelease`, nunca `assembleDebug`).
-- **Correo**: `MAIL_MAILER=log`. Para correos reales (recuperación de
-  contraseña), configura un proveedor SMTP en las variables.
-- **Costos**: el servicio y MySQL consumen del crédito del plan de Railway.
-
-## Publicar una versión nueva del APK (solo release firmado)
-
-> Este procedimiento solo aplica a un APK **release firmado**. El APK de pruebas
-> (debug) no se publica. La firma, la validación con `aapt`/`apksigner`, el
-> SHA-256 y la transición desde instalaciones debug están en
-> [`release-android.md`](release-android.md).
-
-La app consulta `GET /v1/app-version/android` (público) y compara versiones
-numéricamente. Para publicar una versión:
-
-1. Sube `versionCode` (debe ser **mayor que 3**, el actual) y `versionName` en
-   `Movil/app/build.gradle.kts`.
-2. Compila el APK release firmado: `cd Movil` → `.\gradlew.bat :app:assembleRelease`
-   (requiere la firma configurada; ver [`release-android.md`](release-android.md)).
-   Android Studio: **Build → Generate Signed App Bundle / APK → APK**.
-3. Valida el APK antes de publicarlo (`aapt` sin `application-debuggable`,
-   `apksigner` con v2/v3 y el certificado esperado, SHA-256). Si falla, **no lo
-   publiques**.
-4. Reemplaza `backend/public/apk/ProyecTWin.apk` por el APK validado.
-5. Actualiza las variables del servicio en Railway (dashboard → Variables, o
-   `railway variables --set ...`):
-   - `ANDROID_APP_VERSION=<versionName>` (p. ej. `1.3.0`; debe coincidir con el APK)
-   - `ANDROID_APP_MIN_VERSION=1.0.0` (súbela solo si quieres aviso obligatorio)
-   - `ANDROID_APP_ENFORCE_MINIMUM=false` (`true` = obligatoria, no posponible)
-   - `ANDROID_APP_DOWNLOAD_URL=https://<dominio>/apk/ProyecTWin.apk` (HTTPS)
-   - `ANDROID_APP_RELEASE_NOTES=...`
-6. `railway up` (o redeploy desde el dashboard). La app avisa como máximo una
-   vez cada 6 h por instalación; "Más tarde" silencia esa versión 24 h.
-
-**Probar en el dispositivo**: instala el APK de pruebas actual (1.2.0/versionCode
-3) → sube `ANDROID_APP_VERSION` a `1.3.0` → abre la app con sesión iniciada:
-aparece el aviso (Actualizar abre el APK del servidor; Más tarde lo oculta). Si
-mantienes el `applicationId`, la instalación del release firmado **fallará sobre
-el debug** por firma distinta: desinstala el debug (pierdes la sesión local) o
-instala antes un release firmado anterior (p. ej., un 1.2.0 firmado con la misma
-clave) para probar una actualización real.
-
-**Probar el modo obligatorio**: `ANDROID_APP_ENFORCE_MINIMUM=true` con
-`ANDROID_APP_MIN_VERSION` por encima de la versión instalada. Hazlo con un
-release firmado ya instalado; si el dispositivo tiene el debug, el aviso será
-obligatorio pero la instalación seguirá fallando por firma distinta.
-
-## Correo real con Brevo
-
-El backend envía los correos (credenciales, restablecer contraseña) por la
-**API HTTP de Brevo** (`MAIL_MAILER=brevo`), sin SMTP. Variables del servicio:
-
-- `MAIL_MAILER=brevo`
-- `BREVO_API_KEY=<clave API v3>` (app.brevo.com → SMTP y API → Claves API)
-- `MAIL_FROM_ADDRESS=<remitente verificado en Brevo>`
-- `MAIL_FROM_NAME=ProyecTwin`
-
-Requisitos en la cuenta de Brevo:
-
-1. **Remitente verificado** (Senders, Domains & Dedicated IPs → Senders).
-2. **Seguridad por IP**: si está activa, hay que autorizar la IP de salida
-   (Railway usa IPs dinámicas → se recomienda desactivar la restricción en
-   `app.brevo.com/security/authorised_ips`).
-
-Diagnóstico: si un envío falla, el detalle queda en `railway logs`
-(p. ej. `401 unrecognised IP address` o `400 remitente no verificado`).
-
-## Fotos de perfil con Cloudinary (opcional)
-
-Variables del servicio (si faltan, la web guarda la foto localmente como antes):
-
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- `CLOUDINARY_FOLDER` (por defecto `proyecttwin/perfiles`)
-
-Con las credenciales configuradas, `POST /v1/media/foto` (autenticado, multipart
-`foto`, máx. 5 MB) sube la imagen al servidor y devuelve `foto_url` + `public_id`;
-la web guarda esa URL en `users.foto_url`. Las fotos históricas (data URL base64)
-siguen funcionando sin migración. El secreto nunca se expone al frontend ni al APK.
-
-## Notas de despliegue (redeploys)
-
-- **Builder del servicio**: el monorepo solo compila con el Dockerfile de la
-  raíz. En el dashboard → servicio → *Settings → Build* deja
-  **Builder: Dockerfile** y **Dockerfile Path: Dockerfile**. Así los
-  redespliegues automáticos (cambio de variables en el dashboard) usan la
-  imagen correcta en lugar del builder por defecto (Railpack no detecta este
-  monorepo y el deploy falla).
-- **Variables por CLI**: usa `--skip-deploys` y luego `railway up` para
-  desplegar con los valores nuevos (así el build usa el Dockerfile).
-- Un deploy fallido **no tumba** el servicio: la versión anterior sigue Online
-  hasta que el nuevo deploy pase el healthcheck.
+- **Seguridad HTTP:** Nginx envía `Strict-Transport-Security: max-age=86400`
+  sin `includeSubDomains`/`preload`, además de `nosniff`, `X-Frame-Options` y
+  `Referrer-Policy: same-origin`. No se habilita una CSP estricta todavía:
+  el SPA usa un script inline y Google Fonts, y las fotos son `data:`; requiere
+  un inventario/nonce antes de activarla.
+- **Android:** `Movil/` no se despliega en Railway. La app consume
+  `/v1/app-version/android`; el APK se publica únicamente con autorización y
+  validación de Oscar.
+- **Cloudinary:** no está implementado en este backend. Las fotos son data URL
+  en `general_users.foto_url`; no configures variables `CLOUDINARY_*`.
+- **Costos:** el servicio y MySQL consumen del crédito del plan de Railway.

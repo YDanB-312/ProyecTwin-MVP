@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
 import FilterBar from '../../../components/FilterBar/FilterBar'
@@ -82,6 +82,7 @@ function ProgramasCell({ programas: lista }) {
 function ProgramasInput({ programas: lista, setProgramas, error }) {
   const [nuevo, setNuevo] = useState('')
   const [localErr, setLocalErr] = useState('')
+  const tempId = useRef(0)
 
   const agregar = () => {
     const val = nuevo.trim()
@@ -90,7 +91,8 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
       setLocalErr('Ese programa ya está en la lista.')
       return
     }
-    setProgramas([...lista, { id: null, nombre: val }])
+    tempId.current += 1
+    setProgramas([...lista, { id: null, tempId: tempId.current, nombre: val }])
     setNuevo('')
     setLocalErr('')
   }
@@ -109,7 +111,7 @@ function ProgramasInput({ programas: lista, setProgramas, error }) {
     <div className={cs.programasWrap}>
       <div className={cs.programasList}>
         {lista.map((p, i) => (
-          <div key={p.id ?? `nuevo-${i}`} className={cs.programaRow}>
+          <div key={p.id ?? p.tempId} className={cs.programaRow}>
             <div className={cs.inputWrap}>
               <Input
                 value={p.nombre}

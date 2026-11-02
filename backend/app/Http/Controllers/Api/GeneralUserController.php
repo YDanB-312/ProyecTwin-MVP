@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\GeneralUser;
+use App\Models\AccountActivation;
 use App\Models\Admin;
 use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
@@ -15,28 +16,27 @@ use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Support\Auditoria;
 use App\Support\BorradoCascada;
-use App\Support\Credenciales;
 use App\Support\CredencialesPdf;
+use App\Services\ActivacionCuenta;
 use App\Services\AltaUsuario;
-use App\Services\CredencialesCorreo;
 use App\Services\NotificacionesService;
+use App\Services\RecuperacionPassword;
+use App\Notifications\CorreoCambiadoNotification;
 use App\Support\Pii;
 use App\Support\SesionesUsuario;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 class GeneralUserController extends Controller
 {
-    // Campos institucionales/credenciales que solo revela la administración
-    // (el modelo los oculta por defecto para el resto de la API).
-    private const CAMPOS_CREDENCIALES = [
-        'tipo_documento', 'numero_documento', 'username',
-        'must_change_password', 'credenciales_enviadas_en', 'credenciales_error',
+    // Campos institucionales que solo revela la administración (el modelo los
+    // oculta por defecto para el resto de la API).
+    private const CAMPOS_ADMIN = [
+        'tipo_documento', 'numero_documento', 'username', 'email_verified_at',
     ];
 
     // Proyección opt-in para selectores que solo necesitan identificar al
@@ -96,7 +96,7 @@ class GeneralUserController extends Controller
             }
             $pagina = $query->paginate($porPagina);
             if (!$resumen) {
-                $pagina->getCollection()->each->makeVisible(self::CAMPOS_CREDENCIALES);
+                $pagina->getCollection()->each->makeVisible(self::CAMPOS_ADMIN);
             }
             return $pagina;
         }
@@ -106,11 +106,11 @@ class GeneralUserController extends Controller
             return $query->get(self::CAMPOS_RESUMEN);
         }
 
-        return $query->get()->each->makeVisible(self::CAMPOS_CREDENCIALES);
+        return $query->get()->each->makeVisible(self::CAMPOS_ADMIN);
     }
 
-    // Alta exclusiva del administrador (no hay registro público): las
-    // credenciales se generan solas y el usuario cambia la temporal al entrar.
+    // Alta exclusiva del administrador (no hay registro público): la cuenta
+    // nace pendiente y recibe un enlace de activación.
     public function store(Request $request)
     {
         $request->validate([
@@ -124,86 +124,107 @@ class GeneralUserController extends Controller
             'estado' => 'nullable|boolean',
         ]);
 
-        // Alta compartida (cuenta + perfil + auditoría + correo de credenciales).
+        // Alta compartida (cuenta + perfil + auditoría + correo de activación).
         // Whitelist: los campos internos de credenciales no se aceptan del cliente.
         $alta = app(AltaUsuario::class)->crear($request->only([
             'nombre', 'apellido', 'tipo_documento', 'numero_documento',
             'correo', 'foto_url', 'rol', 'estado',
         ]));
 
-        return response()->json([
-            'usuario' => $alta['usuario']->makeVisible(self::CAMPOS_CREDENCIALES),
-            'credenciales' => [
-                'username' => $alta['usuario']->username,
-                'password_temporal' => $alta['temporal'],
-                'enviadas' => $alta['enviadas'],
+        $respuesta = [
+            'usuario' => $alta['usuario']->makeVisible(self::CAMPOS_ADMIN),
+            'activacion' => [
+                'enviada' => (bool) $alta['enviadas'],
+                'correo' => $alta['usuario']->correo,
+                'mensaje' => $alta['enviadas']
+                    ? 'Enviamos el enlace de activación al correo registrado.'
+                    : 'La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación desde el detalle del usuario.',
             ],
-        ], 201);
+        ];
+
+        return response()->json($respuesta, 201);
     }
 
-    // Reenvía las credenciales temporales (solo admin y solo mientras la
-    // contraseña siga siendo temporal; después nunca se revela la actual).
-    public function reenviarCredenciales(Request $request, GeneralUser $general_user)
+    // Reenvía la activación de una cuenta pendiente. Reemplaza el token
+    // anterior, por lo que el enlace viejo deja de servir.
+    public function reenviarActivacion(GeneralUser $general_user)
     {
-        if ($general_user->rol === 'admin') {
-            return response()->json(['message' => 'Los administradores no usan credenciales temporales.'], 422);
+        if ($general_user->email_verified_at) {
+            return response()->json(['message' => 'La cuenta ya está activada.'], 422);
         }
-        if (!$general_user->must_change_password || !$general_user->password_temporal) {
-            return response()->json([
-                'message' => 'La contraseña ya fue cambiada: no se pueden reenviar credenciales.',
-            ], 422);
+
+        if (! $general_user->estado) {
+            return response()->json(['message' => 'No se puede activar una cuenta suspendida.'], 422);
         }
+
+        // Reenvío administrativo: cualquier token/sesión previo de la cuenta
+        // pendiente deja de ser válido; el enlace nuevo reemplaza al anterior.
+        SesionesUsuario::revocar($general_user);
 
         try {
-            $temporal = Crypt::decryptString($general_user->password_temporal);
+            $resultado = app(ActivacionCuenta::class)->reenviar($general_user);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'No se pudo recuperar la contraseña temporal.'], 422);
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                throw $e;
+            }
+
+            report($e);
+
+            return response()->json([
+                'message' => 'No se pudo generar el enlace de activación. Intenta de nuevo.',
+            ], 502);
         }
 
-        $ok = app(CredencialesCorreo::class)->enviar($general_user, $temporal);
-
-        Auditoria::registrar('reenviar_credenciales', 'general_users', $general_user->id, [
+        Auditoria::registrar('reenviar_activacion', 'general_users', $general_user->id, [
             'correo' => $general_user->correo,
-            'enviado' => $ok,
+            'enviado' => $resultado['enviado'],
         ]);
 
-        if (!$ok) {
-            return response()->json(['message' => 'No se pudo enviar el correo. Intenta de nuevo.'], 502);
+        if (! $resultado['enviado']) {
+            return response()->json([
+                'message' => 'El enlace se generó, pero el correo no pudo enviarse. Intenta reenviarlo.',
+                'activacion' => ['enviada' => false],
+            ], 502);
         }
 
-        return $general_user->fresh()->makeVisible(self::CAMPOS_CREDENCIALES);
+        return response()->json([
+            'message' => 'Enlace de activación reenviado al correo registrado.',
+            'activacion' => ['enviada' => true],
+        ]);
     }
 
-    // Restablecimiento del admin: la temporal la genera el servidor (misma
-    // fuente y reglas que el alta) y obliga al cambio en el primer ingreso.
+    // Restablecimiento administrativo: revoca el acceso actual y envía un
+    // enlace de recuperación (o reenvía la activación si la cuenta está
+    // pendiente). Nunca genera ni devuelve contraseñas.
     public function restablecerCredenciales(Request $request, GeneralUser $general_user)
     {
         if ($general_user->rol === 'admin') {
-            return response()->json(['message' => 'Los administradores no usan credenciales temporales.'], 422);
+            return response()->json([
+                'message' => 'Los administradores usan la recuperación de contraseña; no este restablecimiento.',
+            ], 422);
         }
 
-        $temporal = Credenciales::passwordTemporal();
+        if (! $general_user->email_verified_at) {
+            return $this->reenviarActivacion($general_user);
+        }
 
-        $general_user->update([
-            'password' => Hash::make($temporal),
-            'must_change_password' => true,
-            'password_temporal' => Crypt::encryptString($temporal),
-            // La temporal nueva aún no se envía: se limpia el estado del correo.
-            'credenciales_enviadas_en' => null,
-            'credenciales_error' => null,
-        ]);
+        SesionesUsuario::revocar($general_user);
 
-        Auditoria::registrar('restablecer_credenciales', 'general_users', $general_user->id, [
+        $resultado = app(RecuperacionPassword::class)->enviar($general_user);
+
+        Auditoria::registrar('restablecer_clave_administrativa', 'general_users', $general_user->id, [
             'correo' => $general_user->correo,
+            'enviado' => $resultado['enviado'],
         ]);
+
+        if (! $resultado['enviado']) {
+            return response()->json([
+                'message' => 'Se cerraron las sesiones, pero el correo de recuperación no pudo enviarse. Intenta de nuevo.',
+            ], 502);
+        }
 
         return response()->json([
-            'usuario' => $general_user->fresh()->makeVisible(self::CAMPOS_CREDENCIALES),
-            'credenciales' => [
-                'username' => $general_user->username,
-                'password_temporal' => $temporal,
-                'enviadas' => false,
-            ],
+            'message' => 'Se cerraron las sesiones del usuario y se envió un enlace para restablecer su contraseña.',
         ]);
     }
 
@@ -216,7 +237,7 @@ class GeneralUserController extends Controller
             return response()->json(['message' => 'Solo puedes ver tu propia cuenta.'], 403);
         }
 
-        return GeneralUser::included()->findOrFail($id)->makeVisible(self::CAMPOS_CREDENCIALES);
+        return GeneralUser::included()->findOrFail($id)->makeVisible(self::CAMPOS_ADMIN);
     }
 
     // Perfil público (vistas entre usuarios: compañero, instructor). Expone solo
@@ -244,11 +265,21 @@ class GeneralUserController extends Controller
 
     public function update(Request $request, GeneralUser $general_user)
     {
+        // Autorización antes de validar: un usuario sin permiso no debe poder
+        // usar errores de unicidad para enumerar correos o documentos.
+        $yo = $request->user();
+        $esPropiaCuenta = $yo && (int) $yo->id === (int) $general_user->id;
+        $esAdmin = optional($yo)->rol === 'admin';
+
+        if (! $esPropiaCuenta && ! $esAdmin) {
+            return response()->json(['message' => 'No puedes modificar los datos de otro usuario.'], 403);
+        }
+
         // El documento solo lo corrige un administrador. Se rechaza antes de
         // validar para que una petición manual reciba siempre 403 y no pueda
         // usar el error de unicidad como sondeo.
         $intentaDocumento = $request->has('tipo_documento') || $request->has('numero_documento');
-        if ($intentaDocumento && optional($request->user())->rol !== 'admin') {
+        if ($intentaDocumento && ! $esAdmin) {
             return response()->json([
                 'message' => 'Solo un administrador puede modificar el documento de identidad.',
             ], 403);
@@ -274,14 +305,6 @@ class GeneralUserController extends Controller
             'tipo_documento' => 'sometimes|required|in:CC,TI,CE,PPT',
             'numero_documento' => 'sometimes|required|max:40|unique:general_users,numero_documento,' . $general_user->id,
         ]);
-
-        // Autorización: la propia cuenta, o cualquier cuenta si eres admin.
-        $yo = $request->user();
-        $esPropiaCuenta = $yo && (int) $yo->id === (int) $general_user->id;
-        $esAdmin = optional($yo)->rol === 'admin';
-        if (!$esPropiaCuenta && !$esAdmin) {
-            return response()->json(['message' => 'No puedes modificar los datos de otro usuario.'], 403);
-        }
 
         // Cambios de rol o estado exigen admin; nadie se auto-eleva.
         $cambiaRol = $request->has('rol') && $request->rol !== $general_user->rol;
@@ -333,9 +356,8 @@ class GeneralUserController extends Controller
         }
 
         // Whitelist: solo campos editables por esta vía. El admin también puede
-        // corregir el documento de identidad; los campos internos del flujo de
-        // credenciales (username, must_change_password, password_temporal,
-        // credenciales_*) nunca se aceptan desde el request.
+        // corregir el documento de identidad; los campos internos de acceso
+        // (username, password, email_verified_at) nunca se aceptan del request.
         $data = $esAdmin
             ? $request->only([
                 'nombre', 'apellido', 'correo', 'foto_url', 'rol', 'estado',
@@ -344,11 +366,12 @@ class GeneralUserController extends Controller
             : $request->only(['nombre', 'apellido', 'correo', 'foto_url']);
 
         // Las contraseñas no se cambian por esta vía: la propia exige la actual
-        // (PUT /auth/password) y la temporal la genera el servidor.
+        // (PUT /auth/password) y el restablecimiento administrativo envía un
+        // enlace de recuperación.
         if ($request->filled('password')) {
             return response()->json([
                 'message' => $esAdmin
-                    ? 'Usa "Restablecer contraseña" para generar una temporal.'
+                    ? 'Usa "Restablecer contraseña" para enviar un enlace de recuperación.'
                     : 'Usa "Cambiar contraseña" e ingresa tu contraseña actual para modificarla.',
             ], 422);
         }
@@ -363,8 +386,11 @@ class GeneralUserController extends Controller
             $general_user->update($data);
 
             // D-01: una suspensión debe cortar el acceso existente de inmediato.
-            if ($cambiaEstado && !$general_user->estado) {
+            if ($cambiaEstado && ! $general_user->estado) {
                 SesionesUsuario::revocar($general_user);
+                // Un enlace de activación anterior no debe sobrevivir a la
+                // suspensión ni reactivarse después.
+                AccountActivation::where('user_id', $general_user->id)->delete();
             }
 
             $documentoNuevo = $cambiaDocumento
@@ -378,7 +404,6 @@ class GeneralUserController extends Controller
                 'nombre' => $cambiaNombre ? $general_user->nombre : null,
                 // La bitácora no guarda el documento completo. Se conserva el
                 // valor anterior y el nuevo enmascarados para trazabilidad.
-                'documento' => $documentoNuevo,
                 'documento_anterior' => $cambiaDocumento ? $documentoAnterior : null,
                 'documento_nuevo' => $documentoNuevo,
             // Solo se descartan los nulos: `estado=false` es un cambio real y
@@ -395,6 +420,24 @@ class GeneralUserController extends Controller
         // Aviso al usuario afectado solo si el correo cambió realmente y el
         // cambio lo hizo un administrador sobre otra cuenta.
         if ($cambiaCorreo && $esAdmin && !$esPropiaCuenta) {
+            $general_user->refresh();
+
+            // Si la cuenta estaba pendiente, el enlace de activación anterior
+            // ya no sirve para el correo nuevo. Al activarla, no hay fila.
+            AccountActivation::where('user_id', $general_user->id)->delete();
+
+            // Cambiar el identificador de acceso invalida todas las sesiones
+            // del usuario objetivo y rota su remember_token. Se borran también
+            // enlaces de recuperación del correo anterior y del nuevo.
+            SesionesUsuario::revocarOtras($general_user, null, null, $correoAnterior);
+
+            try {
+                Notification::route('mail', $correoAnterior)
+                    ->notify(new CorreoCambiadoNotification($correoAnterior, $general_user->correo));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
             app(NotificacionesService::class)->crear(
                 $general_user->id,
                 'Tu correo electrónico fue actualizado por un administrador.',
@@ -663,7 +706,6 @@ class GeneralUserController extends Controller
 
         Auditoria::registrar('exportar_credenciales', 'general_users', null, [
             'usuarios' => $usuarios->count(),
-            'temporales' => $usuarios->where('must_change_password', true)->count(),
         ]);
 
         return CredencialesPdf::generar($usuarios);

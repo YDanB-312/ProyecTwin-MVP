@@ -80,6 +80,17 @@ class Project extends Model
         $usuario = request()->user();
         $acotadas = [];
 
+        // Las observaciones incluidas en una propuesta deben respetar el mismo
+        // alcance que /v1/comments: el aprendiz solo ve las de sus propuestas
+        // (creador/equipo); el instructor, las de sus fichas/asignadas.
+        $posComentarios = array_search('comments', $relations, true);
+        if ($posComentarios !== false) {
+            unset($relations[$posComentarios]);
+            if ($usuario) {
+                $acotadas['comments'] = fn ($q) => $q->paraUsuario($usuario);
+            }
+        }
+
         if (!$usuario || $usuario->rol !== 'admin') {
             foreach (['similaritiesAsOrigin', 'similaritiesAsDestination'] as $rel) {
                 $pos = array_search($rel, $relations, true);
@@ -282,11 +293,6 @@ class Project extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class, 'id_proyecto');
-    }
-
-    public function histories()
-    {
-        return $this->hasMany(ProjectHistory::class, 'id_proyecto')->orderByDesc('id');
     }
 
     public function similaritiesAsOrigin()

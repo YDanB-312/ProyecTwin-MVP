@@ -19,7 +19,7 @@ import { usuarios } from '../../lib/recursos'
 import { toFieldErrors } from '../../lib/api'
 import { resolverFotoPerfil } from '../../utils/foto'
 import s from './PerfilBase.module.css'
-import { esEmailValido, esPasswordValida } from '../../utils/validation'
+import { esEmailValido, esPasswordValida, MIN_PASSWORD_LENGTH } from '../../utils/validation'
 import { payloadPerfil } from '../../utils/helpers'
 import { ROL_LABEL } from '../../constants/badgeVariants'
 
@@ -258,7 +258,7 @@ export default function PerfilBase({
     const errs = {}
     if (!passForm.actual) errs.actual = 'Ingresa tu contraseña actual.'
     if (!passForm.nueva || !esPasswordValida(passForm.nueva)) {
-      errs.nueva = 'La nueva contraseña debe tener al menos 6 caracteres.'
+      errs.nueva = `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
     }
     if (passForm.confirmar !== passForm.nueva) {
       errs.confirmar = 'Las contraseñas no coinciden.'
@@ -270,7 +270,16 @@ export default function PerfilBase({
     try {
       const res = await cambiarMiContrasena(passForm.actual, passForm.nueva)
       if (!res.exito) {
-        setPassErrors({ actual: res.mensaje })
+        const campos = res.campos || {}
+        const erroresCampos = {
+          actual: campos.password_actual,
+          nueva: campos.password,
+          confirmar: campos.password_confirmation,
+        }
+        setPassErrors(erroresCampos)
+        if (!Object.values(erroresCampos).some(Boolean)) {
+          mostrarPassMsg(res.mensaje, 'error')
+        }
         return
       }
       setCambiandoPass(false)
@@ -454,7 +463,7 @@ export default function PerfilBase({
           {!cambiandoPass ? (
           <div className={s.seguridadRow}>
             <p className={s.seguridadTexto}>
-              Usa una contraseña única de al menos 6 caracteres para proteger tu cuenta.
+              Usa una contraseña única de al menos {MIN_PASSWORD_LENGTH} caracteres. Puedes usar espacios y frases largas.
               <br />
               <Link to="/recuperar-contrasena" className={s.link}>¿Olvidaste tu contraseña? Recupérala por correo</Link>
             </p>
@@ -476,7 +485,7 @@ export default function PerfilBase({
                 autoComplete="current-password"
               />
             </FormField>
-            <FormField label="Nueva contraseña" required error={passErrors.nueva} help="Mínimo 6 caracteres">
+            <FormField label="Nueva contraseña" required error={passErrors.nueva} help={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres. Puedes usar espacios.`}>
               <PasswordInput
                 value={passForm.nueva}
                 onChange={(e) => alCambiarPass('nueva', e.target.value)}

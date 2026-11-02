@@ -7,9 +7,9 @@ import SafeRoute from './components/SafeRoute/SafeRoute'
 // Public
 const Home = lazy(() => import('./pages/public/Home'))
 const Login = lazy(() => import('./pages/public/Login'))
-const CambioObligatorio = lazy(() => import('./pages/public/CambioObligatorio'))
 const RecuperarContrasena = lazy(() => import('./pages/public/RecuperarContrasena'))
 const RestablecerContrasena = lazy(() => import('./pages/public/RestablecerContrasena'))
+const ActivarCuenta = lazy(() => import('./pages/public/ActivarCuenta'))
 const PaginaNoEncontrada = lazy(() => import('./pages/public/PaginaNoEncontrada'))
 
 // Aprendiz
@@ -69,7 +69,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
         <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
-        <Route path="/cambio-obligatorio" element={<ProtectedRoute><SafeRoute><CambioObligatorio /></SafeRoute></ProtectedRoute>} />
+        <Route path="/activar-cuenta" element={<ActivarCuenta />} />
 
         <Route path="/aprendiz/dashboard" element={<ProtectedRoute allowedRoles={['aprendiz']}><SafeRoute><DashboardAprendiz /></SafeRoute></ProtectedRoute>} />
         <Route path="/aprendiz/mis-proyectos" element={<Navigate to="/aprendiz/propuestas" replace />} />

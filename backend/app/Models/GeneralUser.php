@@ -22,25 +22,22 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
 
     protected $fillable = [
         'nombre', 'apellido', 'tipo_documento', 'numero_documento', 'correo',
-        'username', 'password', 'must_change_password', 'password_temporal',
-        'credenciales_enviadas_en', 'credenciales_error',
+        'username', 'password', 'email_verified_at',
         'foto_url', 'rol', 'estado',
     ];
 
-    // Datos sensibles que nunca salen por la API (login/me/listados). La
-    // contraseña temporal se descifra solo al exportar credenciales. Los campos
-    // institucionales/credenciales se ocultan por defecto y solo los revelan
-    // los endpoints de administración (makeVisible).
+    // Datos sensibles que nunca salen por la API (login/me/listados). Los
+    // campos institucionales se ocultan por defecto y solo los revelan los
+    // endpoints de administración (makeVisible).
     protected $hidden = [
-        'password', 'remember_token', 'password_temporal',
+        'password', 'remember_token',
         'tipo_documento', 'numero_documento', 'username',
-        'must_change_password', 'credenciales_enviadas_en', 'credenciales_error',
+        'email_verified_at',
     ];
 
     protected $casts = [
         'estado' => 'boolean',
-        'must_change_password' => 'boolean',
-        'credenciales_enviadas_en' => 'datetime',
+        'email_verified_at' => 'datetime',
     ];
 
     // El correo es el identificador de acceso (no existe columna `email`).
@@ -58,6 +55,13 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
                     (string) $user->nombre,
                     (string) $user->apellido
                 );
+            }
+
+            // Compatibilidad: cualquier alta directa que no declare el campo
+            // (seeders, pruebas, imports legacy) se considera ya verificada.
+            // El flujo de activación pasa null explícitamente y queda pendiente.
+            if (! array_key_exists('email_verified_at', $user->getAttributes())) {
+                $user->email_verified_at = now();
             }
         });
     }
@@ -202,5 +206,10 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     public function bugReports()
     {
         return $this->hasMany(BugReport::class, 'id_usuario');
+    }
+
+    public function accountActivation()
+    {
+        return $this->hasOne(AccountActivation::class, 'user_id');
     }
 }

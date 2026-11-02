@@ -132,6 +132,28 @@ describe('PerfilBase', () => {
     expect(mocks.actualizar).not.toHaveBeenCalled()
   })
 
+  it('muestra el error de política en el campo de la nueva contraseña, no en la actual', async () => {
+    const user = userEvent.setup()
+    mocks.cambiarMiContrasena.mockResolvedValue({
+      exito: false,
+      mensaje: 'La nueva contraseña debe ser distinta a la actual.',
+      campos: { password: 'La nueva contraseña debe ser distinta a la actual.' },
+    })
+    renderPerfil()
+
+    await user.click(screen.getByRole('button', { name: /Cambiar contraseña/ }))
+    await user.type(screen.getByLabelText(/Contraseña actual/), 'Actual123')
+    await user.type(screen.getByLabelText(/Nueva contraseña/), 'Frase segura 2026')
+    await user.type(screen.getByLabelText(/Confirmar nueva contraseña/), 'Frase segura 2026')
+    await user.click(screen.getByRole('button', { name: /Actualizar contraseña/ }))
+
+    const mensaje = await screen.findByText(/La nueva contraseña debe ser distinta a la actual\./)
+    expect(mensaje).toBeInTheDocument()
+
+    const campoActual = screen.getByLabelText(/Contraseña actual/).closest('div').parentElement
+    expect(within(campoActual).queryByText(/La nueva contraseña debe ser distinta a la actual\./)).not.toBeInTheDocument()
+  })
+
   it('no muestra el documento en perfiles públicos o de solo lectura', () => {
     renderPerfil({ soloLectura: true })
 

@@ -11,7 +11,7 @@
 |---|---|---|---|
 | Desarrollo | `backend/.env` | `proyectwin_mvp` | trabajo diario; las suites ya NO lo tocan |
 | PHPUnit | `backend/phpunit.xml` + `backend/.env.testing` (local, **no versionado**) | `proyectwin_test` | `php artisan test` |
-| E2E (Playwright) | `backend/.env.e2e` (local, **no versionado**) | `proyectwin_e2e` | suites E2E + backend servido en `:8001` |
+| E2E (Playwright) | variables de proceso en `frontend/playwright.config.js` y `frontend/e2e/global-setup.js` | `proyectwin_e2e` | suites E2E + backend servido en `:8001` |
 
 Creación de las bases dedicadas (ya ejecutada el 18-oct-2026; este SQL se conserva para recrearlas y **requiere autorización explícita**):
 
@@ -44,38 +44,38 @@ php artisan test
 
 ## 3. E2E (Playwright)
 
+> **Actualizado en 6AA (1-nov-2026):** el harness vigente es `frontend/playwright.config.js`
+> + `frontend/e2e/global-setup.js`. Los runners `guardas-e2e.mjs`, `run-aislado.mjs`,
+> `run-full.mjs`, `run-volumen.mjs` y `playwright.volumen.config.js` fueron retirados.
+> Los conteos y gates de la sección 5 son históricos.
+
 Guardas en capas — **todas** deben pasar:
 
 | Capa | Qué exige | Dónde |
 |---|---|---|
-| 1. Runner (JS) | `E2E_ALLOW_RESET=1` y `PROYECTWIN_API` explícito y **distinto** del backend de desarrollo (`:8000`) | `frontend/e2e/guardas-e2e.mjs` (invocada por todas las entradas `test*`) |
-| 2. globalSetup | Lo anterior + aborta con excepción si falta (ya no “avisa y continúa”) | `frontend/e2e/global-setup.js` |
-| 3. Comando Artisan | `E2E_ALLOW_RESET=1`, existencia de `.env.e2e`, `APP_ENV=e2e`, BD exactamente `proyectwin_e2e`, host loopback y **lock** anti-reseeds concurrentes (`storage/framework/e2e-reset.lock`) | `backend/app/Console/Commands/E2eReset.php` (`php artisan e2e:reset --env=e2e`) |
-| 4. Preview sin reutilización | El preview de Vite ya no se reutiliza (`reuseExistingServer: false`) para que el proxy `PROYECTWIN_API` corresponda siempre a esta corrida | `playwright.config.js`, `playwright.volumen.config.js` |
+| 1. Autorización explícita | `E2E_ALLOW_RESET=1` en el proceso; sin ella `globalSetup` aborta con excepción antes de tocar la BD | `frontend/e2e/global-setup.js` |
+| 2. Backend fijado | El webServer usa `APP_ENV=e2e`, `DB_HOST=127.0.0.1`, `DB_DATABASE=proyectwin_e2e` y API en `:8001`; no se toma de un `.env` de desarrollo | `frontend/playwright.config.js` |
+| 3. Comando Artisan | `E2E_ALLOW_RESET=1`, `APP_ENV=e2e`, BD exactamente `proyectwin_e2e`, host loopback, sin `DATABASE_URL` ni config cacheada, conexión efectiva verificada y **lock** anti-reseeds concurrentes (`storage/framework/e2e-reset.lock`) | `backend/app/Console/Commands/E2eReset.php` |
+| 4. Preview sin reutilización | `reuseExistingServer: false` para que el proxy corresponda a esta corrida | `frontend/playwright.config.js` |
 
-Entradas protegidas: `npm test` · `test:e2e` · `test:e2e:aislado` · `test:agentes` ·
-`test:agentes:acciones` · `test:agentes:cobertura` · `test:agentes:negativos` ·
-`test:volumen` · `test:full`.
+Entradas: `npm run test:e2e` (Playwright). `npm test` ejecuta Vitest y no toca la BD E2E.
+No existen ya las entradas `test:e2e:aislado`, `test:agentes*`, `test:volumen` ni `test:full`.
 
 Preparación (con autorización previa):
 
-```
-# 1) bases dedicadas creadas (ver SQL de la sección 1)
-# 2) backend E2E en :8001 — APP_ENV se propaga al proceso hijo de `serve`
-cd backend
-$env:APP_ENV='e2e'
-php artisan serve --env=e2e --port=8001
-# 3) frontend: proxy al backend E2E + autorización del reseed
+```powershell
+# 1) base dedicada creada y backend E2E disponible en :8001
+# 2) frontend con autorización del reseed
 cd frontend
-$env:PROYECTWIN_API='http://127.0.0.1:8001'
 $env:E2E_ALLOW_RESET='1'
-npm run test:e2e        # o: test:full / test:volumen / test:agentes:*
+npm run test:e2e
 ```
 
 Advertencias:
-- Nunca exportar `PROYECTWIN_API` hacia `:8000` para E2E (la capa 1 lo rechaza).
-- Cerrar cualquier `npm run preview` previo (ya no se reutiliza, pero el puerto debe estar libre).
-- Los workers paralelos (`--workers=4`) comparten la BD E2E **después** de un único reset; el lock del comando impide resets simultáneos entre procesos.
+- El harness fija `proyectwin_e2e`; usar otra base exigiría modificar `playwright.config.js`,
+  `global-setup.js` y las guardas de `e2e:reset`. No se hace sin autorización.
+- `playwright.config.js` usa un solo worker; los escenarios comparten la BD tras un único reset.
+- El spec de correo requiere Mailpit en `127.0.0.1:1025` y `http://localhost:8025`.
 
 ## 4. Cómo comprobar que la BD de desarrollo no se toca
 
@@ -84,6 +84,10 @@ Advertencias:
 3. Prueba de humo de guardas: sin `E2E_ALLOW_RESET` o apuntando a `:8000`, la ejecución debe **fallar**, no advertir.
 
 ## 5. Estado de la implementación
+
+> **Nota 6AA:** los conteos y gates de esta sección son históricos (Lotes 1–13, oct-2026).
+> La suite vigente es **225 tests / 1280 aserciones** (PHPUnit) y **90 tests / 26 archivos**
+> (Vitest); E2E vigente: **11 specs / 25 tests**, no ejecutados en 6AA.
 
 - **Paso 1 (histórico):** quedaron implementadas las guardas PHPUnit + E2E, el comando `e2e:reset`, los entornos locales, los runners actualizados y este documento; la creación de las bases y la ejecución de las suites quedaron pendientes de autorización.
 - **Ejecutado y verificado (18-oct-2026):**

@@ -13,8 +13,13 @@
 #   - el resto              → SPA con fallback a index.html (React Router)
 # =============================================================================
 
+# Versiones fijas de las imágenes base. Actualizar de forma deliberada.
+ARG PHP_VERSION=8.3.36
+ARG NODE_VERSION=22.23.4
+ARG COMPOSER_VERSION=2.11.1
+
 # ------------------------------------------------------- 1) SPA (frontend) ---
-FROM node:22-alpine AS frontend
+FROM node:${NODE_VERSION}-alpine3.23 AS frontend
 
 WORKDIR /build
 
@@ -27,9 +32,18 @@ ENV VITE_API_URL=/v1
 RUN npm run build
 
 # ------------------------------------------- 2) dependencias PHP (Composer) ---
-FROM composer:2 AS vendor
+# Composer se ejecuta con el mismo PHP 8.3 que el runtime. La imagen oficial
+# de Composer solo aporta el ejecutable; no se usa su versión de PHP.
+FROM composer:${COMPOSER_VERSION} AS composer
+
+FROM php:${PHP_VERSION}-cli-alpine3.24 AS vendor
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /app
+
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
+RUN apk add --no-cache unzip
 
 COPY backend/composer.json backend/composer.lock ./
 RUN composer install \
@@ -37,23 +51,27 @@ RUN composer install \
         --no-scripts \
         --no-interaction \
         --prefer-dist \
-        --optimize-autoloader
+        --optimize-autoloader \
+    && composer check-platform-reqs --no-dev
 
 # ------------------------------------------------- 3) runtime (fpm + nginx) ---
-FROM php:8.3-fpm-alpine AS runtime
+FROM php:${PHP_VERSION}-fpm-alpine3.24 AS runtime
 
 # nginx (servidor), gettext (envsubst para $PORT), tzdata (America/Bogota) y
 # tini (reapa procesos y reenvía señales).
 RUN apk add --no-cache nginx gettext tzdata tini
 
-# Extensiones PHP que Laravel/MySQL/dompdf necesitan. El instalador omite las
-# que ya vienen compiladas en la imagen oficial (mbstring, bcmath, opcache).
-COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
-RUN install-php-extensions pdo_mysql mbstring opcache bcmath
+# pdo_mysql no viene compilado en la imagen oficial; mbstring, dom, fileinfo
+# y opcache ya forman parte de PHP 8.3 Alpine.
+COPY --from=mlocati/php-extension-installer:2.13.1 \
+     /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_mysql
 
 # php-fpm escucha solo en localhost (nginx lo alcanza por 127.0.0.1:9000) y
-# conserva las variables de entorno del contenedor.
-RUN printf '[www]\nlisten = 127.0.0.1:9000\nclear_env = no\n' \
+# conserva las variables de entorno del contenedor. Su access log se descarta:
+# nginx ya registra cada petición con un formato que omite el query string, y
+# así no se duplican líneas ni se filtran tokens por rutas heredadas.
+RUN printf '[www]\nlisten = 127.0.0.1:9000\nclear_env = no\naccess.log = /dev/null\n' \
         > /usr/local/etc/php-fpm.d/zz-local.conf
 
 WORKDIR /app
@@ -63,13 +81,17 @@ COPY backend/ ./
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /build/dist ./public
 
-# Directorios de escritura para php-fpm (www-data) y limpieza de cachés locales.
+# Directorios de escritura para php-fpm (www-data).
+# backend/storage y backend/bootstrap/cache se excluyen del contexto
+# y se recrean aquí; el entrypoint ejecuta package:discover/config:cache.
 RUN rm -f bootstrap/cache/*.php \
     && mkdir -p \
+        storage/app/public \
         storage/framework/cache/data \
         storage/framework/sessions \
         storage/framework/views \
         storage/logs \
+        storage/fonts \
         bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
@@ -80,6 +102,7 @@ RUN chmod +x /opt/docker/entrypoint.sh
 ENV APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
+    LOG_LEVEL=warning \
     PORT=8080
 
 EXPOSE 8080

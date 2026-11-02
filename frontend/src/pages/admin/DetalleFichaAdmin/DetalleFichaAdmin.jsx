@@ -58,7 +58,7 @@ export default function DetalleFichaAdmin() {
   })
   const [altaError, setAltaError] = useState('')
   const [altaMsg, setAltaMsg] = useState('')
-  const [altaCredenciales, setAltaCredenciales] = useState(null)
+  const [altaActivacion, setAltaActivacion] = useState(null)
   const [ocupadoAlta, setOcupadoAlta] = useState(false)
 
   // Fuente única: la API. Ficha con relaciones + catálogos + propuestas + usuarios.
@@ -131,8 +131,6 @@ export default function DetalleFichaAdmin() {
     const g = est.generalUser || {}
     return nombreCompleto(g).toLowerCase().includes(q)
       || (g.correo || '').toLowerCase().includes(q)
-      || (g.username || '').toLowerCase().includes(q)
-      || String(g.numero_documento || '').includes(q)
   })
 
   // Usuarios con rol aprendiz que aún no están en la ficha (se pueden asociar).
@@ -146,14 +144,14 @@ export default function DetalleFichaAdmin() {
       })
     : []
 
-  // Asocia un usuario existente (sin credenciales nuevas).
+  // Asocia un usuario existente (sin nuevo enlace de activación).
   const asociarExistente = async (usuario) => {
     setAltaError('')
     setAltaMsg('')
     setOcupadoAlta(true)
     try {
       await fichas.agregarAprendiz(ficha.id, { usuario_id: usuario.id })
-      setAltaMsg(`${nombreCompleto(usuario)} se asoció a la ficha (sin nuevas credenciales).`)
+      setAltaMsg(`${nombreCompleto(usuario)} se asoció a la ficha (sin nuevo enlace de activación).`)
       setBusquedaAprendiz('')
       setMostrarAlta(false)
       await recargar()
@@ -164,12 +162,12 @@ export default function DetalleFichaAdmin() {
     }
   }
 
-  // Crea la cuenta del aprendiz, la asocia a la ficha y envía credenciales.
+  // Crea la cuenta del aprendiz, la asocia a la ficha y envía la activación.
   const crearAprendiz = async (e) => {
     e.preventDefault()
     setAltaError('')
     setAltaMsg('')
-    setAltaCredenciales(null)
+    setAltaActivacion(null)
     if (!nuevoAprendiz.nombre.trim() || !nuevoAprendiz.apellido.trim()
       || !nuevoAprendiz.numeroDocumento.trim() || !nuevoAprendiz.correo.trim()) {
       setAltaError('Completa nombre, apellido, documento y correo.')
@@ -185,12 +183,12 @@ export default function DetalleFichaAdmin() {
         numero_documento: nuevoAprendiz.numeroDocumento.trim(),
         correo: nuevoAprendiz.correo.trim().toLowerCase(),
       })
-      setAltaCredenciales({
+      const esActivacion = !!resp.activacion
+      setAltaActivacion({
         nombre: `${resp.usuario.nombre} ${resp.usuario.apellido}`.trim(),
-        username: resp.credenciales.username,
-        temporal: resp.credenciales.password_temporal,
-        enviadas: resp.credenciales.enviadas,
+        enviada: esActivacion ? !!resp.activacion.enviada : false,
         correo: resp.usuario.correo,
+        mensaje: resp.activacion?.mensaje || '',
       })
       setNuevoAprendiz({ nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '' })
       setMostrarAlta(false)
@@ -425,26 +423,23 @@ export default function DetalleFichaAdmin() {
         <DataPanel title={`Aprendices (${estudiantes.length})`} icon={<GraduationCap />}>
           <FormField
             label="Buscar o agregar aprendiz"
-            help="Busca por nombre, usuario, documento o correo; si no existe, créalo aquí."
+            help="Busca por nombre o correo entre los integrantes; para agregar uno nuevo, también por usuario o documento."
           >
             <Input
               value={busquedaAprendiz}
               onChange={(e) => setBusquedaAprendiz(e.target.value)}
-              placeholder="Nombre, usuario, documento o correo…"
+              placeholder="Nombre o correo; para agregar, usuario o documento…"
             />
           </FormField>
 
           {altaMsg && <Alert variant="success"><CheckCircle size={14} /> {altaMsg}</Alert>}
           {altaError && <Alert variant="danger">{altaError}</Alert>}
-          {altaCredenciales && (
-            <Alert variant={altaCredenciales.enviadas ? 'success' : 'warning'}>
-              <CheckCircle size={14} /> Aprendiz <strong>{altaCredenciales.nombre}</strong> creado.
-              {altaCredenciales.enviadas
-                ? <> Credenciales enviadas a <strong>{altaCredenciales.correo}</strong>.</>
-                : <> No se pudo enviar el correo; reenvíalas desde Usuarios.</>}
-              <div className={s.altaCred}>
-                Usuario: <code>{altaCredenciales.username}</code> · Contraseña temporal: <code>{altaCredenciales.temporal}</code>
-              </div>
+          {altaActivacion && (
+            <Alert variant={altaActivacion.enviada ? 'success' : 'warning'}>
+              <CheckCircle size={14} /> Aprendiz <strong>{altaActivacion.nombre}</strong> creado.
+              {altaActivacion.enviada
+                ? <> Enlace de activación enviado a <strong>{altaActivacion.correo}</strong>.</>
+                : <> La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación desde Usuarios.</>}
             </Alert>
           )}
 
@@ -517,7 +512,7 @@ export default function DetalleFichaAdmin() {
                   />
                 </FormField>
               </div>
-              <FormField label="Correo personal" required help="Allí se envían las credenciales.">
+              <FormField label="Correo personal" required help="Allí se envía el enlace de activación.">
                 <Input
                   type="email"
                   value={nuevoAprendiz.correo}

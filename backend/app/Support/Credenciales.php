@@ -5,27 +5,11 @@ namespace App\Support;
 use App\Models\GeneralUser;
 use Illuminate\Support\Str;
 
-// Generación de credenciales institucionales: username recordable a partir del
-// nombre y la contraseña temporal segura del primer ingreso.
+// Generación del username institucional de las cuentas nuevas. El username se
+// conserva como contrato de login de Android y clientes legacy; no se genera
+// ninguna contraseña temporal.
 class Credenciales
 {
-    // "Carlos Martínez López" → "cmartinez" (si existe: cmartinez1, cmartinez2…).
-    public static function username(string $nombre, string $apellido): string
-    {
-        $inicial = self::limpiar(substr(trim($nombre), 0, 1));
-        $apellido = self::limpiar(explode(' ', trim($apellido))[0] ?? '');
-        $base = ($inicial . $apellido) ?: 'usuario';
-
-        $candidato = $base;
-        $sufijo = 1;
-        while (GeneralUser::where('username', $candidato)->exists()) {
-            $candidato = $base . $sufijo;
-            $sufijo++;
-        }
-
-        return $candidato;
-    }
-
     // Username seguro para cuentas nuevas: fragmento legible del nombre y los
     // apellidos + parte aleatoria (random_int). Sin sufijos secuenciales.
     public static function usernameSeguro(string $nombre, string $apellido): string
@@ -57,12 +41,6 @@ class Credenciales
         } while (GeneralUser::where('username', $candidato)->exists());
 
         return $candidato;
-    }
-
-    // Contraseña temporal legible y segura: X8K2-7P4M (se cambia al ingresar).
-    public static function passwordTemporal(): string
-    {
-        return Str::upper(Str::random(4)) . '-' . Str::upper(Str::random(4));
     }
 
     // Letra mayúscula: la recibida o una aleatoria si viene vacía.

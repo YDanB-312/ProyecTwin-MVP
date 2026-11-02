@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
   apiLogin, apiLogout, apiMe, apiChangePassword,
-  EVENTO_SESION_EXPIRADA,
+  EVENTO_SESION_EXPIRADA, toFieldErrors,
 } from '../lib/api'
 
 // Sesión del usuario.
@@ -22,7 +22,6 @@ function aSesion(u) {
     username: u.username,
     nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
     rol: String(u.rol || '').toLowerCase(),
-    mustChangePassword: !!u.must_change_password,
   }
 }
 
@@ -32,20 +31,19 @@ export function AuthProvider({ children }) {
   const [cargando, setCargando] = useState(true)
 
   // ---------------------------------------------------------------- Login
-  const login = useCallback(async (username, password, recordarme) => {
+  const login = useCallback(async (identificador, password, recordarme) => {
     try {
-      const { user: cuenta } = await apiLogin(username.trim().toLowerCase(), password, recordarme)
+      const { user: cuenta } = await apiLogin(identificador.trim(), password, recordarme)
       const sesion = aSesion(cuenta)
       setUser(sesion)
       return {
         exito: true,
-        // La contraseña temporal obliga a cambiarla antes de usar el sistema.
-        ruta: sesion.mustChangePassword ? '/cambio-obligatorio' : (RUTA_POR_ROL[sesion.rol] || '/'),
+        ruta: RUTA_POR_ROL[sesion.rol] || '/',
       }
     } catch (err) {
       const mensaje = err?.data?.message
         || (err?.status === 0 ? 'No se pudo conectar con el servidor.' : 'Credenciales incorrectas. Verifica tus datos.')
-      return { exito: false, mensaje }
+      return { exito: false, mensaje, campos: toFieldErrors(err?.data) }
     }
   }, [])
 
@@ -57,11 +55,18 @@ export function AuthProvider({ children }) {
     if (!user?.id) return { exito: false, mensaje: 'Sesión no válida. Inicia sesión de nuevo.' }
     try {
       await apiChangePassword(actual, nueva)
-      // La contraseña definitiva libera el primer ingreso.
-      setUser((u) => (u ? { ...u, mustChangePassword: false } : u))
       return { exito: true }
     } catch (err) {
-      return { exito: false, mensaje: err?.data?.message || 'No se pudo actualizar la contraseña.' }
+      const campos = toFieldErrors(err?.data)
+      return {
+        exito: false,
+        mensaje: campos.password_actual
+          || campos.password
+          || campos.password_confirmation
+          || err?.data?.message
+          || 'No se pudo actualizar la contraseña.',
+        campos,
+      }
     }
   }, [user])
 

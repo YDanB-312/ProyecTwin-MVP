@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
+use App\Support\Pii;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -65,10 +66,24 @@ class AuditLogController extends Controller
 
         if ($request->boolean('paginado')) {
             $porPagina = (int) $request->query('por_pagina', 15);
-            return $query->paginate($porPagina);
+            $pagina = $query->paginate($porPagina);
+            $pagina->getCollection()->transform(fn (AuditLog $log) => $this->redactar($log));
+
+            return $pagina;
         }
 
         // Compatibilidad con clientes que esperan el arreglo completo.
-        return $query->limit(500)->get();
+        return $query->limit(500)->get()->map(fn (AuditLog $log) => $this->redactar($log));
+    }
+
+    // Defensa en profundidad para registros históricos escritos antes de la
+    // redacción central. No reescribe la fila: solo protege la respuesta.
+    private function redactar(AuditLog $log): AuditLog
+    {
+        if (is_array($log->detalle)) {
+            $log->detalle = Pii::detalle($log->detalle);
+        }
+
+        return $log;
     }
 }

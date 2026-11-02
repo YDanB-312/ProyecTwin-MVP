@@ -7,8 +7,10 @@ import StatChip from '../../../components/StatChip/StatChip'
 import GradeBadge from '../../../components/GradeBadge/GradeBadge'
 import GradualBlur from '../../../components/GradualBlur/GradualBlur'
 import Button from '../../../components/Button/Button'
+import ApkDownloadButton from '../../../components/ApkDownloadButton/ApkDownloadButton'
 import TextType from '../../../components/TextType/TextType'
 import { useApi } from '../../../lib/useApi'
+import { useDebounced } from '../../../lib/useDebounced'
 import { demo } from '../../../lib/recursos'
 import s from './Home.module.css'
 
@@ -36,8 +38,8 @@ const FEATURES = [
 const PASOS = [
   {
     numero: '01',
-    title: 'Recibe tus credenciales',
-    description: 'Tu cuenta es creada y configurada por el administrador del sistema, que te entrega usuario y contraseña temporal.',
+    title: 'Activa tu cuenta',
+    description: 'El administrador crea tu cuenta y recibirás un enlace de activación en tu correo personal para definir tu contraseña.',
   },
   {
     numero: '02',
@@ -65,16 +67,10 @@ export default function Home() {
 
   /* ---------- Demo en vivo: escribe una idea y el motor la compara ---------- */
   const [ideaViva, setIdeaViva] = useState('')
-  const [ideaEstable, setIdeaEstable] = useState('')
+  const ideaEstable = useDebounced(ideaViva, 350)
   const [resultado, setResultado] = useState(null)
   const [comparando, setComparando] = useState(false)
   const [errorDemo, setErrorDemo] = useState(false)
-
-  // Debounce: la idea se estabiliza a los 350 ms (evita consultar por tecla).
-  useEffect(() => {
-    const t = setTimeout(() => setIdeaEstable(ideaViva), 350)
-    return () => clearTimeout(t)
-  }, [ideaViva])
 
   // Consulta al motor del backend cuando la idea tiene largo suficiente.
   // Si es más corta, el render muestra "esperando" y no se toca el estado.
@@ -122,6 +118,7 @@ export default function Home() {
             </ul>
             <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
               <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
+              <ApkDownloadButton />
             </div>
           </div>
 

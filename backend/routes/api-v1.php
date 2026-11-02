@@ -18,14 +18,22 @@ use App\Http\Controllers\Api\MotorConfigController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AppVersionController;
 use App\Http\Controllers\Api\DashboardMetricsController;
-use App\Http\Controllers\Api\MediaController;
 
 // ------------------------------------------------------------------ Públicas
 // Login y recuperación de contraseña por correo no exigen token. La creación
 // de usuarios es exclusiva del administrador (grupo autenticado, abajo).
-Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('auth/login', [AuthController::class, 'login'])
+    ->middleware('throttle:login');
+Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:forgot-password');
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:reset-password');
+// El token viaja en el cuerpo, nunca en el path: los enlaces de correo usan el
+// fragmento (#token=...) que el navegador no envía al servidor.
+Route::post('auth/activation/validate', [AuthController::class, 'validateActivation'])
+    ->middleware('throttle:activation');
+Route::post('auth/activation', [AuthController::class, 'activate'])
+    ->middleware('throttle:activation');
 
 // Lectura pública (landing/demo): catálogo institucional y config del motor.
 // Solo GET; la escritura sigue restringida a admin dentro del grupo autenticado.
@@ -38,7 +46,8 @@ Route::get('public/resumen', [MotorConfigController::class, 'resumen']);
 
 // Demo pública del motor: compara un texto libre contra el corpus vigente y
 // devuelve solo títulos y porcentajes (nunca autores ni resúmenes).
-Route::post('public/demo-similitud', [SimilarityController::class, 'demo']);
+Route::post('public/demo-similitud', [SimilarityController::class, 'demo'])
+    ->middleware('throttle:demo-similitud');
 
 // Versión publicada de la app Android (detección de actualizaciones en móvil).
 // Pública: la app la consulta sin token; se configura en app_version.php.
@@ -46,7 +55,7 @@ Route::get('app-version/android', [AppVersionController::class, 'android']);
 
 // ------------------------------------------------------------------ Sesión
 // Cuenta suspendida no puede ni siquiera usar su token vigente.
-Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
+Route::middleware(['auth:sanctum', 'cuenta.activa', 'cuenta.activada'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::put('auth/email', [AuthController::class, 'changeEmail']);
@@ -54,14 +63,11 @@ Route::middleware(['auth:sanctum', 'cuenta.activa'])->group(function () {
 });
 
 // ------------------------------------------------------------------ Autenticadas
-Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioContrasenaObligatorio::class])->group(function () {
+Route::middleware(['auth:sanctum', 'cuenta.activa', 'cuenta.activada'])->group(function () {
 
     // Métricas del panel: cada rol recibe solo su ámbito (calculadas en el
     // servidor; el cliente nunca elige el rol).
     Route::get('dashboard-metrics', [DashboardMetricsController::class, 'show']);
-
-    // Subida de foto de perfil a Cloudinary (credenciales solo del servidor).
-    Route::post('media/foto', [MediaController::class, 'uploadFoto']);
 
     // Configuración del motor de similitudes (la lectura es pública, arriba).
     Route::middleware('rol:admin')->put('config-similitud', [MotorConfigController::class, 'update']);
@@ -75,8 +81,9 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioC
     Route::middleware('rol:admin')->post('general-users', [GeneralUserController::class, 'store']);
     // Credenciales iniciales en PDF: selección de usuarios o toda una ficha.
     Route::middleware('rol:admin')->post('general-users/credenciales', [GeneralUserController::class, 'credenciales']);
-    Route::middleware('rol:admin')->post('general-users/{general_user}/credenciales/reenviar', [GeneralUserController::class, 'reenviarCredenciales']);
-    Route::middleware('rol:admin')->post('general-users/{general_user}/credenciales/restablecer', [GeneralUserController::class, 'restablecerCredenciales']);
+    Route::middleware(['rol:admin', 'throttle:activation-resend'])->post('general-users/{general_user}/credenciales/restablecer', [GeneralUserController::class, 'restablecerCredenciales']);
+    Route::middleware('rol:admin')->post('general-users/{general_user}/activacion/reenviar', [GeneralUserController::class, 'reenviarActivacion'])
+        ->middleware('throttle:activation-resend');
     Route::get('general-users/{general_user}/perfil', [GeneralUserController::class, 'perfil']);
     Route::get('general-users/{general_user}', [GeneralUserController::class, 'show']);
     Route::put('general-users/{general_user}', [GeneralUserController::class, 'update']);
@@ -136,7 +143,8 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', \App\Http\Middleware\CambioC
     Route::delete('projects/{project}', [ProjectController::class, 'destroy']);
 
     // Similitudes: el motor se ejecuta del lado servidor
-    Route::post('similarities/detect', [SimilarityController::class, 'detect']);
+    Route::post('similarities/detect', [SimilarityController::class, 'detect'])
+        ->middleware('throttle:similarity-detect');
     Route::get('similarities', [SimilarityController::class, 'index']);
     Route::get('similarities/{similarity}', [SimilarityController::class, 'show']);
     // Escribir pares a mano es exclusivo del admin (el motor los genera).

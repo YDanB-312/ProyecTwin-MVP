@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 class Authenticate extends Middleware
 {
     /**
-     * Get the path the user should be redirected to when they are not authenticated.
+     * La API no tiene una ruta web `login`: el handler de excepciones responde
+     * 401 JSON. Devolver `route('login')` aquí provocaba un 500 en cualquier
+     * petición sin sesión que no enviara `Accept: application/json`.
      */
     protected function redirectTo(Request $request): ?string
     {
-        return $request->expectsJson() ? null : route('login');
+        return null;
     }
 }

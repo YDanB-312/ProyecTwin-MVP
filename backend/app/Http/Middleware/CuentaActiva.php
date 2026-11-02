@@ -67,7 +67,7 @@ class CuentaActiva
             return;
         }
 
-        auth('web')->logout();
+        auth('web')->logoutCurrentDevice();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
     }

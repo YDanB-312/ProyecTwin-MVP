@@ -23,7 +23,6 @@ class Instructor extends Model
 
     protected $allowIncluded = [
         'generalUser',
-        'projects',
         'classGroups',
     ];
 

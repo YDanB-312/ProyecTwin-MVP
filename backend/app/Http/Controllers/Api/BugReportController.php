@@ -33,7 +33,6 @@ class BugReportController extends Controller
             'descripcion' => 'required',
             'tipo' => 'required|in:' . self::TIPOS,
             'fecha' => 'required|date',
-            'id_usuario' => 'nullable|exists:general_users,id',
         ]);
 
         // Soporte por conflicto de ficha: si no llega título, se genera con el
@@ -57,7 +56,7 @@ class BugReportController extends Controller
         ]);
 
         // Avisa a cada administrador activo que entró una solicitud nueva.
-        $this->notificarAdmins($item);
+        app(NotificacionesService::class)->reporteFalla($item);
 
         return response()->json($item, 201);
     }
@@ -127,9 +126,4 @@ class BugReportController extends Controller
         return $bug_report;
     }
 
-    // Crea una notificación por cada admin activo (el panel filtra por usuario).
-    private function notificarAdmins(BugReport $reporte): void
-    {
-        app(NotificacionesService::class)->reporteFalla($reporte);
-    }
 }

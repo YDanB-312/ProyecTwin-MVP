@@ -6,6 +6,7 @@ use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -32,7 +33,10 @@ class InstructorController extends Controller
         // El alcance de arriba decide qué instructores se ven; aquí se limita
         // la relación `classGroups` para que `included` no exponga fichas (y
         // códigos) fuera del alcance del rol.
-        return $this->limitarClassGroups($resultado, $user);
+        return $this->respuestaInstructor(
+            $this->limitarClassGroups($resultado, $user),
+            $user
+        );
     }
 
     public function store(Request $request)
@@ -74,12 +78,12 @@ class InstructorController extends Controller
             return $item;
         }
         if ($user && $user->rol === 'instructor' && (int) $item->id_usuario === (int) $user->id) {
-            return $this->limitarClassGroups($item, $user);
+            return $this->respuestaInstructor($this->limitarClassGroups($item, $user), $user);
         }
         if ($user && $user->rol === 'aprendiz') {
             $fichaIds = Apprentice::where('id_usuario', $user->id)->pluck('id_class_group')->filter();
             if (ClassGroup::whereIn('id', $fichaIds)->where('id_instructor', $item->id)->exists()) {
-                return $this->limitarClassGroups($item, $user);
+                return $this->respuestaInstructor($this->limitarClassGroups($item, $user), $user);
             }
         }
 
@@ -150,6 +154,19 @@ class InstructorController extends Controller
         }
 
         return $resultado;
+    }
+
+    private function respuestaInstructor($resultado, $usuario)
+    {
+        if (optional($usuario)->rol === 'admin') {
+            return $resultado;
+        }
+
+        $datos = $resultado->toArray();
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($datos, optional($usuario)->rol, false)
+        );
     }
 
     // Fichas que el rol puede recibir anidadas en un instructor.

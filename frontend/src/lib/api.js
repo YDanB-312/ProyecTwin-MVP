@@ -5,7 +5,7 @@
 // gestiona sola (no es accesible desde JavaScript). Para métodos que escriben se
 // añade el token CSRF (X-XSRF-TOKEN) que Laravel expone en la cookie XSRF-TOKEN.
 
-const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_API_URL || "/v1").replace(/\/$/, "");
 
 // La cookie CSRF vive en la raíz del backend, no bajo el prefijo de la API:
 // con BASE="/v1" debe pedirse a "/sanctum/csrf-cookie" (el proxy de Vite lo
@@ -179,6 +179,15 @@ export async function apiFetch(
             /* entornos sin window */
           }
         }
+        // Una cuenta pendiente de activación no debe conservar sesión local:
+        // se limpia como una sesión expirada y el usuario puede volver al login.
+        if (res.status === 403 && data?.code === 'cuenta_no_activada') {
+          try {
+            window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA));
+          } catch {
+            /* entornos sin window */
+          }
+        }
         const err = new Error(data?.message || `Error ${res.status}`);
         err.status = res.status;
         err.data = data;
@@ -202,75 +211,6 @@ export async function apiFetch(
 
   if (usaCache) enVuelo.set(url, peticion);
   return peticion;
-}
-
-// Sube un archivo (multipart/form-data) con la sesión y el token CSRF.
-// Se usa para la foto de perfil (Cloudinary) manteniendo la cookie de sesión.
-export async function apiSubirArchivo(path, archivo, { nombre = "archivo.jpg", campo = "foto", timeout = 30000 } = {}) {
-  const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const enviar = async () => {
-    await asegurarCsrf();
-    const headers = { Accept: "application/json" };
-    const xsrf = leerCookie("XSRF-TOKEN");
-    if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
-
-    const form = new FormData();
-    form.append(campo, archivo, nombre);
-
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeout);
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: form,
-        credentials: "include",
-        signal: ctrl.signal,
-      });
-      const text = await res.text();
-      let data = null;
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch {
-        data = text;
-      }
-      return { res, data };
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-
-  try {
-    let { res, data } = await enviar();
-    if (res.status === 419) {
-      await refrescarCsrf();
-      ({ res, data } = await enviar());
-    }
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        try {
-          window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA));
-        } catch {
-          /* entornos sin window */
-        }
-      }
-      const err = new Error(data?.message || `Error ${res.status}`);
-      err.status = res.status;
-      err.data = data;
-      throw err;
-    }
-
-    return data;
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      const e = new Error("El servidor tardó demasiado en responder.");
-      e.status = 0;
-      throw e;
-    }
-    throw err;
-  }
 }
 
 // Descarga un archivo binario (p. ej. el PDF de credenciales) respetando la
@@ -335,14 +275,23 @@ export async function apiDescargar(path, { method = "GET", body, nombre = "archi
     const blob = await res.blob();
     const disposition = res.headers.get("content-disposition") || "";
     const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    let archivo = nombre;
+    if (match) {
+      try {
+        archivo = decodeURIComponent(match[1]);
+      } catch {
+        archivo = match[1];
+      }
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = match ? decodeURIComponent(match[1]) : nombre;
+    a.download = archivo;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    // El navegador necesita conservar el object URL hasta procesar la descarga.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   } catch (err) {
     if (err?.name === "AbortError") {
       const e = new Error("El servidor tardó demasiado en responder.");
@@ -355,12 +304,18 @@ export async function apiDescargar(path, { method = "GET", body, nombre = "archi
 
 // ---------------------------------------------------------------- Sesión
 
-export async function apiLogin(username, password, remember = false) {
-  // La sesión queda en la cookie httpOnly que devuelve el servidor. El acceso
-  // es por username (el correo personal es solo para recuperación).
+export async function apiLogin(identificador, password, remember = false) {
+  // La web usa el correo como identificador principal. Si el valor no tiene
+  // forma de correo, se envía como username para no romper cuentas legacy ni
+  // el hábito de usuarios que aún recuerdan su usuario institucional.
+  const valor = String(identificador || "").trim().toLowerCase();
+  const body = valor.includes("@")
+    ? { correo: valor, password, recordarme: !!remember }
+    : { username: valor, password, recordarme: !!remember };
+
   return apiFetch("/auth/login", {
     method: "POST",
-    body: { username, password, recordarme: !!remember },
+    body,
     auth: false,
   });
 }
@@ -386,8 +341,8 @@ export function apiChangePassword(passwordActual, password) {
   });
 }
 
-// Recuperación de contraseña por correo (en `local` la respuesta trae
-// `reset_url` para poder probarlo sin abrir el correo).
+// Recuperación de contraseña por correo. El enlace solo llega por el correo
+// real configurado (Mailpit en local, SMTP/Brevo en producción).
 export function apiForgotPassword(correo) {
   return apiFetch("/auth/forgot-password", {
     method: "POST",
@@ -405,6 +360,23 @@ export function apiResetPassword({
   return apiFetch("/auth/reset-password", {
     method: "POST",
     body: { correo, token, password, password_confirmation },
+    auth: false,
+  });
+}
+
+// ---------------------------------------------------------------- Activación
+export function apiValidarActivacion(token) {
+  return apiFetch("/auth/activation/validate", {
+    method: "POST",
+    body: { token },
+    auth: false,
+  });
+}
+
+export function apiActivarCuenta({ token, password, password_confirmation }) {
+  return apiFetch("/auth/activation", {
+    method: "POST",
+    body: { token, password, password_confirmation },
     auth: false,
   });
 }

@@ -1,4 +1,6 @@
 /.phpunit.cache
+/.phpunit.result.cache
+/test-results
 /node_modules
 /public/build
 /public/hot
@@ -6,10 +8,8 @@
 /storage/*.key
 /vendor
 .env
-.env.backup
-.env.production
-# Entornos locales de pruebas/aislamiento (sprint final, Paso 1): contienen
-# copia local de APP_KEY/credenciales; NUNCA deben versionarse.
+.env.*
+!.env.example
 .env.testing
 .env.e2e
 .env.e2e-lote3c7b

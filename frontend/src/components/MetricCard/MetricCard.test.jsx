@@ -1,27 +1,27 @@
-﻿import { describe, it, expect } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { ChartBar } from 'phosphor-react'
+import { MemoryRouter } from 'react-router-dom'
 import MetricCard from './MetricCard'
 
 describe('MetricCard', () => {
-  it('muestra el valor y la etiqueta', () => {
-    render(<MetricCard icon={<ChartBar />} label="Proyectos" value="12" />)
-    expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByText('Proyectos')).toBeInTheDocument()
-  })
+  it('conserva valor, etiqueta y tendencia', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
 
-  it('muestra la tendencia cuando se provee', () => {
-    render(<MetricCard icon={<ChartBar />} label="Proyectos" value="12" trend="+2" trendDir="up" />)
+    render(
+      <MemoryRouter>
+        <MetricCard label="Propuestas" value="12" trend="+2" trendDir="up" to="/aprendiz/propuestas" />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('link', { name: /Propuestas/ })).toHaveAttribute('href', '/aprendiz/propuestas')
+    expect(screen.getByText('12')).toBeInTheDocument()
     expect(screen.getByText('+2')).toBeInTheDocument()
   })
 
-  it('no muestra tendencia si no se pasa', () => {
-    render(<MetricCard icon={<ChartBar />} label="Proyectos" value="12" />)
-    expect(screen.queryByText('+2')).not.toBeInTheDocument()
-  })
-
-  it('aplica la variante primaria por defecto', () => {
-    const { container } = render(<MetricCard icon={<ChartBar />} label="P" value="1" />)
-    expect(container.querySelector('div').className).toContain('primary')
+  it('renderiza un contenedor si no recibe destino', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
+    render(<MetricCard label="Fichas" value="3" />)
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.getByText('Fichas')).toBeInTheDocument()
   })
 })

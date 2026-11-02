@@ -149,7 +149,14 @@ export default function DetalleFichaInstructor() {
       await recargar()
       setEditando(false)
     } catch (err) {
-      setErrores({ numero: err?.data?.message || 'No se pudo actualizar la ficha. Intenta de nuevo.' })
+      const mensaje = err?.data?.message || 'No se pudo actualizar la ficha. Intenta de nuevo.'
+      const numero = err?.data?.errors?.numero?.[0]
+      if (numero) {
+        setErrores({ numero })
+      } else {
+        setErrores({})
+        setAccionMsg(mensaje)
+      }
     } finally {
       setGuardando(false)
     }

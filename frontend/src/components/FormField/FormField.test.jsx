@@ -3,41 +3,25 @@ import { render, screen } from '@testing-library/react'
 import FormField from './FormField'
 
 describe('FormField', () => {
-  it('asocia el label con el control mediante htmlFor e id', () => {
+  it('asocia label, ayuda y marca de requerido con el control', () => {
     render(
-      <FormField label="Correo">
+      <FormField label="Correo" help="Solo letras" required>
         <input type="email" />
       </FormField>
     )
-    const label = screen.getByLabelText('Correo')
-    expect(label.tagName).toBe('INPUT')
+
+    expect(screen.getByLabelText(/Correo/).tagName).toBe('INPUT')
+    expect(screen.getByText('Solo letras')).toBeInTheDocument()
+    expect(screen.getByText('*')).toBeInTheDocument()
   })
 
-  it('muestra el mensaje de error y el rol alert', () => {
+  it('muestra el mensaje de error con rol alert', () => {
     render(
       <FormField label="Nombre" error="Campo requerido">
         <input />
       </FormField>
     )
-    const error = screen.getByRole('alert')
-    expect(error).toHaveTextContent('Campo requerido')
-  })
 
-  it('muestra la ayuda cuando no hay error', () => {
-    render(
-      <FormField label="Nombre" help="Solo letras">
-        <input />
-      </FormField>
-    )
-    expect(screen.getByText('Solo letras')).toBeInTheDocument()
-  })
-
-  it('marca el campo como requerido', () => {
-    render(
-      <FormField label="Nombre" required>
-        <input />
-      </FormField>
-    )
-    expect(screen.getByText('*')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Campo requerido')
   })
 })

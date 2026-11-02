@@ -11,12 +11,14 @@ class ResetPasswordNotification extends BaseResetPassword
     protected function resetUrl($notifiable)
     {
         $base = rtrim((string) config('app.frontend_url'), '/');
-        $query = http_build_query([
+        // Fragmento, no query: el token y el correo nunca llegan al servidor
+        // web ni a sus logs.
+        $fragmento = http_build_query([
             'token' => $this->token,
             'correo' => $notifiable->getEmailForPasswordReset(),
         ]);
 
-        return "{$base}/restablecer-contrasena?{$query}";
+        return "{$base}/restablecer-contrasena#{$fragmento}";
     }
 
     public function toMail($notifiable)

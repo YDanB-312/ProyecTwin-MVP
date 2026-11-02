@@ -1,176 +1,127 @@
-# ProyecTwin — Frontend (React + Vite)
+﻿# ProyecTwin — Frontend
 
-Frontend del **MVP** de ProyecTwin, plataforma de análisis de similitud para proyectos
-formativos de aprendices del SENA. Permite registrar propuestas académicas, detectar
-coincidencias contra un corpus aprobado, gestionar fichas y revisar el ciclo completo
-de cada proyecto con tres roles: **Aprendiz**, **Instructor** y **Administrador**.
+Frontend del MVP de ProyecTwin, plataforma de análisis de similitud para
+proyectos formativos. Consume la API real de Laravel; no hay datos mock en la
+aplicación.
 
-> El frontend consume la **API real** de Laravel (`MVP/backend`, rutas en
-> `routes/api-v1.php`) con sesión por cookie httpOnly; no hay datos mock ni
-> registro público (las cuentas las crea el administrador).
+- **Stack:** React 19 + Vite 8, React Router 7, CSS Modules, phosphor-react.
+- **API:** `/v1` mediante el proxy de Vite hacia `http://127.0.0.1:8000`.
+- **Pruebas:** Vitest + React Testing Library y Playwright.
 
----
+## Cuentas demo
 
-## Stack
+| Rol | Correo / usuario | Contraseña |
+|---|---|---|
+| Aprendiz | `maria.gonzalez@example.com` / `mgonzalez` | `ProyecTwin.Demo#2026` |
+| Instructor | `carlos.ruiz@example.com` / `cruiz` | `ProyecTwin.Demo#2026` |
+| Admin | `admin.proyectwin@example.com` / `a` | `ProyecTwin.Demo#2026` |
 
-- **React 19** + **Vite 8**
-- **React Router 7**
-- **CSS Modules** con tokens de diseño centralizados (`src/tokens/index.css`)
-- **phosphor-react** (iconos)
-- **Playwright** (@playwright/test) para E2E
-- **ESLint 10** (flat config) + React Compiler (`react-hooks` v7)
-- **@axe-core/playwright** para auditoría de accesibilidad
-
----
-
-## Roles y credenciales de prueba
-
-El acceso es por **nombre de usuario** (no por correo): las cuentas las crea y
-configura el administrador y no existe registro público.
-
-| Rol | Usuario | Contraseña |
-|-----|---------|------------|
-| Aprendiz | `mgonzalez` | `123456` |
-| Instructor | `cruiz` | `123456` |
-| Admin | `a` | `admin123` |
-
----
+Los correos usan `@example.com` (dominio reservado) y no son buzones reales.
+El seed está bloqueado fuera de local/testing.
 
 ## Scripts
 
 ```bash
-npm install        # instalar dependencias
-npm run dev        # arrancar servidor de desarrollo
+npm ci             # instalar dependencias reproducibles
+npm run dev        # servidor de desarrollo
 npm run build      # build de producción
-npm run lint       # ESLint (flat config)
-npm run preview    # servir el build (usa Playwright)
-npm test           # suite E2E de Playwright (levanta el preview automáticamente)
-npm run test:e2e   # alias de npm test
-npm run test:unit  # tests unitarios (Vitest + React Testing Library)
+npm run lint       # ESLint
+npm run preview    # servir el build; lo usa Playwright
+npm test           # Vitest + React Testing Library
+npm run test:e2e   # Playwright; requiere E2E_ALLOW_RESET=1
+npm run quality    # lint + Vitest + build
 ```
 
----
+`npm test` no ejecuta Playwright. La suite E2E es una sola configuración y usa
+`proyectwin_e2e`, separada de `proyectwin_test` (PHPUnit).
+
+## Entorno local
+
+1. Backend:
+
+```bash
+cd ../backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan demo:preparar
+php artisan serve
+```
+
+2. Frontend:
+
+```bash
+npm ci
+npm run dev
+```
+
+No necesitas `frontend/.env`: `/v1` es el valor predeterminado. Solo define
+`VITE_API_URL` si quieres cambiar el prefijo.
+
+3. Correo local: descarga Mailpit desde
+   `https://github.com/axllent/mailpit/releases`, ejecuta `mailpit.exe` y abre
+   `http://localhost:8025`. El backend local usa SMTP en `127.0.0.1:1025`.
+
+No uses `migrate:fresh`, `db:wipe` ni resets sobre `proyectwin_mvp`.
+
+## Cobertura E2E
+
+| Spec | Qué cubre |
+|---|---|
+| `acceso.spec.js` | Login/logout del aprendiz, credenciales inválidas, ruta protegida y landing pública |
+| `dashboards-permisos.spec.js` | Indicadores por rol y acceso denegado a secciones ajenas |
+| `usuarios.spec.js` | Alta de instructor/aprendiz por el admin y consulta del detalle |
+| `fichas.spec.js` | Red + programa, ficha creada por admin y ficha creada por instructor |
+| `propuestas.spec.js` | Borrador con integrantes, envío, rechazo, corrección, reenvío, aprobación e historial |
+| `similitud.spec.js` | Coincidencias del aprendiz, del instructor y supervisión del admin |
+| `notificaciones.spec.js` | Aviso de ficha navegable y marca de lectura de una notificación |
+| `soporte.spec.js` | Reporte de falla del aprendiz y cierre con respuesta del admin |
+| `correo.spec.js` | Activación y recuperación con correos reales capturados por Mailpit |
+| `admin-usuarios-eliminar.spec.js` | Confirmación reforzada, borrado de usuario y correo duplicado |
+| `red-eliminacion-conserva-evidencia.spec.js` | Borrado de red que conserva propuesta y similitud |
+
+**Estado:** 25 escenarios en 11 archivos. No se ejecutaron en esta fase. La suite se ejecuta con
+`E2E_ALLOW_RESET=1 npm run test:e2e`; el `globalSetup` resea `proyectwin_e2e`
+con `php artisan e2e:reset` y Playwright usa un solo worker. Los escenarios de
+correo requieren Mailpit en `127.0.0.1:1025` y su bandeja en
+`http://localhost:8025`.
+
+## Tests unitarios
+
+`npm test` - **90 tests en 26 archivos**:
+
+| Archivo | Qué cubre |
+|---|---|
+| `src/utils/helpers.test.js` | `iniciales`, `formatearFecha`, `agruparObservaciones` |
+| `src/utils/validation.test.js` | email, contraseña y límites de formularios |
+| `src/lib/api.test.js` | sesión expirada (401), descarga y login |
+| `src/hooks/useFocusTrap.test.jsx` | foco inicial, ciclo Tab/Shift+Tab, Escape |
+| `src/constants/routes.test.js` | rutas por rol, alertas y soporte |
+| `src/components/FormField/FormField.test.jsx` | asociación label-control, error/help, requerido |
+| `src/components/Input/Input.test.jsx` | `PasswordInput`: visibilidad y props |
+| `src/components/DataTable/DataTable.test.jsx` | estado vacío y `data-label` para tarjetas |
+| `src/components/ProtectedRoute/ProtectedRoute.test.jsx` | redirección y roles permitidos |
+| `src/components/PerfilBase/PerfilBase.test.jsx` | edición de perfil y estados |
+| `src/components/DashboardMetrics/DashboardMetrics.test.jsx` | indicadores y estados de carga |
+| `src/components/Charts/Charts.test.jsx` | semántica, teclado y reglas axe de los gráficos |
+| `src/pages/public/ActivarCuenta/ActivarCuenta.test.jsx` | activación, validación y errores |
+
+Los recorridos completos se verifican en Playwright; no se duplican en Vitest.
 
 ## Arquitectura
 
-```
+```text
 src/
-├── components/   # componentes reutilizables (Button, Badge, Modal, Dashboard, …)
-│   └── *Base/    # implementaciones únicas compartidas entre roles
-│                 # (DetalleProyectoBase, DetalleFichaBase, ListaBase,
-│                 #  FormularioBase, PersonaDetalleBase, DetalleSimilitudBase, …)
-├── pages/        # páginas por rol:
-│   ├── aprendiz/ instructor/ admin/ public/
+├── components/   # componentes reutilizables y *Base compartidos
+├── pages/        # páginas por rol: aprendiz, instructor, admin, public
 ├── layouts/      # DashboardLayout, LandingLayout, AuthLayout
-├── contexts/     # AuthContext (sesión real por cookie), TemaContext, MotorContext
-├── constants/    # etiquetas y variantes compartidas (estados, roles, rutas)
-├── tokens/       # tokens de diseño CSS (escala de color SENA, sombras, radios…)
-├── utils/        # helpers (agruparObservaciones, …)
-├── App.jsx       # enrutado + SafeRoute (control de acceso por rol)
+├── contexts/     # AuthContext, TemaContext, MotorContext
+├── constants/    # etiquetas, estados, roles y rutas
+├── tokens/       # tokens de diseño CSS
+├── utils/        # helpers y validaciones
+└── App.jsx       # enrutado y control de acceso
 ```
 
-### Refactor CSS
-
-Las páginas ya no duplican estilos: cada familia comparte uno o varios módulos
-`*Base` (`ListaBase`, `DetalleProyectoBase`, `DetalleFichaBase`, `DetalleSimilitudBase`,
-`FormularioBase`, `PersonaDetalleBase`, `AlertasBase`, `Dashboard`). Las excepciones
-realmente propias de cada página viven en módulos locales pequeños.
-
-### React Compiler
-
-El proyecto usa la verificación del React Compiler vía `eslint-plugin-react-hooks` v7.
-Las memorizaciones manuales (`useMemo`) deben declarar dependencias que el compilador
-pueda **inferir** (p. ej. `[perfil]` en lugar de `[perfil?.fichaId]`) para no provocar
-`Compilation Skipped: Existing memoization could not be preserved`.
-
----
-
-## Calidad
-
-### Cobertura E2E (Playwright) — `e2e/`
-
-| Spec | Qué cubre |
-|------|-----------|
-| `auth.spec.js` | Login, logout, seguridad de cuenta (cambio de contraseña) |
-| `ficha.spec.js` | Ciclo de ficha: unirse → persistir → salir |
-| `instructor.spec.js` | Revisión de propuestas, detección de similitudes al enviar, crear ficha |
-| `intrusion.spec.js` | Autorización por rol: recursos ajenos en modo lectura |
-| `privacidad.spec.js` | Privacidad de propuestas y observaciones por equipos |
-| `propuestas.spec.js` | Listado, validaciones y creación de propuestas (individual y en equipo) |
-| `perfiles.spec.js` | Perfiles de otros usuarios (solo lectura) |
-| `notificaciones-tema.spec.js` | Alertas sin leer, modo oscuro persistente, tablas en vista móvil |
-| `admin.spec.js` | Gestión de usuarios/proyectos/similitudes del administrador |
-| `auditoria-cobertura.spec.js` | 39 rutas recorridas verificando shell, sin fallback de error ni errores de consola |
-| `accesibilidad.spec.js` | Axe (WCAG A/AA): **39 rutas por rol + 3 de foco visible + 4 públicas** (46 verificaciones), modo claro |
-| `accesibilidad-oscuro.spec.js` | Axe (WCAG A/AA): **20 rutas en modo oscuro** (`html[data-theme="dark"]`): 16 autenticadas + 4 públicas |
-| `responsive.spec.js` | Desbordamiento horizontal en **375px y 768px** sobre todas las rutas (por rol y públicas) |
-
-**Estado actual (18-oct-2026):** 60 specs E2E (53 raíz + 7 de agentes), **todos ejecutados** en el gate 5/5 del 18-oct-2026 (**347 pruebas, 0 fallos**; aislados + agentes/cobertura/negativos/volumen).
-
-> `e2e/rutas.js` centraliza `RUTAS_POR_ROL` + `RUTAS_PUBLICAS`, compartido por los
-> specs de accesibilidad, modo oscuro, responsive y cobertura.
-
-### Tests unitarios (Vitest + React Testing Library)
-
-`npm run test:unit` → **63 tests en 18 archivos** (`*.test.{js,jsx}` junto a su fuente):
-
-| Archivo | Qué cubre |
-|---------|-----------|
-| `src/utils/helpers.test.js` | `iniciales`, `formatearFecha`, `parseFecha`, `agruparObservaciones` |
-| `src/utils/validation.test.js` | regex histórica y mínimo 6, `esEmailValido`, `esPasswordValida` |
-| `src/lib/api.test.js` | `apiDescargar` avisa sesión expirada (401) igual que `apiFetch` |
-| `src/hooks/useFocusTrap.test.jsx` | foco inicial, ciclo Tab/Shift+Tab, `onEscape` |
-| `src/constants/routes.test.js` | rutas por rol (`RUTA_POR_ROL`, `RUTA_ALERTAS_POR_ROL`, `RUTA_SOPORTE_POR_ROL`) |
-| `src/components/Badge/Badge.test.jsx` | render de children y variantes |
-| `src/components/Button/Button.test.jsx` | tipo de elemento, variantes, propagación de props |
-| `src/components/Avatar/Avatar.test.jsx` | iniciales, imagen vs texto, `title` |
-| `src/components/FormField/FormField.test.jsx` | asociación label↔control (a11y), error/help, requerido |
-| `src/components/MetricCard/MetricCard.test.jsx` | valor, etiqueta, tendencia, variante |
-| `src/components/Pagination/Pagination.test.jsx` | info de rango, navegación y estados deshabilitados |
-| `src/components/ConsoleCard/Console.test.jsx` | kit consola: `ConsoleCard`, `StatChip`, `SectionHeader` |
-| `src/components/CountUp/CountUp.test.jsx` | valor final accesible, prefijo/sufijo, no numéricos |
-| `src/components/DataTable/DataTable.test.jsx` | estado vacío y `data-label` para modo tarjetas |
-| `src/components/GradeBadge/GradeBadge.test.jsx` | `gradeForScore` por umbral y badge accesible |
-| `src/components/Input/Input.test.jsx` | `PasswordInput`: visibilidad, alternar y props |
-| `src/components/ScoreDial/ScoreDial.test.jsx` | rol `img` con etiqueta de grado; normaliza 0-1 y recorta a 100 |
-| `src/components/TextType/TextType.test.jsx` | escritura progresiva, texto completo para lectores y bucle |
-
-Config en `vitest.config.js` (entorno `jsdom`, setup `src/test/setup.js` con
-`@testing-library/jest-dom`). Los tests de Playwright y de Vitest no se solapan.
-
-### Accesibilidad (WCAG AA)
-
-- Contraste de texto terciario: `--c-text-3` en modo claro es `#666666` y en oscuro
-  `#949494` (≥4.5:1).
-- El verde SENA de acento (botones primarios, sidebar activo) usa `g-700 (#2a7c00)`
-  en claro y tonos claros en oscuro para que el texto sobre él cumpla AA.
-- Tokens de estado (success/info/danger/warning) **separados** por uso: `--c-*-text`
-  para texto sobre fondos translúcidos (badges/alertas) y `--c-*`/`--c-*-hover` con
-  `--c-on-*` para superficies de botones. Así cada modo (claro/oscuro) usa la
-  luminosidad adecuada a su fondo y el texto sobre botones conserva contraste AA.
-- Badges, Alert, MetricCard, Tag, avatares y porcentajes medios (`--c-warning-text`)
-  cumplen contraste AA en ambos temas: `e2e/accesibilidad*.spec.js`.
-
-### Seguridad de dependencias
-
-`npm audit` → **0 vulnerabilidades**. `package-lock.json` sincronizado con versiones
-parcheadas (`react-router-dom 7.18.3`, `vite 8.2.2`, `postcss`, `nanoid`, etc.).
-
-### Lint
-
-Sin errores: `npm run lint` → `0 problemas`.
-
----
-
-## PWA / cabecera
-
-- `index.html` incluye favicon, meta description, Open Graph/Twitter, `theme-color`
-  y `lang="es"`.
-- `public/manifest.webmanifest` habilita instalación de PWA básica.
-
----
-
-## Integración
-
-El frontend consume la API Laravel real (proxy `/v1` y `/sanctum` en
-`vite.config.js`) con sesión por cookie httpOnly y CSRF. No hay capa mock.
+- CSS Modules y estilos globales; sin Tailwind ni estilos inline.
+- La sesión usa cookie httpOnly y CSRF.
+- Los tests de Playwright y Vitest no comparten datos de la aplicación.

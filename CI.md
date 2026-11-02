@@ -27,7 +27,7 @@ producción ni a la base de datos de desarrollo.
 - Node 22.
 - `npm ci` reproducible desde `package-lock.json`.
 - ESLint completo (`npm run lint`).
-- Pruebas unitarias (`npm run test:unit`).
+- Pruebas unitarias (`npm test`).
 - Build de producción (`npm run build`).
 
 ## Aislamiento
@@ -36,7 +36,7 @@ producción ni a la base de datos de desarrollo.
 - No se conecta a `proyectwin_mvp` ni a producción.
 - No ejecuta E2E destructivos.
 - Las pruebas que crean bases temporales (`RollbackAisladoTest` y
-  `VolumenSeederAisladoTest`) usan el usuario MySQL del servicio, que puede
+  `SeederIdempotenciaTest`) usan el usuario MySQL del servicio, que puede
   crear bases desechables.
 
 ## Ejecución local equivalente
@@ -53,7 +53,7 @@ Frontend:
 ```powershell
 cd frontend
 npm run lint
-npm run test:unit
+npm test
 npm run build
 ```
 

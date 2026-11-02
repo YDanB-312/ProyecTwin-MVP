@@ -2,39 +2,39 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Support\Auditoria;
 use App\Support\Credenciales;
 use App\Support\Pii;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
-// Alta de una cuenta institucional: genera username + contraseña temporal,
-// crea el perfil que corresponda, audita y (opcionalmente) envía las
-// credenciales al correo personal. Punto único usado por el panel de usuarios
-// y por el alta de aprendices desde una ficha.
+// Alta de una cuenta institucional. Toda cuenta nueva nace pendiente de
+// activación y recibe un enlace de un solo uso. No se generan ni almacenan
+// contraseñas temporales.
 class AltaUsuario
 {
-    public function crear(array $datos, bool $enviarCredenciales = true): array
+    public function crear(array $datos, bool $enviarCorreo = true): array
     {
         $username = Credenciales::usernameSeguro($datos['nombre'], $datos['apellido']);
-        $temporal = Credenciales::passwordTemporal();
 
         $data = $datos;
         $data['correo'] = strtolower(trim($datos['correo']));
         $data['username'] = $username;
-        $data['password'] = Hash::make($temporal);
-        $data['must_change_password'] = true;
-        $data['password_temporal'] = Crypt::encryptString($temporal);
+        // Hash de un secreto aleatorio descartado: la cuenta no tiene una
+        // contraseña utilizable hasta que el usuario activa y define la suya.
+        $data['password'] = Hash::make(Str::random(64));
+        $data['email_verified_at'] = null;
         $data['estado'] = $datos['estado'] ?? true;
 
         $usuario = DB::transaction(function () use ($data) {
             $usuario = GeneralUser::create($data);
 
-            // El perfil de instructor nace con la cuenta; el de aprendiz nace al
-            // asociarse a una ficha (id_programa es obligatorio).
+            // El perfil correspondiente nace con la cuenta. El de aprendiz
+            // nace al asociarse a una ficha (id_programa es obligatorio).
             if ($usuario->rol === 'instructor') {
                 Instructor::firstOrCreate(
                     ['id_usuario' => $usuario->id],
@@ -42,24 +42,37 @@ class AltaUsuario
                 );
             }
 
+            if ($usuario->rol === 'admin') {
+                Admin::firstOrCreate(['id_usuario' => $usuario->id]);
+            }
+
             Auditoria::registrar('crear_usuario', 'general_users', $usuario->id, [
                 'correo' => $usuario->correo,
                 'username' => $usuario->username,
                 'documento' => Pii::documento($usuario->tipo_documento, $usuario->numero_documento),
                 'rol' => $usuario->rol,
+                'modo' => 'activacion',
             ]);
 
             return $usuario;
         });
 
-        $enviadas = $enviarCredenciales
-            ? app(CredencialesCorreo::class)->enviar($usuario, $temporal)
-            : false;
+        $activacionToken = app(ActivacionCuenta::class)->crearToken($usuario);
+        $activacion = null;
+        $enviadas = false;
+
+        if ($enviarCorreo) {
+            $activacion = app(ActivacionCuenta::class)->enviar($usuario, $activacionToken);
+            $enviadas = $activacion['enviado'];
+        }
 
         return [
             'usuario' => $usuario->fresh(),
-            'temporal' => $temporal,
             'enviadas' => $enviadas,
+            'activacion' => $activacion,
+            // Uso interno (p. ej. alta desde ficha que envía después de la
+            // transacción). Nunca debe devolverse al cliente.
+            'activacion_token' => $activacionToken,
         ];
     }
 }

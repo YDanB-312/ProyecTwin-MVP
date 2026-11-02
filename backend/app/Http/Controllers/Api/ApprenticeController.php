@@ -6,6 +6,7 @@ use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Services\NotificacionesService;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,11 @@ class ApprenticeController extends Controller
             $fichaIds = $user->apprentice()->pluck('id_class_group')->filter();
         }
 
-        return Apprentice::included()->whereIn('id_class_group', $fichaIds)->where($soloAprendices)->get();
+        $items = Apprentice::included()->whereIn('id_class_group', $fichaIds)->where($soloAprendices)->get();
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($items->toArray(), optional($user)->rol, false)
+        );
     }
 
     public function store(Request $request)
@@ -101,14 +106,18 @@ class ApprenticeController extends Controller
         }
         if ($user && $user->rol === 'instructor') {
             if ($item->id_class_group && $this->puedeGestionarFicha($user, (int) $item->id_class_group)) {
-                return $item;
+                return response()->json(
+                    PerfilEnRespuesta::redactar($item->toArray(), $user->rol, false)
+                );
             }
         }
         if ($user && $user->rol === 'aprendiz') {
             $propio = $user->apprentice()->first();
             if ($propio && ((int) $propio->id === (int) $item->id
                 || ($propio->id_class_group && (int) $propio->id_class_group === (int) $item->id_class_group))) {
-                return $item;
+                return response()->json(
+                    PerfilEnRespuesta::redactar($item->toArray(), $user->rol, false)
+                );
             }
         }
 
@@ -117,6 +126,18 @@ class ApprenticeController extends Controller
 
     public function update(Request $request, Apprentice $apprentice)
     {
+        // La pertenencia se comprueba antes de validar el payload: un instructor
+        // ajeno no debe recibir errores de validación de una fila que no gestiona.
+        $user = $request->user();
+        $fichaActual = $apprentice->id_class_group;
+
+        if (optional($user)->rol !== 'admin') {
+            // Un aprendiz sin ficha no pertenece a ninguna ficha del instructor.
+            if (!$fichaActual || !$this->puedeGestionarFicha($user, (int) $fichaActual)) {
+                return response()->json(['message' => 'No puedes modificar aprendices fuera de tus fichas.'], 403);
+            }
+        }
+
         $request->validate([
             'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
             'id_class_group' => 'nullable|exists:class_groups,id',
@@ -132,13 +153,7 @@ class ApprenticeController extends Controller
 
         // Un instructor solo gestiona aprendices de sus fichas y no reasigna
         // la cuenta dueña de la fila (evita suplantación entre fichas).
-        $user = $request->user();
         if (optional($user)->rol !== 'admin') {
-            $fichaActual = $apprentice->id_class_group;
-            // Un aprendiz sin ficha no pertenece a ninguna ficha del instructor.
-            if (!$fichaActual || !$this->puedeGestionarFicha($user, (int) $fichaActual)) {
-                return response()->json(['message' => 'No puedes modificar aprendices fuera de tus fichas.'], 403);
-            }
             if ($request->filled('id_class_group') && (int) $request->id_class_group !== (int) $fichaActual) {
                 $destino = ClassGroup::findOrFail($request->id_class_group);
                 if ($destino->estado !== 'activo' || !$this->puedeGestionarFicha($user, (int) $destino->id)) {
@@ -203,7 +218,14 @@ class ApprenticeController extends Controller
         if (!$ficha) {
             return response()->json(['message' => 'No encontramos una ficha con ese código.'], 404);
         }
-        return $ficha->loadCount('apprentices');
+
+        return response()->json(
+            PerfilEnRespuesta::redactar(
+                $ficha->loadCount('apprentices')->toArray(),
+                optional(request()->user())->rol,
+                true
+            )
+        );
     }
 
     // Une al aprendiz autenticado a la ficha del código recibido. Antes puede
@@ -264,7 +286,11 @@ class ApprenticeController extends Controller
             return $aprendiz;
         });
 
-        return $aprendiz->fresh()->load('classGroup.program', 'classGroup.instructor.generalUser');
+        $fresco = $aprendiz->fresh()->load('classGroup.program', 'classGroup.instructor.generalUser');
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($fresco->toArray(), optional($request->user())->rol, true)
+        );
     }
 
     // Deja al aprendiz autenticado sin ficha. La fila y su código se conservan.

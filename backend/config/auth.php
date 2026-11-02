@@ -112,4 +112,16 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Activación de cuentas nuevas
+    |--------------------------------------------------------------------------
+    |
+    | Toda cuenta nueva nace pendiente y se activa con un enlace de un solo
+    | uso. La recuperación posterior usa el broker de contraseñas.
+    |
+    */
+
+    'activation_expire' => (int) env('AUTH_ACTIVATION_EXPIRE', 1440),
+
 ];

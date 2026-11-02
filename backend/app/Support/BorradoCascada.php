@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\DB;
 // ficha. La eliminación definitiva de usuario con consentimiento explícito es
 // la única excepción y queda auditada por el controlador.
 //
-// Limitación documentada (fuera de este lote): la creación concurrente de una
+// Limitación conocida: la creación concurrente de una
 // ficha dentro del programa/red no está serializada por el mutex del motor; si
 // ocurriera entre la lectura y el borrado, el FK restrict aborta la transacción
 // (error sin pérdida de datos).

@@ -6,6 +6,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input, PasswordInput } from '../../../components/Input/Input'
+import { esEmailValido } from '../../../utils/validation'
 import s from './Login.module.css'
 
 import { RUTA_POR_ROL } from '../../../constants/routes'
@@ -13,7 +14,7 @@ import { RUTA_POR_ROL } from '../../../constants/routes'
 export default function Login() {
   const { user, login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
+  const [identificador, setIdentificador] = useState('')
   const [password, setPassword] = useState('')
   const [recordarme, setRecordarme] = useState(false)
   const [error, setError] = useState('')
@@ -21,7 +22,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(user.mustChangePassword ? '/cambio-obligatorio' : (RUTA_POR_ROL[user.rol] || '/'), { replace: true })
+      navigate(RUTA_POR_ROL[user.rol] || '/', { replace: true })
     }
   }, [isAuthenticated, user, navigate])
 
@@ -30,14 +31,20 @@ export default function Login() {
     if (cargando) return
     setError('')
 
-    if (!username.trim() || !password) {
-      setError('Ingresa tu usuario y contraseña.')
+    if (!identificador.trim() || !password) {
+      setError('Ingresa tu correo y contraseña.')
+      return
+    }
+
+    const valor = identificador.trim()
+    if (valor.includes('@') && !esEmailValido(valor)) {
+      setError('Ingresa un correo electrónico válido.')
       return
     }
 
     setCargando(true)
     try {
-      const resultado = await login(username, password, recordarme)
+      const resultado = await login(valor, password, recordarme)
       if (resultado.exito) {
         navigate(resultado.ruta, { replace: true })
       } else {
@@ -65,13 +72,18 @@ export default function Login() {
             </p>
           )}
 
-          <FormField label="Usuario" required help="El usuario que te entregó el administrador.">
+          <FormField
+            label="Correo electrónico"
+            required
+            help="Usa el correo registrado. Si aún no lo tienes, puedes escribir tu usuario institucional."
+          >
             <Input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Usuario"
+              value={identificador}
+              onChange={(e) => setIdentificador(e.target.value)}
+              placeholder="Correo electrónico"
               autoComplete="username"
+              inputMode="email"
               autoFocus
             />
           </FormField>

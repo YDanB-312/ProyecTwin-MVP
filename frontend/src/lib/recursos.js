@@ -32,11 +32,12 @@ export const usuarios = {
       method: "POST",
       body: { ids },
       nombre: "credenciales-usuarios.pdf",
+      timeout: 120000,
     }),
-  // Reenvía las credenciales temporales al correo personal (solo admin).
-  reenviarCredenciales: (id) =>
-    apiFetch(`/general-users/${id}/credenciales/reenviar`, { method: "POST" }),
-  // Restablece la contraseña temporal: la genera el servidor (solo admin).
+  // Reenvía el enlace de activación de una cuenta pendiente (solo admin).
+  reenviarActivacion: (id) =>
+    apiFetch(`/general-users/${id}/activacion/reenviar`, { method: "POST" }),
+  // Revoca sesiones y envía un enlace de recuperación (solo admin).
   restablecerCredenciales: (id) =>
     apiFetch(`/general-users/${id}/credenciales/restablecer`, { method: "POST" }),
   // Cambio del propio correo: el backend exige la contraseña actual.
@@ -116,6 +117,7 @@ export const fichas = {
   exportarCredenciales: (id) =>
     apiDescargar(`/class-groups/${id}/credenciales`, {
       nombre: `credenciales-ficha-${id}.pdf`,
+      timeout: 120000,
     }),
   // Alta/asociación atómica de un aprendiz: usuario_id (existente) o datos.
   agregarAprendiz: (id, body) =>
@@ -134,7 +136,8 @@ export const proyectos = {
     ),
   crear: (body) => apiFetch("/projects", { method: "POST", body }),
   // Envío explícito del borrador (valida, detecta similitudes y avisa al instructor).
-  enviar: (id) => apiFetch(`/projects/${id}/enviar`, { method: "POST" }),
+  enviar: (id) =>
+    apiFetch(`/projects/${id}/enviar`, { method: "POST", timeout: 120000 }),
   // Evolución de la propuesta (visible para participantes e instructor).
   historial: (id) =>
     apiFetch(`/projects/${id}/historial${qs({ included: "user" })}`).then(lista),
@@ -163,7 +166,7 @@ export const proyectos = {
 // ---------------------------------------------------------------- Similitudes
 // Se incluyen los proyectos del par (con su equipo) para resolver títulos y
 // autoría sin depender del listado global de propuestas.
-export const INCLUDE_SIMILITUD =
+const INCLUDE_SIMILITUD =
   "project1.classGroup.program,project2.classGroup.program,project1.creator,project2.creator,project1.apprentices.generalUser,project2.apprentices.generalUser";
 
 export const similitudes = {
@@ -174,7 +177,11 @@ export const similitudes = {
   obtener: (id) =>
     apiFetch(`/similarities/${id}${qs({ included: INCLUDE_SIMILITUD })}`),
   recalcular: () =>
-    apiFetch("/similarities/recalculate", { method: "POST", body: {} }),
+    apiFetch("/similarities/recalculate", {
+      method: "POST",
+      body: {},
+      timeout: 180000,
+    }),
   eliminar: (id) => apiFetch(`/similarities/${id}`, { method: "DELETE" }),
 };
 
@@ -196,7 +203,15 @@ export const demo = {
       method: "POST",
       body: { texto },
       auth: false,
+      timeout: 60000,
     }),
+};
+
+// ---------------------------------------------------------------- App Android
+// El endpoint público es la única fuente de la URL de descarga: si no hay
+// APK autorizado, `download_url` queda vacío y el botón del Home no se pinta.
+export const appVersion = {
+  android: () => apiFetch("/app-version/android", { auth: false }),
 };
 
 // ---------------------------------------------------------------- Notificaciones

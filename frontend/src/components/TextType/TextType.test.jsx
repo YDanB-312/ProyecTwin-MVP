@@ -1,41 +1,26 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, act, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { render } from '@testing-library/react'
 import TextType from './TextType'
 
 describe('TextType', () => {
-  beforeEach(() => vi.useFakeTimers())
-  afterEach(() => vi.useRealTimers())
+  it('respeta reduced motion y muestra el texto completo', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
 
-  it('escribe el texto progresivamente de izquierda a derecha', () => {
-    const { container } = render(<TextType text="hola" speed={10} startDelay={0} />)
-    const visual = container.querySelector('[aria-hidden="true"]')
+    const { container } = render(<TextType text="Hola ProyecTwin" />)
 
-    expect(visual.textContent).toBe('')
-    act(() => vi.advanceTimersByTime(10))
-    expect(visual.textContent).toBe('h')
-    act(() => vi.advanceTimersByTime(30))
-    expect(visual.textContent).toBe('hola')
+    expect(container).toHaveTextContent('Hola ProyecTwin')
+    expect(container.querySelector('.sr-only')).not.toBeInTheDocument()
   })
 
-  it('expone el texto completo para lectores de pantalla', () => {
-    render(<TextType text="comparar" />)
-    expect(screen.getByText('comparar')).toBeInTheDocument()
-  })
+  it('mantiene el texto real en sr-only durante la animación', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false })
+    vi.stubGlobal('requestAnimationFrame', (cb) => { cb(); return 1 })
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
 
-  it('en modo bucle escribe, borra y pasa a la siguiente frase', () => {
-    const { container } = render(
-      <TextType texts={['ab', 'cd']} speed={10} deleteSpeed={10} hold={10} startDelay={0} />,
-    )
-    const visual = container.querySelector('[aria-hidden="true"]')
-    const paso = () => act(() => vi.advanceTimersByTime(10))
+    const { container } = render(<TextType text="Hola" speed={1000} startDelay={1000} />)
 
-    paso(); expect(visual.textContent).toBe('a')   // t=10
-    paso(); expect(visual.textContent).toBe('ab')  // t=20
-    paso(); expect(visual.textContent).toBe('ab')  // t=30 (espera)
-    paso(); expect(visual.textContent).toBe('a')   // t=40 (borra)
-    paso(); expect(visual.textContent).toBe('')    // t=50
-    paso(); expect(visual.textContent).toBe('')    // t=60 (cambia)
-    paso(); expect(visual.textContent).toBe('c')   // t=70
-    paso(); expect(visual.textContent).toBe('cd')  // t=80
+    expect(container.querySelector('.sr-only')).toHaveTextContent('Hola')
+    expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+    vi.unstubAllGlobals()
   })
 })

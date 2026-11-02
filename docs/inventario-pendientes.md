@@ -4,12 +4,15 @@
 **Refs:** `C-xx`/`P-xx`/`D-xx` (backend) y `M-x`/`O-x`/`D1` (Android) son **referencias de trabajo del Lote 3**, no IDs de auditoría. Los `BUG-xxx` provienen de `AUDITORIA-INTEGRAL.md` (snapshot histórico).
 **Regla:** ningún ítem se implementa sin autorización; las decisiones del propietario no se asumen.
 
+> **Estado vigente (1-nov-2026):** backend **225 tests / 1280 aserciones**; frontend unit **90 tests / 26 archivos**; E2E **11 specs / 25 tests inventariados, no ejecutados** en esta fase. Las cifras de los Lotes 3–13 (344/347/433/90/175, etc.) son **históricas** y no representan el estado actual del árbol.
+
 **Cambios del Lote 4 (18-oct):** C-01, C-04 y C-08 **cubiertos con pruebas** (focales verdes); FE-2 y FE-8 **corregidos**; M4 **implementado** (gradle 139/139 + assembleDebug); M7 **plan presentado**; M8 y FE-7/O5 **parciales**; D-01 **investigado**.
 **Cambios del Lote 5 (cierre de entrega, 18-oct):** D-01 con **recomendación lista** (opción a: guarda 409, comparativa completa); Android con **estado de entrega y procedimientos APK + verificación manual M4** documentados (`docs/ejecutar-android.md §10-11`); FE-1 con **plan de ejecución y autorización solicitada** (requiere reset de `proyectwin_e2e` vía procedimiento oficial; NO es el gate integral); clasificación de pendientes: **nada nuevo imprescindible** más allá de M1/D-01/FE-1/M4.
 **Cambios del Lote 6 (18-oct):** **D-01 implementado y verificado** (guarda 409 en el borrado de usuarios: instructor + propuestas creadas, mutex O1, admin exento; 6 pruebas nuevas; suite backend **324/324, 1883 aserciones**); **plan de versionado Android revisable** creado (`docs/plan-versionado-android.md`: 24 archivos a versionar + exclusión de 4 `.idea` máquina-específico preservando 9 compartibles; diff exacto — aplicado después, ver M7); FE-1 quedaba pendiente de autorización de reset en ese momento (ejecutado después — ver fila FE-1).
 **Corrección documental (Lote 11, 19-oct):** FE-1 **ejecutado y aprobado** (5 tests autorizados + 4 adicionales); M7 **aplicado** (Lote 8); M1 **publicado** en el commit `d327b10` (mensaje final `Consolidar la entrega final con backend, web, movil, pruebas y documentacion`; incluye los 24 archivos Android del plan de versionado).
 **Cambios del Lote 12 (19-oct, evolución multiagéntica):** M4 **verificado manualmente** en dispositivo físico (4 pasos × 2 casos; solo habilitación, sin borrado real); M2, O2 y O4 **implementados**; FE-3/FE-4/FE-5/FE-6 **implementados**; pruebas C-02/C-03/C-06/C-09 y M5 **añadidas** (backend **341/341, 1985 aserciones**, exit 0); logging P-02/P-04 **añadido**; Android **169/169** + `assembleDebug` OK; conexión física simplificada (`Movil/local.properties.example` + `Movil/scripts/preparar-fisico.ps1`).
 **Cambios del Lote 13 (19-oct, integración + siguiente bloque):** M3 **implementado** (detalle admin de ficha: info + roster + propuestas; 6 tests); M6 **implementado** (6 smoke tests instrumentados; compilados y arranque verificado en dispositivo físico; componentes pendientes de corrida en dispositivo libre); P-03 **mejorado** (mensaje de carrera preciso + test determinista); P-01 **alineado** (defaults de migración + test conductual); revisión del Lote 12 **sin defectos nuevos**; backend **344/344 (1998 aserciones)**; Android unit **175/175**.
+**Actualización 6P–6T (1-nov-2026):** backend **225/225 (1280 aserciones)**; frontend unit **90/90 (26 archivos)**, lint y build OK; privacidad de fichas/aprendices/instructores revisada; migración idempotente de `email_verified_at` probada en base legacy. La imagen `6j` previa está preservada, pero **no se reconstruyó con los últimos cambios porque Docker Desktop no estaba disponible**; 5A/6A/6C también se conservan. Siguen pendientes: commit/push, E2E con Mailpit/base aislada, Brevo/Railway y autorización del APK. El manual técnico de `docs/manual-tecnico/` sigue siendo un snapshot histórico.
 
 ## 1. Bloqueantes para un MVP funcional y seguro
 
@@ -36,12 +39,18 @@
 
 ## 3. Mejoras opcionales
 
+> **Nota 6AA (1-nov-2026):** las referencias a pruebas de esta sección son históricas.
+> Tras la consolidación en `tests/Core`, varios tests citados ya no existen
+> (`ComandosSimilitudTest`, `E2eResetGuardasTest`, `IdorRecursosTest`,
+> `PublicosYSesionTest`, `DefaultsAlineadosTest`, `AlineacionBloqueosTest`).
+> C-03 y C-06 quedan sin prueba actual y se registran como hueco aceptado.
+
 | Ref | Estado + evidencia | Impacto | Archivos | Pruebas |
 |---|---|---|---|---|
 | C-02 | ✅ **Cubierto (19-oct, Lote 12)** — `DemoSimilitudPublicaTest` (2 pruebas, 28 aserciones): anónimo 200 solo `id/titulo/porcentaje` (sin PII) y 422 (faltante/corto/largo/tipo) | — | `SimilarityController:181-219` | — |
-| C-03 | ✅ **Cubierto (19-oct)** — `ComandosSimilitudTest` (5 pruebas, 19 aserciones): `calibrar` (distribución, `--labels`, sin persistir) y `recalcular` (par vigente, `--sin-notificar`) | — | `SimilitudCalibrar.php`, `SimilitudRecalcular.php` | — |
+| C-03 | 🟨 **Sin prueba actual (6AA)** — el histórico `ComandosSimilitudTest` fue retirado en la consolidación a `tests/Core`; no hay test equivalente de `calibrar`/`recalcular`. Hueco aceptado y pendiente de decisión | Medio (comandos manuales) | `SimilitudCalibrar.php`, `SimilitudRecalcular.php` | Reponer prueba focal antes de producción si se autoriza |
 | C-05 | BUG-032: migraciones consolidadas, `down()` = dropIfExists (18/18); sin test de rollback | Bajo con esquema consolidado | `database/migrations/*` | Test `migrate:rollback` en CI |
-| C-06 | ✅ **Cubierto (19-oct)** — `E2eResetGuardasTest` (4 pruebas, 13 aserciones): ramas de aborto (sin autorización, BD incorrecta, host, lock) sin tocar ninguna BD (centinela SQLite) | — | `E2eReset.php:40-51,82-96` | — |
+| C-06 | 🟨 **Sin prueba actual (6AA)** — `E2eResetGuardasTest` fue retirado; no queda prueba de las ramas de aborto de `e2e:reset`. Hueco aceptado; el comando conserva las guardas en código | Alto (comando destructivo) | `E2eReset.php:40-51,82-96` | Reponer prueba de guardas con SQLite/centinela antes de producción |
 | C-08 | ✅ **Cubierto (Lote 4)** — caso admin 200 añadido a `IdorRecursosTest` (espejo de notificaciones) | — | `IdorRecursosTest.php` | — |
 | C-09 | ✅ **Cubierto (19-oct)** — `PublicosYSesionTest` (4 pruebas, 33 aserciones): `resumen` anónimo sin PII, `logout` revoca el token, `PUT/DELETE /similarities/{id}` con permisos por rol | — | `MotorConfigController`, `AuthController`, `SimilarityController` | — |
 | P-01 | ✅ **Alineado (19-oct, Lote 13)** — defaults de migración `projects.estado`→`borrador` y `motor_configs.umbral`→`0.30` (verificado: ningún camino real dependía de los defaults) + test conductual `DefaultsAlineadosTest` (2) | — | migraciones citadas | Focal 2/2 + suite |
@@ -57,7 +66,7 @@
 | FE-4 | ✅ **Implementado (19-oct)** — literales de alertas/soporte migrados a los mapas de `constants/routes.js` en 6 archivos (mismos strings/URLs) | — | ~6 archivos | lint + unit verdes |
 | FE-5 | ✅ **Implementado (19-oct)** — mapa local renombrado a `RUTA_DETALLE_POR_ROL` en `DetalleSimilitudBase.jsx` | — | 1 archivo | lint + unit verdes |
 | FE-6 | ✅ **Implementado (19-oct)** — fallback del 422 en `DetalleProyecto.jsx` (`CAMPOS_CON_ERROR`; mensaje genérico si no hay claves visibles, comportamiento previo intacto) | — | 1 archivo | lint + unit verdes |
-| FE-7 | 🟨 **Parcial (Lote 4)** — `arquitectura.md` (8 anclas), `guion-presentacion.md` y `arquitectura.html` corregidos; `arquitectura-figma.svg`, `diagrama-*.drawio` y `diagrama.excalidraw` **pendientes de regenerar por su autor** (solo reportados) | Doc menor | docs citados | Regeneración |
+| FE-7 | **Actualizado (6P-6T)**: `docs/diagrama.excalidraw` del working tree conserva 71/71 IDs y corrige el mojibake; SVG/drawio no se verificaron en esta fase | Doc menor | `docs/diagrama.excalidraw` | Revisar y commit docs separado |
 | FE-8 | ✅ **Precisado (Lote 4)** — `backend/README` distingue ruta directa (anula) de cascada (borra tras el 409) | — | `backend/README.md` | — |
 | O-INFO | Doble-submit same-tick: guardas robustas (React 19: eventos discretos, flush en microtarea + `disabled`); único hueco teórico = despachos sintéticos en el mismo task (no alcanzable por input real) | Informativo, sin acción | — | — |
 | O-INFO | Test 2 de fechas depende de TZ no-UTC (válido en esta máquina UTC-05:00); `retries:1` podría enmascarar flakiness futura (hoy 0) | Informativo | — | — |
@@ -94,7 +103,7 @@
 | D-10 | **Sin cambio de política**: se conserva la cascada administrativa existente; no se añadieron 409 por dependencias; se corrigió la invariante `id_programa` de la ficha | `BorradoCascada`; `ApprenticeController`; `ApprenticeFichaTest`; la política de conservar filas sigue pendiente |
 | C-05 | **Probado en base temporal desechable**: migración, rollback completo y re-migración | `RollbackAisladoTest`; no se toca `proyectwin_test` ni `proyectwin_mvp`; no hay CI versionado |
 | O5 | **Nota de vigencia y entrada local** en `frontend/CHANGELOG.md`; no se afirma release | Reconstrucción histórica completa sigue pendiente de decisión |
-| FE-7 | **Anclas y middleware corregidos** en `arquitectura.md`/`.html`; etiquetas de autenticación actualizadas en SVG y drawio (cookie httpOnly/CSRF) | Excalidraw queda fuera de este commit por el reformateo pendiente de revisión; los diagramas conservan su alcance de flujo GET |
+| FE-7 | **Actualizado (6P-6T)**: `docs/diagrama.excalidraw` del working tree conserva 71/71 IDs y corrige el mojibake; SVG/drawio no se verificaron en esta fase | Doc menor | `docs/diagrama.excalidraw` | Revisar y commit docs separado |
 
 **Pruebas de cierre:** backend completo **433/433 (2600 aserciones)**, frontend unit **90/90**, rollback real y seeder de volumen en bases temporales desechables; `php -l` y ESLint focalizado verdes. Pint reporta reglas preexistentes en archivos legacy; los archivos nuevos se formatearon sin reformateo masivo. Las pruebas E2E no se repitieron.
 

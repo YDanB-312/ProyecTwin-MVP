@@ -8,6 +8,7 @@ use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
 use App\Support\CredencialesPdf;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -60,7 +61,10 @@ class ClassGroupController extends Controller
             });
         }
 
-        return $query->orderByDesc('id')->get();
+        return $this->respuestaFicha(
+            $query->orderByDesc('id')->get(),
+            $user
+        );
     }
 
     public function store(Request $request)
@@ -132,7 +136,7 @@ class ClassGroupController extends Controller
         if ($user && $user->rol === 'instructor') {
             $instructor = $this->miFilaInstructor($request);
             if ($instructor && (int) $ficha->id_instructor === (int) $instructor->id) {
-                return $ficha;
+                return $this->respuestaFicha($ficha, $user);
             }
         }
         if ($user && $user->rol === 'aprendiz') {
@@ -140,16 +144,32 @@ class ClassGroupController extends Controller
                 ->where('id_class_group', $ficha->id)
                 ->exists();
             if ($esSuFicha) {
-                return $ficha;
+                return $this->respuestaFicha($ficha, $user);
             }
         }
 
         return response()->json(['message' => 'No tienes acceso a esta ficha.'], 403);
     }
 
+    // La ficha expone compañeros e instructor. Se conserva el contacto que usa
+    // la UI de la ficha, pero no el estado interno de las cuentas fuera de
+    // administración. `codigo` ya está limitado por el alcance de la consulta.
+    private function respuestaFicha($resultado, $usuario)
+    {
+        if (optional($usuario)->rol === 'admin') {
+            return $resultado;
+        }
+
+        $datos = $resultado->toArray();
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($datos, optional($usuario)->rol, false)
+        );
+    }
+
     // Alta/asociación atómica de un aprendiz a la ficha: si el usuario ya
-    // existe solo se asocia (sin credenciales nuevas); si no, se crea la cuenta
-    // con username + temporal, se asocia y se envían las credenciales.
+    // existe solo se asocia; si no, se crea la cuenta pendiente, se asocia y
+    // se envía el enlace de activación.
     public function agregarAprendiz(Request $request, ClassGroup $class_group)
     {
         if (!$this->puedeGestionar($request, $class_group)) {
@@ -168,7 +188,7 @@ class ClassGroupController extends Controller
             'correo' => 'required_without:usuario_id|nullable|email|unique:general_users,correo',
         ]);
 
-        // Usuario existente: solo se asocia a la ficha (sin nuevas credenciales).
+        // Usuario existente: solo se asocia a la ficha (sin nuevo enlace de activación).
         if ($request->filled('usuario_id')) {
             $usuario = GeneralUser::findOrFail($request->usuario_id);
             if ($usuario->rol !== 'aprendiz') {
@@ -196,16 +216,19 @@ class ClassGroupController extends Controller
                 'creada' => false,
             ]);
 
+            $usuarioRespuesta = optional($request->user())->rol === 'admin'
+                ? $usuario
+                : $usuario->makeHidden('estado');
+
             return response()->json([
-                'usuario' => $usuario,
+                'usuario' => $usuarioRespuesta,
                 'aprendiz' => $aprendiz,
                 'creada' => false,
-                'credenciales_enviadas' => false,
             ]);
         }
 
-        // Usuario nuevo: cuenta + credenciales + asociación atómicas (todo o
-        // nada). El correo se envía después de confirmar la transacción.
+        // Usuario nuevo: cuenta pendiente + activación + asociación atómicas
+        // (todo o nada). El correo se envía después de confirmar la transacción.
         [$alta, $aprendiz] = DB::transaction(function () use ($request, $class_group) {
             $alta = app(\App\Services\AltaUsuario::class)->crear([
                 'nombre' => $request->nombre,
@@ -219,23 +242,31 @@ class ClassGroupController extends Controller
             return [$alta, $this->asociarAprendiz($class_group, $alta['usuario'])];
         });
 
-        $enviadas = app(\App\Services\CredencialesCorreo::class)->enviar($alta['usuario'], $alta['temporal']);
+        $activacion = app(\App\Services\ActivacionCuenta::class)->enviar(
+            $alta['usuario'],
+            $alta['activacion_token']
+        );
+        $enviadas = $activacion['enviado'];
 
         \App\Support\Auditoria::registrar('agregar_aprendiz', 'class_groups', $class_group->id, [
             'usuario' => $alta['usuario']->id,
             'creada' => true,
-            'credenciales_enviadas' => $enviadas,
+            'activacion_enviada' => $enviadas,
+            'modo' => 'activacion',
         ]);
 
         return response()->json([
-            'usuario' => $alta['usuario']->fresh(),
+            'usuario' => optional($request->user())->rol === 'admin'
+                ? $alta['usuario']->fresh()
+                : $alta['usuario']->fresh()->makeHidden('estado'),
             'aprendiz' => $aprendiz,
             'creada' => true,
-            'credenciales_enviadas' => $enviadas,
-            'credenciales' => [
-                'username' => $alta['usuario']->username,
-                'password_temporal' => $alta['temporal'],
-                'enviadas' => $enviadas,
+            'activacion' => [
+                'enviada' => $enviadas,
+                'correo' => $alta['usuario']->correo,
+                'mensaje' => $enviadas
+                    ? 'Enviamos el enlace de activación al correo registrado.'
+                    : 'La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación desde el detalle del usuario.',
             ],
         ], 201);
     }
@@ -256,7 +287,6 @@ class ClassGroupController extends Controller
 
         \App\Support\Auditoria::registrar('exportar_credenciales', 'class_groups', $class_group->id, [
             'usuarios' => $usuarios->count(),
-            'temporales' => $usuarios->where('must_change_password', true)->count(),
         ]);
 
         return CredencialesPdf::generar($usuarios, [

@@ -10,19 +10,13 @@ export function norm(texto) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
-export const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
 export function formatearFecha(fecha) {
   if (!fecha) return ''
   const [d, m, a] = String(fecha).split('/')
   if (!d || !m || !a) return fecha
   return `${Number(d)} ${MESES_CORTOS[Number(m) - 1]} ${a}`
-}
-
-export function parseFecha(fecha) {
-  const [d, m, a] = String(fecha || '').split('/').map(Number)
-  if (!d || !m || !a) return null
-  return new Date(a, m - 1, d)
 }
 
 // Formatea una fecha que viene de la API.

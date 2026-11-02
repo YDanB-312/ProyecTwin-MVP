@@ -1,11 +1,9 @@
-import { apiSubirArchivo } from '../lib/api'
-
 const MAX_BYTES = 5 * 1024 * 1024
 const LADO = 256
 
 // Procesa la imagen en el navegador (recorte cuadrado + JPEG) y devuelve un
 // Blob listo para subir o convertir a data URL.
-export async function procesarFotoBlob(file) {
+async function procesarFotoBlob(file) {
   if (!file) throw new Error('Selecciona un archivo.')
   if (!file.type.startsWith('image/')) throw new Error('El archivo debe ser una imagen.')
   if (file.size > MAX_BYTES) throw new Error('La imagen no debe superar 5MB.')
@@ -31,24 +29,10 @@ export async function procesarFotoBlob(file) {
   })
 }
 
-// Formato histórico (data URL). Se conserva como respaldo y compatibilidad.
-export async function procesarFoto(file) {
-  return blobADataUrl(await procesarFotoBlob(file))
-}
-
-// Resuelve la foto de perfil: sube a Cloudinary (servidor) y, si no está
-// configurado o falla, mantiene el guardado local (data URL) de siempre.
+// La foto se guarda como data URL en el perfil. Es el contrato que valida el
+// backend y evita depender de un servicio externo de almacenamiento.
 export async function resolverFotoPerfil(file) {
-  const blob = await procesarFotoBlob(file)
-
-  try {
-    const datos = await apiSubirArchivo('/media/foto', blob, { nombre: 'perfil.jpg', campo: 'foto' })
-    if (datos?.foto_url && /^https:\/\//i.test(datos.foto_url)) return datos.foto_url
-  } catch {
-    /* Cloudinary no configurado o sin red: se guarda localmente */
-  }
-
-  return blobADataUrl(blob)
+  return blobADataUrl(await procesarFotoBlob(file))
 }
 
 function blobADataUrl(blob) {

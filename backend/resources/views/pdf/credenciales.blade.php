@@ -29,7 +29,7 @@
             <tr>
                 <th>Nombre completo</th>
                 <th>Usuario</th>
-                <th>Contraseña temporal</th>
+                <th>Estado de acceso</th>
                 <th>Ficha</th>
                 <th>Programa</th>
             </tr>
@@ -39,7 +39,7 @@
                 <tr>
                     <td>{{ $fila['nombre'] }}</td>
                     <td class="cred">{{ $fila['username'] }}</td>
-                    <td class="cred">{{ $fila['password'] }}</td>
+                    <td>{{ $fila['estado'] }}</td>
                     <td>{{ $fila['ficha'] }}</td>
                     <td>{{ $fila['programa'] }}</td>
                 </tr>
@@ -48,9 +48,9 @@
     </table>
 
     <p class="aviso">
-        La contraseña temporal debe cambiarse en el primer inicio de sesión. Una vez cambiada
-        no puede recuperarse; si el usuario la olvida, use “¿Olvidaste tu contraseña?” con su
-        correo personal o restablézcala desde el panel de administración.
+        Las cuentas nuevas se activan con el enlace enviado a su correo personal. Si el
+        usuario olvida su contraseña, use “¿Olvidaste tu contraseña?” con su correo personal o
+        restablézcala desde el panel de administración.
     </p>
 </body>
 </html>

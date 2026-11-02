@@ -42,6 +42,7 @@ export default function MiFicha() {
   const [confirmarSalida, setConfirmarSalida] = useState(false)
   const [saliendo, setSaliendo] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [avisoError, setAvisoError] = useState('')
   const [busquedaComp, setBusquedaComp] = useState('')
 
   const miAprendiz = aprendicesApi.find((a) => Number(a.id_usuario) === Number(user.id)) || null
@@ -72,6 +73,7 @@ export default function MiFicha() {
     setCodigoError('')
     setPrevia(null)
     setAviso('')
+    setAvisoError('')
     if (!codigo.trim()) {
       setCodigoError('Ingresa el código de la ficha.')
       return
@@ -88,6 +90,7 @@ export default function MiFicha() {
 
   async function unirme() {
     setCodigoError('')
+    setAvisoError('')
     setUniendose(true)
     try {
       const nombreFicha = previa?.nombre || 'la ficha'
@@ -107,12 +110,13 @@ export default function MiFicha() {
     setConfirmarSalida(false)
     setSaliendo(true)
     setAviso('')
+    setAvisoError('')
     try {
       await aprendices.salirDeFicha()
       setAviso('Saliste de tu ficha. Puedes unirte a otra con el código que te comparta un instructor.')
       await recargar()
     } catch (err) {
-      setAviso(err?.data?.message || 'No fue posible salir de la ficha.')
+      setAvisoError(err?.data?.message || 'No fue posible salir de la ficha.')
     } finally {
       setSaliendo(false)
     }
@@ -146,6 +150,7 @@ export default function MiFicha() {
           />
 
           {aviso && <Alert variant="success">{aviso}</Alert>}
+          {avisoError && <Alert variant="danger">{avisoError}</Alert>}
 
           <DataPanel title="Unirme a una ficha" icon={<Key />}>
             <form onSubmit={buscar} className={sd.joinForm}>
@@ -248,6 +253,7 @@ export default function MiFicha() {
         />
 
         {aviso && <Alert variant="success">{aviso}</Alert>}
+        {avisoError && <Alert variant="danger">{avisoError}</Alert>}
 
         <section className={sd.infoCard}>
           <header className={sd.infoHeader}>

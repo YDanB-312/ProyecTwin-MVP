@@ -1,18 +1,22 @@
 # Release Android firmado — ProyecTwin MVP
 
-> **Estado verificado el 19-oct-2026.** El APK que se sirve en
-> `/apk/ProyecTWin.apk` es un **build de pruebas (debug)**: `applicationId`
-> `com.example.proyectwin`, `versionCode` 3, `versionName` 1.2.0, marcado
-> `application-debuggable` y firmado con la clave debug (`CN=Android Debug`,
-> SHA-256 `72:05:D0:E6:E6:13:58:74:A4:20:73:B0:C9:C8:EB:0D:42:D1:34:DA:63:E5:68:FA:74:F1:74:5E:88:F7:80:93`).
-> **No es una distribución oficial.** En Git HEAD el binario versionado es
-> anterior (1.1.0 / versionCode 2), también debug. El 1.2.0/3 que se sirve está
-> en el working tree y aún no está confirmado en HEAD.
+> **Estado actual del APK (Fase 6C).** El artefacto `backend/public/apk/ProyecTWin.apk`
+> es **1.3.0 / versionCode 4**, `applicationId com.example.proyectwin`, sin
+> `application-debuggable`, firmas v2/v3 y certificado `CN=Oscar` (RSA 2048).
+> SHA-256 del APK:
+> `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E`.
+> SHA-256 del certificado:
+> `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D`.
 >
-> Este documento es el plan reproducible para sustituirlo por un APK **release
-> firmado**. No se ha generado ninguna clave, no se ha firmado ningún APK y no
-> se ha modificado el artefacto servido. Todos los valores entre `<...>` son
-> marcadores: **ningún secreto debe escribirse en este archivo ni en el repo**.
+> **No se ha autorizado su publicación desde la imagen web.** `.dockerignore` y
+> `.railwayignore` excluyen el APK y Nginx responde 404 en
+> `/apk/ProyecTWin.apk`. No generes una clave nueva ni re-firmes este APK:
+> cambiaría la identidad de actualización. La autorización escrita de Oscar y la
+> custodia de la clave siguen pendientes.
+>
+> Este documento es el procedimiento para validar y publicar futuras versiones.
+> Todos los valores entre `<...>` son marcadores: **ningún secreto debe
+> escribirse en este archivo ni en el repo**.
 
 ## 0. Decisiones que debe tomar el owner
 
@@ -23,15 +27,17 @@ propuestas son recomendaciones técnicas, no decisiones ya tomadas.
 |---|---|---|
 | Custodio de la clave | El owner del proyecto (con un suplente designado) | Nadie más genera, copia ni usa la clave; la custodia se documenta |
 | Alias de la clave | `proyecttwin-release` | Debe coincidir con `keyAlias` y con el usado al firmar |
-| `applicationId` | Mantener `com.example.proyectwin` en la primera release firmada | El release no se instala sobre el debug (firma distinta); hay que desinstalar. Si se cambia, es una app nueva |
+| `applicationId` | Mantener `com.example.proyectwin` en la primera release firmada | El release no se instala sobre instalaciones debug 1.2.0/3 (firma distinta); hay que desinstalar. Si se cambia, es una app nueva |
 | Minify / R8 | `isMinifyEnabled = false` en la primera release firmada | Aísla el cambio de firma; R8 queda como optimización posterior con pruebas completas |
-| Versión de la primera release | `versionName = "1.3.0"`, `versionCode = 4` | Debe ser mayor que 1.2.0/3 para que el aviso in-app tenga sentido |
-| Canal de distribución | APK directo servido por el backend en Railway | No hay Play Store ni App Bundle en este plan |
-| APK en Git | Commitear solo el APK liberado (nunca builds intermedios) | El repo crece ~20 MB por release; valorar artefactos externos más adelante |
-| Aviso obligatorio | `ANDROID_APP_ENFORCE_MINIMUM=false` en la release de transición | Los usuarios con debug deben desinstalar antes de instalar el release |
+| Versión de la release actual | `versionName = "1.3.0"`, `versionCode = 4` | El APK actual ya tiene esa versión; si se publica, la siguiente debería ser 1.4.0/5 |
+| Autorización de publicación | Oscar debe autorizar por escrito la publicación de 1.3.0/4 y confirmar la custodia de `CN=Oscar` | Sin esa confirmación, el APK permanece fuera de la imagen y la ruta responde 404 |
+| Canal de distribución | APK directo servido por Railway cuando Oscar autorice; alternativa externa si se decide no incluirlo | No hay Play Store ni App Bundle en este plan |
+| APK en Git | Commitear solo el APK liberado y autorizado (nunca builds intermedios) | El repo crece ~15 MB por release; valorar artefactos externos |
+| Aviso obligatorio | `ANDROID_APP_ENFORCE_MINIMUM=false` en la release de transición | Los usuarios con debug 1.2.0/3 deben desinstalar antes de instalar el release |
 
 **Criterio de aceptación de la release:** APK firmado con la clave del owner (no
-debug), sin `application-debuggable`, con firma v2/v3, `versionCode` > 3, URL de
+debug), sin `application-debuggable`, con firma v2/v3, `versionCode` > 4
+para la próxima release, URL de
 API HTTPS, SHA-256 registrado y endpoint `/v1/app-version/android` coherente con
 el APK publicado.
 
@@ -70,7 +76,17 @@ La huella SHA-256 del certificado (no la del APK) es pública y se registra en e
 expediente de release. Se obtiene con `keytool -list -v` o con
 `apksigner verify --print-certs`.
 
+> **El APK 1.3.0/4 actual no usa estos valores propuestos:** está firmado con
+> `CN=Oscar`, RSA 2048, no con `CN=ProyecTwin Release`/RSA 4096. Oscar debe
+> confirmar si esa es la identidad definitiva. No se debe generar una clave
+> nueva para la misma app sin una decisión explícita.
+
 ### 1.3 Generación (solo el owner, fuera del repo)
+
+> **No ejecutes esta sección para 1.3.0/4.** Ese APK ya está firmado con
+> `CN=Oscar`; generar otra clave rompería las actualizaciones de las
+> instalaciones existentes. La generación solo aplica si Oscar decide una
+> identidad nueva y asume el cambio de `applicationId`/transición.
 
 El comando siguiente se documenta para que el owner lo ejecute en su equipo. No
 lo ejecutes en un agente ni en CI. `keytool` pide las contraseñas de forma
@@ -116,8 +132,9 @@ guardan ahí.
 ### 1.5 Prohibiciones explícitas
 
 - **No usar la clave debug** (`%USERPROFILE%\.android\debug.keystore`, alias
-  `androiddebugkey`, contraseña pública `android`). El APK actual está firmado
-  con esa clave: `CN=Android Debug`.
+  `androiddebugkey`, contraseña pública `android`). El APK 1.3.0/4 **no** usa esa
+  clave: está firmado con `CN=Oscar` (RSA 2048). `CN=Android Debug` solo aplica
+  a builds debug anteriores (1.2.0/3 y previos).
 - No reutilizar la clave de otro proyecto, de otro equipo o de una release
   anterior que no sea de ProyecTwin.
 - No commitear el keystore, `keystore.properties`, contraseñas, `mapping.txt` de
@@ -131,6 +148,12 @@ guardan ahí.
 
 Los cambios de esta sección deben aplicarse en un lote de código autorizado. Este
 documento no modifica `Movil/app/build.gradle.kts` ni `.gitignore`.
+
+> **Estado actual:** `Movil/app/build.gradle.kts` no tiene `signingConfigs`
+> versionado y el APK 1.3.0/4 se firmó fuera de Gradle. `assembleRelease`
+> produce actualmente `app-release-unsigned.apk`; no lo uses para re-firmar ni
+> para reemplazar el APK ya firmado. Esta configuración es para una release
+> futura y debe ser reproducida/validada por Oscar.
 
 ### 2.1 `.gitignore`
 
@@ -346,8 +369,9 @@ Desde `MVP\Movil`:
 .\gradlew.bat clean :app:assembleRelease
 ```
 
-Salida esperada: `app\build\outputs\apk\release\app-release.apk` (firmado). Si el
-archivo es `app-release-unsigned.apk`, la firma no se aplicó: **no continuar**.
+Salida esperada: `app\build\outputs\apk\release\app-release.apk` (firmado), solo
+si ya existe una `signingConfig` autorizada. En el estado actual el build produce
+`app-release-unsigned.apk`: **no continuar** ni re-firmar el 1.3.0/4.
 
 ### 4.3 Verificar versión y ausencia de `debuggable` con `aapt`
 
@@ -367,7 +391,7 @@ package: name='com.example.proyectwin' versionCode='4' versionName='1.3.0' ...
 
 Comprobaciones adicionales:
 
-- `versionCode` debe ser **mayor que 3** (el del APK actual).
+- `versionCode` debe ser **mayor que 4** (el del APK actual 1.3.0/4).
 - `versionName` debe coincidir exactamente con `ANDROID_APP_VERSION`.
 - `sdkVersion:'26'` y `targetSdkVersion:'36'` deben ser los esperados.
 - Si el manifiesto declara `android:debuggable="true"`, `aapt` lo muestra como
@@ -430,13 +454,25 @@ servido en producción. No confundir con la huella del certificado:
 
 ## 5. Publicación en Railway
 
-El APK se sirve como archivo estático desde `backend/public/apk/ProyecTWin.apk`
-(nginx lo entrega por `location /`; `.dockerignore` no lo excluye). El
-procedimiento de despliegue general está en
+**Estado actual:** el APK **no se sirve** desde la imagen web. `.dockerignore`
+y `.railwayignore` excluyen `backend/public/apk` y `*.apk`; Nginx responde 404
+para `/apk` y `/apk/`. La ruta dedicada para el archivo autorizado ya existe,
+pero `try_files` devuelve 404 mientras el archivo no esté incluido.
+
+Para publicar, Oscar debe entregar autorización escrita, el APK release firmado,
+su SHA-256, la confirmación de que `CN=Oscar` es la clave oficial y la custodia
+de esa clave. Sin esos elementos, no se modifica la imagen ni
+`ANDROID_APP_DOWNLOAD_URL`.
+
+El procedimiento de despliegue general está en
 [`deploy-railway.md`](deploy-railway.md); esta sección solo añade el artefacto
 Android.
 
 ### 5.1 Subir versión
+
+> Si se autoriza publicar el **1.3.0/4 ya firmado**, omite esta sección y usa
+> `ANDROID_APP_VERSION=1.3.0` en 5.3. Para una compilación nueva (por ejemplo,
+> 1.4.0/5), sigue el ejemplo y sube `versionCode > 4`.
 
 Antes de compilar, en `Movil/app/build.gradle.kts`:
 
@@ -445,8 +481,8 @@ defaultConfig {
     applicationId = "com.example.proyectwin" // mantener salvo decisión del owner
     minSdk = 26
     targetSdk = 36
-    versionCode = 4        // > 3 (el actual); incrementar en cada publicación
-    versionName = "1.3.0"  // debe coincidir con ANDROID_APP_VERSION
+    versionCode = 5        // > 4 (el actual); incrementar en cada publicación
+    versionName = "1.4.0"  // debe coincidir con ANDROID_APP_VERSION
 }
 ```
 
@@ -463,46 +499,56 @@ Reglas:
 - Si se cambia `applicationId`, actualizar este documento y las instrucciones de
   transición; no es una actualización de la app existente.
 
-### 5.2 Reemplazar el APK servido
+### 5.2 Incluir el APK autorizado
 
-Desde `MVP` (archiva antes el APK anterior fuera del repo):
+Solo después de la autorización escrita de Oscar. Archiva el APK anterior fuera
+del repositorio y coloca el release validado:
 
 ```powershell
 $releases = "$env:USERPROFILE\proyecttwin-releases"
 New-Item -ItemType Directory -Force $releases | Out-Null
 
-Copy-Item backend\public\apk\ProyecTWin.apk `
-  "$releases\proyecttwin-1.2.0-debug.apk" -Force
-
 Copy-Item Movil\app\build\outputs\apk\release\app-release.apk `
-  "$releases\proyecttwin-1.3.0.apk" -Force
+  "$releases\proyecttwin-1.4.0.apk" -Force
 
 Copy-Item Movil\app\build\outputs\apk\release\app-release.apk `
   backend\public\apk\ProyecTWin.apk -Force
 
 Get-FileHash backend\public\apk\ProyecTWin.apk -Algorithm SHA256
-Get-FileHash "$releases\proyecttwin-1.3.0.apk" -Algorithm SHA256
+Get-FileHash "$releases\proyecttwin-1.4.0.apk" -Algorithm SHA256
 ```
 
-Los dos hashes deben coincidir. No guardes el backup dentro de
-`backend/public/apk/`: se serviría públicamente y confundiría la descarga.
+Los dos hashes deben coincidir. No guardes backups dentro de
+`backend/public/apk/`: se servirían públicamente.
 
-> El APK está versionado en Git (`backend/public/apk/ProyecTWin.apk`). Al
-> reemplazarlo, `git status` mostrará un binario modificado. Política propuesta:
-> commitear solo el APK liberado, nunca builds intermedios. Si el equipo decide
-> dejar de versionarlo, el pipeline debe colocarlo en esa ruta antes de
-> `railway up`; de lo contrario la imagen se construye sin APK.
+La imagen actual excluye el APK. Para incluir **solo** `ProyecTWin.apk`, añade
+al final de `.dockerignore` y `.railwayignore` (el orden importa):
+
+```text
+!backend/public/apk/
+!backend/public/apk/ProyecTWin.apk
+```
+
+Después del despliegue, verifica antes de anunciar la actualización:
+
+- `GET /apk/ProyecTWin.apk` → `200`.
+- `Content-Type: application/vnd.android.package-archive`.
+- `Content-Disposition: attachment; filename="ProyecTWin.apk"`.
+- SHA-256 remoto idéntico al local.
+- `/apk/otro.apk` y el resto de `/apk/` → `404`.
+
+Si no hay autorización, no añadas estas excepciones y no publiques el APK.
 
 ### 5.3 Actualizar variables y redesplegar
 
-Dashboard → servicio → Variables, o CLI:
+Solo cuando el archivo ya responda 200. Dashboard → servicio → Variables, o CLI:
 
 ```powershell
-railway variables --set 'ANDROID_APP_VERSION=1.3.0' `
+railway variables --set 'ANDROID_APP_VERSION=1.4.0' `
   --set 'ANDROID_APP_MIN_VERSION=1.0.0' `
   --set 'ANDROID_APP_ENFORCE_MINIMUM=false' `
   --set 'ANDROID_APP_DOWNLOAD_URL=https://<dominio>/apk/ProyecTWin.apk' `
-  --set 'ANDROID_APP_RELEASE_NOTES=Versión firmada. Si tienes la app de pruebas, desinstálala antes de instalar.' `
+  --set 'ANDROID_APP_RELEASE_NOTES=Versión firmada.' `
   --skip-deploys
 
 railway up
@@ -511,10 +557,13 @@ railway up
 Notas:
 
 - `ANDROID_APP_VERSION` debe ser exactamente el `versionName` del APK
-  (`1.3.0`), no el `versionCode`.
+  (`1.4.0`), no el `versionCode`.
 - `ANDROID_APP_DOWNLOAD_URL` debe ser HTTPS y apuntar al archivo que se acaba de
-  reemplazar. Si el dominio cambia, actualiza también `APP_URL`,
+  verificar. Si el dominio cambia, actualiza también `APP_URL`,
   `FRONTEND_URL` y `SANCTUM_STATEFUL_DOMAINS` según `deploy-railway.md`.
+- El botón "Descargar APK de ProyecTWIN" del Home lee
+  `/v1/app-version/android`; si `download_url` está vacío, no se muestra. No
+  definas la variable antes de que el archivo exista.
 - Para la release de transición se recomienda `ENFORCE_MINIMUM=false` y
   `MIN_VERSION=1.0.0`; si se activa la obligatoriedad, los usuarios con debug
   verán el aviso, pero la instalación fallará hasta que desinstalen.
@@ -542,7 +591,7 @@ Debe devolver, como mínimo:
 
 ```json
 {
-  "latest_version": "1.3.0",
+  "latest_version": "1.4.0",
   "minimum_supported_version": "1.0.0",
   "enforce_minimum": false,
   "download_url": "https://<dominio>/apk/ProyecTWin.apk",
@@ -569,16 +618,17 @@ Debe coincidir con el SHA-256 del APK local. Comprueba también el tamaño:
 4. Descarga e instalación reales desde la URL pública en un dispositivo limpio.
    Si el APK remoto es distinto, el despliegue no incluyó el archivo o hay caché:
    revisa `railway logs`, vuelve a desplegar y, si hace falta, añade un
-   cache-buster a `ANDROID_APP_DOWNLOAD_URL` (`...?v=1.3.0`).
+   cache-buster a `ANDROID_APP_DOWNLOAD_URL` (`...?v=1.4.0`).
 
 ### 5.5 Aviso in-app y prueba de actualización
 
-- El aviso se muestra como máximo una vez cada 6 h por instalación; "Más tarde"
-  silencia esa versión 24 h.
-- Para probar una actualización real, instala un **release firmado anterior**
-  (no un debug; p. ej., un 1.2.0 firmado con la misma clave), publica el nuevo y
-  abre la app con sesión iniciada.
-- Si el dispositivo tiene el debug 1.2.0/3, el aviso aparecerá, pero el instalador
+- La app consulta la versión **una vez por arranque** (sin caché entre
+  procesos); "Más tarde" silencia esa misma versión durante 24 h. No hay un
+  límite de 6 h: si se publica una versión nueva, se detecta al reabrir la app.
+- Para probar una actualización real, instala el APK firmado actual 1.3.0/4 y
+  publica el nuevo 1.4.0/5; abre la app con sesión iniciada.
+- Si el dispositivo tiene una instalación antigua debug 1.2.0/3, el aviso
+  aparecerá, pero el instalador
   rechazará el APK firmado por el owner: es el comportamiento esperado
   (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). Ver sección 6.
 - No uses `ENFORCE_MINIMUM=true` en la release de transición sin avisar antes de
@@ -588,8 +638,9 @@ Debe coincidir con el SHA-256 del APK local. Comprueba también el tamaño:
 ## 6. Actualización sobre instalaciones debug
 
 Android solo permite actualizar una app si el APK nuevo está firmado con la
-**misma clave** que el instalado. El APK actual está firmado con la clave debug;
-el release firmado con la clave del owner tiene otra firma. Por tanto:
+**misma clave** que el instalado. Las instalaciones **debug 1.2.0/3** usan la
+clave debug; el release **1.3.0/4 y posteriores** usa la clave del owner
+(`CN=Oscar`), que es distinta. Por tanto:
 
 ```text
 INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package com.example.proyectwin signatures
@@ -694,9 +745,10 @@ en macOS: `base64 -i release.jks | tr -d '\n'`. No uses `cat` en un log.
 
 ### 7.2 Esquema de workflow (GitHub Actions)
 
-Al 19-oct-2026 el repo no incluye CI; este es un esquema de referencia para
-adoptarlo. Ajusta las versiones del SDK a las de `ejecutar-android.md` (Platform
-36.1, Build-Tools 36.1.0).
+El repositorio ya incluye CI web (`.github/workflows/ci.yml`); este esquema
+sigue siendo la referencia para una futura CI de release Android. Ajusta las
+versiones del SDK a las de `ejecutar-android.md` (Platform 36.1,
+Build-Tools 36.1.0).
 
 ```yaml
 name: android-release
@@ -838,7 +890,7 @@ Reglas de seguridad del CI:
       sigue funcionando sin clave.
 - [ ] `proyectwin.apiBaseUrl.release=https://<dominio>/v1/`; no se usa el fallback
       HTTP.
-- [ ] `versionCode` > 3 y `versionName` definidos; `ANDROID_APP_VERSION` coincide.
+- [ ] `versionCode` > 4 y `versionName` definidos; `ANDROID_APP_VERSION` coincide.
 - [ ] `aapt dump badging`: versión correcta y sin `application-debuggable`.
 - [ ] `apksigner verify --verbose --print-certs`: v2/v3 y certificado esperado.
 - [ ] SHA-256 del APK calculado y registrado.
@@ -860,7 +912,7 @@ Completar solo con releases reales; no inventar hashes ni fechas.
 | Fecha | versionName | versionCode | applicationId | SHA-256 certificado | SHA-256 APK | Responsable | Estado |
 |---|---:|---:|---|---|---|---|---|
 | 2026-10-19 | 1.2.0 | 3 | `com.example.proyectwin` | `72:05:D0:E6:E6:13:58:74:A4:20:73:B0:C9:C8:EB:0D:42:D1:34:DA:63:E5:68:FA:74:F1:74:5E:88:F7:80:93` | — | — | Debug, no oficial |
-| `<pendiente>` | `1.3.0` | 4 | `<decisión>` | `<huella release>` | `<hash APK>` | `<owner>` | Release firmada |
+| 2026-10-22 | 1.3.0 | 4 | `com.example.proyectwin` | `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D` | `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E` | Oscar | Firmado; publicación desde Railway pendiente de autorización |
 
 ## Referencias
 
@@ -870,4 +922,5 @@ Completar solo con releases reales; no inventar hashes ni fechas.
   debug en desarrollo.
 - `Movil/app/build.gradle.kts` — `applicationId`, versiones, URL de API y firma.
 - `backend/config/app_version.php` — contrato de `/v1/app-version/android`.
-- `backend/public/apk/ProyecTWin.apk` — APK servido públicamente (hoy debug).
+- `backend/public/apk/ProyecTWin.apk` — APK local 1.3.0/4; la imagen web actual
+  no lo incluye y `/apk/ProyecTWin.apk` responde 404 hasta autorización.

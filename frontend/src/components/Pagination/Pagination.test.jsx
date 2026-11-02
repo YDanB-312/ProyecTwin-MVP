@@ -1,29 +1,45 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import Pagination from './Pagination'
 
 describe('Pagination', () => {
-  it('no renderiza nada con cero elementos', () => {
-    const { container } = render(<Pagination totalItems={0} />)
+  it('corrige página y rango cuando el filtro reduce la lista', () => {
+    render(
+      <Pagination
+        totalItems={20}
+        itemsPerPage={10}
+        filteredCount={8}
+        paginaActual={2}
+        setPaginaActual={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/1–8/)).toBeInTheDocument()
+    expect(screen.getByText('8', { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('button', { name: '2' })).not.toBeInTheDocument()
+  })
+
+  it('navega a la página siguiente y deshabilita en el extremo', () => {
+    const setPagina = vi.fn()
+    const { rerender } = render(
+      <Pagination totalItems={30} itemsPerPage={10} paginaActual={1} setPaginaActual={setPagina} />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }))
+    expect(setPagina).toHaveBeenCalledWith(2)
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled()
+
+    rerender(
+      <Pagination totalItems={30} itemsPerPage={10} paginaActual={3} setPaginaActual={setPagina} />
+    )
+    expect(screen.getByRole('button', { name: 'Página siguiente' })).toBeDisabled()
+  })
+
+  it('no renderiza nada sin elementos', () => {
+    const { container } = render(
+      <Pagination totalItems={0} paginaActual={1} setPaginaActual={vi.fn()} />
+    )
     expect(container).toBeEmptyDOMElement()
-  })
-
-  it('muestra la información de rango y total', () => {
-    render(<Pagination totalItems={25} itemsPerPage={10} paginaActual={1} itemName="proyectos" />)
-    expect(screen.getByText(/Mostrando/)).toBeInTheDocument()
-  })
-
-  it('permite navegar con el botón siguiente', async () => {
-    const setPaginaActual = vi.fn()
-    const user = userEvent.setup()
-    render(<Pagination totalItems={40} itemsPerPage={10} paginaActual={1} setPaginaActual={setPaginaActual} />)
-    await user.click(screen.getByRole('button', { name: /siguiente/i }))
-    expect(setPaginaActual).toHaveBeenCalledWith(2)
-  })
-
-  it('deshabilita el botón anterior en la primera página', () => {
-    render(<Pagination totalItems={40} paginaActual={1} />)
-    expect(screen.getByRole('button', { name: /anterior/i })).toBeDisabled()
   })
 })

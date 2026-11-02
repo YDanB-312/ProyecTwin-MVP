@@ -6,6 +6,7 @@ use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
 use App\Models\Instructor;
 use App\Models\Project;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -27,28 +28,39 @@ class ApprenticeProjectController extends Controller
             $ids = Project::where('id_instructor_asignado', $instructorId)
                 ->orWhereHas('classGroup', fn ($q) => $q->where('id_instructor', $instructorId))
                 ->pluck('id');
-            return ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+            $items = ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+            return response()->json(
+                PerfilEnRespuesta::redactar($items->toArray(), $user->rol, false)
+            );
         }
 
         $ids = Project::where('id_creador', optional($user)->id)
             ->orWhereHas('apprentices', fn ($q) => $q->where('id_usuario', optional($user)->id))
             ->pluck('id');
-        return ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+        $items = ApprenticeProject::included()->whereIn('id_proyecto', $ids)->get();
+        return response()->json(
+            PerfilEnRespuesta::redactar($items->toArray(), optional($user)->rol, false)
+        );
     }
 
     public function store(Request $request)
     {
+        // Primero se resuelve el proyecto y el permiso; el integrante se valida
+        // después para no exponer IDs de aprendices a quien no gestiona el equipo.
         $request->validate([
-            'id_aprendiz' => 'required|exists:apprentices,id',
             'id_proyecto' => 'required|exists:projects,id',
         ]);
 
         $proyecto = Project::findOrFail($request->id_proyecto);
 
-        if (!$this->puedeGestionarEquipo($request, (int) $proyecto->id)
+        if (!$this->puedeGestionarEquipo($request, $proyecto)
             || !$proyecto->puedeEscribir($request->user())) {
             return response()->json(['message' => 'No puedes gestionar el equipo de esta propuesta.'], 403);
         }
+
+        $request->validate([
+            'id_aprendiz' => 'required|exists:apprentices,id',
+        ]);
 
         // El equipo se gestiona mientras la propuesta es editable (borrador,
         // en revisión o rechazada); aprobada queda bloqueada.
@@ -82,7 +94,14 @@ class ApprenticeProjectController extends Controller
         if (!Project::where('id', $item->id_proyecto)->paraDetalle($request->user())->exists()) {
             return response()->json(['message' => 'No tienes acceso a este equipo.'], 403);
         }
-        return $item;
+
+        if (optional($request->user())->rol === 'admin') {
+            return $item;
+        }
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($item->toArray(), $request->user()->rol, false)
+        );
     }
 
     // Retiro idempotente: borrar dos veces no falla (evita el 404 crudo del
@@ -95,8 +114,8 @@ class ApprenticeProjectController extends Controller
         }
 
         $proyecto = Project::find($item->id_proyecto);
-        if (!$this->puedeGestionarEquipo($request, (int) $item->id_proyecto)
-            || !$proyecto
+        if (!$proyecto
+            || !$this->puedeGestionarEquipo($request, $proyecto)
             || !$proyecto->puedeEscribir($request->user())) {
             return response()->json(['message' => 'No puedes gestionar el equipo de esta propuesta.'], 403);
         }
@@ -120,14 +139,11 @@ class ApprenticeProjectController extends Controller
     }
 
     // Admin cualquiera; el creador aprendiz el suyo; el instructor su ficha.
-    private function puedeGestionarEquipo(Request $request, int $idProyecto): bool
+    private function puedeGestionarEquipo(Request $request, Project $project): bool
     {
         $user = $request->user();
         if (!$user) return false;
         if ($user->rol === 'admin') return true;
-
-        $project = Project::find($idProyecto);
-        if (!$project) return false;
 
         if ($user->rol === 'aprendiz') {
             return (int) $project->id_creador === (int) $user->id;

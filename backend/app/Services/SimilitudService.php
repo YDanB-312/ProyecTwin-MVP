@@ -126,7 +126,7 @@ class SimilitudService
 
     // ---------------------------------------------------------------- Normalización
 
-    // minúsculas + sin tildes; deja solo [a-z0-9ñ].
+    // Minúsculas y sin tildes; el filtrado de tokens ocurre en tokenizar().
     public static function normalizar(string $texto): string
     {
         $t = mb_strtolower($texto);

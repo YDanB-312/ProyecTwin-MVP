@@ -17,7 +17,7 @@ vi.mock('../../layouts/DashboardLayout/DashboardLayout', () => ({
 
 function auth(overrides = {}) {
   return {
-    user: { rol: 'admin', mustChangePassword: false },
+    user: { rol: 'admin' },
     cargando: false,
     isAuthenticated: true,
     ...overrides,
@@ -31,7 +31,6 @@ function renderRuta(authState, initial = '/admin/usuarios', allowedRoles = ['adm
     <MemoryRouter initialEntries={[initial]}>
       <Routes>
         <Route path="/login" element={<div>Pantalla login</div>} />
-        <Route path="/cambio-obligatorio" element={<div>Cambio obligatorio</div>} />
         <Route
           path="/admin/usuarios"
           element={(
@@ -59,7 +58,7 @@ describe('ProtectedRoute', () => {
   })
 
   it('muestra acceso denegado para una sesión autenticada con rol incorrecto', () => {
-    renderRuta(auth({ user: { rol: 'instructor', mustChangePassword: false } }))
+    renderRuta(auth({ user: { rol: 'instructor' } }))
 
     expect(screen.getByText('403 · Acceso denegado')).toBeInTheDocument()
     expect(screen.queryByText('Pantalla login')).not.toBeInTheDocument()
@@ -73,16 +72,9 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('403 · Acceso denegado')).not.toBeInTheDocument()
   })
 
-  it('mantiene la redirección obligatoria de contraseña antes del control de rol', () => {
-    renderRuta(auth({ user: { rol: 'instructor', mustChangePassword: true } }))
-
-    expect(screen.getByText('Cambio obligatorio')).toBeInTheDocument()
-    expect(screen.queryByText('403 · Acceso denegado')).not.toBeInTheDocument()
-  })
-
   it('ofrece una salida segura al panel del rol sin crear un bucle', async () => {
     const user = userEvent.setup()
-    renderRuta(auth({ user: { rol: 'instructor', mustChangePassword: false } }))
+    renderRuta(auth({ user: { rol: 'instructor' } }))
 
     await user.click(screen.getByRole('button', { name: /Volver a mi panel/i }))
 
@@ -90,15 +82,4 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('403 · Acceso denegado')).not.toBeInTheDocument()
   })
 
-  it('mantiene la ruta pública de login fuera de ProtectedRoute', () => {
-    render(
-      <MemoryRouter initialEntries={['/login']}>
-        <Routes>
-          <Route path="/login" element={<div>Pantalla login</div>} />
-        </Routes>
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByText('Pantalla login')).toBeInTheDocument()
-  })
 })

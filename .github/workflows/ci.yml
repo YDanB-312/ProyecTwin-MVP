@@ -106,7 +106,7 @@ jobs:
         run: npm run lint
 
       - name: Pruebas unitarias
-        run: npm run test:unit
+        run: npm test
 
       - name: Build de producción
         run: npm run build

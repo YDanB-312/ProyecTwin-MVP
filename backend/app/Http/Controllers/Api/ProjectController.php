@@ -14,6 +14,7 @@ use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Services\NotificacionesService;
 use App\Similarity\Recomputador;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -93,7 +94,9 @@ class ProjectController extends Controller
                     return response()->json(['message' => 'La propuesta debe pertenecer a un aprendiz.'], 422);
                 }
             } else {
-                $datos['id_creador'] = $usuario->id;
+                return response()->json([
+                    'message' => 'Indica el aprendiz autor de la propuesta.',
+                ], 422);
             }
             // Toda propuesta nace como borrador (también las del admin): el
             // envío explícito es el que ejecuta el motor de similitud (D-3).
@@ -241,21 +244,6 @@ class ProjectController extends Controller
 
     public function update(Request $request, Project $project)
     {
-        $request->validate([
-            'titulo' => 'nullable|max:255',
-            'resumen' => 'nullable',
-            'palabras_clave' => 'nullable|max:255',
-            'area_aplicacion' => 'nullable|max:255',
-            'objetivo_general' => 'nullable',
-            'objetivos_especificos' => 'nullable|array',
-            'estado' => 'nullable|in:borrador,pendiente,aprobado,rechazado',
-            // Observación del instructor al rechazar (opcional).
-            'observacion' => 'nullable|string|max:1000',
-            'id_creador' => 'nullable|exists:general_users,id',
-            'id_instructor_asignado' => 'nullable|exists:instructors,id',
-            'id_class_group' => 'nullable|exists:class_groups,id',
-        ]);
-
         $usuario = $request->user();
         $rol = optional($usuario)->rol;
 
@@ -299,6 +287,23 @@ class ProjectController extends Controller
             return response()->json(['message' => 'Sin permiso para editar propuestas.'], 403);
         }
 
+        // La autorización se resuelve antes de validar el payload: un usuario
+        // sin acceso no debe recibir errores de validación de recursos ajenos.
+        $request->validate([
+            'titulo' => 'nullable|max:255',
+            'resumen' => 'nullable',
+            'palabras_clave' => 'nullable|max:255',
+            'area_aplicacion' => 'nullable|max:255',
+            'objetivo_general' => 'nullable',
+            'objetivos_especificos' => 'nullable|array',
+            'estado' => 'sometimes|required|in:borrador,pendiente,aprobado,rechazado',
+            // Observación del instructor al rechazar (opcional).
+            'observacion' => 'nullable|string|max:1000',
+            'id_creador' => 'nullable|exists:general_users,id',
+            'id_instructor_asignado' => 'nullable|exists:instructors,id',
+            'id_class_group' => 'nullable|exists:class_groups,id',
+        ]);
+
         // Un borrador no salta el flujo (D-3): el envío explícito es el que
         // ejecuta el motor de similitud. El admin conserva las transiciones de
         // revisión existentes (pendiente→aprobado/rechazado, intervención).
@@ -318,6 +323,8 @@ class ProjectController extends Controller
                 'rechazado>aprobado' => 'Una propuesta rechazada no puede aprobarse directamente: debe reenviarse y analizarse primero.',
                 'rechazado>pendiente' => 'Una propuesta rechazada no puede volver a revisión sin reenviarse y analizarse.',
                 'pendiente>borrador' => 'Una propuesta enviada no puede volver a borrador; permanece en revisión o se rechaza.',
+                'aprobado>borrador' => 'Una propuesta aprobada no puede volver a borrador directamente; usa el flujo de revisión.',
+                'rechazado>borrador' => 'Una propuesta rechazada debe corregirse y reenviarse para volver a analizarse.',
             ];
             $clave = $project->estado . '>' . $request->input('estado');
             if (isset($bloqueos[$clave])) {
@@ -457,14 +464,25 @@ class ProjectController extends Controller
     public function historial(Request $request, $id)
     {
         $user = $request->user();
-        if (!Project::where('id', $id)->paraDetalle($user)->exists()) {
+        // El historial puede contener la observación privada de un rechazo.
+        // Se limita a autores/equipo/instructor de la ficha, igual que las
+        // observaciones; el resto de la ficha solo puede ver la propuesta.
+        if (!Project::where('id', $id)->deAutor($user)->exists()) {
             return response()->json(['message' => 'No tienes acceso al historial de esta propuesta.'], 403);
         }
 
-        return ProjectHistory::included()
+        $historial = ProjectHistory::included()
             ->where('id_proyecto', $id)
             ->orderByDesc('id')
             ->get();
+
+        if (optional($user)->rol === 'admin') {
+            return $historial;
+        }
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($historial->toArray(), optional($user)->rol)
+        );
     }
 
     public function destroy(Request $request, Project $project)
@@ -558,7 +576,9 @@ class ProjectController extends Controller
             ? $resultado->map(fn ($item) => $item->toArray())->all()
             : $resultado->toArray();
 
-        return $this->redactarCodigoFicha($datos, $this->fichasConCodigoVisible($usuario));
+        $datos = $this->redactarCodigoFicha($datos, $this->fichasConCodigoVisible($usuario));
+
+        return PerfilEnRespuesta::redactar($datos, optional($usuario)->rol);
     }
 
     // Fichas cuyo código puede ver el usuario en una respuesta de propuestas.

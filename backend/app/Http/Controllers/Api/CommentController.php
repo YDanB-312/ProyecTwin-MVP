@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Comment;
 use App\Models\Project;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -15,11 +16,13 @@ class CommentController extends Controller
     {
         $request->validate(['id_proyecto' => 'nullable|integer']);
 
-        return Comment::included()
+        $items = Comment::included()
             ->paraUsuario($request->user())
             ->when($request->query('id_proyecto'), fn ($q, $id) => $q->where('id_proyecto', $id))
             ->orderByDesc('id')
             ->get();
+
+        return $this->respuestaComentarios($request->user(), $items);
     }
 
     public function store(Request $request)
@@ -66,18 +69,30 @@ class CommentController extends Controller
             return response()->json(['message' => 'No tienes acceso a esta observación.'], 403);
         }
 
-        return Comment::included()->findOrFail($id);
+        return $this->respuestaComentarios(
+            $request->user(),
+            Comment::included()->findOrFail($id)
+        );
+    }
+
+    // La relación `user` no debe exponer datos de contacto/estado fuera de
+    // administración. Se reutiliza el mismo criterio que propuestas y
+    // similitudes; el admin conserva la respuesta completa.
+    private function respuestaComentarios($usuario, $items)
+    {
+        if (optional($usuario)->rol === 'admin') {
+            return $items;
+        }
+
+        $datos = $items->toArray();
+
+        return response()->json(
+            PerfilEnRespuesta::redactar($datos, optional($usuario)->rol)
+        );
     }
 
     public function update(Request $request, Comment $comment)
     {
-        $request->validate([
-            'texto' => 'required',
-            'id_proyecto' => 'required|exists:projects,id',
-            'id_usuario' => 'nullable|exists:general_users,id',
-            'respuesta_a' => 'nullable|exists:comments,id',
-        ]);
-
         // Solo el autor (o un admin) edita la observación.
         $user = $request->user();
         if ((int) $comment->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
@@ -91,6 +106,13 @@ class CommentController extends Controller
                 return response()->json(['message' => 'Solo lectura: ya no puedes editar esta observación.'], 403);
             }
         }
+
+        $request->validate([
+            'texto' => 'required',
+            'id_proyecto' => 'required|exists:projects,id',
+            'id_usuario' => 'nullable|exists:general_users,id',
+            'respuesta_a' => 'nullable|exists:comments,id',
+        ]);
 
         // Solo cambia el texto: la observación no se mueve de proyecto ni de hilo
         // (trazabilidad del hilo de revisión).

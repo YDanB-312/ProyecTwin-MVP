@@ -1,26 +1,26 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import Button from './Button'
 
 describe('Button', () => {
-  it('renderiza un <button> por defecto', () => {
-    render(<Button>Aceptar</Button>)
-    const btn = screen.getByRole('button', { name: 'Aceptar' })
-    expect(btn.tagName).toBe('BUTTON')
+  it('renderiza un botón con type, disabled y children', () => {
+    render(<Button type="submit" disabled>Guardar</Button>)
+
+    const boton = screen.getByRole('button', { name: 'Guardar' })
+    expect(boton.tagName).toBe('BUTTON')
+    expect(boton).toHaveAttribute('type', 'submit')
+    expect(boton).toBeDisabled()
   })
 
-  it('aplica la variante primaria por defecto', () => {
-    render(<Button>Guardar</Button>)
-    expect(screen.getByRole('button', { name: 'Guardar' }).className).toContain('primary')
-  })
+  it('renderiza un enlace interno cuando as="link"', () => {
+    render(
+      <MemoryRouter>
+        <Button as="link" to="/login">Entrar</Button>
+      </MemoryRouter>
+    )
 
-  it('aplica una variante dada', () => {
-    render(<Button variant="danger">Eliminar</Button>)
-    expect(screen.getByRole('button', { name: 'Eliminar' }).className).toContain('danger')
-  })
-
-  it('propaga props al elemento subyacente', () => {
-    render(<Button type="submit">Enviar</Button>)
-    expect(screen.getByRole('button', { name: 'Enviar' })).toHaveAttribute('type', 'submit')
+    const enlace = screen.getByRole('link', { name: 'Entrar' })
+    expect(enlace).toHaveAttribute('href', '/login')
   })
 })

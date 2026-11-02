@@ -177,8 +177,7 @@ class Similarity extends Model
             // El par debe tocar una ficha que el instructor DICTA. Estar solo
             // asignado (`id_instructor_asignado`) abre la propuesta en
             // `Project::paraDetalle`, pero no habilita por sí solo listar el
-            // par: es una diferencia preexistente que requiere decisión
-            // funcional (ver informe del Lote 16 §3).
+            // par: son alcances distintos y deliberados.
             $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))
                 ->pluck('id');
             return $query->where(function (Builder $q) use ($fichaIds) {
@@ -229,7 +228,7 @@ class Similarity extends Model
         if ($user->rol === 'instructor') {
             // Mismo alcance que el listado: fichas que el instructor DICTA.
             // La asignación (`id_instructor_asignado`) por sí sola no abre el
-            // detalle de similitud (diferencia preexistente documentada).
+            // detalle de similitud.
             $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))
                 ->pluck('id');
             return $query->where(function (Builder $q) use ($fichaIds) {

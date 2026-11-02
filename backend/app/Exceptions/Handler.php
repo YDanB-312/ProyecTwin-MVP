@@ -3,6 +3,8 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -34,6 +36,7 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        'password_actual',
     ];
 
     /**
@@ -44,5 +47,24 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    public function render($request, Throwable $e)
+    {
+        if ($e instanceof ThrottleRequestsException && $request->expectsJson()) {
+            return response()->json([
+                'message' => 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+            ], 429, $e->getHeaders());
+        }
+
+        return parent::render($request, $e);
+    }
+
+    // La API no tiene una ruta web `login`: una petición sin cabecera Accept:
+    // application/json también debe recibir 401 JSON, nunca un 500 por el
+    // redirect a route('login').
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        return response()->json(['message' => $exception->getMessage()], 401);
     }
 }

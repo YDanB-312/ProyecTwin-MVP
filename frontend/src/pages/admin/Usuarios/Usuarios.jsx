@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../../../layouts/DashboardLayout/DashboardLayout'
 import PageHeader from '../../../components/PageHeader/PageHeader'
@@ -18,10 +18,11 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import {
   Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise,
-  Warning, Copy, DownloadSimple,
+  Warning, DownloadSimple,
 } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
+import { useDebounced } from '../../../lib/useDebounced'
 import { usuarios, aprendices, fichas, programas } from '../../../lib/recursos'
 import { esEmailValido, MAX_DOCUMENTO, MAX_NOMBRE } from '../../../utils/validation'
 import { PAGINA_TABLA } from '../../../constants/pagination'
@@ -37,10 +38,6 @@ const ITEMS_POR_PAGINA = PAGINA_TABLA
 const ROL_VARIANT = { aprendiz: 'info', instructor: 'primary', admin: 'warning' }
 const ESTADO_VARIANT = { activo: 'success', suspendido: 'danger' }
 const ESTADO_LABEL = { activo: 'Activo', suspendido: 'Suspendido' }
-
-// Estado del envío de credenciales temporales al correo personal.
-const CRED_VARIANT = { enviadas: 'success', pendiente: 'warning', fallo: 'danger' }
-const CRED_LABEL = { enviadas: 'Enviadas', pendiente: 'Pendiente', fallo: 'Falló' }
 
 const TIPOS_DOCUMENTO = ['CC', 'TI', 'CE', 'PPT']
 
@@ -59,32 +56,22 @@ export default function Usuarios() {
   }, [searchParams])
 
   const [accionMsg, setAccionMsg] = useState(null)
+  const [accionOk, setAccionOk] = useState('')
   const [suspender, setSuspender] = useState(null)
-  // Credenciales recién generadas (se muestran una sola vez tras crear).
-  const [credenciales, setCredenciales] = useState(null)
+  // Resultado del alta: estado del enlace de activación enviado.
+  const [resultadoAlta, setResultadoAlta] = useState(null)
   const [exportando, setExportando] = useState(false)
   const [accionOcupada, setAccionOcupada] = useState(false)
   const [seleccionados, setSeleccionados] = useState([])
-  const msgTimer = useRef(null)
 
   /* ---------- Lista (paginación del servidor) ---------- */
   const [busqueda, setBusqueda] = useState('')
-  const [busquedaServidor, setBusquedaServidor] = useState('')
+  const busquedaServidor = useDebounced(busqueda.trim(), 300)
   const [filtroRol, setFiltroRol] = useState('todos')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroFicha, setFiltroFicha] = useState('todos')
   const [filtroPrograma, setFiltroPrograma] = useState('todos')
   const [pagina, setPagina] = useState(1)
-
-  // La búsqueda se envía al servidor con un pequeño retardo (evita una
-  // petición por tecla).
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setBusquedaServidor(busqueda.trim())
-      setPagina(1)
-    }, 300)
-    return () => clearTimeout(t)
-  }, [busqueda])
 
   const { data: paginaUsuarios, cargando, error, recargar } = useApi(
     () => usuarios.listarPaginado({
@@ -134,15 +121,12 @@ export default function Usuarios() {
 
   const limpiarFiltros = () => {
     setBusqueda('')
-    setBusquedaServidor('')
     setFiltroRol('todos')
     setFiltroEstado('todos')
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
     setPagina(1)
   }
-
-  useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current) }, [])
 
   /* ---------- Selección y exportación ---------- */
   const alternarSeleccion = (id) => {
@@ -161,27 +145,18 @@ export default function Usuarios() {
     }
   }
 
-  const copiarCredenciales = async () => {
-    if (!credenciales) return
-    try {
-      await navigator.clipboard.writeText(
-        `Usuario: ${credenciales.username}\nContraseña temporal: ${credenciales.password_temporal}`
-      )
-    } catch {
-      // Sin portapapeles disponible: el admin puede copiarlas a mano.
-    }
-  }
-
-  // Reenvía las credenciales temporales al correo personal del usuario.
+  // Reenvía el enlace de activación de una cuenta pendiente.
   const reenviar = async (usr) => {
     if (accionOcupada) return
     setAccionMsg(null)
+    setAccionOk('')
     setAccionOcupada(true)
     try {
-      await usuarios.reenviarCredenciales(usr.id)
+      await usuarios.reenviarActivacion(usr.id)
+      setAccionOk('Enlace de activación reenviado al correo personal.')
       await recargar()
     } catch (err) {
-      setAccionMsg(err?.data?.message || 'No se pudieron reenviar las credenciales.')
+      setAccionMsg(err?.data?.message || 'No se pudo reenviar el correo.')
     } finally {
       setAccionOcupada(false)
     }
@@ -222,8 +197,9 @@ export default function Usuarios() {
     }
     setGuardando(true)
     setAccionMsg(null)
+    setAccionOk('')
     try {
-      // El username y la contraseña temporal los genera el sistema.
+      // El sistema crea la cuenta pendiente y envía el enlace de activación.
       const resp = await usuarios.crear({
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
@@ -233,13 +209,12 @@ export default function Usuarios() {
         rol: form.rol,
         estado: true,
       })
-      setCredenciales({
+      setResultadoAlta({
         id: resp.usuario.id,
         nombre: `${resp.usuario.nombre} ${resp.usuario.apellido}`.trim(),
-        username: resp.credenciales.username,
-        password_temporal: resp.credenciales.password_temporal,
-        enviadas: resp.credenciales.enviadas,
         correo: resp.usuario.correo,
+        enviada: !!resp.activacion?.enviada,
+        mensaje: resp.activacion?.mensaje || '',
       })
       setForm({ nombre: '', apellido: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', rol: 'aprendiz' })
       setErrores({})
@@ -296,7 +271,7 @@ export default function Usuarios() {
           title={creando ? 'Crear Nuevo Usuario' : 'Gestión de Usuarios'}
           subtitle={
             creando
-              ? 'El sistema genera el usuario y la contraseña temporal; el usuario la cambia al entrar.'
+              ? 'El sistema crea la cuenta y envía un enlace de activación al correo personal.'
               : 'Administra las cuentas de aprendices e instructores de la plataforma.'
           }
           icon={creando ? <Code /> : <Users />}
@@ -325,7 +300,7 @@ export default function Usuarios() {
                 )}
                 <Button
                   type="button"
-                  onClick={() => { setCredenciales(null); setCreando(true) }}
+                  onClick={() => { setResultadoAlta(null); setCreando(true) }}
                 >
                   <Plus size={14} /> Nuevo Usuario
                 </Button>
@@ -379,7 +354,7 @@ export default function Usuarios() {
               </div>
 
               <div className={nu.grid2}>
-                <FormField label="Correo personal" required error={errores.correo} help="Para recuperar la contraseña y comunicaciones.">
+                <FormField label="Correo personal" required error={errores.correo} help="Allí se envía el enlace de activación y la recuperación de contraseña.">
                   <Input
                     name="correo"
                     type="email"
@@ -408,35 +383,31 @@ export default function Usuarios() {
           </DataPanel>
         ) : (
           <ApiState cargando={cargando} error={error} onReintentar={recargar}>
-            {credenciales && (
-              <Alert variant={credenciales.enviadas ? 'success' : 'warning'}>
-                <CheckCircle size={14} /> Usuario <strong>{credenciales.nombre}</strong> creado.
-                {credenciales.enviadas
-                  ? <> Credenciales enviadas a <strong>{credenciales.correo}</strong>.</>
-                  : <> No se pudo enviar el correo; usa <strong>Reenviar</strong> o el PDF.</>}
+            {resultadoAlta && (
+              <Alert variant={resultadoAlta.enviada ? 'success' : 'warning'}>
+                <CheckCircle size={14} /> Usuario <strong>{resultadoAlta.nombre}</strong> creado.
+                {resultadoAlta.enviada
+                  ? <> Enlace de activación enviado a <strong>{resultadoAlta.correo}</strong>.</>
+                  : <> La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación.</>}
                 <div className={s.actions} style={{ marginTop: 'var(--sp-2)' }}>
-                  Usuario: <code className={s.codigo}>{credenciales.username}</code>
-                  Contraseña temporal: <code className={s.codigo}>{credenciales.password_temporal}</code>
-                  <Button type="button" size="sm" variant="secondary" onClick={copiarCredenciales}>
-                    <Copy size={14} /> Copiar
-                  </Button>
+                  Correo: <code className={s.codigo}>{resultadoAlta.correo}</code>
                   <Button
                     type="button"
                     size="sm"
                     variant="secondary"
                     disabled={exportando}
-                    onClick={() => exportar([credenciales.id])}
+                    onClick={() => exportar([resultadoAlta.id])}
                   >
                     <DownloadSimple size={14} /> PDF
                   </Button>
-                  {!credenciales.enviadas && (
+                  {!resultadoAlta.enviada && (
                     <Button
                       type="button"
                       size="sm"
                       variant="secondary"
-                      onClick={() => reenviar({ id: credenciales.id })}
+                      onClick={() => reenviar({ id: resultadoAlta.id })}
                     >
-                      <ArrowCounterClockwise size={14} /> Reenviar
+                      <ArrowCounterClockwise size={14} /> Reenviar activación
                     </Button>
                   )}
                 </div>
@@ -446,6 +417,12 @@ export default function Usuarios() {
             {accionMsg && (
               <Alert variant="danger">
                 <Warning size={14} /> {accionMsg}
+              </Alert>
+            )}
+
+            {accionOk && (
+              <Alert variant="success">
+                <CheckCircle size={14} /> {accionOk}
               </Alert>
             )}
 
@@ -463,7 +440,7 @@ export default function Usuarios() {
                 <span className={s.label}>Buscar</span>
                 <Input
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  onChange={(e) => { setBusqueda(e.target.value); setPagina(1) }}
                   placeholder="Nombre, documento, usuario o correo…"
                 />
               </label>
@@ -594,15 +571,14 @@ export default function Usuarios() {
                       },
                     },
                     {
-                      key: 'credenciales',
-                      header: 'Credenciales',
+                      key: 'acceso',
+                      header: 'Acceso',
                       render: (usr) => {
                         if (usr.rol === 'admin') return <span className={s.muted}>—</span>
-                        if (!usr.must_change_password) return <span className={s.muted}>Ya cambiada</span>
-                        const estado = usr.credenciales_error
-                          ? 'fallo'
-                          : (usr.credenciales_enviadas_en ? 'enviadas' : 'pendiente')
-                        return <Badge variant={CRED_VARIANT[estado]}>{CRED_LABEL[estado]}</Badge>
+                        if (!usr.email_verified_at) {
+                          return <Badge variant="warning">Pendiente de activación</Badge>
+                        }
+                        return <Badge variant="success">Activa</Badge>
                       },
                     },
                     {
@@ -632,16 +608,16 @@ export default function Usuarios() {
                           >
                             <Eye size={14} /> Ver
                           </Button>
-                          {usr.rol !== 'admin' && usr.must_change_password && (
+                          {usr.rol !== 'admin' && !usr.email_verified_at && (
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
-                              title="Reenviar credenciales al correo personal"
+                              title="Reenviar el enlace de activación"
                               disabled={accionOcupada}
                               onClick={() => reenviar(usr)}
                             >
-                              <ArrowCounterClockwise size={14} /> Reenviar
+                              <ArrowCounterClockwise size={14} /> Reenviar activación
                             </Button>
                           )}
                           {usr.estado === false ? (

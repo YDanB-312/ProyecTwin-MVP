@@ -12,8 +12,19 @@ dist
 dist-ssr
 *.local
 
-# Reportes de los agentes (se regeneran en cada corrida)
+# Entorno local (el frontend funciona con /v1 por defecto)
+.env
+.env.*
+!.env.example
+
+# Reportes de agentes (artefactos locales)
 agentes-reportes
+
+# Artefactos de Playwright (se regeneran en cada corrida)
+test-results
+playwright-report
+blob-report
+playwright/.cache
 
 # Editor directories and files
 .vscode/*

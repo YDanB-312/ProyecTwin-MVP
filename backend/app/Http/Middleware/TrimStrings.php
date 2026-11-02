@@ -15,5 +15,9 @@ class TrimStrings extends Middleware
         'current_password',
         'password',
         'password_confirmation',
+        // El proyecto nombra este campo en español; sin esta excepción una
+        // contraseña con espacios en los extremos funciona en login pero
+        // falla al cambiarla o al cambiar el correo.
+        'password_actual',
     ];
 }

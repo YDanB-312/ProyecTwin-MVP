@@ -6,16 +6,15 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reseed de la base de datos E2E (sprint final, Paso 1).
+ * Reseed de la base exclusiva de Playwright.
  *
  * SOLO opera sobre `proyectwin_e2e` y exige:
  *   - E2E_ALLOW_RESET=1 (autorización explícita),
- *   - APP_ENV=e2e (invocar como `php artisan e2e:reset --env=e2e`),
- *   - backend/.env.e2e presente,
+ *   - APP_ENV=e2e (se pasa por variable de proceso),
  *   - base de datos resuelta = proyectwin_e2e en loopback,
- *   - ausencia de configuración cacheada incompatible,
+ *   - ausencia de DATABASE_URL y de configuración cacheada incompatible,
  *   - conexión efectiva verificada (base y puerto reales),
- *   - lock exclusivo (evita reseeds concurrentes de workers paralelos).
+ *   - lock exclusivo (evita reseeds concurrentes).
  *
  * Si algo de esto falla, la ejecución ABORTA sin tocar ninguna base de datos.
  * La opción --check-only valida entorno y conexión sin migrar ni sembrar.
@@ -23,7 +22,6 @@ use Illuminate\Support\Facades\DB;
 class E2eReset extends Command
 {
     protected $signature = 'e2e:reset
-        {--con-volumen : siembra también VolumenSeeder}
         {--check-only : valida entorno y conexión efectiva sin migrar ni sembrar}';
 
     protected $description = 'Reinicia SOLO la base E2E (proyectwin_e2e) con guardas estrictas de seguridad.';
@@ -86,15 +84,12 @@ class E2eReset extends Command
             }
 
             $this->info(
-                'Reseed E2E autorizado: APP_ENV=e2e · BD='.$this->baseDeDatos().
+                'Reseed autorizado: APP_ENV=e2e · BD='.$this->baseDeDatos().
                 ' · host='.$this->host().' · puerto='.$this->puerto()
             );
 
+            // Destructivo SOLO sobre proyectwin_e2e, ya validada arriba.
             $this->call('migrate:fresh', ['--seed' => true, '--force' => true]);
-
-            if ($this->option('con-volumen')) {
-                $this->call('db:seed', ['--class' => 'VolumenSeeder', '--force' => true]);
-            }
         } finally {
             flock($bloqueo, LOCK_UN);
             fclose($bloqueo);
@@ -128,8 +123,8 @@ class E2eReset extends Command
             $problemas[] = 'Falta autorización explícita: define E2E_ALLOW_RESET=1.';
         }
 
-        if (! file_exists(base_path('.env.e2e'))) {
-            $problemas[] = 'No existe backend/.env.e2e (configuración E2E obligatoria).';
+        if (filled(env('DATABASE_URL'))) {
+            $problemas[] = 'DATABASE_URL no está permitido en E2E; usa DB_HOST/DB_PORT/DB_DATABASE explícitos.';
         }
 
         if (file_exists(base_path('bootstrap/cache/config.php'))) {
@@ -137,7 +132,7 @@ class E2eReset extends Command
         }
 
         if ($this->laravel->environment() !== 'e2e') {
-            $problemas[] = 'APP_ENV="'.$this->laravel->environment().'"; debe ser "e2e" (usa --env=e2e).';
+            $problemas[] = 'APP_ENV="'.$this->laravel->environment().'"; debe ser "e2e" (define APP_ENV=e2e en el proceso).';
         }
 
         if (! preg_match(self::BD_PERMITIDA, $this->baseDeDatos())) {

@@ -73,6 +73,12 @@ class NotificationController extends Controller
 
     public function update(Request $request, Notification $notification)
     {
+        // Marcar como leída es del dueño de la bandeja (o de un admin).
+        $user = $request->user();
+        if ((int) $notification->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
+            return response()->json(['message' => 'No puedes modificar notificaciones de otro usuario.'], 403);
+        }
+
         $request->validate([
             'titulo' => 'sometimes|required|max:255',
             'descripcion' => 'nullable',
@@ -82,12 +88,6 @@ class NotificationController extends Controller
             'fecha' => 'sometimes|required|date',
             'id_usuario' => 'sometimes|required|exists:general_users,id',
         ]);
-
-        // Marcar como leída es del dueño de la bandeja (o de un admin).
-        $user = $request->user();
-        if ((int) $notification->id_usuario !== (int) $user->id && $user->rol !== 'admin') {
-            return response()->json(['message' => 'No puedes modificar notificaciones de otro usuario.'], 403);
-        }
 
         // El dueño solo marca leída; el admin puede corregir el resto. El
         // destinatario no se reasigna por esta vía.

@@ -44,6 +44,7 @@ class Kernel extends HttpKernel
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
         'cuenta.activa' => \App\Http\Middleware\CuentaActiva::class,
+        'cuenta.activada' => \App\Http\Middleware\CuentaActivada::class,
         'rol' => \App\Http\Middleware\RolMiddleware::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,

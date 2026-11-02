@@ -1,5 +1,12 @@
 <?php
 
+// Orígenes del SPA. En producción solo el dominio configurado: el preview de
+// E2E (4173) es una comodidad local y no debe abrir CORS en el despliegue.
+$origenes = [env('FRONTEND_URL', 'http://localhost:5173')];
+if (env('APP_ENV', 'production') !== 'production') {
+    $origenes[] = 'http://localhost:4173';
+}
+
 return [
 
     /*
@@ -19,8 +26,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // 5173 = dev (vite), 4173 = preview (E2E). Ambos locales.
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173'), 'http://localhost:4173'],
+    // 5173 = dev (vite). 4173 (preview/E2E) solo se añade fuera de producción.
+    'allowed_origins' => array_values(array_unique($origenes)),
 
     'allowed_origins_patterns' => [],
 

@@ -19,7 +19,6 @@ class Apprentice extends Model
         'generalUser',
         'classGroup',
         'program',
-        'projects',
     ];
 
     // Filtra el parámetro `included` contra la lista blanca del modelo.

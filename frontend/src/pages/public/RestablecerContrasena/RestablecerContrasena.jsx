@@ -1,18 +1,27 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, Warning } from 'phosphor-react'
 import AuthLayout from '../../../layouts/AuthLayout/AuthLayout'
 import FormField from '../../../components/FormField/FormField'
 import Button from '../../../components/Button/Button'
 import { Input, PasswordInput } from '../../../components/Input/Input'
-import { apiResetPassword } from '../../../lib/api'
-import { esPasswordValida } from '../../../utils/validation'
+import { apiResetPassword, toFieldErrors } from '../../../lib/api'
+import { esPasswordValida, MIN_PASSWORD_LENGTH } from '../../../utils/validation'
+import { leerParametrosDeEnlace, urlSinToken } from '../../../utils/enlacesToken'
 import s from './RestablecerContrasena.module.css'
 
 export default function RestablecerContrasena() {
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token') || ''
-  const correo = searchParams.get('correo') || ''
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [{ token, correo }] = useState(() => leerParametrosDeEnlace(location))
+
+  // El token y el correo llegan en el fragmento y se quitan de la URL en
+  // cuanto se leen; así no quedan en el historial ni en capturas de pantalla.
+  useEffect(() => {
+    if (location.hash || location.search) {
+      navigate(urlSinToken(location), { replace: true })
+    }
+  }, [location, navigate])
 
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
@@ -26,7 +35,7 @@ export default function RestablecerContrasena() {
     setError('')
 
     if (!esPasswordValida(password)) {
-      setError('La contraseña debe tener al menos 6 caracteres.')
+      setError(`La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`)
       return
     }
     if (password !== confirmar) {
@@ -39,7 +48,13 @@ export default function RestablecerContrasena() {
       await apiResetPassword({ correo, token, password, password_confirmation: confirmar })
       setExito(true)
     } catch (err) {
-      setError(err?.data?.message || 'El enlace es inválido o venció. Solicita uno nuevo.')
+      const campos = toFieldErrors(err?.data)
+      setError(
+        campos.password
+        || campos.password_confirmation
+        || err?.data?.message
+        || 'El enlace es inválido o venció. Solicita uno nuevo.'
+      )
     } finally {
       setEnviando(false)
     }
@@ -107,7 +122,7 @@ export default function RestablecerContrasena() {
             <Input type="email" value={correo} readOnly />
           </FormField>
 
-          <FormField label="Nueva contraseña" help="Mínimo 6 caracteres" required>
+          <FormField label="Nueva contraseña" help={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres. Puedes usar espacios.`} required>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}

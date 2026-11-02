@@ -7,6 +7,7 @@ use App\Models\Similarity;
 use App\Models\MotorConfig;
 use App\Services\SimilitudService;
 use App\Similarity\Recomputador;
+use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -176,7 +177,7 @@ class SimilarityController extends Controller
         $propio = Project::with('classGroup')->findOrFail($request->id_proyecto);
 
         // Solo el dueño (aprendiz/equipo), su instructor o un admin disparan el motor.
-        if (!$this->puedeDetectar($request->user(), $propio)) {
+        if (!$propio->puedeEscribir($request->user())) {
             return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
         }
 
@@ -201,7 +202,7 @@ class SimilarityController extends Controller
     {
         $request->validate(['texto' => 'required|string|min:3|max:300']);
 
-        $config = $this->config();
+        $config = MotorConfig::actual();
         $umbral = (float) ($config->umbral ?? 0.30);
         $meses = (int) ($config->meses ?? 12);
 
@@ -254,7 +255,9 @@ class SimilarityController extends Controller
             ? $resultado->map(fn ($item) => $item->toArray())->all()
             : $resultado->toArray();
 
-        return response()->json($this->ocultarCodigoFicha($datos));
+        $datos = $this->ocultarCodigoFicha($datos);
+
+        return response()->json(PerfilEnRespuesta::redactar($datos, optional($request->user())->rol));
     }
 
     private function ocultarCodigoFicha(array $datos): array
@@ -270,19 +273,6 @@ class SimilarityController extends Controller
         }
 
         return $datos;
-    }
-
-    // Misma regla que la escritura: admin siempre; aprendiz solo dentro de su
-    // ficha activa (creador o equipo); instructor de la ficha o asignado.
-    private function puedeDetectar($user, Project $project): bool
-    {
-        return $project->puedeEscribir($user);
-    }
-
-    // Config global del motor (fila única).
-    private function config(): MotorConfig
-    {
-        return MotorConfig::actual();
     }
 
 }

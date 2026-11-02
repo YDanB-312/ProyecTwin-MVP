@@ -40,7 +40,7 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
             {breadcrumb.map((item, i) => {
               const isLast = i === breadcrumb.length - 1
               return (
-                <li key={i} className={isLast ? s.current : undefined} aria-current={isLast ? 'page' : undefined}>
+                <li key={item.to || item.label || i} className={isLast ? s.current : undefined} aria-current={isLast ? 'page' : undefined}>
                   {item.onClick && !isLast ? (
                     <button type="button" className={s.crumb} onClick={item.onClick}>
                       <CrumbIcon icon={item.icon} />
@@ -68,7 +68,7 @@ export default function PageHeader({ title, subtitle, icon, actions, breadcrumb 
         <div className={s.titleWrap}>
           {icon && (
             <span className={s.icon} aria-hidden="true">
-              {typeof icon === 'string' ? icon : icon}
+              {icon}
             </span>
           )}
           <div>

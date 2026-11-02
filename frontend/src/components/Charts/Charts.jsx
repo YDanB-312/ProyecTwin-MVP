@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import s from './Charts.module.css'
 
-// GrÃ¡ficas del dashboard con el tema visual de la app (sin cyberpunk).
+// Gráficas del dashboard con el tema visual de la app (sin cyberpunk).
 
 export function BarChart({
   data = [],
-  ariaLabel = 'GrÃ¡fica de barras',
+  ariaLabel = 'Gráfica de barras',
   maximo = null,
   valueSuffix = '',
   emptyMessage = 'Sin datos para mostrar.',
@@ -41,7 +41,7 @@ export function DonutChart({
   size = 176,
   thickness = 22,
   centro = '',
-  ariaLabel = 'DistribuciÃ³n',
+  ariaLabel = 'Distribución',
 }) {
   const total = data.reduce((acc, d) => acc + (Number(d.value) || 0), 0)
   if (!total) return <p className={s.empty}>Sin datos para mostrar.</p>
@@ -124,7 +124,7 @@ export function DonutChart({
   )
 }
 
-// Curva suave (Catmull-Rom â†’ BÃ©zier) para la grÃ¡fica de Ã¡rea.
+// Curva suave (Catmull-Rom → Bézier) para la gráfica de área.
 function curvaSuave(puntos) {
   if (puntos.length === 0) return ''
   if (puntos.length === 1) return `M ${puntos[0].x} ${puntos[0].y}`
@@ -144,12 +144,12 @@ function curvaSuave(puntos) {
 }
 
 /**
- * GrÃ¡fica de Ã¡rea compacta e interactiva: curva suave, degradado, tooltip con
+ * Gráfica de área compacta e interactiva: curva suave, degradado, tooltip con
  * fecha, total y nombres de propuestas del periodo (datos reales del backend).
  */
 export function LineChart({
   data = [],
-  ariaLabel = 'EvoluciÃ³n mensual',
+  ariaLabel = 'Evolución mensual',
   unidad = 'propuesta',
   unidadPlural = 'propuestas',
 }) {
@@ -171,7 +171,7 @@ export function LineChart({
 
   const valores = data.map((d) => Number(d.value) || 0)
   if (!data.length || valores.every((v) => v === 0)) {
-    return <p className={s.empty}>Sin datos en el perÃ­odo.</p>
+    return <p className={s.empty}>Sin datos en el período.</p>
   }
 
   const W = Math.max(320, ancho)
@@ -189,7 +189,7 @@ export function LineChart({
     .map((f) => ({ valor: Math.round(max * f), y: y(max * f) }))
     .filter((t, i, arr) => arr.findIndex((u) => u.valor === t.valor) === i)
 
-  // En 30/7 dÃ­as no se muestran todas las etiquetas para evitar solapamientos.
+  // En 30/7 días no se muestran todas las etiquetas para evitar solapamientos.
   const salto = data.length > 12 ? Math.ceil(data.length / 8) : 1
   const resumen = data.map((d) => `${d.label}: ${d.value}`).join(', ')
   const puntoActivo = activo != null ? data[activo] : null
@@ -262,7 +262,7 @@ export function LineChart({
             </ul>
           )}
           {puntoActivo.restantes > 0 && (
-            <p className={s.tipMas}>y {puntoActivo.restantes} mÃ¡sâ€¦</p>
+            <p className={s.tipMas}>y {puntoActivo.restantes} más…</p>
           )}
         </div>
       )}

@@ -40,7 +40,7 @@ class Auditoria
             'accion' => $accion,
             'entidad' => $entidad,
             'entidad_id' => $entidadId,
-            'detalle' => $detalle ?: null,
+            'detalle' => $detalle ? Pii::detalle($detalle) : null,
             'ip' => $request->ip(),
         ]);
     }
