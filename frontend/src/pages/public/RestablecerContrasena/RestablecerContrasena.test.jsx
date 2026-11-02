@@ -66,4 +66,35 @@ describe('RestablecerContrasena', () => {
 
     expect(await screen.findByRole('heading', { name: /Enlace inválido/i })).toBeInTheDocument()
   })
+
+  it('no trata 429 como enlace vencido', async () => {
+    const user = userEvent.setup()
+    const error = new Error('Too Many Requests')
+    error.status = 429
+    mocks.reset.mockRejectedValue(error)
+
+    const { container } = renderPagina()
+    const campos = container.querySelectorAll('input[type="password"]')
+    await user.type(campos[0], 'Frase segura 2026')
+    await user.type(campos[1], 'Frase segura 2026')
+    await user.click(screen.getByRole('button', { name: /Restablecer contraseña/i }))
+
+    expect(await screen.findByText(/Demasiados intentos/i)).toBeInTheDocument()
+    expect(screen.queryByText(/El enlace es inválido o venció/i)).not.toBeInTheDocument()
+  })
+
+  it('distingue un fallo de conexión de un enlace vencido', async () => {
+    const user = userEvent.setup()
+    const error = new Error('No se pudo conectar')
+    error.status = 0
+    mocks.reset.mockRejectedValue(error)
+
+    const { container } = renderPagina()
+    const campos = container.querySelectorAll('input[type="password"]')
+    await user.type(campos[0], 'Frase segura 2026')
+    await user.type(campos[1], 'Frase segura 2026')
+    await user.click(screen.getByRole('button', { name: /Restablecer contraseña/i }))
+
+    expect(await screen.findByText(/No se pudo conectar con el servidor/i)).toBeInTheDocument()
+  })
 })

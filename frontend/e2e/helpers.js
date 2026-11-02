@@ -65,7 +65,9 @@ export async function apiLogin(request, role = 'admin') {
   return (await respuesta.json()).token
 }
 
-export async function crearNotificacionApi(request, { titulo, idUsuario = 1, enlace = null, tipo = 'sistema' }) {
+// El backend solo genera "sistema" internamente; la API rechaza ese tipo con
+// 422. Las notificaciones preparadas por los tests usan un tipo manual válido.
+export async function crearNotificacionApi(request, { titulo, idUsuario = 1, enlace = null, tipo = 'mensaje' }) {
   const token = await apiLogin(request, 'admin')
   const hoy = new Date()
   const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`

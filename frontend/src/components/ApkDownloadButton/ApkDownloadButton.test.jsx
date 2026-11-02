@@ -19,7 +19,7 @@ describe('ApkDownloadButton', () => {
 
     render(<ApkDownloadButton />)
 
-    const enlace = screen.getByRole('link', { name: /Descargar APK de ProyecTWIN/i })
+    const enlace = screen.getByRole('link', { name: /Descargar aplicación Android/i })
     expect(enlace).toHaveAttribute('href', '/apk/ProyecTWin.apk')
     expect(enlace).toHaveAttribute('download', 'ProyecTWin.apk')
   })
@@ -29,7 +29,7 @@ describe('ApkDownloadButton', () => {
 
     render(<ApkDownloadButton />)
 
-    expect(screen.queryByRole('link', { name: /Descargar APK/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Descargar aplicación Android/i })).not.toBeInTheDocument()
   })
 
   it('no muestra el enlace si la URL no es HTTP(S) o relativa', () => {
@@ -39,7 +39,7 @@ describe('ApkDownloadButton', () => {
 
     render(<ApkDownloadButton />)
 
-    expect(screen.queryByRole('link', { name: /Descargar APK/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Descargar aplicación Android/i })).not.toBeInTheDocument()
   })
 
   it('no muestra el enlace si el endpoint falla', () => {
@@ -50,7 +50,7 @@ describe('ApkDownloadButton', () => {
 
     render(<ApkDownloadButton />)
 
-    expect(screen.queryByRole('link', { name: /Descargar APK/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Descargar aplicación Android/i })).not.toBeInTheDocument()
   })
 
   it('rechaza URLs protocol-relative y HTTP', () => {
@@ -58,14 +58,14 @@ describe('ApkDownloadButton', () => {
       data: { download_url: '//evil.example/app.apk' },
     })
     const { unmount } = render(<ApkDownloadButton />)
-    expect(screen.queryByRole('link', { name: /Descargar APK/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Descargar aplicación Android/i })).not.toBeInTheDocument()
     unmount()
 
     useApi.mockReturnValue({
       data: { download_url: 'http://example.com/app.apk' },
     })
     render(<ApkDownloadButton />)
-    expect(screen.queryByRole('link', { name: /Descargar APK/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Descargar aplicación Android/i })).not.toBeInTheDocument()
   })
 
   it('acepta una URL HTTPS absoluta', () => {
@@ -75,7 +75,7 @@ describe('ApkDownloadButton', () => {
 
     render(<ApkDownloadButton />)
 
-    expect(screen.getByRole('link', { name: /Descargar APK/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Descargar aplicación Android/i })).toHaveAttribute(
       'href',
       'https://cdn.example.com/ProyecTWin.apk'
     )

@@ -10,18 +10,28 @@ describe('FormField', () => {
       </FormField>
     )
 
-    expect(screen.getByLabelText(/Correo/).tagName).toBe('INPUT')
-    expect(screen.getByText('Solo letras')).toBeInTheDocument()
+    const input = screen.getByLabelText(/Correo/)
+    const ayuda = screen.getByText('Solo letras')
+
+    expect(input.tagName).toBe('INPUT')
+    expect(input).toHaveAttribute('aria-required', 'true')
+    expect(input).toHaveAttribute('aria-describedby', ayuda.id)
+    expect(input).not.toHaveAttribute('aria-invalid')
     expect(screen.getByText('*')).toBeInTheDocument()
   })
 
-  it('muestra el mensaje de error con rol alert', () => {
+  it('muestra el mensaje de error con rol alert y lo asocia al control', () => {
     render(
       <FormField label="Nombre" error="Campo requerido">
         <input />
       </FormField>
     )
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Campo requerido')
+    const input = screen.getByRole('textbox')
+    const error = screen.getByRole('alert')
+
+    expect(error).toHaveTextContent('Campo requerido')
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+    expect(input).toHaveAttribute('aria-describedby', error.id)
   })
 })

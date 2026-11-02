@@ -20,6 +20,22 @@ describe('Pagination', () => {
     expect(screen.queryByRole('button', { name: '2' })).not.toBeInTheDocument()
   })
 
+  it('sincroniza la página del padre cuando el total encoge', () => {
+    const setPagina = vi.fn()
+
+    render(
+      <Pagination
+        totalItems={20}
+        itemsPerPage={10}
+        filteredCount={8}
+        paginaActual={2}
+        setPaginaActual={setPagina}
+      />
+    )
+
+    expect(setPagina).toHaveBeenCalledWith(1)
+  })
+
   it('navega a la página siguiente y deshabilita en el extremo', () => {
     const setPagina = vi.fn()
     const { rerender } = render(

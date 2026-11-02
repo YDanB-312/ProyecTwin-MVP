@@ -62,10 +62,50 @@ describe('ActivarCuenta', () => {
   })
 
   it('muestra enlace inválido cuando el token no es válido', async () => {
-    mocks.validar.mockRejectedValue(new Error('inválido'))
+    const error = new Error('inválido')
+    error.status = 422
+    mocks.validar.mockRejectedValue(error)
     renderPagina('token-vencido')
 
     expect(await screen.findByRole('heading', { name: /Enlace inválido o vencido/i })).toBeInTheDocument()
+  })
+
+  it('no confunde 429 con un enlace inválido', async () => {
+    const error = new Error('Too Many Requests')
+    error.status = 429
+    mocks.validar.mockRejectedValue(error)
+
+    renderPagina('token-valido')
+
+    expect(await screen.findByText(/Demasiados intentos/i)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Enlace inválido o vencido/i })).not.toBeInTheDocument()
+  })
+
+  it('no confunde 419 con un enlace inválido', async () => {
+    const error = new Error('CSRF token mismatch')
+    error.status = 419
+    mocks.validar.mockRejectedValue(error)
+
+    renderPagina('token-valido')
+
+    expect(await screen.findByText(/sesión de seguridad expiró/i)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Enlace inválido o vencido/i })).not.toBeInTheDocument()
+  })
+
+  it('distingue un fallo de conexión y permite reintentar', async () => {
+    const user = userEvent.setup()
+    const error = new Error('No se pudo conectar')
+    error.status = 0
+    mocks.validar
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce({ nombre: 'Ana', correo: 'a***@test.local' })
+
+    renderPagina('token-valido')
+
+    expect(await screen.findByRole('heading', { name: /No pudimos validar el enlace/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Reintentar/i }))
+
+    expect(await screen.findByRole('heading', { name: /Activa tu cuenta/i })).toBeInTheDocument()
   })
 
   it('no envía si las contraseñas no coinciden', async () => {
