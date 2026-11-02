@@ -1,0 +1,58 @@
+# Artefactos locales y temporales de ProyecTWIN.
+# No sustituye backend/.gitignore ni frontend/.gitignore: refuerza la raíz.
+
+# Python / generación de manuales
+__pycache__/
+*.py[cod]
+*$py.class
+~$*
+*.tmp
+
+# Pruebas y cobertura
+.phpunit.result.cache
+.phpunit.cache/
+test-results/
+playwright-report/
+blob-report/
+coverage/
+*.lcov
+
+# Dependencias y builds
+node_modules/
+vendor/
+dist/
+build/
+backend/public/build/
+backend/public/hot/
+
+# Entornos y secretos (los ejemplos sí se conservan)
+.env
+.env.*
+!.env.example
+auth.json
+
+# Firma Android y material sensible
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+
+# APK/AAB no autorizados para distribución
+*.apk
+*.aab
+
+# Logs
+*.log
+logs/
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Respaldos locales
+*.bak
+*.local
