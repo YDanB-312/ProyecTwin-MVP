@@ -218,10 +218,10 @@ class DemoPreparar extends Command
         }
 
         $this->error('ABORTADO antes de migrar: general_users existe pero no tiene email_verified_at.');
-        $this->line('La base conserva el esquema anterior. Aplica la adaptación única documentada en README.md:');
+        $this->line('La base conserva el esquema anterior. Para aplicar la compatibilidad idempotente:');
         $this->line('  1. genera un backup restaurable');
-        $this->line('  2. ejecuta el ALTER TABLE de adaptación (añade email_verified_at y retira columnas legacy)');
-        $this->line('  3. vuelve a ejecutar --migrar');
+        $this->line('  2. ejecuta `php artisan migrate --force` (la migración 2026_11_01 añade la columna)');
+        $this->line('  3. si el esquema legacy requiere el ALTER manual, aplícalo y vuelve a migrar');
         $this->line('No se modificó el esquema.');
 
         return true;

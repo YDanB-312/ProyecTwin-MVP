@@ -101,18 +101,6 @@ class CuentasDemo
         return self::CUENTAS + self::CUENTAS_LEGACY;
     }
 
-    public static function correosAdministrados(): array
-    {
-        $correos = [];
-
-        foreach (self::cuentasAdministradas() as $cuenta) {
-            $correos[] = $cuenta['correo'];
-            $correos[] = $cuenta['correo_legacy'];
-        }
-
-        return array_values(array_unique($correos));
-    }
-
     public static function password(): string
     {
         return (string) config('demo.password');

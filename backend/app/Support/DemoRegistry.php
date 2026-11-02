@@ -31,19 +31,6 @@ class DemoRegistry
         );
     }
 
-    // Registra si la clave está libre. Si ya existe, conserva el registro
-    // original y devuelve false para que el seeder no lo reasigne.
-    public static function reclamar(string $tipo, string $clave, int $entidadId): bool
-    {
-        if (self::id($tipo, $clave) !== null) {
-            return false;
-        }
-
-        self::registrar($tipo, $clave, $entidadId);
-
-        return true;
-    }
-
     public static function existe(string $tipo, string $clave): bool
     {
         return self::id($tipo, $clave) !== null;

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -88,9 +89,11 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $user = $request->user();
+
         // Token Bearer (móvil) si lo hay. Con sesión (cookie), Sanctum devuelve
         // un TransientToken que no se puede borrar (no hay token que revocar).
-        $token = $request->user()?->currentAccessToken();
+        $token = $user?->currentAccessToken();
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
@@ -102,6 +105,15 @@ class AuthController extends Controller
             auth('web')->logoutCurrentDevice();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+        }
+
+        // logoutCurrentDevice no rota el remember_token: una copia de la cookie
+        // "recordarme" seguiría autenticando. Se rota para invalidar todas las
+        // copias. CuentaActiva usa ese token como versión de sesión, así que
+        // también se invalidan las sesiones de cookie de otros dispositivos;
+        // es el alcance aceptado para revocar copias sin tokens por dispositivo.
+        if ($user) {
+            $user->forceFill(['remember_token' => Str::random(60)])->save();
         }
 
         return response()->json(['message' => 'Sesión cerrada.']);

@@ -26,9 +26,9 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         'foto_url', 'rol', 'estado',
     ];
 
-    // Datos sensibles que nunca salen por la API (login/me/listados). Los
-    // campos institucionales se ocultan por defecto y solo los revelan los
-    // endpoints de administración (makeVisible).
+    // Datos sensibles ocultos por defecto. El titular los ve en su propio
+    // perfil y la administración puede revelarlos en sus endpoints
+    // (makeVisible); el resto de listados no los expone.
     protected $hidden = [
         'password', 'remember_token',
         'tipo_documento', 'numero_documento', 'username',

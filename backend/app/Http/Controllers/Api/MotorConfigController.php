@@ -13,7 +13,10 @@ class MotorConfigController extends Controller
     // Configuración del motor (fila única global). La lectura es pública.
     public function show()
     {
-        return MotorConfig::actual();
+        // Response explícito: si MotorConfig::actual() acaba de crear el
+        // singleton, devolver el modelo directamente produciría un 201 en un
+        // GET. La lectura pública debe ser siempre 200.
+        return response()->json(MotorConfig::actual());
     }
 
     // Resumen público para la landing: configuración del motor + conteos

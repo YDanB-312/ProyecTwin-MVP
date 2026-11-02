@@ -42,6 +42,48 @@ class AppVersionTest extends TestCase
             ]);
     }
 
+    public function test_anuncia_el_apk_incluido_en_local(): void
+    {
+        config([
+            'app.url' => 'http://localhost',
+            'app_version.android.download_url' => '/apk/ProyecTWin.apk',
+            'app_version.android.version' => '1.3.0',
+        ]);
+
+        $this->getJson('/v1/app-version/android')
+            ->assertOk()
+            ->assertJson([
+                'latest_version' => '1.3.0',
+                'download_url' => '/apk/ProyecTWin.apk',
+            ]);
+    }
+
+    public function test_anuncia_url_absoluta_https_en_produccion(): void
+    {
+        config([
+            'app.url' => 'https://proyectwin.test',
+            'app_version.android.download_url' => '/apk/ProyecTWin.apk',
+        ]);
+
+        $this->getJson('/v1/app-version/android')
+            ->assertOk()
+            ->assertJson([
+                'download_url' => 'https://proyectwin.test/apk/ProyecTWin.apk',
+            ]);
+    }
+
+    public function test_oculta_la_descarga_si_el_apk_no_existe(): void
+    {
+        config([
+            'app.url' => 'https://proyectwin.test',
+            'app_version.android.download_url' => '/apk/NoExiste.apk',
+        ]);
+
+        $this->getJson('/v1/app-version/android')
+            ->assertOk()
+            ->assertJson(['download_url' => '']);
+    }
+
     public function test_obligatoriedad_explicita(): void
     {
         config([

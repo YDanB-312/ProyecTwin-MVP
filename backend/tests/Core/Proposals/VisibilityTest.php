@@ -507,4 +507,44 @@ class VisibilityTest extends TestCase
         $this->assertCount(1, $filas);
         $this->assertSame($this->instructorA->id, $filas[0]['id_usuario']);
     }
+
+    public function test_aprendiz_no_accede_al_perfil_de_otro_aprendiz(): void
+    {
+        $this->como($this->aprendizA)
+            ->getJson('/v1/general-users/'.$this->aprendizB->id.'/perfil')
+            ->assertStatus(403);
+
+        $this->como($this->aprendizA)
+            ->getJson('/v1/general-users/'.$this->aprendizA->id.'/perfil')
+            ->assertOk();
+    }
+
+    public function test_admin_accede_al_perfil_de_cualquier_aprendiz(): void
+    {
+        $this->como($this->admin)
+            ->getJson('/v1/general-users/'.$this->aprendizB->id.'/perfil')
+            ->assertOk();
+    }
+
+    public function test_aprendiz_no_accede_a_propuesta_de_otra_ficha(): void
+    {
+        $this->como($this->aprendizA)
+            ->getJson('/v1/projects/'.$this->projectB->id)
+            ->assertStatus(403);
+
+        $this->como($this->aprendizA)
+            ->getJson('/v1/projects/'.$this->projectA->id)
+            ->assertOk();
+    }
+
+    public function test_instructor_no_accede_a_propuesta_de_otro_programa(): void
+    {
+        $this->como($this->instructorA)
+            ->getJson('/v1/projects/'.$this->projectB->id)
+            ->assertStatus(403);
+
+        $this->como($this->instructorA)
+            ->getJson('/v1/projects/'.$this->projectA->id)
+            ->assertOk();
+    }
 }

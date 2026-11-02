@@ -35,9 +35,12 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->environment('production')) {
+        // La demo solo tiene sentido en entornos controlados. E2E usa una base
+        // desechable y también necesita este escenario; staging y producción
+        // quedan bloqueados.
+        if (! app()->environment(['local', 'testing', 'e2e'])) {
             throw new \RuntimeException(
-                'DemoSeeder es de demostración y está bloqueado en producción. Usa admin:inicial.'
+                'DemoSeeder solo se permite en local/testing/e2e. Usa admin:inicial en producción.'
             );
         }
 

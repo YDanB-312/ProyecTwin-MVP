@@ -197,9 +197,9 @@ class Recomputador
     // Deja como históricos todos los pares vigentes de una propuesta.
     private function archivarPares(int $projectId): void
     {
-        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
-            ->where('vigente', true)
-            ->update(['vigente' => false]);
+        Similarity::where(function ($q) use ($projectId) {
+            $q->where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId);
+        })->where('vigente', true)->update(['vigente' => false]);
     }
 
     // Deja como históricos los pares vigentes de la propuesta que ya no
@@ -207,8 +207,9 @@ class Recomputador
     private function archivarParesObsoletos(int $projectId, array $vigentes): void
     {
         $vigentes = array_map('intval', $vigentes);
-        Similarity::where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId)
-            ->where('vigente', true)
+        Similarity::where(function ($q) use ($projectId) {
+            $q->where('id_proyecto_1', $projectId)->orWhere('id_proyecto_2', $projectId);
+        })->where('vigente', true)
             ->get()
             ->each(function (Similarity $s) use ($projectId, $vigentes) {
                 $otro = (int) $s->id_proyecto_1 === $projectId ? (int) $s->id_proyecto_2 : (int) $s->id_proyecto_1;

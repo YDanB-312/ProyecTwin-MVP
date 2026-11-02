@@ -196,7 +196,7 @@ class GeneralUserController extends Controller
     // Restablecimiento administrativo: revoca el acceso actual y envía un
     // enlace de recuperación (o reenvía la activación si la cuenta está
     // pendiente). Nunca genera ni devuelve contraseñas.
-    public function restablecerCredenciales(Request $request, GeneralUser $general_user)
+    public function restablecerCredenciales(GeneralUser $general_user)
     {
         if ($general_user->rol === 'admin') {
             return response()->json([
@@ -322,9 +322,24 @@ class GeneralUserController extends Controller
                 'message' => 'Usa "Cambiar correo" e ingresa tu contraseña actual para modificar tu correo.',
             ], 422);
         }
+        // Un admin no puede cambiar el correo de OTRO admin: podría tomar la
+        // cuenta y usar la recuperación de contraseña sobre el correo nuevo.
+        // El titular lo cambia con /auth/email y su contraseña actual.
+        if ($cambiaCorreo && $esAdmin && ! $esPropiaCuenta && $general_user->rol === 'admin') {
+            return response()->json([
+                'message' => 'El correo de otro administrador solo puede cambiarlo su titular con la contraseña actual.',
+            ], 422);
+        }
         // Nadie puede quitarse a sí mismo el rol de admin.
         if ($cambiaRol && $yo && (int) $yo->id === (int) $general_user->id && $general_user->rol === 'admin') {
             return response()->json(['message' => 'No puedes quitarte tu propio rol de administrador.'], 422);
+        }
+        // Tampoco se puede degradar a OTRO admin desde esta vía: tras
+        // degradarlo, el atacante podría cambiar su correo y tomar la cuenta.
+        if ($cambiaRol && $esAdmin && ! $esPropiaCuenta && $general_user->rol === 'admin') {
+            return response()->json([
+                'message' => 'El rol de otro administrador no puede cambiarse desde esta vía.',
+            ], 422);
         }
         // Tampoco se puede suspender/degradar al último administrador activo.
         $dejaDeSerAdminActivo = $general_user->rol === 'admin' && $general_user->estado
@@ -382,7 +397,14 @@ class GeneralUserController extends Controller
         $documentoAnterior = Pii::documento($general_user->tipo_documento, $general_user->numero_documento);
 
         // Actualización atómica: cuenta + perfiles + auditoría (todo o nada).
-        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre, $cambiaDocumento, $documentoAnterior) {
+        DB::transaction(function () use ($general_user, $data, $cambiaRol, $cambiaEstado, $cambiaCorreo, $cambiaNombre, $cambiaDocumento, $documentoAnterior, $dejaDeSerAdminActivo) {
+            // La comprobación previa puede quedar obsoleta si otra sesión
+            // cambió el rol/estado mientras tanto. Se bloquean y recuentan los
+            // administradores activos dentro de la misma transacción.
+            if ($dejaDeSerAdminActivo) {
+                \App\Support\GuardiaAdministradores::bloquearYAfirmar();
+            }
+
             $general_user->update($data);
 
             // D-01: una suspensión debe cortar el acceso existente de inmediato.
@@ -534,6 +556,10 @@ class GeneralUserController extends Controller
                 &$impactoConfirmado,
                 &$impactoCambiado
             ) {
+                if ($general_user->rol === 'admin' && $general_user->estado) {
+                    \App\Support\GuardiaAdministradores::bloquearYAfirmar();
+                }
+
                 $this->bloquearUsuarioYRelaciones($general_user);
                 $impactoConfirmado = $this->impactoUsuario($general_user);
                 $hashActual = $this->hashImpacto($general_user, $impactoConfirmado);

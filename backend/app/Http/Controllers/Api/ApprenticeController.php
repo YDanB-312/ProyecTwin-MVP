@@ -50,8 +50,6 @@ class ApprenticeController extends Controller
             'codigo' => 'required|max:255|unique:apprentices,codigo',
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')],
-            // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
-            'id_programa' => 'nullable|exists:training_programs,id',
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);
@@ -75,7 +73,7 @@ class ApprenticeController extends Controller
             }
         }
 
-        $data = $request->only(['codigo', 'id_class_group', 'id_usuario', 'id_programa']);
+        $data = $request->only(['codigo', 'id_class_group', 'id_usuario']);
         // Invariante: el programa del aprendiz es el de su ficha (o null sin ficha).
         if ($request->filled('id_class_group')) {
             $data['id_programa'] = ClassGroup::findOrFail($request->id_class_group)->id_programa;
@@ -142,8 +140,6 @@ class ApprenticeController extends Controller
             'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
             'id_class_group' => 'nullable|exists:class_groups,id',
             'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')->ignore($apprentice->id)],
-            // Sin ficha no hay programa (se deriva de la ficha cuando la hay).
-            'id_programa' => 'nullable|exists:training_programs,id',
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);

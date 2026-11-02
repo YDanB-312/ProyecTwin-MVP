@@ -10,13 +10,38 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
-     * En Railway el TLS termina en su proxy: confiar en todos es seguro
-     * (el contenedor solo es alcanzable a través de él) y garantiza que
-     * Laravel genere URLs https y marque las cookies como seguras.
+     * El valor por defecto conserva el comportamiento histórico de Railway
+     * (TLS termina en su proxy). Para endurecerlo, define TRUSTED_PROXIES con
+     * los CIDR/IP del proxy; el valor "*" sigue siendo el fallback.
      *
      * @var array<int, string>|string|null
      */
-    protected $proxies = '*';
+    protected $proxies;
+
+    public function __construct()
+    {
+        // Se lee del entorno del proceso, igual que la guarda del entrypoint.
+        // Con `config:cache` la variable debe llegar del contenedor (Railway),
+        // no solo desde el `.env` local.
+        $configurados = env('TRUSTED_PROXIES');
+        $valor = is_string($configurados) ? trim($configurados) : '';
+
+        if (app()->environment('production') && ($valor === '' || $valor === '*')) {
+            throw new \RuntimeException(
+                'TRUSTED_PROXIES debe configurarse con los CIDR/IP del proxy en producción; "*" no está permitido.'
+            );
+        }
+
+        if ($valor === '') {
+            $this->proxies = '*';
+
+            return;
+        }
+
+        $this->proxies = $valor === '*'
+            ? '*'
+            : array_values(array_filter(array_map('trim', explode(',', $valor))));
+    }
 
     /**
      * The headers that should be used to detect proxies.

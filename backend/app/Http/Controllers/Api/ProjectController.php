@@ -16,6 +16,7 @@ use App\Services\NotificacionesService;
 use App\Similarity\Recomputador;
 use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -130,9 +131,10 @@ class ProjectController extends Controller
     // propuesta completa, ejecuta el motor de similitud en el servidor y avisa
     // al instructor. El frontend ya no dispara el análisis.
     //
-    // Regla del motor (intencional): corre al enviar/reenviar y al editar en
-    // revisión; NO al crear ni al aprobar. Tras una intervención admin que
-    // devuelve a revisión, el contenido se archiva y se re-detecta.
+    // Regla del motor (intencional): corre al enviar/reenviar, al editar en
+    // revisión y al aprobar si el contenido cambió en la misma petición o hubo
+    // intervención admin; no al crear. En esos casos el contenido anterior se
+    // archiva como evidencia y se vuelve a detectar sobre el texto vigente.
     public function enviar(Request $request, Project $project)
     {
         $usuario = $request->user();
@@ -171,7 +173,7 @@ class ProjectController extends Controller
             ], 422);
         }
 
-        $item = DB::transaction(function () use ($project, $huella, $eraRechazada) {
+        $item = DB::transaction(function () use ($project) {
             // Orden global de bloqueos (D-2b): el mutex del motor se adquiere
             // SIEMPRE antes de tocar la propuesta (evita el AB-BA con destroy).
             $config = \App\Models\MotorConfig::actual();
@@ -188,6 +190,26 @@ class ProjectController extends Controller
                 );
             }
 
+            // El contenido pudo cambiar mientras se esperaba el lock.
+            $faltantes = $this->camposFaltantes($bloqueado);
+            if ($faltantes) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json([
+                        'message' => 'Completa la propuesta antes de enviarla: '.implode(', ', $faltantes).'.',
+                        'campos' => $faltantes,
+                    ], 422)
+                );
+            }
+
+            $eraRechazada = $bloqueado->estado === 'rechazado';
+            $huella = $this->huellaContenido($bloqueado);
+            if ($eraRechazada && $bloqueado->huella_envio && $bloqueado->huella_envio === $huella) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json(['message' => 'No hay cambios respecto a la versión anterior. Modifica la propuesta antes de reenviarla.'], 422)
+                );
+            }
+
+            $project = $bloqueado;
             $project->update(['estado' => 'pendiente', 'huella_envio' => $huella]);
 
             // Reenvío: la detección de la versión rechazada queda como evidencia
@@ -297,6 +319,8 @@ class ProjectController extends Controller
             'objetivo_general' => 'nullable',
             'objetivos_especificos' => 'nullable|array',
             'estado' => 'sometimes|required|in:borrador,pendiente,aprobado,rechazado',
+            // Versión optimista: el cliente envía el updated_at que leyó.
+            'version' => 'sometimes|date',
             // Observación del instructor al rechazar (opcional).
             'observacion' => 'nullable|string|max:1000',
             'id_creador' => 'nullable|exists:general_users,id',
@@ -369,16 +393,58 @@ class ProjectController extends Controller
             $datos['estado'] = 'pendiente';
         }
 
+        $versionSolicitada = null;
+        if ($request->filled('version')) {
+            $versionSolicitada = Carbon::parse($request->input('version'));
+            if (! $project->updated_at || ! $project->updated_at->equalTo($versionSolicitada)) {
+                return $this->respuestaPayloadObsoleto($project);
+            }
+        }
+
         $estadoAnterior = $project->estado;
         $observacion = trim((string) $request->input('observacion', ''));
 
+        // Aprobar exige el contenido completo, incluso si se edita y aprueba
+        // en la misma petición. Se valida sobre una copia con los cambios
+        // solicitados, antes de abrir la transacción.
+        $estadoNuevo = $datos['estado'] ?? $project->estado;
+        if ($estadoNuevo === 'aprobado' && $estadoAnterior !== 'aprobado') {
+            $candidato = clone $project;
+            $candidato->fill($datos);
+            $faltantes = $this->camposFaltantes($candidato);
+            if ($faltantes) {
+                return response()->json([
+                    'message' => 'Completa la propuesta antes de aprobarla: '.implode(', ', $faltantes).'.',
+                    'campos' => $faltantes,
+                ], 422);
+            }
+        }
+
+        $huellaVista = $this->huellaContenido($project);
+
         // Actualización atómica: propuesta + comentario + historial + avisos.
-        DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario) {
+        DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario, $huellaVista, $versionSolicitada) {
             // Orden global de bloqueos (D-2b): el mutex del motor se adquiere
             // SIEMPRE antes de tocar la propuesta (evita el AB-BA con destroy).
             $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
 
+            // Revalidación con la fila bloqueada: la autorización y el estado
+            // se leyeron antes de la transacción y otra petición pudo cambiarlos.
+            $bloqueado = Project::whereKey($project->id)->lockForUpdate()->first();
+            if (! $bloqueado
+                || $bloqueado->estado !== $estadoAnterior
+                || $this->huellaContenido($bloqueado) !== $huellaVista
+                || ($versionSolicitada && (
+                    ! $bloqueado->updated_at
+                    || ! $bloqueado->updated_at->equalTo($versionSolicitada)
+                ))) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    $this->respuestaPayloadObsoleto($bloqueado ?? $project)
+                );
+            }
+
+            $project = $bloqueado;
             $project->update($datos);
 
             // Aprobar/rechazar queda en la bitácora (decisión con efecto académico).
@@ -436,6 +502,15 @@ class ProjectController extends Controller
                     $motor->detectar($project, false);
                 }
 
+                // Si se aprobó y el contenido cambió en la misma petición, los
+                // pares vigentes describen el texto anterior: se archivan y se
+                // vuelven a detectar sobre el texto aprobado.
+                if ($contenidoCambio && ! $intervencionAdmin && $project->estado === 'aprobado') {
+                    $motor = app(Recomputador::class);
+                    $motor->archivar($project);
+                    $motor->detectar($project, false);
+                }
+
                 // Avisa al creador de la decisión (el rechazo incluye la observación).
                 if ($project->estado === 'aprobado') {
                     app(NotificacionesService::class)->propuestaAprobada($project);
@@ -456,6 +531,10 @@ class ProjectController extends Controller
                 }
             }
         });
+
+        // La transacción actualizó la fila; el modelo de la ruta quedó con el
+        // estado anterior. Refrescar para devolver el estado real.
+        $project->refresh();
 
         return $this->respuestaProyectos($project, $usuario);
     }
@@ -519,7 +598,7 @@ class ProjectController extends Controller
             return response()->json(['message' => $mensajeEvidencia], 409);
         }
 
-        $item = DB::transaction(function () use ($project, $mensajeEvidencia) {
+        $item = DB::transaction(function () use ($project, $mensajeEvidencia, $rol) {
             // Re-verificación serializada con el motor (mismo mutex que
             // Recomputador::detectar) y como LECTURA DE BLOQUEO (actual, no la
             // instantánea de REPEATABLE READ): ve cualquier par confirmado antes
@@ -528,6 +607,21 @@ class ProjectController extends Controller
             // del motor también en el arranque y toma SIEMPRE el mutex.
             $config = \App\Models\MotorConfig::actual();
             \App\Models\MotorConfig::whereKey($config->id)->lockForUpdate()->first();
+
+            // La fila pudo cambiar de estado entre la autorización y el lock.
+            $bloqueado = Project::whereKey($project->id)->lockForUpdate()->first();
+            if (! $bloqueado) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json(['message' => 'La propuesta ya no existe.'], 404)
+                );
+            }
+            if ($rol === 'aprendiz' && in_array($bloqueado->estado, ['pendiente', 'aprobado'], true)) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json(['message' => 'No puedes eliminar una propuesta en revisión o aprobada.'], 409)
+                );
+            }
+            $project = $bloqueado;
+
             $paresBloqueados = Similarity::where('id_proyecto_1', $project->id)
                 ->orWhere('id_proyecto_2', $project->id)
                 ->lockForUpdate()
@@ -564,6 +658,15 @@ class ProjectController extends Controller
     private function respuestaProyectos($resultado, $usuario, int $estado = 200)
     {
         return response()->json($this->datosProyecto($resultado, $usuario), $estado);
+    }
+
+    private function respuestaPayloadObsoleto(Project $project)
+    {
+        return response()->json([
+            'message' => 'La propuesta fue modificada por otra sesión. Recarga los datos e inténtalo de nuevo.',
+            'code' => 'payload_obsoleto',
+            'actualizado_en' => $project->updated_at?->toJSON(),
+        ], 409);
     }
 
     private function datosProyecto($resultado, $usuario)

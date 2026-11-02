@@ -108,10 +108,7 @@ class CommentController extends Controller
         }
 
         $request->validate([
-            'texto' => 'required',
-            'id_proyecto' => 'required|exists:projects,id',
-            'id_usuario' => 'nullable|exists:general_users,id',
-            'respuesta_a' => 'nullable|exists:comments,id',
+            'texto' => 'required|string',
         ]);
 
         // Solo cambia el texto: la observación no se mueve de proyecto ni de hilo

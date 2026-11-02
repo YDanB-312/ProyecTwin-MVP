@@ -591,4 +591,118 @@ class FlujoPropuestaTest extends TestCase
         $this->como($instructorUser)->getJson("/v1/projects/$id/historial")->assertOk();
         $this->como($ajeno)->getJson("/v1/projects/$id/historial")->assertStatus(403);
     }
+
+    public function test_payload_obsoleto_no_sobrescribe_cambios_recientes(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $aprendiz = $this->aprendizEn($ficha);
+
+        $creada = $this->como($aprendiz)
+            ->postJson('/v1/projects', $this->borradorCompleto($aprendiz))
+            ->assertCreated();
+
+        $id = $creada->json('id');
+        $this->como($aprendiz)->postJson("/v1/projects/$id/enviar")->assertOk();
+
+        $version = Project::find($id)->updated_at->toJSON();
+        sleep(1);
+
+        $this->como($instructorUser)
+            ->putJson("/v1/projects/$id", [
+                'titulo' => 'Primera edición válida',
+                'version' => $version,
+            ])
+            ->assertOk();
+
+        $this->como($instructorUser)
+            ->putJson("/v1/projects/$id", [
+                'titulo' => 'Edición obsoleta',
+                'version' => $version,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'payload_obsoleto');
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $id,
+            'titulo' => 'Primera edición válida',
+        ]);
+    }
+
+    public function test_no_se_puede_aprobar_una_propuesta_que_quedo_incompleta(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $aprendiz = $this->aprendizEn($ficha);
+
+        $creada = $this->como($aprendiz)
+            ->postJson('/v1/projects', $this->borradorCompleto($aprendiz))
+            ->assertCreated();
+
+        $id = $creada->json('id');
+        $this->como($aprendiz)->postJson("/v1/projects/$id/enviar")->assertOk();
+
+        $this->como($instructorUser)
+            ->putJson("/v1/projects/$id", [
+                'titulo' => '',
+                'resumen' => '',
+                'objetivo_general' => '',
+                'objetivos_especificos' => [],
+                'estado' => 'aprobado',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn ($m) => str_contains($m, 'Completa la propuesta'));
+
+        $this->assertDatabaseHas('projects', ['id' => $id, 'estado' => 'pendiente']);
+    }
+
+    public function test_aprobar_con_contenido_editado_reanaliza_el_motor(): void
+    {
+        $programa = $this->programa();
+        $instructorUser = $this->usuario('instructor');
+        $ficha = $this->ficha($programa, $instructorUser);
+        $aprendiz = $this->aprendizEn($ficha);
+
+        // Corpus aprobado con el mismo contenido del borrador.
+        $otro = $this->usuario('aprendiz');
+        Project::create([
+            'titulo' => 'Sistema de inventarios para tienda',
+            'resumen' => 'Herramienta web para controlar inventarios de almacén con alertas de stock y reportes.',
+            'area_aplicacion' => 'Desarrollo Web',
+            'estado' => 'aprobado',
+            'id_creador' => $otro->id,
+            'id_class_group' => $ficha->id,
+        ]);
+
+        $creada = $this->como($aprendiz)
+            ->postJson('/v1/projects', $this->borradorCompleto($aprendiz))
+            ->assertCreated();
+
+        $id = $creada->json('id');
+        $this->como($aprendiz)->postJson("/v1/projects/$id/enviar")->assertOk();
+
+        // El contenido cambia y se aprueba en la misma petición: el motor debe
+        // archivar los pares del texto anterior y analizar el nuevo.
+        $this->mock(\App\Similarity\Recomputador::class, function ($mock) {
+            $mock->shouldReceive('archivar')->once();
+            $mock->shouldReceive('detectar')->once()->andReturn(0);
+        });
+
+        $this->como($instructorUser)
+            ->putJson("/v1/projects/$id", [
+                'titulo' => 'Aplicación de turismo rural comunitario',
+                'resumen' => 'Plataforma para reservas de hospedaje rural, rutas y artesanías locales con panel de administración.',
+                'area_aplicacion' => 'Turismo',
+                'objetivo_general' => 'Promover reservas turísticas comunitarias con información verificada.',
+                'objetivos_especificos' => [
+                    'Registrar hospedajes y rutas.',
+                    'Gestionar reservas y pagos.',
+                ],
+                'estado' => 'aprobado',
+            ])
+            ->assertOk()
+            ->assertJsonPath('estado', 'aprobado');
+    }
 }

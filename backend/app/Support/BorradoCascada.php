@@ -162,6 +162,12 @@ class BorradoCascada
                 self::assertSinEvidencia($fichas, self::mensajeEvidencia('usuario'), $usuario->id);
             }
 
+            // La guarda se toma después del mutex del motor (cuando aplica)
+            // para conservar el orden global motor -> administradores.
+            if ($usuario->rol === 'admin' && $usuario->estado) {
+                \App\Support\GuardiaAdministradores::bloquearYAfirmar();
+            }
+
             if ($instructor) {
                 ClassGroup::where('id_instructor', $instructor->id)->get()
                     ->each(fn ($f) => self::fichaInterna($f));

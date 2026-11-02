@@ -2,7 +2,6 @@
 
 namespace Tests\Core\Academic;
 
-use App\Models\Apprentice;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
