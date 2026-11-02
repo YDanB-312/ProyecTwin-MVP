@@ -67,10 +67,27 @@ async function asegurarCsrf() {
 // Cualquier escritura (POST/PUT/PATCH/DELETE) invalida la caché completa, para
 // que el patrón "mutar y recargar" siga viendo datos frescos.
 const TTL_GET_MS = 15000;
+const MAX_CACHE_GET = 50;
 
 let generacion = 0;
 const cacheGet = new Map(); // url -> { ts, data }
 const enVuelo = new Map(); // url -> Promise
+
+// Guarda una respuesta GET, purga entradas vencidas y acota la caché para que
+// una sesión larga con muchos filtros no acumule URLs indefinidamente.
+function guardarEnCache(url, data) {
+  const ahora = Date.now();
+
+  for (const [clave, entrada] of cacheGet) {
+    if (ahora - entrada.ts >= TTL_GET_MS) cacheGet.delete(clave);
+  }
+
+  cacheGet.set(url, { ts: ahora, data });
+
+  while (cacheGet.size > MAX_CACHE_GET) {
+    cacheGet.delete(cacheGet.keys().next().value);
+  }
+}
 
 // Descarta lo cacheado y anula escrituras pendientes de peticiones en curso.
 export function invalidarCache() {
@@ -193,8 +210,7 @@ export async function apiFetch(
         err.data = data;
         throw err;
       }
-      if (usaCache && gen === generacion)
-        cacheGet.set(url, { ts: Date.now(), data });
+      if (usaCache && gen === generacion) guardarEnCache(url, data);
       return data;
     } catch (err) {
       if (err?.name === "AbortError") {

@@ -1,0 +1,7 @@
+.loading {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { motor as motorApi } from '../lib/recursos'
 
 // Configuración del motor de similitud (umbral + ventana), compartida por toda
@@ -35,15 +35,15 @@ export function MotorProvider({ children }) {
     return () => { vivo = false }
   }, [])
 
+  const value = useMemo(() => ({
+    umbral: config.umbral,
+    umbralPct: Math.round(config.umbral * 100),
+    meses: config.meses,
+    recargar,
+  }), [config.umbral, config.meses, recargar])
+
   return (
-    <MotorContext.Provider
-      value={{
-        umbral: config.umbral,
-        umbralPct: Math.round(config.umbral * 100),
-        meses: config.meses,
-        recargar,
-      }}
-    >
+    <MotorContext.Provider value={value}>
       {children}
     </MotorContext.Provider>
   )

@@ -69,6 +69,7 @@ export default function DashboardLayout({ role = 'aprendiz', titulo = '', childr
         usuario={user}
         role={role}
         notificaciones={sinLeer}
+        sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
       />
       <Sidebar

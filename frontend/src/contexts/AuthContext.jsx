@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
 import { RUTA_POR_ROL } from '../constants/routes'
 import {
   apiLogin, apiLogout, apiMe, apiChangePassword,
@@ -110,8 +110,21 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener(EVENTO_SESION_EXPIRADA, alExpirar)
   }, [])
 
+  // El valor del contexto se crea una vez por cambio real de sesión. Sin esto,
+  // cualquier render del provider entrega un objeto nuevo y vuelve a renderizar
+  // a todos los consumidores.
+  const value = useMemo(() => ({
+    user,
+    cargando,
+    login,
+    cambiarMiContrasena,
+    sincronizarSesion,
+    logout,
+    isAuthenticated: !!user,
+  }), [user, cargando, login, cambiarMiContrasena, sincronizarSesion, logout])
+
   return (
-    <AuthContext.Provider value={{ user, cargando, login, cambiarMiContrasena, sincronizarSesion, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

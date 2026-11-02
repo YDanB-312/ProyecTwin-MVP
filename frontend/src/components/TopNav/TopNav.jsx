@@ -55,7 +55,7 @@ function HamburgerIcon() {
   )
 }
 
-export default function TopNav({ titulo = '', usuario = null, notificaciones = 0, role = '', onToggleSidebar }) {
+export default function TopNav({ titulo = '', usuario = null, notificaciones = 0, role = '', sidebarOpen = false, onToggleSidebar }) {
   const { logout } = useAuth()
   const navigate = useNavigate()
 
@@ -83,8 +83,15 @@ export default function TopNav({ titulo = '', usuario = null, notificaciones = 0
     <header className={s.topnav}>
       <div className={s.bar}>
         <div className={s.left}>
-          <Tooltip content="Abrir menú de navegación">
-            <button type="button" className={s.hamburger} onClick={onToggleSidebar} aria-label="Abrir menú de navegación">
+          <Tooltip content={sidebarOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}>
+            <button
+              type="button"
+              className={s.hamburger}
+              onClick={onToggleSidebar}
+              aria-label={sidebarOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+              aria-expanded={sidebarOpen}
+              aria-controls="sidebar-navegacion"
+            >
               <HamburgerIcon />
             </button>
           </Tooltip>

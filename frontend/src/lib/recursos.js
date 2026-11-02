@@ -208,8 +208,8 @@ export const demo = {
 };
 
 // ---------------------------------------------------------------- App Android
-// El endpoint público es la única fuente de la URL de descarga: si no hay
-// APK autorizado, `download_url` queda vacío y el botón del Home no se pinta.
+// Metadatos de versión para la app móvil. El APK histórico no se anuncia:
+// `download_url` permanece vacío y no se muestra una descarga en la web.
 export const appVersion = {
   android: () => apiFetch("/app-version/android", { auth: false }),
 };

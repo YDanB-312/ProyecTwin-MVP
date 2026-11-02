@@ -20,7 +20,7 @@ export default function Sidebar({ isOpen = false, onClose, role = '', links = []
     <>
       {isOpen && <div className={s.overlay} onClick={onClose} aria-hidden="true" />}
 
-      <aside className={`${s.sidebar} ${isOpen ? s.isOpen : ''}`} aria-label={`Navegación principal (${role})`}>
+      <aside id="sidebar-navegacion" className={`${s.sidebar} ${isOpen ? s.isOpen : ''}`} aria-label={`Navegación principal (${role})`}>
         <button type="button" className={s.closeBtn} onClick={onClose} aria-label="Cerrar menú">
           <CloseIcon />
         </button>

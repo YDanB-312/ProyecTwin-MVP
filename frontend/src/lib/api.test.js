@@ -1,5 +1,11 @@
 ﻿import { afterEach, describe, expect, it, vi } from 'vitest'
-import { apiDescargar, apiLogin, EVENTO_SESION_EXPIRADA } from './api'
+import {
+  apiDescargar,
+  apiFetch,
+  apiLogin,
+  EVENTO_SESION_EXPIRADA,
+  invalidarCache,
+} from './api'
 
 // La descarga de PDF debe manejar la sesión expirada igual que apiFetch.
 describe('apiDescargar', () => {
@@ -62,5 +68,30 @@ describe('apiDescargar', () => {
       password: 'ClaveTest#2026',
       recordarme: false,
     })
+  })
+})
+
+describe('caché de apiFetch', () => {
+  afterEach(() => {
+    invalidarCache()
+    vi.restoreAllMocks()
+  })
+
+  it('acota las URLs cacheadas para no crecer sin límite', async () => {
+    invalidarCache()
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ url: String(url) }),
+    }))
+
+    for (let i = 0; i < 55; i += 1) {
+      await apiFetch(`/cache-${i}`)
+    }
+
+    const antes = fetchMock.mock.calls.length
+    await apiFetch('/cache-0')
+
+    expect(fetchMock.mock.calls.length).toBe(antes + 1)
   })
 })

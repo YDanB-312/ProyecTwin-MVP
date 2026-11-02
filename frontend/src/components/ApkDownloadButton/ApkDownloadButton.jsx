@@ -20,7 +20,7 @@ export default function ApkDownloadButton() {
       download="ProyecTWin.apk"
       rel="noopener noreferrer"
     >
-      Descargar APK de ProyecTWIN
+      Descargar aplicación Android
     </Button>
   )
 }

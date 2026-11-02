@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { THEME_KEY, ThemeContext } from './theme'
 
 // Lee una cookie de primer nivel (no usa localStorage).
@@ -35,8 +35,13 @@ export function ThemeProvider({ children }) {
     []
   )
 
+  const value = useMemo(
+    () => ({ theme, alternarTema }),
+    [theme, alternarTema]
+  )
+
   return (
-    <ThemeContext.Provider value={{ theme, alternarTema }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   )
