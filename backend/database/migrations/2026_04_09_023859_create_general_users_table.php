@@ -29,6 +29,8 @@ return new class extends Migration
             $table->text('foto_url')->nullable();
             $table->enum('rol', ['aprendiz', 'instructor', 'admin']);
             $table->boolean('estado')->default(true);
+            // Índice para la guarda del último administrador (bloqueo por rol/estado).
+            $table->index(['rol', 'estado'], 'general_users_rol_estado_index');
             // Necesario para el flujo de restablecer contraseña (broker de Laravel).
             $table->rememberToken();
             $table->timestamps();
