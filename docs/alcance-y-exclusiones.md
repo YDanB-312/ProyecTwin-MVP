@@ -28,8 +28,10 @@ actual.
   la **exención administrativa** se mantiene implementada. Queda documentado
   como decisión residual el "callejón 409" del aprendiz creador (sin endpoint
   de reasignación de `id_creador`).
-- **Perfiles de aprendices al borrar programas/redes:** se mantiene la política
-  actual (eliminación de la fila) hasta decisión específica.
+- **Perfiles de aprendices al borrar programas/redes:** el código actual
+  conserva la fila de `apprentices` y deja `id_class_group`/`id_programa` en
+  null; la ratificación de esa política sigue pendiente de decisión del
+  propietario.
 - **Cascadas de catálogo (instructor/programa/red):** protegidas contra la
   destrucción indirecta de pares de similitud (409), según la decisión
   BUG-007 × D-2b.

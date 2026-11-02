@@ -1,6 +1,6 @@
 # Release Android firmado — ProyecTwin MVP
 
-> **Estado actual del APK (Fase 6C).** El artefacto `backend/public/apk/ProyecTWin.apk`
+> **Estado actual del APK (Fase 6AP).** El artefacto `backend/public/apk/ProyecTWin.apk`
 > es **1.3.0 / versionCode 4**, `applicationId com.example.proyectwin`, sin
 > `application-debuggable`, firmas v2/v3 y certificado `CN=Oscar` (RSA 2048).
 > SHA-256 del APK:
@@ -8,11 +8,11 @@
 > SHA-256 del certificado:
 > `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D`.
 >
-> **No se ha autorizado su publicación desde la imagen web.** `.dockerignore` y
-> `.railwayignore` excluyen el APK y Nginx responde 404 en
-> `/apk/ProyecTWin.apk`. No generes una clave nueva ni re-firmes este APK:
-> cambiaría la identidad de actualización. La autorización escrita de Oscar y la
-> custodia de la clave siguen pendientes.
+> **El APK histórico se conserva tracked, pero no se distribuye.** No se copia
+> a nuevas imágenes, Nginx responde 404 en `/apk/**`, `/v1/app-version/android`
+> devuelve `download_url` vacío y el Home no muestra el botón. La publicación
+> requiere autorización escrita de Oscar y custodia de la clave. No generes una
+> clave nueva ni re-firmes este APK: cambiaría la identidad de actualización.
 >
 > Este documento es el procedimiento para validar y publicar futuras versiones.
 > Todos los valores entre `<...>` son marcadores: **ningún secreto debe
@@ -30,9 +30,9 @@ propuestas son recomendaciones técnicas, no decisiones ya tomadas.
 | `applicationId` | Mantener `com.example.proyectwin` en la primera release firmada | El release no se instala sobre instalaciones debug 1.2.0/3 (firma distinta); hay que desinstalar. Si se cambia, es una app nueva |
 | Minify / R8 | `isMinifyEnabled = false` en la primera release firmada | Aísla el cambio de firma; R8 queda como optimización posterior con pruebas completas |
 | Versión de la release actual | `versionName = "1.3.0"`, `versionCode = 4` | El APK actual ya tiene esa versión; si se publica, la siguiente debería ser 1.4.0/5 |
-| Autorización de publicación | Oscar debe autorizar por escrito la publicación de 1.3.0/4 y confirmar la custodia de `CN=Oscar` | Sin esa confirmación, el APK permanece fuera de la imagen y la ruta responde 404 |
-| Canal de distribución | APK directo servido por Railway cuando Oscar autorice; alternativa externa si se decide no incluirlo | No hay Play Store ni App Bundle en este plan |
-| APK en Git | Commitear solo el APK liberado y autorizado (nunca builds intermedios) | El repo crece ~15 MB por release; valorar artefactos externos |
+| Autorización de publicación | Oscar debe confirmar por escrito la publicación de 1.3.0/4 y la custodia de `CN=Oscar`; actualmente no está autorizada | Sin esa confirmación, el APK permanece fuera de las imágenes y sin descarga |
+| Canal de distribución | APK directo servido por Railway solo después de autorización y cambio de código explícito; alternativa externa si se decide no incluirlo | No hay Play Store ni App Bundle en este plan |
+| APK en Git | El APK histórico permanece tracked; no se reemplaza ni se publica sin autorización | El repo crece ~15 MB por release; valorar artefactos externos |
 | Aviso obligatorio | `ANDROID_APP_ENFORCE_MINIMUM=false` en la release de transición | Los usuarios con debug 1.2.0/3 deben desinstalar antes de instalar el release |
 
 **Criterio de aceptación de la release:** APK firmado con la clave del owner (no
@@ -333,8 +333,9 @@ fallback es `http://10.0.2.2:8000/v1/`; el APK se instala, pero **no podrá
 conectar** porque el HTTP está bloqueado en release. No publiques un APK que use
 el fallback.
 
-`ANDROID_APP_DOWNLOAD_URL` es otra cosa: es la URL pública del archivo APK que
-consume el aviso de actualización, y también debe ser HTTPS.
+El endpoint `/v1/app-version/android` mantiene los metadatos de versión, pero
+devuelve `download_url=""`: no hay una URL pública de APK mientras no exista
+autorización de Oscar.
 
 Verificación funcional: en un dispositivo/emulador limpio, instalar el release y
 hacer login contra `https://<dominio>/v1/`. Si la app muestra un error genérico de
@@ -454,15 +455,15 @@ servido en producción. No confundir con la huella del certificado:
 
 ## 5. Publicación en Railway
 
-**Estado actual:** el APK **no se sirve** desde la imagen web. `.dockerignore`
-y `.railwayignore` excluyen `backend/public/apk` y `*.apk`; Nginx responde 404
-para `/apk` y `/apk/`. La ruta dedicada para el archivo autorizado ya existe,
-pero `try_files` devuelve 404 mientras el archivo no esté incluido.
+**Estado actual:** el APK **1.3.0/4** histórico se conserva tracked, pero **no
+se sirve ni se incluye en nuevas imágenes**. `.dockerignore` y
+`.railwayignore` excluyen `backend/public/apk`, Nginx responde 404 en
+`/apk/**`, el endpoint `/v1/app-version/android` devuelve `download_url=""` y
+el Home no muestra botón de descarga.
 
-Para publicar, Oscar debe entregar autorización escrita, el APK release firmado,
-su SHA-256, la confirmación de que `CN=Oscar` es la clave oficial y la custodia
-de esa clave. Sin esos elementos, no se modifica la imagen ni
-`ANDROID_APP_DOWNLOAD_URL`.
+La confirmación formal de Oscar sobre publicación y custodia de `CN=Oscar` es
+obligatoria antes de habilitar cualquier descarga. Habilitarla requiere un
+cambio de código explícito; no basta con una variable de entorno.
 
 El procedimiento de despliegue general está en
 [`deploy-railway.md`](deploy-railway.md); esta sección solo añade el artefacto
@@ -499,79 +500,34 @@ Reglas:
 - Si se cambia `applicationId`, actualizar este documento y las instrucciones de
   transición; no es una actualización de la app existente.
 
-### 5.2 Incluir el APK autorizado
+### 5.2 Distribución del APK
 
-Solo después de la autorización escrita de Oscar. Archiva el APK anterior fuera
-del repositorio y coloca el release validado:
+El APK histórico **no se incluye actualmente en la imagen**. No copies
+`backend/public/apk/ProyecTWin.apk` al contexto de build, no modifiques
+`.dockerignore`/`.railwayignore` para reincorporarlo y no reemplaces el archivo
+sin autorización escrita de Oscar.
 
-```powershell
-$releases = "$env:USERPROFILE\proyecttwin-releases"
-New-Item -ItemType Directory -Force $releases | Out-Null
+Para una release futura autorizada se necesitará un cambio de código explícito
+que vuelva a incluir el APK en el contexto, habilite una ruta controlada en
+Nginx y active `download_url` en el contrato. Ese cambio debe ir acompañado de
+pruebas de firma, SHA-256, MIME y actualización in-app en staging. No se activa
+por variable de entorno.
 
-Copy-Item Movil\app\build\outputs\apk\release\app-release.apk `
-  "$releases\proyecttwin-1.4.0.apk" -Force
+Mientras no exista esa autorización, `/apk/ProyecTWin.apk` y el resto de
+`/apk/` deben responder 404, y el endpoint debe devolver `download_url=""`.
 
-Copy-Item Movil\app\build\outputs\apk\release\app-release.apk `
-  backend\public\apk\ProyecTWin.apk -Force
+### 5.3 Metadatos de versión
 
-Get-FileHash backend\public\apk\ProyecTWin.apk -Algorithm SHA256
-Get-FileHash "$releases\proyecttwin-1.4.0.apk" -Algorithm SHA256
-```
+`ANDROID_APP_VERSION`, `ANDROID_APP_MIN_VERSION`,
+`ANDROID_APP_ENFORCE_MINIMUM` y `ANDROID_APP_RELEASE_NOTES` siguen siendo
+metadatos válidos. **No definas ni uses `ANDROID_APP_DOWNLOAD_URL`**: el
+controlador no la lee y `download_url` siempre queda vacío mientras el APK no
+esté autorizado.
 
-Los dos hashes deben coincidir. No guardes backups dentro de
-`backend/public/apk/`: se servirían públicamente.
+Habilitar una descarga requiere autorización de Oscar y un cambio de código
+explícito; no se hace desde variables de entorno.
 
-La imagen actual excluye el APK. Para incluir **solo** `ProyecTWin.apk`, añade
-al final de `.dockerignore` y `.railwayignore` (el orden importa):
-
-```text
-!backend/public/apk/
-!backend/public/apk/ProyecTWin.apk
-```
-
-Después del despliegue, verifica antes de anunciar la actualización:
-
-- `GET /apk/ProyecTWin.apk` → `200`.
-- `Content-Type: application/vnd.android.package-archive`.
-- `Content-Disposition: attachment; filename="ProyecTWin.apk"`.
-- SHA-256 remoto idéntico al local.
-- `/apk/otro.apk` y el resto de `/apk/` → `404`.
-
-Si no hay autorización, no añadas estas excepciones y no publiques el APK.
-
-### 5.3 Actualizar variables y redesplegar
-
-Solo cuando el archivo ya responda 200. Dashboard → servicio → Variables, o CLI:
-
-```powershell
-railway variables --set 'ANDROID_APP_VERSION=1.4.0' `
-  --set 'ANDROID_APP_MIN_VERSION=1.0.0' `
-  --set 'ANDROID_APP_ENFORCE_MINIMUM=false' `
-  --set 'ANDROID_APP_DOWNLOAD_URL=https://<dominio>/apk/ProyecTWin.apk' `
-  --set 'ANDROID_APP_RELEASE_NOTES=Versión firmada.' `
-  --skip-deploys
-
-railway up
-```
-
-Notas:
-
-- `ANDROID_APP_VERSION` debe ser exactamente el `versionName` del APK
-  (`1.4.0`), no el `versionCode`.
-- `ANDROID_APP_DOWNLOAD_URL` debe ser HTTPS y apuntar al archivo que se acaba de
-  verificar. Si el dominio cambia, actualiza también `APP_URL`,
-  `FRONTEND_URL` y `SANCTUM_STATEFUL_DOMAINS` según `deploy-railway.md`.
-- El botón "Descargar APK de ProyecTWIN" del Home lee
-  `/v1/app-version/android`; si `download_url` está vacío, no se muestra. No
-  definas la variable antes de que el archivo exista.
-- Para la release de transición se recomienda `ENFORCE_MINIMUM=false` y
-  `MIN_VERSION=1.0.0`; si se activa la obligatoriedad, los usuarios con debug
-  verán el aviso, pero la instalación fallará hasta que desinstalen.
-- `--skip-deploys` evita que cada cambio de variable dispare un deploy; `railway
-  up` construye la imagen con el APK nuevo. Si usas el dashboard, pulsa
-  **Deploy** después de guardar las variables.
-
-### 5.4 Verificar el despliegue y el hash remoto
+### 5.4 Verificar el estado seguro
 
 1. Healthcheck:
 
@@ -579,46 +535,21 @@ Notas:
 curl.exe -fsS https://<dominio>/up
 ```
 
-Debe responder `{"status":"ok"}` (o el contrato de `/up` vigente).
-
 2. Endpoint de versión:
 
 ```powershell
 curl.exe -fsS https://<dominio>/v1/app-version/android
 ```
 
-Debe devolver, como mínimo:
+Debe devolver `"download_url": ""` y los metadatos de versión.
 
-```json
-{
-  "latest_version": "1.4.0",
-  "minimum_supported_version": "1.0.0",
-  "enforce_minimum": false,
-  "download_url": "https://<dominio>/apk/ProyecTWin.apk",
-  "release_notes": "..."
-}
-```
-
-3. Hash remoto:
+3. La descarga debe estar cerrada:
 
 ```powershell
-curl.exe -fL -o "$env:TEMP\proyecttwin-remote.apk" `
-  https://<dominio>/apk/ProyecTWin.apk
-
-Get-FileHash "$env:TEMP\proyecttwin-remote.apk" -Algorithm SHA256
+curl.exe -I https://<dominio>/apk/ProyecTWin.apk
 ```
 
-Debe coincidir con el SHA-256 del APK local. Comprueba también el tamaño:
-
-```powershell
-(Get-Item "$env:TEMP\proyecttwin-remote.apk").Length
-(Get-Item "backend\public\apk\ProyecTWin.apk").Length
-```
-
-4. Descarga e instalación reales desde la URL pública en un dispositivo limpio.
-   Si el APK remoto es distinto, el despliegue no incluyó el archivo o hay caché:
-   revisa `railway logs`, vuelve a desplegar y, si hace falta, añade un
-   cache-buster a `ANDROID_APP_DOWNLOAD_URL` (`...?v=1.4.0`).
+Debe responder `404`. No debe existir un hash remoto que descargar.
 
 ### 5.5 Aviso in-app y prueba de actualización
 
@@ -661,7 +592,8 @@ adb uninstall com.example.proyectwin
 
    o Ajustes → Aplicaciones → ProyecTwin → Desinstalar.
 
-3. Instalar el APK release (descarga desde `/apk/ProyecTWin.apk` o `adb install`).
+3. Instalar el APK release con `adb install` o transferencia local; la descarga
+   pública desde `/apk/` permanece deshabilitada hasta autorización.
 4. Iniciar sesión de nuevo.
 
 **Pérdida:** se borran los datos locales de la app (preferencias, token de sesión,
@@ -691,8 +623,8 @@ hacerlo.**
 
 ### Comunicación de la transición
 
-Incluye en `ANDROID_APP_RELEASE_NOTES` y en el canal habitual (correo, chat,
-página de descarga):
+Incluye en `ANDROID_APP_RELEASE_NOTES` y en el canal habitual (correo, chat),
+sin publicar una página de descarga:
 
 > Esta es la primera versión firmada. Si tienes instalada una versión de pruebas
 > (1.2.0 o anterior), desinstálala antes de instalar esta actualización; de lo
@@ -833,10 +765,9 @@ Reglas de seguridad del CI:
 - El runner es efímero: no cachees `$RUNNER_TEMP` ni subas `release.jks` como
   artefacto.
 - Verifica el SHA-256 del keystore antes de compilar; si no coincide, falla.
-- El deploy a Railway es un job separado, manual o con aprobación. Si se
-  automatiza, descarga el artefacto, cópialo a
-  `backend/public/apk/ProyecTWin.apk`, ejecuta `railway up` con
-  `RAILWAY_TOKEN` y verifica el hash remoto (sección 5.4).
+- El deploy a Railway es un job separado, manual o con aprobación. **No debe
+  copiar el APK ni publicar `/apk/`**: la distribución permanece deshabilitada
+  hasta autorización escrita y un cambio de código explícito.
 - Si el keystore o sus contraseñas se filtran, asume que la clave está
   comprometida: la clave de firma no se puede rotar para instalaciones
   existentes y cambiar la contraseña no invalida una copia ya filtrada. Con Play
@@ -848,8 +779,8 @@ Reglas de seguridad del CI:
 ### 8.1 Rollback
 
 - Conserva el APK anterior y las variables anteriores fuera del repo.
-- Si el deploy falla antes de publicar, restaura `backend/public/apk/ProyecTWin.apk`
-  y las variables, y redespliega.
+- Si el deploy falla antes de publicar, restaura las variables y redespliega.
+  No copies el APK al contexto de build mientras la distribución esté cerrada.
 - Si el APK ya se publicó y los usuarios lo instalaron, **no publiques un
   `versionCode` menor**: Android rechaza el downgrade. Publica una corrección con
   `versionCode` mayor.
@@ -874,8 +805,8 @@ Reglas de seguridad del CI:
 | `baseUrl must end in /` | URL de release sin barra final | Usar `https://<dominio>/v1/` |
 | La app no conecta en release | URL ausente, HTTP o dominio incorrecto | Recompilar con HTTPS; revisar `network_security_config` |
 | El endpoint sigue con la versión anterior | Variables sin guardar o deploy sin terminar | Revisar `railway variables`, `railway logs`, redesplegar |
-| El hash remoto no coincide | APK no reemplazado, imagen vieja o caché | Reemplazar, redesplegar, añadir `?v=<versionName>` |
-| El aviso in-app no aparece | `ANDROID_APP_VERSION` no supera la instalada o `download_url` vacía | Ajustar variables y verificar el endpoint |
+| `/apk/ProyecTWin.apk` responde 404 | Comportamiento esperado | El APK histórico no se distribuye |
+| El aviso in-app no aparece | `download_url` vacío | Correcto mientras no haya autorización de Oscar |
 
 ## 9. Checklist de release
 
@@ -894,13 +825,13 @@ Reglas de seguridad del CI:
 - [ ] `aapt dump badging`: versión correcta y sin `application-debuggable`.
 - [ ] `apksigner verify --verbose --print-certs`: v2/v3 y certificado esperado.
 - [ ] SHA-256 del APK calculado y registrado.
-- [ ] `backend/public/apk/ProyecTWin.apk` reemplazado y hash verificado.
-- [ ] Variables de Railway actualizadas (`ANDROID_APP_VERSION`,
-      `ANDROID_APP_DOWNLOAD_URL` HTTPS) y redeploy correcto.
-- [ ] `/up` y `/v1/app-version/android` verificados.
-- [ ] Hash del APK remoto idéntico al local.
-- [ ] Instalación limpia y prueba de actualización desde un release firmado
-      anterior.
+- [ ] `backend/public/apk/ProyecTWin.apk` histórico conservado sin cambios.
+- [ ] Variables de Railway actualizadas solo con metadatos
+      (`ANDROID_APP_VERSION`, mínimo, notas) y redeploy correcto.
+- [ ] `/up` y `/v1/app-version/android` verificados; `download_url=""`.
+- [ ] `/apk/ProyecTWin.apk` responde 404.
+- [ ] Instalación limpia mediante `adb install` o transferencia local, no por
+      descarga pública.
 - [ ] Instrucciones de desinstalación del debug comunicadas.
 - [ ] Backup del APK anterior archivado fuera de `public/`.
 - [ ] Release registrada (Anexo A) y tag/commit autorizados.
@@ -912,7 +843,7 @@ Completar solo con releases reales; no inventar hashes ni fechas.
 | Fecha | versionName | versionCode | applicationId | SHA-256 certificado | SHA-256 APK | Responsable | Estado |
 |---|---:|---:|---|---|---|---|---|
 | 2026-10-19 | 1.2.0 | 3 | `com.example.proyectwin` | `72:05:D0:E6:E6:13:58:74:A4:20:73:B0:C9:C8:EB:0D:42:D1:34:DA:63:E5:68:FA:74:F1:74:5E:88:F7:80:93` | — | — | Debug, no oficial |
-| 2026-10-22 | 1.3.0 | 4 | `com.example.proyectwin` | `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D` | `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E` | Oscar | Firmado; publicación desde Railway pendiente de autorización |
+| 2026-10-22 | 1.3.0 | 4 | `com.example.proyectwin` | `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D` | `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E` | Oscar | Firmado; histórico conservado; no distribuido; aprobación pendiente |
 
 ## Referencias
 
@@ -922,5 +853,5 @@ Completar solo con releases reales; no inventar hashes ni fechas.
   debug en desarrollo.
 - `Movil/app/build.gradle.kts` — `applicationId`, versiones, URL de API y firma.
 - `backend/config/app_version.php` — contrato de `/v1/app-version/android`.
-- `backend/public/apk/ProyecTWin.apk` — APK local 1.3.0/4; la imagen web actual
-  no lo incluye y `/apk/ProyecTWin.apk` responde 404 hasta autorización.
+- `backend/public/apk/ProyecTWin.apk` — APK histórico 1.3.0/4; conservado
+  tracked, no incluido en nuevas imágenes y no servido en `/apk/`.

@@ -10,30 +10,36 @@ y credenciales institucionales.
 
 ## Requisitos
 
-- XAMPP con MySQL iniciado.
-- PHP de XAMPP con `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd` y `zip`.
-- Composer.
+- MySQL 8 o MariaDB 10.4+ iniciado (el equipo actual usa MariaDB 10.4.32).
+- PHP 8.2+ con `pdo_mysql`, `mbstring`, `dom`, `fileinfo`, `openssl`,
+  `tokenizer`, `xml`, `ctype`, `filter`, `hash` y `session`. `gd`/`zip` son
+  opcionales (imágenes PDF y conveniencia de Composer).
+- Composer 2.x.
 - Mailpit para probar el correo real en local.
 
-## Instalación local (XAMPP)
+## Instalación local (Windows)
 
-1. Crear la base en phpMyAdmin:
+1. Crear tu propia base local vacía:
 
-```sql
-CREATE DATABASE proyectwin_mvp
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-```
+`proyectwin_mvp` es el nombre de la base local del propietario actual y el valor
+de ejemplo del `.env.example`. Cada desarrollador debe crear su propia base
+vacía y ajustar `DB_DATABASE`; no se copia ni se comparte la base de otra
+persona. No ejecutes migraciones ni seeders sobre una base existente con datos
+sin autorización específica.
 
 2. Instalar y configurar:
 
 ```powershell
-cd C:\xampp\htdocs\ProyecTwin-master\MVP\backend
+# Desde la raíz del repositorio
+cd backend
 
-C:\xampp\php\php.exe composer install
+composer install
 copy .env.example .env
-C:\xampp\php\php.exe artisan key:generate
+php artisan key:generate
 ```
+
+`.env.example` usa `proyectwin_mvp` solo como ejemplo. Ajusta `DB_DATABASE` al
+nombre de tu base local vacía.
 
 3. Editar `.env`:
 
@@ -62,25 +68,38 @@ MAIL_FROM_ADDRESS="no-responder@proyecttwin.local"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-4. Preparar la base:
+4. Si la base es nueva, vacía y propia, preparar el esquema y la demo **solo en
+   local**:
 
 ```powershell
-C:\xampp\php\php.exe artisan demo:preparar
-C:\xampp\php\php.exe artisan serve --host=127.0.0.1 --port=8000
+php artisan migrate --seed
 ```
 
-`demo:preparar` solo opera sobre `proyectwin_mvp` en local. No usa
-`migrate:fresh`, `db:wipe` ni truncamientos. Para una base existente exige
-flags explícitos (`--check-only`, `--migrar`, `--actualizar-correos`,
-`--solo-credenciales`, `--sembrar`). `--check-only` es siempre de solo lectura.
-En una base nueva, `--migrar` crea el esquema completo. En una base anterior
-como `proyectwin_mvp`, las migraciones incluyen una compatibilidad idempotente
-para añadir `email_verified_at` si falta.
+No ejecutes este comando sobre una base que ya contiene datos ni en producción.
+En producción se usa `php artisan migrate --force` y
+`php artisan admin:inicial` con un correo real.
+
+5. Iniciar la API:
+
+```powershell
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+`demo:preparar` es una herramienta del entorno local del propietario: solo opera
+sobre `proyectwin_mvp` y requiere autorización. En un equipo nuevo normalmente
+no la necesitas; usa `php artisan migrate --seed` sobre tu propia base vacía.
+No uses `migrate:fresh`, `db:wipe` ni truncamientos sobre la base de desarrollo.
+Para una base existente exige flags explícitos (`--check-only`, `--migrar`,
+`--actualizar-correos`, `--solo-credenciales`, `--sembrar`). `--check-only` es
+siempre de solo lectura. En una base legacy que ya tiene `general_users` sin
+`email_verified_at`, `demo:preparar --migrar` se detiene de forma intencional;
+el propietario decide si aplica la migración idempotente
+`2026_11_01_000001`.
 
 ## Migraciones
 
-El historial local tiene 21 archivos en `database/migrations` más la migración
-de Sanctum que Laravel carga desde `vendor/`. En total son 22 migraciones
+El historial local tiene 22 archivos en `database/migrations` más la migración
+de Sanctum que Laravel carga desde `vendor/`. En total son 23 migraciones
 efectivas. `create_general_users_table` incluye `email_verified_at` para bases
 nuevas y `2026_11_01_000001_add_email_verified_at_to_general_users` la añade de
 forma idempotente a bases anteriores. `create_account_activations_table` define
@@ -103,15 +122,15 @@ duplicada.
 Después, si aplica a una base demo, continúa con:
 
 ```powershell
-C:\xampp\php\php.exe artisan demo:preparar --migrar
-C:\xampp\php\php.exe artisan demo:preparar --actualizar-correos
-C:\xampp\php\php.exe artisan demo:preparar --solo-credenciales
-C:\xampp\php\php.exe artisan demo:preparar --sembrar
+php artisan demo:preparar --migrar
+php artisan demo:preparar --actualizar-correos
+php artisan demo:preparar --solo-credenciales
+php artisan demo:preparar --sembrar
 ```
 
-Las cuentas administradas (`@example.com` y `demo.temporal@example.com`) se
-verifican y rotan con `--solo-credenciales`. Las cuentas no administradas que
-existan en la base quedan sin verificar y deben usar activación o recuperación.
+Las cuentas administradas del seed se verifican y rotan con
+`--solo-credenciales`. Las cuentas no administradas que existan en la base
+quedan sin verificar y deben usar activación o recuperación.
 
 ## Correo local con Mailpit
 
@@ -123,33 +142,35 @@ mailpit.exe
 ```
 
 - SMTP: `127.0.0.1:1025`
-- Bandeja web: `http://localhost:8025`
+- Bandeja web: `http://127.0.0.1:8025`
 
 La activación, recuperación y aviso de cambio de correo usan las notificaciones
 reales de Laravel. No hay enlace local por API. La entrega real a internet no se
 prueba en local; Mailpit captura los mensajes. En producción el correo se
 configura con `MAIL_MAILER=brevo` o un SMTP real.
 
-## Cuentas demo
+## Cuentas demo y secretos
 
-Todas las cuentas del seed están verificadas y comparten la contraseña
-`ProyecTwin.Demo#2026` (configurable con `DEMO_PASSWORD`). Los correos usan el
-dominio reservado `@example.com`; no son buzones reales.
+El seed demo crea cuentas de ejemplo **solo** en `local`, `testing` o `e2e`.
+No se publican correos, usuarios ni contraseñas compartidas en la
+documentación.
 
-| Rol | Correo / username |
-|---|---|
-| Aprendiz | `maria.gonzalez@example.com` / `mgonzalez` |
-| Instructor | `carlos.ruiz@example.com` / `cruiz` |
-| Admin | `admin.proyectwin@example.com` / `a` |
+Para una base local nueva:
+
+1. Define tu propia contraseña temporal en `backend/.env`:
+   `DEMO_PASSWORD="<tu-clave-local>"` (entre comillas si contiene `#`).
+2. Ejecuta `php artisan migrate --seed` sobre esa base vacía.
+3. Consulta los identificadores definidos en
+   `app/Support/CuentasDemo.php` o crea tu propia cuenta con el flujo de
+   administrador.
+
+No uses estas cuentas ni la contraseña local en producción. Para producción,
+crea el administrador con `php artisan admin:inicial`, un correo real y el
+procedimiento de `../docs/deploy-railway.md`.
 
 La activación de una cuenta nueva se prueba creando el usuario desde el flujo
-real del administrador y abriendo el enlace recibido en Mailpit.
-
-La cuenta heredada `demo.temporal@soy.sena.edu.co` se administra con
-`--actualizar-correos` y `--solo-credenciales` cuando existe en una base
-anterior; no forma parte del seed nuevo. Las migraciones no marcan cuentas
-existentes como verificadas: la verificación de las cuentas administradas se
-hace explícitamente con `--solo-credenciales`.
+real del administrador y abriendo el enlace recibido en Mailpit. Las
+migraciones no marcan cuentas existentes como verificadas.
 
 ## Seeders
 
@@ -162,78 +183,76 @@ notificaciones y reportes.
 
 ## Backup y restauración
 
+> Los comandos de esta sección usan `proyectwin_mvp` como ejemplo. Sustituye el
+> nombre por el de tu base local; no apuntes a la base de otra persona.
+
 No uses la redirección `>` de PowerShell para crear el respaldo: puede cambiar
 la codificación del SQL. Usa `--result-file`:
 
 ```powershell
-New-Item -ItemType Directory -Force C:\backups
+New-Item -ItemType Directory -Force $env:USERPROFILE\backups
 
-C:\xampp\mysql\bin\mysqldump.exe -u root --single-transaction --routines --triggers --default-character-set=utf8mb4 --result-file="C:\backups\proyectwin_mvp_backup.sql" proyectwin_mvp
+mysqldump -u root --single-transaction --routines --triggers --default-character-set=utf8mb4 --result-file="$env:USERPROFILE\backups\proyectwin_mvp_backup.sql" proyectwin_mvp
 ```
 
 Si MySQL tiene contraseña, añade `-p` y escríbela cuando se solicite. Nunca la
 incluyas en el comando ni la imprimas:
 
 ```powershell
-C:\xampp\mysql\bin\mysqldump.exe -u root -p --single-transaction --routines --triggers --default-character-set=utf8mb4 --result-file="C:\backups\proyectwin_mvp_backup.sql" proyectwin_mvp
+mysqldump -u root -p --single-transaction --routines --triggers --default-character-set=utf8mb4 --result-file="$env:USERPROFILE\backups\proyectwin_mvp_backup.sql" proyectwin_mvp
 ```
 
 Comprueba el archivo:
 
 ```powershell
-Get-Item C:\backups\proyectwin_mvp_backup.sql
-Select-String -Path C:\backups\proyectwin_mvp_backup.sql -Pattern 'CREATE TABLE `general_users`'
+Get-Item $env:USERPROFILE\backups\proyectwin_mvp_backup.sql
+Select-String -Path $env:USERPROFILE\backups\proyectwin_mvp_backup.sql -Pattern 'CREATE TABLE `general_users`'
 ```
 
 Verifica la restauración en una base temporal, nunca directamente sobre
 `proyectwin_mvp`:
 
 ```powershell
-C:\xampp\mysql\bin\mysql.exe -u root -e "CREATE DATABASE proyectwin_mvp_restore_check CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-C:\xampp\mysql\bin\mysql.exe -u root proyectwin_mvp_restore_check < C:\backups\proyectwin_mvp_backup.sql
+mysql -u root -e "CREATE DATABASE proyectwin_mvp_restore_check CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+cmd /c "mysql -u root proyectwin_mvp_restore_check < %USERPROFILE%\backups\proyectwin_mvp_backup.sql"
 ```
 
-La segunda línea usa `<`, que es una entrada de archivo, no una redirección de
-salida. No ejecutes la restauración sobre la base original sin autorización.
+PowerShell no admite `<` como redirección de entrada; `cmd /c` conserva los
+bytes del dump UTF-8. No ejecutes la restauración sobre la base original sin
+autorización.
 
 ## Pruebas
 
 ```powershell
-C:\xampp\php\php.exe composer test
-# Equivalente:
-C:\xampp\php\php.exe artisan test
+composer test
 ```
 
-La suite tiene **225 tests en 39 archivos**. `phpunit.xml` fuerza
-`APP_ENV=testing`, `proyectwin_test`, mail `array`, sesión `array` y cache
-`array`; la guarda de `tests/CreatesApplication.php` rechaza `DATABASE_URL` y
-conexiones que no sean loopback. Las suites no dependen de archivos de entorno
-adicionales: solo se mantiene `.env` para la configuración local y
-`.env.example` como plantilla. `phpunit.xml` y `playwright.config.js` definen
-las variables de sus respectivas bases. Para ejecutarlas desde cero, crea
-`proyectwin_test` y `proyectwin_e2e` en el MySQL local; no se crean
-automáticamente.
-
-Para crear el esquema de `proyectwin_test` sin archivos de entorno adicionales,
-define la base explícitamente antes de migrar:
+La suite tiene **312 tests en 49 archivos** (Fase 6, 2-nov-2026).
 
 ```powershell
-$env:APP_ENV = 'testing'
-$env:DB_DATABASE = 'proyectwin_test'
-php artisan migrate --force
+cd backend
+composer test
 ```
 
-No ejecutes `--env=testing` sin `DB_DATABASE`: Laravel cargaría `.env` y podría
-apuntar a la base local.
+`composer test` ejecuta `scripts/run-tests.php`: crea una base desechable
+`ptwin_test_*`, migra, ejecuta PHPUnit y la elimina al terminar. No es necesario
+exportar `DB_DATABASE` ni crear la base manualmente.
 
-Playwright usa `proyectwin_e2e` de forma exclusiva. PHPUnit usa
-`proyectwin_test`. La base local `proyectwin_mvp` nunca es objetivo de tests.
+Prueba individual:
 
 ```powershell
-cd ../frontend
-$env:E2E_ALLOW_RESET = '1'
-npm run test:e2e
+cd backend
+composer test -- --filter NombreDelTest
 ```
+
+`phpunit.xml` no fija una base por defecto. La guarda de
+`tests/CreatesApplication.php` rechaza `DATABASE_URL`, `proyectwin_mvp`,
+`proyectwin_test`, `proyectwin_e2e` y cualquier nombre fuera de `ptwin_test_*`.
+
+E2E se ejecuta desde `frontend` con `npm run test:e2e`. El wrapper verifica
+Mailpit, crea una base desechable `ptwin_e2e_6an_*`, ejecuta Playwright y la
+elimina al terminar. No es necesario exportar `E2E_ALLOW_RESET` ni
+`E2E_DB_DATABASE`.
 
 ## Reglas relevantes
 
@@ -248,13 +267,17 @@ npm run test:e2e
   guarda la evolución funcional.
 - **Borrado:** las propuestas con evidencia de similitud responden 409; una
   ficha con datos se anula en lugar de borrarse.
+- **Notificaciones:** las de tipo `sistema` solo las genera el backend mediante
+  `NotificacionesService`. `POST /v1/notifications` rechaza ese tipo con 422 y
+  `PUT` no permite convertir un aviso manual en `sistema`; los demás tipos
+  conservan las reglas de alcance por rol.
 
 ## Comandos útiles
 
 ```powershell
-C:\xampp\php\php.exe artisan demo:preparar --check-only
-C:\xampp\php\php.exe artisan demo:preparar --solo-credenciales
-C:\xampp\php\php.exe artisan similitud:recalcular
-C:\xampp\php\php.exe artisan similitud:calibrar
-C:\xampp\php\php.exe artisan perfiles:docentes
+php artisan demo:preparar --check-only
+php artisan demo:preparar --solo-credenciales
+php artisan similitud:recalcular
+php artisan similitud:calibrar
+php artisan perfiles:docentes
 ```

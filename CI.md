@@ -15,7 +15,7 @@ producción ni a la base de datos de desarrollo.
 
 - PHP 8.3, alineado con el `Dockerfile` de despliegue.
 - MySQL 8.0 como servicio del job.
-- Base de datos aislada `proyectwin_test`.
+- Base aislada y efímera `ptwin_test_ci_suite` (servicio MySQL del job).
 - `composer install`.
 - `php artisan key:generate`.
 - `php artisan migrate --force`.
@@ -34,7 +34,9 @@ producción ni a la base de datos de desarrollo.
 
 - El workflow no define credenciales reales ni secretos.
 - No se conecta a `proyectwin_mvp` ni a producción.
-- No ejecuta E2E destructivos.
+- PHPUnit solo acepta bases desechables `ptwin_test_*`; la base de desarrollo
+  `proyectwin_mvp` queda rechazada por la guarda.
+- No ejecuta E2E.
 - Las pruebas que crean bases temporales (`RollbackAisladoTest` y
   `SeederIdempotenciaTest`) usan el usuario MySQL del servicio, que puede
   crear bases desechables.
@@ -45,8 +47,12 @@ Backend:
 
 ```powershell
 cd backend
-php vendor/phpunit/phpunit/phpunit --do-not-cache-result
+composer test
 ```
+
+`composer test` crea, migra y elimina una base desechable `ptwin_test_*`. El
+workflow de GitHub Actions usa directamente PHPUnit contra la base aislada del
+servicio MySQL del job; no reutiliza bases locales.
 
 Frontend:
 

@@ -8,32 +8,38 @@ aplicación.
 - **API:** `/v1` mediante el proxy de Vite hacia `http://127.0.0.1:8000`.
 - **Pruebas:** Vitest + React Testing Library y Playwright.
 
-## Cuentas demo
+## Cuentas demo y secretos
 
-| Rol | Correo / usuario | Contraseña |
-|---|---|---|
-| Aprendiz | `maria.gonzalez@example.com` / `mgonzalez` | `ProyecTwin.Demo#2026` |
-| Instructor | `carlos.ruiz@example.com` / `cruiz` | `ProyecTwin.Demo#2026` |
-| Admin | `admin.proyectwin@example.com` / `a` | `ProyecTwin.Demo#2026` |
-
-Los correos usan `@example.com` (dominio reservado) y no son buzones reales.
-El seed está bloqueado fuera de local/testing.
+El seed demo está bloqueado fuera de `local`, `testing` y `e2e`. No se
+publican correos, usuarios ni contraseñas compartidas en la documentación. Si
+usas el seed local, define tu propia `DEMO_PASSWORD` en el `.env` del backend;
+no uses esas cuentas en producción. Consulta el procedimiento en
+[`../backend/README.md`](../backend/README.md).
 
 ## Scripts
 
 ```bash
-npm ci             # instalar dependencias reproducibles
+npm install        # instalar dependencias
+npm ci             # alternativa reproducible (CI)
 npm run dev        # servidor de desarrollo
 npm run build      # build de producción
 npm run lint       # ESLint
 npm run preview    # servir el build; lo usa Playwright
 npm test           # Vitest + React Testing Library
-npm run test:e2e   # Playwright; requiere E2E_ALLOW_RESET=1
+npm run test:e2e   # Playwright con base desechable automática; requiere Mailpit
 npm run quality    # lint + Vitest + build
 ```
 
-`npm test` no ejecuta Playwright. La suite E2E es una sola configuración y usa
-`proyectwin_e2e`, separada de `proyectwin_test` (PHPUnit).
+`npm test` no ejecuta Playwright. `npm run test:e2e` ejecuta el wrapper
+`backend/scripts/run-e2e.php`, que crea una base desechable
+`ptwin_e2e_6an_*`, ejecuta Playwright y la elimina. Solo requiere Mailpit
+iniciado; no hay que exportar `E2E_DB_DATABASE` ni `E2E_ALLOW_RESET`.
+
+Prueba E2E individual:
+
+```bash
+npm run test:e2e -- --grep "nombre del escenario"
+```
 
 ## Entorno local
 
@@ -44,14 +50,15 @@ cd ../backend
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan demo:preparar
+# Crea tu propia base local vacía y ajusta DB_DATABASE.
+# No migres ni recrees una base existente con datos sin autorización.
 php artisan serve
 ```
 
 2. Frontend:
 
 ```bash
-npm ci
+npm install
 npm run dev
 ```
 
@@ -60,9 +67,10 @@ No necesitas `frontend/.env`: `/v1` es el valor predeterminado. Solo define
 
 3. Correo local: descarga Mailpit desde
    `https://github.com/axllent/mailpit/releases`, ejecuta `mailpit.exe` y abre
-   `http://localhost:8025`. El backend local usa SMTP en `127.0.0.1:1025`.
+   `http://127.0.0.1:8025`. El backend local usa SMTP en `127.0.0.1:1025`.
 
-No uses `migrate:fresh`, `db:wipe` ni resets sobre `proyectwin_mvp`.
+No uses `migrate:fresh`, `db:wipe` ni resets sobre tu base de desarrollo
+(`proyectwin_mvp` es solo un ejemplo).
 
 ## Cobertura E2E
 
@@ -80,15 +88,16 @@ No uses `migrate:fresh`, `db:wipe` ni resets sobre `proyectwin_mvp`.
 | `admin-usuarios-eliminar.spec.js` | Confirmación reforzada, borrado de usuario y correo duplicado |
 | `red-eliminacion-conserva-evidencia.spec.js` | Borrado de red que conserva propuesta y similitud |
 
-**Estado:** 25 escenarios en 11 archivos. No se ejecutaron en esta fase. La suite se ejecuta con
-`E2E_ALLOW_RESET=1 npm run test:e2e`; el `globalSetup` resea `proyectwin_e2e`
-con `php artisan e2e:reset` y Playwright usa un solo worker. Los escenarios de
-correo requieren Mailpit en `127.0.0.1:1025` y su bandeja en
-`http://localhost:8025`.
+**Estado:** 25 escenarios en 11 archivos, ejecutados y aprobados (**25/25**).
+La suite se ejecuta con `npm run test:e2e`; el wrapper crea y elimina una base
+desechable `ptwin_e2e_6an_*`, y el `globalSetup` la resea con
+`php artisan e2e:reset`. Playwright usa un solo worker. Los escenarios de correo
+requieren Mailpit en `127.0.0.1:1025` y su bandeja en
+`http://127.0.0.1:8025`.
 
 ## Tests unitarios
 
-`npm test` - **90 tests en 26 archivos**:
+`npm test` - **110 tests en 31 archivos** (Fase 6, 2-nov-2026; lista representativa):
 
 | Archivo | Qué cubre |
 |---|---|
@@ -105,6 +114,9 @@ correo requieren Mailpit en `127.0.0.1:1025` y su bandeja en
 | `src/components/DashboardMetrics/DashboardMetrics.test.jsx` | indicadores y estados de carga |
 | `src/components/Charts/Charts.test.jsx` | semántica, teclado y reglas axe de los gráficos |
 | `src/pages/public/ActivarCuenta/ActivarCuenta.test.jsx` | activación, validación y errores |
+| `src/components/GovernmentBar/GovernmentBar.test.jsx` | estado del motor con texto accesible y ARIA válida |
+| `src/pages/admin/FichasAdmin/FichasAdmin.test.jsx` | `fieldset`/`legend` y buscador de aprendices con nombre accesible |
+| `src/pages/admin/DetalleUsuario/DetalleUsuario.test.jsx` | cambio de rol y ficha en el mismo guardado |
 
 Los recorridos completos se verifican en Playwright; no se duplican en Vitest.
 
@@ -122,6 +134,7 @@ src/
 └── App.jsx       # enrutado y control de acceso
 ```
 
-- CSS Modules y estilos globales; sin Tailwind ni estilos inline.
+- CSS Modules y estilos globales; sin Tailwind. Hay estilos inline puntuales
+  donde el componente lo requiere (avatares, gráficas y la demo del Home).
 - La sesión usa cookie httpOnly y CSRF.
 - Los tests de Playwright y Vitest no comparten datos de la aplicación.
