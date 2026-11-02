@@ -3,12 +3,10 @@
 Guía del despliegue del MVP completo (**SPA React + API Laravel**) en un solo
 servicio de Railway, con MySQL como base de datos.
 
-> **Política del APK.** El APK histórico **1.3.0 / versionCode 4** se conserva
-> tracked en `backend/public/apk/ProyecTWin.apk`, pero **no se distribuye**.
-> No se copia a nuevas imágenes, Nginx responde 404 en `/apk/` y el endpoint
-> `/v1/app-version/android` devuelve `download_url` vacío. La publicación
-> requiere autorización escrita de Oscar y custodia de la firma. No re-firmes
-> ni modifiques el APK.
+> **Política del APK.** El APK autorizado **1.4.0 / versionCode 5** se incluye
+> en la imagen y se sirve únicamente en `/apk/ProyecTWin.apk`. El endpoint
+> `/v1/app-version/android` publica URL HTTPS, versión, hash y tamaño. No
+> re-firmes ni cambies de identidad el APK sin autorización del owner.
 
 ## Arquitectura
 
@@ -69,6 +67,9 @@ hay CORS entre sitios ni cookies cross-site.
 | `MAIL_MAILER` | `brevo` |
 | `BREVO_API_KEY` | clave API v3 de Brevo |
 | `MAIL_FROM_ADDRESS` | remitente verificado en Brevo |
+| `ANDROID_APP_VERSION` / `ANDROID_APP_VERSION_CODE` | versión visible y `versionCode` del APK |
+| `ANDROID_APP_DOWNLOAD_URL` | URL HTTPS estable de `/apk/ProyecTWin.apk` |
+| `ANDROID_APP_APK_SHA256` / `ANDROID_APP_APK_SIZE` | integridad del APK (opcionales; se calculan del archivo si faltan) |
 
 Puedes usar las referencias `${{MySQL.*}}` del plugin de Railway o una única
 `DATABASE_URL` proporcionada por el plugin. **No mezcles ambas formas.** No
@@ -86,7 +87,7 @@ inventes nombres de servicios: ajusta las referencias al nombre real del plugin.
 | `QUEUE_CONNECTION` | `sync` |
 | `FILESYSTEM_DISK` | `local` |
 | `API_RATE_LIMIT` | `300` para la demo; el valor por defecto es `60` |
-| `ANDROID_APP_*` | Solo metadatos (`1.3.0`, mínimo y notas); `download_url` permanece vacío |
+| `ANDROID_APP_*` | Versión, `versionCode`, mínimo, URL HTTPS, SHA-256, tamaño y notas del APK autorizado |
 
 ### Temporal
 
@@ -216,10 +217,10 @@ una ejecución única del owner.
 - `/` carga el SPA y las rutas internas no dan 404 al recargar.
 - Login con cookie, recarga del SPA, `/v1/auth/me` y logout.
 - Activación de una cuenta nueva y recuperación de contraseña.
-- `/v1/app-version/android` responde `1.3.0` con `download_url=""`.
-- `/apk/ProyecTWin.apk`, `/apk/otro.apk`, `/apk/` y `/apk/ProyecTWin.apk.php`
-  responden 404.
-- El Home no muestra botón ni enlace de descarga del APK.
+- `/v1/app-version/android` responde `1.4.0`, `versionCode 5` y una URL HTTPS.
+- `/apk/ProyecTWin.apk` responde 200; `/apk/otro.apk`, `/apk/` y
+  `/apk/ProyecTWin.apk.php` responden 404.
+- El Home muestra el botón de descarga cuando la URL es válida.
 - Logs sin tokens, query strings sensibles ni credenciales.
 
 ## Correo real con Brevo
@@ -248,21 +249,18 @@ verificado, IP no autorizada). No se registra la clave.
 
 ## APK en Railway
 
-**Estado actual:** el APK histórico **1.3.0 / versionCode 4** se conserva
-tracked en `backend/public/apk/ProyecTWin.apk`, pero no forma parte de la
-imagen. `.dockerignore` y `.railwayignore` excluyen todo el directorio
-`backend/public/apk`; Nginx responde 404 en `/apk/**`; el controlador devuelve
-`download_url=""`; y el Home no muestra botón de descarga.
+**Estado actual:** el APK **1.4.0 / versionCode 5**, firmado con `CN=Oscar`, está
+tracked en `backend/public/apk/ProyecTWin.apk` y se incluye en la imagen.
+`.dockerignore` y `.railwayignore` excluyen cualquier APK salvo ese archivo;
+Nginx lo sirve únicamente en `/apk/ProyecTWin.apk` y responde 404 para el resto
+de `/apk/**`. El controlador publica URL HTTPS, versión, hash y tamaño.
 
-La publicación del APK requiere:
+Requisitos para una nueva versión:
 
-1. Autorización escrita de Oscar y custodia verificada de `CN=Oscar`.
-2. Un cambio de código explícito para volver a incluirlo en el contexto de
-   build, Nginx y el contrato de versión.
-3. Validar firma, SHA-256, MIME y actualización in-app en un entorno de staging.
-
-No se habilita por una variable de entorno. No reemplazar ni re-firmar el APK
-histórico sin autorización.
+1. Firmar con la misma keystore original y aumentar `versionCode`.
+2. Validar firma, SHA-256, tamaño, MIME y actualización in-app.
+3. Actualizar las variables `ANDROID_APP_*` y desplegar solo con autorización.
+4. No reemplazar el APK publicado por otro con distinta identidad de firma.
 
 ## Una sola réplica y migraciones
 
@@ -302,8 +300,8 @@ suficiente para el MVP.
    `ADMIN_BOOTSTRAP_ALLOW`.
 6. Probar recuperación de contraseña y activación de una cuenta nueva.
 7. Verificar la sesión: login, recarga del SPA, `/v1/auth/me`, logout y 419/CSRF.
-8. Verificar que `/apk/ProyecTWin.apk` y `/apk/` responden 404 y que
-   `/v1/app-version/android` devuelve `download_url=""`.
+8. Verificar que `/apk/ProyecTWin.apk` responde 200, que `/apk/` responde 404
+   y que `/v1/app-version/android` publica la URL, hash y versión correctos.
 9. Revisar logs de Railway: sin tokens, sin query strings sensibles, sin errores
    de Brevo ni de migraciones.
 10. Solo entonces declarar staging validado; producción requiere repetir el
@@ -318,7 +316,7 @@ suficiente para el MVP.
 | Login 200 pero `/auth/me` 401 tras recargar | `SANCTUM_STATEFUL_DOMAINS`, `FRONTEND_URL` o `Referrer-Policy` incorrectos |
 | 419/CSRF | Dominio stateful mal configurado; el SPA reintenta una vez renovando el token |
 | No llega el correo de activación | Mailer en `log`, Brevo sin remitente/IP o `FRONTEND_URL` inválida |
-| `/apk/ProyecTWin.apk` da 404 | Comportamiento esperado: el APK histórico no se distribuye |
+| `/apk/ProyecTWin.apk` da 404 | El APK no entró en la imagen, ruta Nginx incorrecta o archivo ausente |
 | Error 500 al exportar PDF | Revisar fuentes/permisos de dompdf; `dom` y `mbstring` ya están incluidas en la imagen |
 
 ## Notas
@@ -332,9 +330,8 @@ suficiente para el MVP.
   `unsafe-eval`. `server_tokens` está desactivado y `expose_php=Off` evita
   `X-Powered-By`.
 - **Android:** `Movil/` no se despliega en Railway. La app consume
-  `/v1/app-version/android`, que mantiene los metadatos de versión pero devuelve
-  `download_url=""`. El APK histórico no se sirve ni se incluye en la imagen;
-  su publicación requiere autorización escrita de Oscar.
+  `/v1/app-version/android` y descarga el APK autorizado desde
+  `/apk/ProyecTWin.apk`.
 - **Cloudinary:** no está implementado en este backend. Las fotos son data URL
   en `general_users.foto_url`; no configures variables `CLOUDINARY_*`.
 - **Costos:** el servicio y MySQL consumen del crédito del plan de Railway.
