@@ -48,16 +48,17 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'titulo' => 'nullable|max:255',
-            'resumen' => 'nullable',
-            'palabras_clave' => 'nullable|max:255',
-            'area_aplicacion' => 'nullable|max:255',
-            'objetivo_general' => 'nullable',
+            'titulo' => 'nullable|string|max:255',
+            'resumen' => 'nullable|string',
+            'palabras_clave' => 'nullable|string|max:255',
+            'area_aplicacion' => 'nullable|string|max:255',
+            'objetivo_general' => 'nullable|string',
             'objetivos_especificos' => 'nullable|array',
+            'objetivos_especificos.*' => 'string',
             'estado' => 'nullable|in:borrador,pendiente,aprobado,rechazado',
-            'id_creador' => 'nullable|exists:general_users,id',
-            'id_instructor_asignado' => 'nullable|exists:instructors,id',
-            'id_class_group' => 'nullable|exists:class_groups,id',
+            'id_creador' => 'bail|nullable|integer|exists:general_users,id',
+            'id_instructor_asignado' => 'bail|nullable|integer|exists:instructors,id',
+            'id_class_group' => 'bail|nullable|integer|exists:class_groups,id',
         ]);
 
         $usuario = $request->user();
@@ -312,20 +313,21 @@ class ProjectController extends Controller
         // La autorización se resuelve antes de validar el payload: un usuario
         // sin acceso no debe recibir errores de validación de recursos ajenos.
         $request->validate([
-            'titulo' => 'nullable|max:255',
-            'resumen' => 'nullable',
-            'palabras_clave' => 'nullable|max:255',
-            'area_aplicacion' => 'nullable|max:255',
-            'objetivo_general' => 'nullable',
+            'titulo' => 'nullable|string|max:255',
+            'resumen' => 'nullable|string',
+            'palabras_clave' => 'nullable|string|max:255',
+            'area_aplicacion' => 'nullable|string|max:255',
+            'objetivo_general' => 'nullable|string',
             'objetivos_especificos' => 'nullable|array',
+            'objetivos_especificos.*' => 'string',
             'estado' => 'sometimes|required|in:borrador,pendiente,aprobado,rechazado',
             // Versión optimista: el cliente envía el updated_at que leyó.
             'version' => 'sometimes|date',
             // Observación del instructor al rechazar (opcional).
             'observacion' => 'nullable|string|max:1000',
-            'id_creador' => 'nullable|exists:general_users,id',
-            'id_instructor_asignado' => 'nullable|exists:instructors,id',
-            'id_class_group' => 'nullable|exists:class_groups,id',
+            'id_creador' => 'bail|nullable|integer|exists:general_users,id',
+            'id_instructor_asignado' => 'bail|nullable|integer|exists:instructors,id',
+            'id_class_group' => 'bail|nullable|integer|exists:class_groups,id',
         ]);
 
         // Un borrador no salta el flujo (D-3): el envío explícito es el que

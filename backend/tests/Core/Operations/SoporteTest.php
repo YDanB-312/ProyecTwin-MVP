@@ -107,6 +107,44 @@ class SoporteTest extends TestCase
         ]);
     }
 
+    public function test_cerrar_como_cerrado_tambien_audita_y_avisa(): void
+    {
+        $admin = $this->usuario('admin');
+        $solicitante = $this->usuario('instructor');
+
+        $reporte = BugReport::create([
+            'titulo' => 'Conflicto con la ficha 3142103',
+            'numero_ficha' => '3142103',
+            'descripcion' => 'Solicitud para probar el cierre como cerrado.',
+            'tipo' => 'otro',
+            'estado' => 'pendiente',
+            'fecha' => now()->toDateString(),
+            'id_usuario' => $solicitante->id,
+        ]);
+
+        $this->como($admin)
+            ->putJson('/v1/bug-reports/' . $reporte->id, [
+                'descripcion' => $reporte->descripcion,
+                'tipo' => 'otro',
+                'estado' => 'cerrado',
+                'respuesta' => 'Solicitud cerrada tras la revisión.',
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $solicitante->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('estado', 'cerrado');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'accion' => 'resolver_soporte',
+            'entidad_id' => $reporte->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'id_usuario' => $solicitante->id,
+            'tipo' => 'sistema',
+            'enlace' => 'reporte:' . $reporte->id,
+        ]);
+    }
+
     public function test_el_cierre_no_genera_avisos_repetidos(): void
     {
         $admin = $this->usuario('admin');

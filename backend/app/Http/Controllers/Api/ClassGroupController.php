@@ -81,13 +81,13 @@ class ClassGroupController extends Controller
         }
 
         $request->validate([
-            'numero' => 'required|max:255|unique:class_groups,numero',
-            'nombre' => 'required|max:255',
+            'numero' => 'bail|required|string|max:255|unique:class_groups,numero',
+            'nombre' => 'required|string|max:255',
             'estado' => 'required|in:activo,finalizado',
-            'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'required|exists:instructors,id',
+            'id_programa' => 'bail|required|integer|exists:training_programs,id',
+            'id_instructor' => 'bail|required|integer|exists:instructors,id',
             'aprendices' => 'nullable|array',
-            'aprendices.*' => 'integer|exists:general_users,id',
+            'aprendices.*' => 'bail|integer|exists:general_users,id',
         ]);
 
         // Whitelist: `aprendices` se sincroniza aparte (relación aprendiz-ficha).
@@ -180,12 +180,12 @@ class ClassGroupController extends Controller
         }
 
         $request->validate([
-            'usuario_id' => 'nullable|integer|exists:general_users,id',
+            'usuario_id' => 'bail|nullable|integer|exists:general_users,id',
             'nombre' => 'required_without:usuario_id|nullable|string|max:255',
             'apellido' => 'required_without:usuario_id|nullable|string|max:255',
             'tipo_documento' => 'required_without:usuario_id|nullable|in:CC,TI,CE,PPT',
-            'numero_documento' => 'required_without:usuario_id|nullable|string|max:40|unique:general_users,numero_documento',
-            'correo' => 'required_without:usuario_id|nullable|email|unique:general_users,correo',
+            'numero_documento' => 'bail|required_without:usuario_id|nullable|string|max:40|unique:general_users,numero_documento',
+            'correo' => 'bail|required_without:usuario_id|nullable|string|email|unique:general_users,correo',
         ]);
 
         // Usuario existente: solo se asocia a la ficha (sin nuevo enlace de activación).
@@ -307,13 +307,13 @@ class ClassGroupController extends Controller
         }
 
         $request->validate([
-            'numero' => 'required|max:255|unique:class_groups,numero,' . $class_group->id,
-            'nombre' => 'required|max:255',
+            'numero' => 'bail|required|string|max:255|unique:class_groups,numero,' . $class_group->id,
+            'nombre' => 'required|string|max:255',
             'estado' => 'required|in:activo,finalizado,anulada',
-            'id_programa' => 'required|exists:training_programs,id',
-            'id_instructor' => 'required|exists:instructors,id',
+            'id_programa' => 'bail|required|integer|exists:training_programs,id',
+            'id_instructor' => 'bail|required|integer|exists:instructors,id',
             'aprendices' => 'nullable|array',
-            'aprendices.*' => 'integer|exists:general_users,id',
+            'aprendices.*' => 'bail|integer|exists:general_users,id',
         ]);
 
         // Whitelist: el código de unión es inmutable y `aprendices` se

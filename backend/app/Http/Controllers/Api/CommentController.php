@@ -28,10 +28,10 @@ class CommentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'texto' => 'required',
-            'id_proyecto' => 'required|exists:projects,id',
-            'id_usuario' => 'nullable|exists:general_users,id',
-            'respuesta_a' => 'nullable|exists:comments,id',
+            'texto' => 'required|string',
+            'id_proyecto' => 'bail|required|integer|exists:projects,id',
+            'id_usuario' => 'bail|nullable|integer|exists:general_users,id',
+            'respuesta_a' => 'bail|nullable|integer|exists:comments,id',
         ]);
 
         // Comentar exige poder ESCRIBIR: dentro de la ficha ACTIVA (o ser el

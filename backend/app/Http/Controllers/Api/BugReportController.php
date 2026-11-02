@@ -27,10 +27,10 @@ class BugReportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'titulo' => 'nullable|max:255',
-            'numero_ficha' => 'nullable|max:30',
-            'motivo' => 'nullable|max:120',
-            'descripcion' => 'required',
+            'titulo' => 'nullable|string|max:255',
+            'numero_ficha' => 'nullable|string|max:30',
+            'motivo' => 'nullable|string|max:120',
+            'descripcion' => 'required|string',
             'tipo' => 'required|in:' . self::TIPOS,
             'fecha' => 'required|date',
         ]);
@@ -78,15 +78,15 @@ class BugReportController extends Controller
         }
 
         $request->validate([
-            'titulo' => 'nullable|max:255',
-            'numero_ficha' => 'nullable|max:30',
-            'motivo' => 'nullable|max:120',
-            'descripcion' => 'required',
+            'titulo' => 'nullable|string|max:255',
+            'numero_ficha' => 'nullable|string|max:30',
+            'motivo' => 'nullable|string|max:120',
+            'descripcion' => 'required|string',
             'tipo' => 'required|in:' . self::TIPOS,
-            'estado' => 'nullable|in:pendiente,en_revision,resuelto,cerrado,rechazado',
+            'estado' => 'sometimes|required|in:pendiente,en_revision,resuelto,cerrado,rechazado',
             'respuesta' => 'nullable|string|max:2000',
             'fecha' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'bail|required|integer|exists:general_users,id',
         ]);
 
         $estadoAnterior = $bug_report->estado;
@@ -95,10 +95,11 @@ class BugReportController extends Controller
             'respuesta', 'fecha', 'id_usuario',
         ]));
 
-        // Cierre de la solicitud (resuelta/rechazada): bitácora + aviso al
-        // solicitante. Solo cuenta la primera transición hacia el cierre.
-        $seCierra = in_array($bug_report->estado, ['resuelto', 'rechazado'], true)
-            && !in_array($estadoAnterior, ['resuelto', 'rechazado'], true);
+        // Cierre de la solicitud (resuelta/cerrada/rechazada): bitácora + aviso
+        // al solicitante. Solo cuenta la primera transición hacia el cierre.
+        $estadosFinales = ['resuelto', 'cerrado', 'rechazado'];
+        $seCierra = in_array($bug_report->estado, $estadosFinales, true)
+            && !in_array($estadoAnterior, $estadosFinales, true);
 
         if ($seCierra) {
             Auditoria::registrar('resolver_soporte', 'bug_reports', $bug_report->id, [

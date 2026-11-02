@@ -17,7 +17,7 @@ class KnowledgeNetworkController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|max:255|unique:knowledge_networks,nombre',
+            'nombre' => 'bail|required|string|max:255|unique:knowledge_networks,nombre',
         ]);
 
         $item = KnowledgeNetwork::create($request->only(['nombre']));
@@ -33,7 +33,7 @@ class KnowledgeNetworkController extends Controller
     public function update(Request $request, KnowledgeNetwork $knowledge_network)
     {
         $request->validate([
-            'nombre' => 'required|max:255|unique:knowledge_networks,nombre,' . $knowledge_network->id,
+            'nombre' => 'bail|required|string|max:255|unique:knowledge_networks,nombre,' . $knowledge_network->id,
         ]);
 
         $knowledge_network->update($request->only(['nombre']));

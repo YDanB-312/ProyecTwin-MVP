@@ -99,8 +99,8 @@ class SimilarityController extends Controller
             'porcentaje' => 'required|numeric|min:0|max:100',
             'detalles' => 'nullable|array',
             'fecha' => 'nullable|date',
-            'id_proyecto_1' => 'required|exists:projects,id',
-            'id_proyecto_2' => 'required|exists:projects,id',
+            'id_proyecto_1' => 'bail|required|integer|exists:projects,id',
+            'id_proyecto_2' => 'bail|required|integer|exists:projects,id',
         ]);
 
         if ((int) $request->id_proyecto_1 === (int) $request->id_proyecto_2) {
@@ -145,8 +145,8 @@ class SimilarityController extends Controller
             'porcentaje' => 'required|numeric|min:0|max:100',
             'detalles' => 'nullable|array',
             'fecha' => 'nullable|date',
-            'id_proyecto_1' => 'required|exists:projects,id',
-            'id_proyecto_2' => 'required|exists:projects,id',
+            'id_proyecto_1' => 'bail|required|integer|exists:projects,id',
+            'id_proyecto_2' => 'bail|required|integer|exists:projects,id',
         ]);
 
         if ((int) $request->id_proyecto_1 === (int) $request->id_proyecto_2) {
@@ -173,7 +173,7 @@ class SimilarityController extends Controller
     // `similarities`. Devuelve cuántos pares nuevos quedaron.
     public function detect(Request $request)
     {
-        $request->validate(['id_proyecto' => 'required|exists:projects,id']);
+        $request->validate(['id_proyecto' => 'bail|required|integer|exists:projects,id']);
         $propio = Project::with('classGroup')->findOrFail($request->id_proyecto);
 
         // Solo el dueño (aprendiz/equipo), su instructor o un admin disparan el motor.

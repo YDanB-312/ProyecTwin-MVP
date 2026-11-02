@@ -47,9 +47,9 @@ class ApprenticeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'codigo' => 'required|max:255|unique:apprentices,codigo',
-            'id_class_group' => 'nullable|exists:class_groups,id',
-            'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')],
+            'codigo' => 'bail|required|string|max:255|unique:apprentices,codigo',
+            'id_class_group' => 'bail|nullable|integer|exists:class_groups,id',
+            'id_usuario' => ['bail', 'required', 'integer', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')],
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);
@@ -137,9 +137,9 @@ class ApprenticeController extends Controller
         }
 
         $request->validate([
-            'codigo' => 'required|max:255|unique:apprentices,codigo,' . $apprentice->id,
-            'id_class_group' => 'nullable|exists:class_groups,id',
-            'id_usuario' => ['required', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')->ignore($apprentice->id)],
+            'codigo' => 'bail|required|string|max:255|unique:apprentices,codigo,' . $apprentice->id,
+            'id_class_group' => 'bail|nullable|integer|exists:class_groups,id',
+            'id_usuario' => ['bail', 'required', 'integer', 'exists:general_users,id', Rule::unique('apprentices', 'id_usuario')->ignore($apprentice->id)],
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);

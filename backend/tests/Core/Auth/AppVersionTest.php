@@ -4,11 +4,11 @@ namespace Tests\Core\Auth;
 
 use Tests\TestCase;
 
-// Endpoint público que alimenta la actualización Android y el botón APK del
-// Home. No toca base de datos ni autenticación.
+// Endpoint público de metadatos Android. El APK histórico no se anuncia ni se
+// sirve: download_url permanece vacío hasta autorización de Oscar.
 class AppVersionTest extends TestCase
 {
-    public function test_expone_la_version_configurada(): void
+    public function test_expone_la_version_configurada_sin_descarga(): void
     {
         config([
             'app_version.android.version' => '1.10.0',
@@ -24,7 +24,7 @@ class AppVersionTest extends TestCase
                 'latest_version' => '1.10.0',
                 'minimum_supported_version' => '1.0.0',
                 'enforce_minimum' => false,
-                'download_url' => 'https://example.test/apk/proyecttwin.apk',
+                'download_url' => '',
                 'release_notes' => 'Mejoras de estabilidad',
             ]);
     }
@@ -39,49 +39,27 @@ class AppVersionTest extends TestCase
                 'enforce_minimum',
                 'download_url',
                 'release_notes',
-            ]);
+            ])
+            ->assertJson(['download_url' => '']);
     }
 
-    public function test_anuncia_el_apk_incluido_en_local(): void
-    {
-        config([
-            'app.url' => 'http://localhost',
-            'app_version.android.download_url' => '/apk/ProyecTWin.apk',
-            'app_version.android.version' => '1.3.0',
-        ]);
-
-        $this->getJson('/v1/app-version/android')
-            ->assertOk()
-            ->assertJson([
-                'latest_version' => '1.3.0',
-                'download_url' => '/apk/ProyecTWin.apk',
-            ]);
-    }
-
-    public function test_anuncia_url_absoluta_https_en_produccion(): void
+    public function test_no_anuncia_descarga_aunque_la_configuracion_la_defina(): void
     {
         config([
             'app.url' => 'https://proyectwin.test',
             'app_version.android.download_url' => '/apk/ProyecTWin.apk',
-        ]);
-
-        $this->getJson('/v1/app-version/android')
-            ->assertOk()
-            ->assertJson([
-                'download_url' => 'https://proyectwin.test/apk/ProyecTWin.apk',
-            ]);
-    }
-
-    public function test_oculta_la_descarga_si_el_apk_no_existe(): void
-    {
-        config([
-            'app.url' => 'https://proyectwin.test',
-            'app_version.android.download_url' => '/apk/NoExiste.apk',
         ]);
 
         $this->getJson('/v1/app-version/android')
             ->assertOk()
             ->assertJson(['download_url' => '']);
+    }
+
+    public function test_no_publica_el_apk_historico_por_ruta_publica(): void
+    {
+        $this->get('/apk/ProyecTWin.apk')->assertNotFound();
+        $this->get('/apk/')->assertNotFound();
+        $this->get('/apk/otro.apk')->assertNotFound();
     }
 
     public function test_obligatoriedad_explicita(): void

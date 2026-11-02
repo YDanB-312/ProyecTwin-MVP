@@ -16,9 +16,9 @@ class TrainingProgramController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|max:255',
-            'nivel' => 'required|max:255',
-            'knowledge_network_id' => 'required|exists:knowledge_networks,id',
+            'nombre' => 'required|string|max:255',
+            'nivel' => 'required|string|max:255',
+            'knowledge_network_id' => 'bail|required|integer|exists:knowledge_networks,id',
         ]);
 
         $item = TrainingProgram::create($request->only(['nombre', 'nivel', 'knowledge_network_id']));
@@ -33,9 +33,9 @@ class TrainingProgramController extends Controller
     public function update(Request $request, TrainingProgram $training_program)
     {
         $request->validate([
-            'nombre' => 'required|max:255',
-            'nivel' => 'required|max:255',
-            'knowledge_network_id' => 'required|exists:knowledge_networks,id',
+            'nombre' => 'required|string|max:255',
+            'nivel' => 'required|string|max:255',
+            'knowledge_network_id' => 'bail|required|integer|exists:knowledge_networks,id',
         ]);
 
         $training_program->update($request->only(['nombre', 'nivel', 'knowledge_network_id']));

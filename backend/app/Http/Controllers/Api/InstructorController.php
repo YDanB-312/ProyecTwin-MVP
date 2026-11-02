@@ -43,7 +43,7 @@ class InstructorController extends Controller
     {
         $request->validate([
             'fecha_ingreso' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'bail|required|integer|exists:general_users,id',
         ]);
 
         $usuario = GeneralUser::findOrFail($request->id_usuario);

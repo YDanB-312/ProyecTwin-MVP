@@ -12,24 +12,15 @@ class AppVersionController extends Controller
     public function android()
     {
         $config = config('app_version.android');
-        $download = (string) ($config['download_url'] ?? '');
-
-        if ($download !== '' && str_starts_with($download, '/')) {
-            if (! is_file(public_path(ltrim($download, '/')))) {
-                // La ruta local está configurada pero el APK no está presente:
-                // no anunciamos una descarga que terminaría en 404.
-                $download = '';
-            } elseif (str_starts_with((string) config('app.url'), 'https://')) {
-                // Android exige URLs absolutas https://; el SPA acepta ambas.
-                $download = rtrim((string) config('app.url'), '/').$download;
-            }
-        }
 
         return response()->json([
             'latest_version' => (string) $config['version'],
             'minimum_supported_version' => (string) $config['min_version'],
             'enforce_minimum' => (bool) $config['enforce_minimum'],
-            'download_url' => $download,
+            // El APK histórico no está autorizado para distribución pública.
+            // Se mantiene la clave del contrato para clientes antiguos, pero
+            // siempre vacía hasta que Oscar autorice su publicación.
+            'download_url' => '',
             'release_notes' => (string) $config['release_notes'],
         ]);
     }

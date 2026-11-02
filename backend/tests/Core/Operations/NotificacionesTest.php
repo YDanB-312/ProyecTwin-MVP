@@ -3,12 +3,14 @@
 namespace Tests\Core\Operations;
 
 use App\Models\Apprentice;
+use App\Models\BugReport;
 use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\KnowledgeNetwork;
 use App\Models\Notification;
 use App\Models\TrainingProgram;
+use App\Services\NotificacionesService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -220,5 +222,141 @@ class NotificacionesTest extends TestCase
             ->deleteJson('/v1/notifications/' . $creada->json('id'))
             ->assertOk();
         $this->assertDatabaseMissing('notifications', ['id' => $creada->json('id')]);
+    }
+
+    public function test_nadie_puede_crear_manualmente_una_notificacion_sistema(): void
+    {
+        $admin = $this->usuario('admin');
+        $instructor = $this->usuario('instructor');
+        $aprendiz = $this->usuario('aprendiz');
+
+        // Cualquier rol, incluido admin, recibe el rechazo y no deja fila.
+        foreach ([[$admin, $aprendiz], [$instructor, $aprendiz], [$aprendiz, $aprendiz]] as [$autor, $destino]) {
+            $titulo = 'Sistema manual ' . uniqid();
+
+            $this->app['auth']->forgetGuards();
+            $this->como($autor)
+                ->postJson('/v1/notifications', [
+                    'titulo' => $titulo,
+                    'tipo' => 'sistema',
+                    'fecha' => now()->toDateString(),
+                    'id_usuario' => $destino->id,
+                ])
+                ->assertStatus(422)
+                ->assertJsonPath(
+                    'message',
+                    'Las notificaciones de tipo "sistema" son generadas automáticamente por el backend y no pueden crearse manualmente.'
+                );
+
+            $this->assertDatabaseMissing('notifications', ['titulo' => $titulo]);
+        }
+    }
+
+    public function test_el_backend_sigue_creando_notificaciones_sistema_internamente(): void
+    {
+        $solicitante = $this->usuario('aprendiz');
+        $reporte = BugReport::create([
+            'titulo' => 'No puedo unirme a mi ficha',
+            'descripcion' => 'La ficha aparece ocupada.',
+            'tipo' => 'sistema',
+            'estado' => 'pendiente',
+            'fecha' => now()->toDateString(),
+            'id_usuario' => $solicitante->id,
+        ]);
+
+        app(NotificacionesService::class)->soporteResuelto($reporte);
+
+        $this->assertDatabaseHas('notifications', [
+            'id_usuario' => $solicitante->id,
+            'tipo' => 'sistema',
+            'titulo' => 'Tu solicitud de soporte #' . $reporte->id . ' fue atendida.',
+            'enlace' => 'reporte:' . $reporte->id,
+        ]);
+    }
+
+    public function test_las_notificaciones_manuales_de_otros_tipos_conservan_sus_reglas(): void
+    {
+        $instructor = $this->usuario('instructor');
+        $admin = $this->usuario('admin');
+        $aprendiz = $this->usuario('aprendiz');
+        [, $aprendizPropio] = $this->fichaConAprendiz($instructor);
+
+        // Instructor → aprendiz de su ficha.
+        $this->como($instructor)
+            ->postJson('/v1/notifications', [
+                'titulo' => 'Revisa el avance de tu propuesta',
+                'tipo' => 'mensaje',
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $aprendizPropio->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('tipo', 'mensaje');
+
+        // Usuario → su propia bandeja.
+        $this->app['auth']->forgetGuards();
+        $this->como($aprendiz)
+            ->postJson('/v1/notifications', [
+                'titulo' => 'Recordatorio personal',
+                'tipo' => 'observacion',
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $aprendiz->id,
+            ])
+            ->assertCreated();
+
+        // Admin → cualquiera.
+        $this->app['auth']->forgetGuards();
+        $this->como($admin)
+            ->postJson('/v1/notifications', [
+                'titulo' => 'Propuesta lista para revisar',
+                'tipo' => 'revision',
+                'enlace' => 'proyecto:42',
+                'fecha' => now()->toDateString(),
+                'id_usuario' => $aprendizPropio->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('enlace', 'proyecto:42');
+    }
+
+    public function test_put_no_convierte_una_notificacion_manual_en_sistema_pero_si_marca_leida_una_sistema(): void
+    {
+        $admin = $this->usuario('admin');
+        $dueno = $this->usuario('aprendiz');
+        $manual = $this->notificacion($dueno, ['tipo' => 'mensaje', 'titulo' => 'Mensaje manual']);
+        $sistema = $this->notificacion($dueno, ['tipo' => 'sistema', 'titulo' => 'Aviso del sistema']);
+
+        // Ni el dueño ni el admin convierten una notificación manual en sistema.
+        foreach ([$dueno, $admin] as $autor) {
+            $this->app['auth']->forgetGuards();
+            $this->como($autor)
+                ->putJson('/v1/notifications/' . $manual->id, [
+                    'tipo' => 'sistema',
+                    'leida' => true,
+                ])
+                ->assertStatus(422)
+                ->assertJsonPath(
+                    'message',
+                    'Las notificaciones de tipo "sistema" son generadas automáticamente por el backend y no pueden crearse manualmente.'
+                );
+
+            $manual->refresh();
+            $this->assertSame('mensaje', $manual->tipo);
+            $this->assertSame(0, (int) $manual->leida);
+        }
+
+        // Marcar leída una que ya es sistema sigue funcionando aunque el
+        // cliente reenvíe el objeto completo (tipo incluido).
+        $this->app['auth']->forgetGuards();
+        $this->como($dueno)
+            ->putJson('/v1/notifications/' . $sistema->id, [
+                'tipo' => 'sistema',
+                'leida' => true,
+                'titulo' => 'Intento de cambio',
+            ])
+            ->assertOk();
+
+        $sistema->refresh();
+        $this->assertSame(1, (int) $sistema->leida);
+        $this->assertSame('sistema', $sistema->tipo);
+        $this->assertSame('Aviso del sistema', $sistema->titulo);
     }
 }

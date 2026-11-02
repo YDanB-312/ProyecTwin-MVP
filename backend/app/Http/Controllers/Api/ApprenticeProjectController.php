@@ -48,7 +48,7 @@ class ApprenticeProjectController extends Controller
         // Primero se resuelve el proyecto y el permiso; el integrante se valida
         // después para no exponer IDs de aprendices a quien no gestiona el equipo.
         $request->validate([
-            'id_proyecto' => 'required|exists:projects,id',
+            'id_proyecto' => 'bail|required|integer|exists:projects,id',
         ]);
 
         $proyecto = Project::findOrFail($request->id_proyecto);
@@ -59,7 +59,7 @@ class ApprenticeProjectController extends Controller
         }
 
         $request->validate([
-            'id_aprendiz' => 'required|exists:apprentices,id',
+            'id_aprendiz' => 'bail|required|integer|exists:apprentices,id',
         ]);
 
         // El equipo se gestiona mientras la propuesta es editable (borrador,

@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    // Las notificaciones de tipo "sistema" son reacciones internas del backend
+    // (NotificacionesService); ningún cliente puede crearlas ni convertirlas
+    // manualmente, ni siquiera un administrador.
+    private const MENSAJE_SISTEMA = 'Las notificaciones de tipo "sistema" son generadas automáticamente por el backend y no pueden crearse manualmente.';
+
     public function index(Request $request)
     {
         $request->validate(['id_usuario' => 'nullable|integer']);
@@ -34,15 +39,20 @@ class NotificationController extends Controller
 
     public function store(Request $request)
     {
+        // Validar primero conserva los 422 de campo para el resto de la carga.
         $request->validate([
-            'titulo' => 'required|max:255',
-            'descripcion' => 'nullable',
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
             'tipo' => 'required|in:similitud,observacion,revision,mensaje,sistema',
-            'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
+            'enlace' => ['nullable', 'string', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
             'leida' => 'sometimes|boolean',
             'fecha' => 'required|date',
-            'id_usuario' => 'required|exists:general_users,id',
+            'id_usuario' => 'bail|required|integer|exists:general_users,id',
         ]);
+
+        if ($request->input('tipo') === 'sistema') {
+            return response()->json(['message' => self::MENSAJE_SISTEMA], 422);
+        }
 
         // Admin avisa a cualquiera; el instructor solo a aprendices de sus
         // fichas; nadie más crea avisos para terceros.
@@ -80,14 +90,21 @@ class NotificationController extends Controller
         }
 
         $request->validate([
-            'titulo' => 'sometimes|required|max:255',
-            'descripcion' => 'nullable',
+            'titulo' => 'sometimes|required|string|max:255',
+            'descripcion' => 'nullable|string',
             'tipo' => 'sometimes|required|in:similitud,observacion,revision,mensaje,sistema',
-            'enlace' => ['nullable', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
+            'enlace' => ['nullable', 'string', 'max:255', 'regex:/^(proyecto|ficha|reporte):\d+$/'],
             'leida' => 'sometimes|boolean',
             'fecha' => 'sometimes|required|date',
-            'id_usuario' => 'sometimes|required|exists:general_users,id',
+            'id_usuario' => 'bail|sometimes|required|integer|exists:general_users,id',
         ]);
+
+        // Marcar leída una notificación que ya es "sistema" sigue permitido
+        // (el cliente reenvía el tipo actual); convertir una manual a
+        // "sistema" no.
+        if ($request->input('tipo') === 'sistema' && $notification->tipo !== 'sistema') {
+            return response()->json(['message' => self::MENSAJE_SISTEMA], 422);
+        }
 
         // El dueño solo marca leída; el admin puede corregir el resto. El
         // destinatario no se reasigna por esta vía.

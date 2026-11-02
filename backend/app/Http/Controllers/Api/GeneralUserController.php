@@ -75,6 +75,8 @@ class GeneralUserController extends Controller
             'ficha_id' => 'nullable|string',
             'programa' => 'nullable|string',
             'resumen' => 'nullable|boolean',
+            'paginado' => 'nullable|boolean',
+            'por_pagina' => 'bail|nullable|integer',
         ]);
 
         $query = GeneralUser::included()
@@ -114,11 +116,11 @@ class GeneralUserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|max:255',
-            'apellido' => 'required|max:255',
+            'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
             'tipo_documento' => 'required|in:CC,TI,CE,PPT',
-            'numero_documento' => 'required|max:40|unique:general_users,numero_documento',
-            'correo' => 'required|email|unique:general_users,correo',
+            'numero_documento' => 'bail|required|string|max:40|unique:general_users,numero_documento',
+            'correo' => 'bail|required|string|email|unique:general_users,correo',
             'foto_url' => self::REGLAS_FOTO_URL,
             'rol' => 'required|in:aprendiz,instructor',
             'estado' => 'nullable|boolean',
@@ -294,16 +296,16 @@ class GeneralUserController extends Controller
         // Actualización parcial: los campos solo se validan si vienen. Así se
         // puede guardar SOLO la foto (foto_url) sin exigir el resto.
         $request->validate([
-            'nombre' => 'sometimes|required|max:255',
-            'apellido' => 'sometimes|required|max:255',
-            'correo' => 'sometimes|required|email|unique:general_users,correo,' . $general_user->id,
+            'nombre' => 'sometimes|required|string|max:255',
+            'apellido' => 'sometimes|required|string|max:255',
+            'correo' => 'bail|sometimes|required|string|email|unique:general_users,correo,' . $general_user->id,
             'foto_url' => self::REGLAS_FOTO_URL,
             'rol' => 'sometimes|required|in:aprendiz,instructor,admin',
             'estado' => 'sometimes|boolean',
             // Documento de identidad: el admin puede corregirlo (p. ej. un
             // número mal digitado en el alta). El propio usuario no lo edita.
             'tipo_documento' => 'sometimes|required|in:CC,TI,CE,PPT',
-            'numero_documento' => 'sometimes|required|max:40|unique:general_users,numero_documento,' . $general_user->id,
+            'numero_documento' => 'bail|sometimes|required|string|max:40|unique:general_users,numero_documento,' . $general_user->id,
         ]);
 
         // Cambios de rol o estado exigen admin; nadie se auto-eleva.
@@ -722,7 +724,7 @@ class GeneralUserController extends Controller
     {
         $request->validate([
             'ids' => 'required|array|min:1',
-            'ids.*' => 'integer|exists:general_users,id',
+            'ids.*' => 'bail|integer|exists:general_users,id',
         ]);
 
         $usuarios = GeneralUser::with('apprentice.classGroup.program', 'instructor.classGroups.program')
