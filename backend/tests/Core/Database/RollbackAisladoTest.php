@@ -8,8 +8,8 @@ use PDO;
 use Tests\TestCase;
 
 // C-05: valida en una base MySQL temporal y desechable que las migraciones se
-// aplican, se revierten por completo y se vuelven a aplicar. No toca
-// proyectwin_test (más allá de la guarda de aislamiento) ni proyectwin_mvp.
+// aplican, se revierten por completo y se vuelven a aplicar. No toca la base
+// de desarrollo proyectwin_mvp ni bases ajenas.
 class RollbackAisladoTest extends TestCase
 {
     private ?string $baseTemporal = null;
@@ -22,7 +22,10 @@ class RollbackAisladoTest extends TestCase
 
         $base = config('database.connections.mysql');
 
-        $this->assertSame('proyectwin_test', $base['database'], 'La prueba exige la base de testing aislada.');
+        $this->assertTrue(
+            $this->baseDePruebasSegura((string) $base['database']),
+            'La prueba exige una base de testing aislada.'
+        );
         $this->assertContains($base['host'], ['127.0.0.1', 'localhost', '::1'], 'La prueba exige loopback.');
 
         $nombre = 'proyectwin_rollback_'.substr(uniqid(), -8);

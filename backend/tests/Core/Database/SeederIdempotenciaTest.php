@@ -22,8 +22,8 @@ use PDO;
 use Tests\TestCase;
 
 // El escenario demo debe poder ejecutarse dos veces sin duplicar ni adoptar
-// registros ajenos. Se prueba en una base temporal desechable, nunca en
-// proyectwin_test ni en proyectwin_mvp.
+// registros ajenos. Se prueba en una base temporal desechable, nunca en la
+// base de desarrollo proyectwin_mvp.
 class SeederIdempotenciaTest extends TestCase
 {
     private ?string $baseTemporal = null;
@@ -36,7 +36,10 @@ class SeederIdempotenciaTest extends TestCase
 
         $base = config('database.connections.mysql');
 
-        $this->assertSame('proyectwin_test', $base['database'], 'La prueba exige la base de testing aislada.');
+        $this->assertTrue(
+            $this->baseDePruebasSegura((string) $base['database']),
+            'La prueba exige una base de testing aislada.'
+        );
         $this->assertContains($base['host'], ['127.0.0.1', 'localhost', '::1'], 'La prueba exige loopback.');
 
         $nombre = 'proyectwin_demo_'.substr(uniqid(), -8);

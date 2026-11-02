@@ -3,8 +3,17 @@ import { defineConfig } from '@playwright/test'
 const API = 'http://127.0.0.1:8001'
 const APP = 'http://localhost:4173'
 
-// Configuración única E2E. Playwright usa `proyectwin_e2e`; PHPUnit usa
-// `proyectwin_test`; la base local `proyectwin_mvp` nunca es objetivo de tests.
+// Base E2E: obligatoria y desechable (`ptwin_e2e_6an_<identificador>`).
+// El comando e2e:reset valida el patrón y rechaza las bases protegidas.
+const E2E_DB = process.env.E2E_DB_DATABASE
+if (!E2E_DB) {
+  throw new Error(
+    'Define E2E_DB_DATABASE con una base desechable ptwin_e2e_6an_<identificador>.'
+  )
+}
+
+// Configuración única E2E. PHPUnit usa una base desechable `ptwin_test_*`;
+// la base local `proyectwin_mvp` nunca es objetivo de tests.
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.js',
@@ -36,10 +45,11 @@ export default defineConfig({
         DB_CONNECTION: 'mysql',
         DB_HOST: '127.0.0.1',
         DB_PORT: '3306',
-        DB_DATABASE: 'proyectwin_e2e',
-        CACHE_DRIVER: 'file',
-        SESSION_DRIVER: 'file',
+        DB_DATABASE: E2E_DB,
+        CACHE_DRIVER: 'array',
+        SESSION_DRIVER: 'database',
         QUEUE_CONNECTION: 'sync',
+        LOG_CHANNEL: 'stderr',
         BCRYPT_ROUNDS: '4',
         API_RATE_LIMIT: '1000',
         SANCTUM_STATEFUL_DOMAINS: 'localhost:4173,127.0.0.1:4173',
