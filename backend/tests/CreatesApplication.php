@@ -2,16 +2,12 @@
 
 namespace Tests;
 
+use App\Support\Pruebas\ReglasBaseDatos;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 
 trait CreatesApplication
 {
-    // Las pruebas solo pueden usar una base desechable con este prefijo.
-    // El patrón rechaza bases fuera del prefijo reservado, incluidas las de
-    // desarrollo.
-    private const BASE_DESECHABLE = '/^ptwin_test_[a-z0-9_]{6,50}$/D';
-
     /**
      * Creates the application.
      */
@@ -37,9 +33,22 @@ trait CreatesApplication
      */
     private function afirmarEntornoDePruebasSeguro(Application $app): void
     {
-        if (filled(env('DATABASE_URL'))) {
+        $cache = ReglasBaseDatos::rutaCacheEfectiva(
+            dirname(__DIR__),
+            $app->getCachedConfigPath(),
+            env('APP_CONFIG_CACHE'),
+        );
+
+        if ($cache !== null) {
             throw new \RuntimeException(
-                'Entorno de pruebas inseguro: DATABASE_URL está definido. '.
+                'Entorno de pruebas inseguro: existe configuración cacheada en '.$cache.'. '.
+                'Ejecuta `php artisan config:clear` antes de las pruebas.'
+            );
+        }
+
+        if (filled(env('DATABASE_URL')) || filled(env('DB_URL'))) {
+            throw new \RuntimeException(
+                'Entorno de pruebas inseguro: DATABASE_URL o DB_URL está definido. '.
                 'PHPUnit solo admite una base desechable ptwin_test_* en loopback.'
             );
         }
@@ -51,9 +60,12 @@ trait CreatesApplication
         $baseDatos = (string) ($config['database'] ?? '');
         $host = (string) ($config['host'] ?? '');
         $puerto = (string) ($config['port'] ?? '');
+        $socket = (string) ($config['unix_socket'] ?? '');
         $url = $config['url'] ?? null;
+        $baseEsperada = env('PTWIN_TEST_DATABASE');
+        $baseEsperada = is_string($baseEsperada) ? trim($baseEsperada) : '';
 
-        $hostSeguro = in_array($host, ['127.0.0.1', 'localhost', '::1'], true);
+        $hostSeguro = in_array($host, ReglasBaseDatos::HOSTS_LOOPBACK, true);
 
         if (filled($url)) {
             throw new \RuntimeException(
@@ -67,9 +79,11 @@ trait CreatesApplication
             || $driver !== 'mysql'
             || ! $this->baseDePruebasSegura($baseDatos)
             || ! $hostSeguro
-            || $puerto !== '3306') {
+            || $puerto !== '3306'
+            || $socket !== ''
+            || ($baseEsperada !== '' && $baseDatos !== $baseEsperada)) {
             throw new \RuntimeException(sprintf(
-                'Entorno de pruebas inseguro: APP_ENV="%s", conexión="%s", driver="%s", BD="%s", host="%s", puerto="%s". '.
+                'Entorno de pruebas inseguro: APP_ENV="%s", conexión="%s", driver="%s", BD="%s", host="%s", puerto="%s", socket="%s", esperada="%s". '.
                 'PHPUnit debe resolver a testing + mysql + ptwin_test_* en loopback:3306 '.
                 '(ver backend/phpunit.xml).',
                 $entorno,
@@ -78,6 +92,8 @@ trait CreatesApplication
                 $baseDatos,
                 $host,
                 $puerto,
+                $socket,
+                $baseEsperada,
             ));
         }
     }
@@ -88,6 +104,6 @@ trait CreatesApplication
      */
     protected function baseDePruebasSegura(string $base): bool
     {
-        return preg_match(self::BASE_DESECHABLE, $base) === 1;
+        return ReglasBaseDatos::esBasePermitida($base);
     }
 }
