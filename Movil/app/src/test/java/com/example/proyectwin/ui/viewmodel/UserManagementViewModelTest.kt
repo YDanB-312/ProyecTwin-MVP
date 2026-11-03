@@ -29,8 +29,7 @@ import org.junit.Test
 /**
  * Gestión admin de usuarios: filtros del contrato real (`search`, `role`,
  * `estado`, `ficha_id`, `programa`), paginación del servidor, reinicio a la
- * primera página al filtrar, descarte de respuestas desactualizadas y
- * selección múltiple para el PDF de credenciales por lote.
+ * primera página al filtrar y descarte de respuestas desactualizadas.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class UserManagementViewModelTest {
@@ -264,129 +263,6 @@ class UserManagementViewModelTest {
         assertEquals(2, datos.items.size)
         coVerify(exactly = 1) { users.listarPaginado(3, 8, null, null, null, null, null) }
         coVerify(exactly = 1) { users.listarPaginado(2, 8, null, null, null, null, null) }
-    }
-
-    // ------------------------------------------- Selección múltiple (PDF por lote)
-
-    @Test
-    fun `activar y desactivar el modo seleccion limpia los ids marcados`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.activarSeleccion()
-        vm.toggleSeleccion(3)
-        assertTrue(vm.seleccionActiva.value)
-        assertEquals(setOf(3), vm.seleccionados.value)
-
-        vm.desactivarSeleccion()
-        assertFalse(vm.seleccionActiva.value)
-        assertTrue(vm.seleccionados.value.isEmpty())
-    }
-
-    @Test
-    fun `toggle alterna la marca del mismo usuario`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.toggleSeleccion(1)
-        vm.toggleSeleccion(2)
-        assertEquals(setOf(1, 2), vm.seleccionados.value)
-
-        vm.toggleSeleccion(1)
-        assertEquals(setOf(2), vm.seleccionados.value)
-    }
-
-    @Test
-    fun `todos en pagina marca y desmarca solo la pagina visible`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.toggleTodosEnPagina(listOf(1, 2, 3))
-        assertEquals(setOf(1, 2, 3), vm.seleccionados.value)
-
-        vm.toggleSeleccion(9) // de otra página
-        vm.toggleTodosEnPagina(listOf(1, 2, 3))
-        assertEquals(setOf(9), vm.seleccionados.value)
-    }
-
-    @Test
-    fun `la seleccion persiste al cambiar de pagina`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.toggleSeleccion(1)
-        vm.paginaSiguiente()
-        advanceUntilIdle()
-        vm.toggleSeleccion(9)
-
-        assertEquals(setOf(1, 9), vm.seleccionados.value)
-    }
-
-    @Test
-    fun `cambiar filtro, buscar o limpiar filtros vacia la seleccion`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-        vm.activarSeleccion()
-
-        vm.toggleSeleccion(1)
-        vm.filtrarRol("aprendiz")
-        assertTrue(vm.seleccionados.value.isEmpty())
-        assertTrue(vm.seleccionActiva.value) // el modo sigue activo
-
-        advanceUntilIdle()
-        vm.toggleSeleccion(2)
-        vm.buscar("ana")
-        assertTrue(vm.seleccionados.value.isEmpty())
-
-        advanceUntilIdle()
-        vm.toggleSeleccion(3)
-        vm.limpiarFiltros()
-        advanceUntilIdle()
-        assertTrue(vm.seleccionados.value.isEmpty())
-    }
-
-    @Test
-    fun `los ids para el pdf van ordenados y sin repetidos`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.toggleSeleccion(9)
-        vm.toggleSeleccion(2)
-        vm.toggleSeleccion(5)
-        vm.toggleSeleccion(2) // quita
-        vm.toggleSeleccion(2) // vuelve a marcar
-
-        assertEquals(listOf(2, 5, 9), vm.idsSeleccionados())
-    }
-
-    @Test
-    fun `un fallo del pdf se avisa por el snackbar y conserva la seleccion`() = runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.toggleSeleccion(4)
-        vm.reportarError("No se pudo descargar el PDF.")
-
-        assertEquals("No se pudo descargar el PDF.", vm.errorAccion.value)
-        assertEquals(setOf(4), vm.seleccionados.value)
-
-        vm.limpiarErrorAccion()
-        assertNull(vm.errorAccion.value)
-    }
-
-    @Test
-    fun `eliminar un usuario lo saca de la seleccion`() = runTest(dispatcher) {
-        coEvery { users.eliminar(5) } returns Result.success(Unit)
-
-        val vm = viewModel()
-        advanceUntilIdle()
-        vm.toggleSeleccion(5)
-        vm.toggleSeleccion(7)
-
-        vm.eliminarUsuario(5)
-        advanceUntilIdle()
-
-        assertEquals(setOf(7), vm.seleccionados.value)
     }
 
     // ------------------------------------------- Pull-to-refresh sin skeleton

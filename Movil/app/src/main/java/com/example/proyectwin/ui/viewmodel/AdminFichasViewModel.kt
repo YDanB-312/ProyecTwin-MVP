@@ -97,8 +97,4 @@ class AdminFichasViewModel @Inject constructor(
         }
     }
 
-    /** Bytes del PDF de credenciales de la ficha (solo admin). */
-    fun credencialesPdf(fichaId: Int, onResult: (Result<ByteArray>) -> Unit) {
-        viewModelScope.launch { onResult(fichasRepository.descargarCredencialesPdf(fichaId)) }
-    }
 }

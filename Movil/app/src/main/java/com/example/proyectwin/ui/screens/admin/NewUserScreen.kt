@@ -16,7 +16,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.proyectwin.data.local.DescargasArchivos
 import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -96,23 +95,6 @@ fun NewUserScreen(
             },
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = {
-                        adminViewModel.credencialesPdf(listOf(datos.usuario.id)) { resultado ->
-                            val mensaje = resultado.fold(
-                                onSuccess = { bytes ->
-                                    DescargasArchivos.guardarPdf(
-                                        context,
-                                        bytes,
-                                        "credenciales-${datos.usuario.username.ifBlank { datos.usuario.id }}.pdf",
-                                    )
-                                },
-                                onFailure = { it.message ?: "No se pudo descargar el PDF." },
-                            )
-                            Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
-                        }
-                    }) {
-                        Text("PDF", color = senaColors().green)
-                    }
                     if (!datos.enviada) {
                         TextButton(
                             enabled = !reenviando,

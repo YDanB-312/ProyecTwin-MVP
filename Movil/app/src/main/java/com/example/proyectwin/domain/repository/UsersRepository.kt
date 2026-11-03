@@ -60,7 +60,4 @@ interface UsersRepository {
 
     /** Reenvía el enlace de activación vigente. */
     suspend fun reenviarActivacion(id: Int): Result<String>
-
-    /** PDF binario con las credenciales de los usuarios indicados. */
-    suspend fun descargarCredencialesPdf(ids: List<Int>): Result<ByteArray>
 }

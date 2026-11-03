@@ -1,7 +1,6 @@
 package com.example.proyectwin.ui.screens.admin
 
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,11 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.proyectwin.data.local.DescargasArchivos
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -58,10 +55,7 @@ fun UserManagementScreen(
     val fichas by userManagementViewModel.fichas.collectAsState()
     val programas by userManagementViewModel.programas.collectAsState()
     val errorAccion by userManagementViewModel.errorAccion.collectAsState()
-    val seleccionActiva by userManagementViewModel.seleccionActiva.collectAsState()
-    val seleccionados by userManagementViewModel.seleccionados.collectAsState()
     val refrescando by userManagementViewModel.refrescando.collectAsState()
-    val descargandoPdf by adminViewModel.descargandoPdf.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -158,27 +152,7 @@ fun UserManagementScreen(
 
                 // Filter Section
                 item {
-                    SenaFilterBar(
-                        title = "Buscar y filtrar",
-                        actions = {
-                            if (!seleccionActiva) {
-                                TextButton(onClick = { userManagementViewModel.activarSeleccion() }) {
-                                    Icon(
-                                        Icons.Default.CheckBox,
-                                        contentDescription = null,
-                                        tint = senaColors().green,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        "Seleccionar",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = senaColors().green,
-                                    )
-                                }
-                            }
-                        },
-                    ) {
+                    SenaFilterBar(title = "Buscar y filtrar") {
                         SenaTextField(
                             value = filtros.search,
                             onValueChange = { userManagementViewModel.buscar(it) },
@@ -253,45 +227,6 @@ fun UserManagementScreen(
                     }
                 }
 
-                // Modo selección: contador, todos-en-página y PDF por lote.
-                if (seleccionActiva) {
-                    item {
-                        val idsPagina = pagina.items.map { it.id }
-                        SeleccionUsuariosBar(
-                            cantidad = seleccionados.size,
-                            seleccionadosEnPagina = idsPagina.count { it in seleccionados },
-                            totalEnPagina = idsPagina.size,
-                            cargando = descargandoPdf,
-                            onToggleTodos = { userManagementViewModel.toggleTodosEnPagina(idsPagina) },
-                            onDescargarPdf = {
-                                val ids = userManagementViewModel.idsSeleccionados()
-                                if (ids.isNotEmpty()) {
-                                    // Mismo mecanismo que NewUserScreen: bytes del
-                                    // endpoint + DescargasArchivos + Toast.
-                                    adminViewModel.credencialesPdf(ids) { resultado ->
-                                        resultado.fold(
-                                            onSuccess = { bytes ->
-                                                userManagementViewModel.desactivarSeleccion()
-                                                Toast.makeText(
-                                                    context,
-                                                    DescargasArchivos.guardarPdf(context, bytes, "credenciales-usuarios.pdf"),
-                                                    Toast.LENGTH_LONG,
-                                                ).show()
-                                            },
-                                            onFailure = { e ->
-                                                userManagementViewModel.reportarError(
-                                                    e.message ?: "No se pudo descargar el PDF.",
-                                                )
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                            onCancelar = { userManagementViewModel.desactivarSeleccion() },
-                        )
-                    }
-                }
-
                 if (usersList.isEmpty()) {
                     item {
                         val accionLimpiar: (@Composable () -> Unit)? = if (filtros.hayFiltros) {
@@ -332,9 +267,6 @@ fun UserManagementScreen(
                             } else {
                                 null
                             },
-                            selectionMode = seleccionActiva,
-                            selected = user.id in seleccionados,
-                            onToggleSelection = { userManagementViewModel.toggleSeleccion(user.id) },
                         )
                     }
 
@@ -461,92 +393,14 @@ private fun PaginacionUsuarios(
     }
 }
 
-/** Barra del modo selección: contador, todos-en-página y PDF por lote. */
-@Composable
-private fun SeleccionUsuariosBar(
-    cantidad: Int,
-    seleccionadosEnPagina: Int,
-    totalEnPagina: Int,
-    cargando: Boolean,
-    onToggleTodos: () -> Unit,
-    onDescargarPdf: () -> Unit,
-    onCancelar: () -> Unit,
-) {
-    val estadoPagina = when {
-        totalEnPagina == 0 || seleccionadosEnPagina == 0 -> ToggleableState.Off
-        seleccionadosEnPagina == totalEnPagina -> ToggleableState.On
-        else -> ToggleableState.Indeterminate
-    }
-    SenaCard(elevation = 1.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (cantidad == 0) {
-                        "Selecciona usuarios para el PDF"
-                    } else {
-                        "$cantidad usuario${if (cantidad != 1) "s" else ""} seleccionado${if (cantidad != 1) "s" else ""}"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = senaColors().text,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onCancelar) {
-                    Text(
-                        "Cancelar",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = senaColors().textSecondary,
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .clickable(enabled = totalEnPagina > 0) { onToggleTodos() },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TriStateCheckbox(
-                    state = estadoPagina,
-                    onClick = { onToggleTodos() },
-                    enabled = totalEnPagina > 0,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = senaColors().green,
-                        checkmarkColor = senaColors().onPrimary,
-                        uncheckedColor = senaColors().border,
-                    ),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "Todos en la página",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (totalEnPagina > 0) senaColors().text else senaColors().textMuted,
-                )
-            }
-            SenaButton(
-                text = "PDF ($cantidad)",
-                onClick = onDescargarPdf,
-                isLoading = cargando,
-                enabled = cantidad > 0,
-                icon = Icons.Default.PictureAsPdf,
-                modifier = Modifier.fillMaxWidth(),
-                minWidth = 0.dp,
-            )
-        }
-    }
-}
-
 @Composable
 fun UserCard(
     user: UserItem,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onResend: (() -> Unit)? = null,
-    selectionMode: Boolean = false,
-    selected: Boolean = false,
-    onToggleSelection: () -> Unit = {},
 ) {
-    SenaCard(onClick = if (selectionMode) onToggleSelection else null) {
+    SenaCard {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -554,18 +408,6 @@ fun UserCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    if (selectionMode) {
-                        Checkbox(
-                            checked = selected,
-                            onCheckedChange = { onToggleSelection() },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = senaColors().green,
-                                checkmarkColor = senaColors().onPrimary,
-                                uncheckedColor = senaColors().border,
-                            ),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                    }
                     SenaAvatar(
                         fotoBase64 = user.photo,
                         nombre = user.name,
@@ -582,19 +424,17 @@ fun UserCard(
                         Text(user.email, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     }
                 }
-                if (!selectionMode) {
-                    Row {
-                        if (onResend != null) {
-                            IconButton(onClick = onResend) {
-                                Icon(Icons.Default.Autorenew, contentDescription = "Reenviar activación", tint = senaColors().warning)
-                            }
+                Row {
+                    if (onResend != null) {
+                        IconButton(onClick = onResend) {
+                            Icon(Icons.Default.Autorenew, contentDescription = "Reenviar activación", tint = senaColors().warning)
                         }
-                        IconButton(onClick = onEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green)
-                        }
-                        IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = senaColors().danger)
-                        }
+                    }
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = senaColors().danger)
                     }
                 }
             }

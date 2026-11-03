@@ -41,8 +41,8 @@ data class PerfilDto(
 )
 
 /**
- * POST /general-users (solo admin): el backend exige documento y genera
- * username + contraseña temporal; no se envía contraseña desde el cliente.
+ * POST /general-users (solo admin): el backend exige documento, genera el
+ * username histórico y deja la cuenta pendiente de activación por correo.
  */
 @Serializable
 data class UserCreateRequest(
@@ -121,7 +121,3 @@ data class DeleteUserRequest(
     @SerialName("confirmar_eliminacion") val confirmarEliminacion: Boolean,
     @SerialName("confirmacion_hash") val confirmacionHash: String? = null,
 )
-
-/** Cuerpo del PDF por lote: `{"ids":[...]}`. */
-@Serializable
-data class CredencialesRequest(val ids: List<Int>)

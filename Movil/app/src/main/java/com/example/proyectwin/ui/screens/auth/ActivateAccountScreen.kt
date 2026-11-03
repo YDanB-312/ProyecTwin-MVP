@@ -139,7 +139,7 @@ fun ActivateAccountScreen(
                             color = senaColors().text,
                         )
                         Text(
-                            "Tu contraseña quedó establecida. Ya puedes iniciar sesión con tu correo o usuario.",
+                            "Tu contraseña quedó establecida. Ya puedes iniciar sesión con tu correo electrónico.",
                             style = MaterialTheme.typography.bodySmall,
                             color = senaColors().textSecondary,
                         )

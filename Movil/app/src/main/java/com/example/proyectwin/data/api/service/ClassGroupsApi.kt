@@ -6,7 +6,6 @@ import com.example.proyectwin.data.api.dto.ClassGroupCreateRequest
 import com.example.proyectwin.data.api.dto.ClassGroupDeleteResponse
 import com.example.proyectwin.data.api.dto.ClassGroupDto
 import com.example.proyectwin.data.api.dto.ClassGroupUpdateRequest
-import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -39,10 +38,6 @@ interface ClassGroupsApi {
         @Path("id") id: Int,
         @Body body: AgregarAprendizRequest,
     ): AgregarAprendizResponse
-
-    /** PDF de credenciales de la ficha (solo admin). */
-    @GET("class-groups/{id}/credenciales")
-    suspend fun credencialesPdf(@Path("id") id: Int): ResponseBody
 
     @DELETE("class-groups/{id}")
     suspend fun eliminar(@Path("id") id: Int): ClassGroupDeleteResponse

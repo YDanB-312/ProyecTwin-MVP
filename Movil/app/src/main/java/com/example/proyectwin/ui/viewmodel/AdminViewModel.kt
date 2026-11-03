@@ -178,23 +178,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    /** Descarga de credenciales PDF en curso (evita dobles envíos del botón). */
-    private val _descargandoPdf = MutableStateFlow(false)
-    val descargandoPdf: StateFlow<Boolean> = _descargandoPdf.asStateFlow()
-
-    /** Descarga el PDF de credenciales (bytes) para guardarlo en el dispositivo. */
-    fun credencialesPdf(ids: List<Int>, onResult: (Result<ByteArray>) -> Unit) {
-        if (_descargandoPdf.value) return
-        _descargandoPdf.value = true
-        viewModelScope.launch {
-            try {
-                onResult(usersRepository.descargarCredencialesPdf(ids))
-            } finally {
-                _descargandoPdf.value = false
-            }
-        }
-    }
-
     /** Reenvía la activación de una cuenta pendiente desde el alta. */
     fun reenviarActivacion(id: Int, onResult: (Result<String>) -> Unit) {
         viewModelScope.launch {

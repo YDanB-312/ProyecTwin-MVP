@@ -48,9 +48,6 @@ interface FichasRepository {
         correo: String,
     ): Result<ActivacionUsuario?>
 
-    /** PDF de credenciales de la ficha (solo admin). */
-    suspend fun descargarCredencialesPdf(fichaId: Int): Result<ByteArray>
-
     /** Previsualiza una ficha por su código (flujo "unirme con código"). */
     suspend fun fichaPorCodigo(codigo: String): Result<Ficha>
 

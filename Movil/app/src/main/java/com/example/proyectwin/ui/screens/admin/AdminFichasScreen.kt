@@ -1,6 +1,5 @@
 package com.example.proyectwin.ui.screens.admin
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -12,11 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.proyectwin.data.local.DescargasArchivos
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
@@ -44,7 +41,6 @@ fun AdminFichasScreen(
     val accion by adminFichasViewModel.accion.collectAsState()
     val detalles by adminFichasViewModel.detalles.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
     var busqueda by rememberSaveable { mutableStateOf("") }
@@ -157,17 +153,6 @@ fun AdminFichasScreen(
                                         AppNavigation.INSTRUCTOR_CREAR_FICHA.replace("{fichaId}", ficha.id.toString()),
                                     )
                                 },
-                                onCredenciales = {
-                                    adminFichasViewModel.credencialesPdf(ficha.id) { resultado ->
-                                        val mensaje = resultado.fold(
-                                            onSuccess = { bytes ->
-                                                DescargasArchivos.guardarPdf(context, bytes, "credenciales-ficha-${ficha.codigo}.pdf")
-                                            },
-                                            onFailure = { it.message ?: "No se pudo descargar el PDF." },
-                                        )
-                                        Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
-                                    }
-                                },
                                 onEliminar = { fichaParaEliminar = ficha },
                             )
                         }
@@ -218,7 +203,6 @@ private fun TarjetaFichaAdmin(
     onVerDetalle: () -> Unit,
     onExpandir: () -> Unit,
     onEditar: () -> Unit,
-    onCredenciales: () -> Unit,
     onEliminar: () -> Unit,
 ) {
     SenaCard(elevation = 1.dp, onClick = onVerDetalle) {
@@ -291,11 +275,6 @@ private fun TarjetaFichaAdmin(
                     Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("Editar")
-                }
-                TextButton(onClick = onCredenciales) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Credenciales")
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {

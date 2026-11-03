@@ -109,9 +109,6 @@ class FichasRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun descargarCredencialesPdf(fichaId: Int): Result<ByteArray> =
-        safeApiCall { api.credencialesPdf(fichaId).bytes() }
-
     override suspend fun fichaPorCodigo(codigo: String): Result<Ficha> =
         safeApiCall { apprenticesApi.fichaPorCodigo(normalizar(codigo)) }.map { it.toDomain() }
 

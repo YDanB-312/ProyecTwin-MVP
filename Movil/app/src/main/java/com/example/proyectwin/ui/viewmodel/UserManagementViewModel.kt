@@ -75,14 +75,6 @@ class UserManagementViewModel @Inject constructor(
     private val _errorAccion = MutableStateFlow<String?>(null)
     val errorAccion: StateFlow<String?> = _errorAccion.asStateFlow()
 
-    /** Modo selección múltiple para el PDF de credenciales por lote. */
-    private val _seleccionActiva = MutableStateFlow(false)
-    val seleccionActiva: StateFlow<Boolean> = _seleccionActiva.asStateFlow()
-
-    /** Ids marcados: persisten al cambiar de página y se limpian al filtrar. */
-    private val _seleccionados = MutableStateFlow<Set<Int>>(emptySet())
-    val seleccionados: StateFlow<Set<Int>> = _seleccionados.asStateFlow()
-
     /** `true` mientras se recarga conservando la lista (pull-to-refresh). */
     private val _refrescando = MutableStateFlow(false)
     val refrescando: StateFlow<Boolean> = _refrescando.asStateFlow()
@@ -106,7 +98,6 @@ class UserManagementViewModel @Inject constructor(
     /** Búsqueda con retardo (evita una petición por tecla, como la web). */
     fun buscar(texto: String) {
         _filtros.update { it.copy(search = texto) }
-        limpiarSeleccion()
         trabajoBusqueda?.cancel()
         trabajoBusqueda = viewModelScope.launch {
             delay(DEBOUNCE_BUSQUEDA_MS)
@@ -123,7 +114,6 @@ class UserManagementViewModel @Inject constructor(
     fun limpiarFiltros() {
         trabajoBusqueda?.cancel()
         _filtros.value = UserFilters()
-        limpiarSeleccion()
         paginaActual = 1
         cargar()
     }
@@ -133,7 +123,6 @@ class UserManagementViewModel @Inject constructor(
         // búsqueda pendiente (el texto ya vive en `_filtros`).
         trabajoBusqueda?.cancel()
         _filtros.update(cambio)
-        limpiarSeleccion()
         paginaActual = 1
         cargar()
     }
@@ -158,8 +147,6 @@ class UserManagementViewModel @Inject constructor(
         viewModelScope.launch {
             usersRepository.eliminar(id).fold(
                 onSuccess = {
-                    // Un usuario eliminado no debe viajar en un PDF por lote.
-                    _seleccionados.update { it - id }
                     // Si era la última fila de una página interior, retrocede una.
                     val pagina = (_uiState.value as? UserManagementUiState.Success)?.pagina
                     if (pagina != null && pagina.items.size == 1 && paginaActual > 1) {
@@ -176,43 +163,6 @@ class UserManagementViewModel @Inject constructor(
 
     fun limpiarErrorAccion() {
         _errorAccion.value = null
-    }
-
-    // -------------------------------------------------- Selección múltiple
-
-    fun activarSeleccion() {
-        _seleccionActiva.value = true
-    }
-
-    /** Cancela el modo selección y descarta los ids marcados. */
-    fun desactivarSeleccion() {
-        _seleccionActiva.value = false
-        _seleccionados.value = emptySet()
-    }
-
-    /** Alterna la marca de un usuario (la selección persiste entre páginas). */
-    fun toggleSeleccion(id: Int) {
-        _seleccionados.update { if (id in it) it - id else it + id }
-    }
-
-    /** Marca/desmarca todos los usuarios de la página visible. */
-    fun toggleTodosEnPagina(ids: List<Int>) {
-        val actuales = _seleccionados.value
-        val todosMarcados = ids.isNotEmpty() && ids.all { it in actuales }
-        _seleccionados.value = if (todosMarcados) actuales - ids.toSet() else actuales + ids
-    }
-
-    /** Ids listos para el request del PDF por lote (orden estable). */
-    fun idsSeleccionados(): List<Int> = _seleccionados.value.sorted()
-
-    /** Vacía la marca sin salir del modo (cambios de filtro/búsqueda). */
-    fun limpiarSeleccion() {
-        _seleccionados.value = emptySet()
-    }
-
-    /** Avisa por el snackbar un fallo puntual (p. ej. el PDF por lote). */
-    fun reportarError(mensaje: String) {
-        _errorAccion.value = mensaje
     }
 
     // -------------------------------------------------------------- Carga

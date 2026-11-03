@@ -1,6 +1,5 @@
 package com.example.proyectwin.data.api.service
 
-import com.example.proyectwin.data.api.dto.CredencialesRequest
 import com.example.proyectwin.data.api.dto.DeleteUserRequest
 import com.example.proyectwin.data.api.dto.FotoUpdateRequest
 import com.example.proyectwin.data.api.dto.GeneralUserDto
@@ -12,7 +11,6 @@ import com.example.proyectwin.data.api.dto.ReenviarActivacionResponse
 import com.example.proyectwin.data.api.dto.UserCreateRequest
 import com.example.proyectwin.data.api.dto.UserUpdateRequest
 import com.example.proyectwin.data.api.dto.UsuarioActivacionDto
-import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
@@ -80,10 +78,6 @@ interface UsersApi {
         @Path("id") id: Int,
         @Body body: DeleteUserRequest,
     ): GeneralUserDto
-
-    /** PDF de credenciales por lote (binario). */
-    @POST("general-users/credenciales")
-    suspend fun credencialesPdf(@Body body: CredencialesRequest): ResponseBody
 
     @POST("general-users/{id}/activacion/reenviar")
     suspend fun reenviarActivacion(@Path("id") id: Int): ReenviarActivacionResponse

@@ -1,6 +1,5 @@
 package com.example.proyectwin.data.repository
 
-import com.example.proyectwin.data.api.dto.CredencialesRequest
 import com.example.proyectwin.data.api.dto.DeleteUserRequest
 import com.example.proyectwin.data.api.dto.UserCreateRequest
 import com.example.proyectwin.data.api.dto.UsuarioActivacionDto
@@ -122,9 +121,6 @@ class UsersRepositoryImpl @Inject constructor(
 
     override suspend fun reenviarActivacion(id: Int): Result<String> =
         safeApiCall { api.reenviarActivacion(id) }.map { it.message }
-
-    override suspend fun descargarCredencialesPdf(ids: List<Int>): Result<ByteArray> =
-        safeApiCall { api.credencialesPdf(CredencialesRequest(ids)).bytes() }
 
     private fun UsuarioActivacionDto.toDomain(): ActivacionUsuario = ActivacionUsuario(
         usuario = usuario.toDomain(),
