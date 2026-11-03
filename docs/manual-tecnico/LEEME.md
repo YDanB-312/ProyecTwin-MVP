@@ -3,8 +3,9 @@
 > **Nota de vigencia (Fase 6S, 1-nov-2026):** este manual es un **snapshot
 > histórico** generado el 16-oct-2026. No debe usarse como guía de despliegue
 > vigente. Varias referencias están obsoletas: `RUN_SEED=true`, `MAIL_MAILER=log`,
-> `SESSION_DRIVER=file`, credenciales temporales y `VolumenSeeder`. Para el
-> estado actual usa `docs/deploy-railway.md` y `docs/release-android.md`.
+> `SESSION_DRIVER=file`, credenciales temporales, `VolumenSeeder` y la
+> exportación PDF de credenciales (retirada el 2-nov-2026). Para el estado
+> actual usa `docs/deploy-railway.md` y `docs/release-android.md`.
 
 Esta carpeta contiene el **Manual Técnico de ProyecTwin** (MVP) generado a partir de la
 auditoría técnica del repositorio realizada el **16 de octubre de 2026**.

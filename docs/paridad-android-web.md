@@ -69,7 +69,7 @@ manual de extremo a extremo.
 |---|---|---|---|
 | Dashboard | `AdminDashboardScreen` | **Completo** | Existente; métricas y salud del motor. |
 | Usuarios | `UserManagementScreen` | **Parcial** | Alta con `{usuario, activacion}`, estado “Pendiente”, reenvío desde la fila y detalle completo. La eliminación directa desde la lista no replica el diálogo de decisión por historial; debe hacerse desde el detalle. |
-| Alta de usuario | `NewUserScreen` | **Completo** | Sin contraseña temporal; muestra correo, estado del enlace, PDF y reenvío. |
+| Alta de usuario | `NewUserScreen` | **Completo** | Sin contraseña temporal; muestra correo, estado del enlace y reenvío. |
 | Detalle de usuario | `UserDetailScreen`, `UserDetailViewModel` | **Completo** | Edita nombre, correo, documento, foto, rol y estado; reenvía activación; restablecimiento por enlace; borrado con `409`, impacto y hash de confirmación. |
 | Redes y programas | `AdminCatalogosScreen` | **Completo** | Existente. |
 | Configuración del motor | `AdminMotorScreen` | **Completo** | Existente. |

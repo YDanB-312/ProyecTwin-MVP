@@ -165,6 +165,8 @@ Adicionalmente: lectura de pasajes de propuestas ajenas vía `similarities?proye
 ### BUG-017 🟡 — PDF de credenciales: fallo de descifrado se etiqueta "Contraseña ya establecida"
 `CredencialesPdf.php:18-42`. Si `APP_KEY` rotó, el admin entrega un PDF sin temporal creyendo que ya cambió. Esperado: mensaje de error explícito. Prueba: simular `Crypt` inválido.
 
+> **Obsoleto (2-nov-2026):** la exportación PDF de credenciales se eliminó junto con `CredencialesPdf`, la vista Blade y la dependencia Dompdf. Este hallazgo se conserva solo como registro histórico.
+
 ### BUG-018 🟡 — Configuración de sesión/tokens para despliegue
 `.env.example:2-4,14,63-64`; `config/sanctum.php` (`expiration=null`); `config/session.php` (`same_site` fijo `lax`, `secure` sin default). `forgotPassword` devuelve `reset_url` con token en `local` (`AuthController.php:168-174`). Riesgos al desplegar (cookie no viaja cross-site, token sin caducidad, reset filtrable si `APP_ENV=local`). Esperado: endurecer para producción. (Fuera de alcance de demo local, pero documentar).
 

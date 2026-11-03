@@ -58,7 +58,7 @@ flowchart LR
 | Componente | `frontend/src/pages/aprendiz/Propuestas/Propuestas.jsx` | `useApi(() => proyectos.listar({ included: INCLUDE_PROYECTOS }), [], { inicial: [] })` |
 | Hook | `frontend/src/lib/useApi.js` | `{ data, cargando, error, recargar }` |
 | Recurso | `frontend/src/lib/recursos.js` | `apiFetch` sobre `/projects` con `qs(...)`; devuelve la lista |
-| Cliente HTTP | `frontend/src/lib/api.js` | `credentials: "include"` para la cookie de sesión httpOnly; `X-XSRF-TOKEN` en escrituras; funciones `apiFetch` y `apiDescargar` |
+| Cliente HTTP | `frontend/src/lib/api.js` | `credentials: "include"` para la cookie de sesión httpOnly; `X-XSRF-TOKEN` en escrituras; función `apiFetch` |
 | Proxy | `frontend/vite.config.js` | `'/v1': { target: 'http://127.0.0.1:8000', changeOrigin: true }` |
 | Ruta | `backend/routes/api-v1.php` | `Route::get('projects', [ProjectController::class, 'index'])` |
 | Middleware | `backend/app/Http/Kernel.php` | `'cuenta.activa' => CuentaActiva::class` · `'cuenta.activada' => CuentaActivada::class` · `'rol' => RolMiddleware::class`; las rutas autenticadas usan `auth:sanctum` y ambas guardas de cuenta |

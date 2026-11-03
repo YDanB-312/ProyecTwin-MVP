@@ -317,7 +317,6 @@ suficiente para el MVP.
 | 419/CSRF | Dominio stateful mal configurado; el SPA reintenta una vez renovando el token |
 | No llega el correo de activación | Mailer en `log`, Brevo sin remitente/IP o `FRONTEND_URL` inválida |
 | `/apk/ProyecTWin.apk` da 404 | El APK no entró en la imagen, ruta Nginx incorrecta o archivo ausente |
-| Error 500 al exportar PDF | Revisar fuentes/permisos de dompdf; `dom` y `mbstring` ya están incluidas en la imagen |
 
 ## Notas
 
