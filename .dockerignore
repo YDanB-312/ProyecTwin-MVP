@@ -1,6 +1,6 @@
 # =============================================================================
 # Contexto de build de la imagen (Railway usa el Dockerfile de la raíz).
-# Excluir estado local, secretos, artefactos y APK no autorizados.
+# Fase 5A: excluir estado local, secretos, artefactos y APK no validado.
 # Docker no hereda .gitignore; este archivo debe ser autónomo.
 # =============================================================================
 
