@@ -79,8 +79,7 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', 'cuenta.activada'])->group(f
     // del propio usuario o de un admin; el perfil público lo usan las vistas.
     Route::middleware('rol:admin')->get('general-users', [GeneralUserController::class, 'index']);
     Route::middleware('rol:admin')->post('general-users', [GeneralUserController::class, 'store']);
-    // Credenciales iniciales en PDF: selección de usuarios o toda una ficha.
-    Route::middleware('rol:admin')->post('general-users/credenciales', [GeneralUserController::class, 'credenciales']);
+    // Restablecimiento de acceso: revoca sesiones y envía un enlace por correo.
     Route::middleware(['rol:admin', 'throttle:activation-resend'])->post('general-users/{general_user}/credenciales/restablecer', [GeneralUserController::class, 'restablecerCredenciales']);
     Route::middleware('rol:admin')->post('general-users/{general_user}/activacion/reenviar', [GeneralUserController::class, 'reenviarActivacion'])
         ->middleware('throttle:activation-resend');
@@ -124,7 +123,6 @@ Route::middleware(['auth:sanctum', 'cuenta.activa', 'cuenta.activada'])->group(f
 
     // Fichas: lectura autenticada; escritura admin/instructor
     Route::get('class-groups', [ClassGroupController::class, 'index']);
-    Route::middleware('rol:admin')->get('class-groups/{class_group}/credenciales', [ClassGroupController::class, 'credenciales']);
     Route::get('class-groups/{class_group}', [ClassGroupController::class, 'show']);
     Route::middleware('rol:admin,instructor')->group(function () {
         Route::post('class-groups', [ClassGroupController::class, 'store']);

@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
-// Flujo institucional: el admin crea cuentas pendientes de activación y puede
-// exportar el PDF con usuario y estado, sin contraseñas.
+// Flujo institucional: el admin crea cuentas pendientes de activación, envía
+// el enlace de activación y restablece el acceso por correo.
 class CredencialesTest extends TestCase
 {
     use DatabaseTransactions;
@@ -195,46 +195,6 @@ class CredencialesTest extends TestCase
 
         $this->assertSame($ficha->id, (int) Apprentice::where('id_usuario', $aprendizA->id)->value('id_class_group'));
         $this->assertNull(Apprentice::where('id_usuario', $aprendizB->id)->value('id_class_group'));
-    }
-
-    // ---------------------------------------------------------------- Exportación
-
-    public function test_exportar_credenciales_de_una_ficha_genera_pdf(): void
-    {
-        $admin = $this->usuario('admin');
-        $programa = $this->programa();
-        $instructor = Instructor::create([
-            'fecha_ingreso' => now()->toDateString(),
-            'id_usuario' => $this->usuario('instructor')->id,
-        ]);
-
-        $creada = $this->como($admin)->postJson('/v1/class-groups', [
-            'numero' => '7010003',
-            'nombre' => 'Ficha exportable',
-            'estado' => 'activo',
-            'id_programa' => $programa->id,
-            'id_instructor' => $instructor->id,
-        ])->assertCreated();
-        $fichaId = $creada->json('id');
-
-        $respuesta = $this->como($admin)->get('/v1/class-groups/' . $fichaId . '/credenciales');
-        $respuesta->assertOk();
-        $this->assertStringContainsString('application/pdf', $respuesta->headers->get('content-type'));
-        $this->assertDatabaseHas('audit_logs', ['accion' => 'exportar_credenciales', 'entidad_id' => $fichaId]);
-    }
-
-    public function test_exportar_credenciales_de_usuarios_seleccionados_solo_admin(): void
-    {
-        $admin = $this->usuario('admin');
-        $aprendiz = $this->usuario('aprendiz');
-
-        // Un aprendiz no puede exportar credenciales.
-        $this->como($aprendiz)->postJson('/v1/general-users/credenciales', ['ids' => [$aprendiz->id]])
-            ->assertStatus(403);
-
-        $respuesta = $this->como($admin)->post('/v1/general-users/credenciales', ['ids' => [$aprendiz->id]]);
-        $respuesta->assertOk();
-        $this->assertStringContainsString('application/pdf', $respuesta->headers->get('content-type'));
     }
 
     // ---------------------------------------------------------------- Búsqueda y paginación

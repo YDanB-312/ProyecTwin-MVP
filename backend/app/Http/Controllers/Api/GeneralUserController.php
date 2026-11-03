@@ -16,7 +16,6 @@ use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Support\Auditoria;
 use App\Support\BorradoCascada;
-use App\Support\CredencialesPdf;
 use App\Services\ActivacionCuenta;
 use App\Services\AltaUsuario;
 use App\Services\NotificacionesService;
@@ -724,27 +723,6 @@ class GeneralUserController extends Controller
             'impacto' => $impacto,
             'confirmacion_hash' => $this->hashImpacto($general_user, $impacto),
         ], 409);
-    }
-
-    // Exporta en PDF las credenciales iniciales de los usuarios seleccionados
-    // (independiente de una ficha). Solo admin; queda en la bitácora.
-    public function credenciales(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'bail|integer|exists:general_users,id',
-        ]);
-
-        $usuarios = GeneralUser::with('apprentice.classGroup.program', 'instructor.classGroups.program')
-            ->whereIn('id', $request->ids)
-            ->orderBy('nombre')
-            ->get();
-
-        Auditoria::registrar('exportar_credenciales', 'general_users', null, [
-            'usuarios' => $usuarios->count(),
-        ]);
-
-        return CredencialesPdf::generar($usuarios);
     }
 
     // ---------------------------------------------------------------- Perfiles

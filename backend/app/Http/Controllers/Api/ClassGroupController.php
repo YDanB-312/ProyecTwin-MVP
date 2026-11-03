@@ -7,7 +7,6 @@ use App\Models\ClassGroup;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Models\Project;
-use App\Support\CredencialesPdf;
 use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
@@ -269,30 +268,6 @@ class ClassGroupController extends Controller
                     : 'La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación desde el detalle del usuario.',
             ],
         ], 201);
-    }
-
-    // Exporta en PDF las credenciales iniciales de la ficha (aprendices +
-    // instructor responsable). Solo admin; queda en la bitácora.
-    public function credenciales(ClassGroup $class_group)
-    {
-        $ids = Apprentice::where('id_class_group', $class_group->id)->pluck('id_usuario')->all();
-        if ($class_group->instructor) {
-            $ids[] = $class_group->instructor->id_usuario;
-        }
-
-        $usuarios = GeneralUser::with('apprentice.classGroup.program', 'instructor.classGroups.program')
-            ->whereIn('id', $ids)
-            ->orderBy('nombre')
-            ->get();
-
-        \App\Support\Auditoria::registrar('exportar_credenciales', 'class_groups', $class_group->id, [
-            'usuarios' => $usuarios->count(),
-        ]);
-
-        return CredencialesPdf::generar($usuarios, [
-            'ficha' => $class_group->numero,
-            'programa' => optional($class_group->program)->nombre,
-        ]);
     }
 
     public function update(Request $request, ClassGroup $class_group)
