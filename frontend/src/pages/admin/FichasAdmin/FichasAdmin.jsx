@@ -15,7 +15,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import DataTable from '../../../components/DataTable/DataTable'
 import ApiState from '../../../components/ApiState/ApiState'
 import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal'
-import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning, DownloadSimple, MagnifyingGlass } from 'phosphor-react'
+import { Books, ChartBar, CheckCircle, Eye, Lifebuoy, Plus, Trash, Warning, MagnifyingGlass } from 'phosphor-react'
 import { useApi } from '../../../lib/useApi'
 import { useDebounced } from '../../../lib/useDebounced'
 import { fichas, programas, redes, instructores, proyectos, usuarios } from '../../../lib/recursos'
@@ -147,22 +147,6 @@ export default function FichasAdmin() {
   function abrirCreacion() {
     setCreadaMsg(false)
     setCreando(true)
-  }
-
-  const [exportando, setExportando] = useState(false)
-
-  // Exporta el PDF con las credenciales iniciales de la ficha (solo admin).
-  const exportarCredenciales = async (id) => {
-    if (exportando) return
-    setAccionMsg(null)
-    setExportando(true)
-    try {
-      await fichas.exportarCredenciales(id)
-    } catch (err) {
-      setAccionMsg(err?.data?.message || 'No se pudieron exportar las credenciales.')
-    } finally {
-      setExportando(false)
-    }
   }
 
   const confirmarEliminar = async () => {
@@ -639,16 +623,6 @@ export default function FichasAdmin() {
                       align: 'end',
                       render: (f) => (
                         <div className={s.actions}>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            title="Exportar credenciales de la ficha"
-                            disabled={exportando}
-                            onClick={() => exportarCredenciales(f.id)}
-                          >
-                            <DownloadSimple size={14} /> Credenciales
-                          </Button>
                           <Button
                             as="link"
                             to={`/admin/detalle-ficha/${f.id}`}

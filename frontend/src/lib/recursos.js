@@ -3,7 +3,7 @@
 // Cada recurso expone funciones que devuelven directamente los datos del
 // servidor (columnas del backend). No hay mocks ni transformaciones ocultas:
 // las páginas piden lo que necesitan y resuelven las relaciones por `included`.
-import { apiFetch, apiDescargar, qs } from "./api";
+import { apiFetch, qs } from "./api";
 
 const lista = (data) => (Array.isArray(data) ? data : (data?.data ?? []));
 
@@ -26,14 +26,6 @@ export const usuarios = {
   crear: (body) => apiFetch("/general-users", { method: "POST", body }),
   actualizar: (id, body) =>
     apiFetch(`/general-users/${id}`, { method: "PUT", body }),
-  // Credenciales iniciales en PDF de los usuarios seleccionados (solo admin).
-  exportarCredenciales: (ids) =>
-    apiDescargar("/general-users/credenciales", {
-      method: "POST",
-      body: { ids },
-      nombre: "credenciales-usuarios.pdf",
-      timeout: 120000,
-    }),
   // Reenvía el enlace de activación de una cuenta pendiente (solo admin).
   reenviarActivacion: (id) =>
     apiFetch(`/general-users/${id}/activacion/reenviar`, { method: "POST" }),
@@ -113,12 +105,6 @@ export const fichas = {
   actualizar: (id, body) =>
     apiFetch(`/class-groups/${id}`, { method: "PUT", body }),
   eliminar: (id) => apiFetch(`/class-groups/${id}`, { method: "DELETE" }),
-  // Credenciales iniciales de la ficha (aprendices + instructor) en PDF.
-  exportarCredenciales: (id) =>
-    apiDescargar(`/class-groups/${id}/credenciales`, {
-      nombre: `credenciales-ficha-${id}.pdf`,
-      timeout: 120000,
-    }),
   // Alta/asociación atómica de un aprendiz: usuario_id (existente) o datos.
   agregarAprendiz: (id, body) =>
     apiFetch(`/class-groups/${id}/aprendices`, { method: "POST", body }),

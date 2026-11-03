@@ -18,7 +18,7 @@ import EmptyState from '../../../components/EmptyState/EmptyState'
 import ApiState from '../../../components/ApiState/ApiState'
 import {
   Users, Plus, Eye, CheckCircle, Code, ChartBar, Prohibit, ArrowCounterClockwise,
-  Warning, DownloadSimple,
+  Warning,
 } from 'phosphor-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useApi } from '../../../lib/useApi'
@@ -60,9 +60,7 @@ export default function Usuarios() {
   const [suspender, setSuspender] = useState(null)
   // Resultado del alta: estado del enlace de activación enviado.
   const [resultadoAlta, setResultadoAlta] = useState(null)
-  const [exportando, setExportando] = useState(false)
   const [accionOcupada, setAccionOcupada] = useState(false)
-  const [seleccionados, setSeleccionados] = useState([])
 
   /* ---------- Lista (paginación del servidor) ---------- */
   const [busqueda, setBusqueda] = useState('')
@@ -126,23 +124,6 @@ export default function Usuarios() {
     setFiltroFicha('todos')
     setFiltroPrograma('todos')
     setPagina(1)
-  }
-
-  /* ---------- Selección y exportación ---------- */
-  const alternarSeleccion = (id) => {
-    setSeleccionados((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]))
-  }
-
-  const exportar = async (ids) => {
-    setAccionMsg(null)
-    setExportando(true)
-    try {
-      await usuarios.exportarCredenciales(ids)
-    } catch (err) {
-      setAccionMsg(err?.data?.message || 'No se pudieron exportar las credenciales.')
-    } finally {
-      setExportando(false)
-    }
   }
 
   // Reenvía el enlace de activación de una cuenta pendiente.
@@ -287,24 +268,12 @@ export default function Usuarios() {
           onBack={creando ? () => setCreando(false) : undefined}
           actions={
             !creando ? (
-              <>
-                {seleccionados.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={exportando}
-                    onClick={() => exportar(seleccionados)}
-                  >
-                    <DownloadSimple size={14} /> Exportar credenciales ({seleccionados.length})
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  onClick={() => { setResultadoAlta(null); setCreando(true) }}
-                >
-                  <Plus size={14} /> Nuevo Usuario
-                </Button>
-              </>
+              <Button
+                type="button"
+                onClick={() => { setResultadoAlta(null); setCreando(true) }}
+              >
+                <Plus size={14} /> Nuevo Usuario
+              </Button>
             ) : undefined
           }
         />
@@ -391,15 +360,6 @@ export default function Usuarios() {
                   : <> La cuenta quedó pendiente, pero el correo no pudo enviarse. Reenvía la activación.</>}
                 <div className={s.actions} style={{ marginTop: 'var(--sp-2)' }}>
                   Correo: <code className={s.codigo}>{resultadoAlta.correo}</code>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={exportando}
-                    onClick={() => exportar([resultadoAlta.id])}
-                  >
-                    <DownloadSimple size={14} /> PDF
-                  </Button>
                   {!resultadoAlta.enviada && (
                     <Button
                       type="button"
@@ -517,18 +477,6 @@ export default function Usuarios() {
                   ariaLabel="Usuarios registrados"
                   columns={[
                     {
-                      key: 'sel',
-                      header: 'Sel.',
-                      render: (usr) => (
-                        <input
-                          type="checkbox"
-                          aria-label={`Seleccionar ${usr.nombre} ${usr.apellido}`}
-                          checked={seleccionados.includes(usr.id)}
-                          onChange={() => alternarSeleccion(usr.id)}
-                        />
-                      ),
-                    },
-                    {
                       key: 'usuario',
                       header: 'Usuario',
                       render: (usr) => (
@@ -549,8 +497,15 @@ export default function Usuarios() {
                     },
                     {
                       key: 'username',
-                      header: 'Username',
-                      render: (usr) => <code className={s.codigo}>{usr.username}</code>,
+                      header: 'Usuario institucional',
+                      render: (usr) => (
+                        <code
+                          className={s.codigo}
+                          title="Referencia histórica; no se usa para iniciar sesión."
+                        >
+                          {usr.username}
+                        </code>
+                      ),
                     },
                     { key: 'correo', header: 'Correo', render: (usr) => usr.correo },
                     {
