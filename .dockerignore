@@ -56,7 +56,7 @@ backend/storage
 backend/bootstrap/cache
 backend/public/storage
 
-# APK: no se distribuye desde la imagen web
+# APK histórico: se conserva en el repositorio, pero nunca se copia a la imagen.
 backend/public/apk
 **/*.apk
 **/*.aab

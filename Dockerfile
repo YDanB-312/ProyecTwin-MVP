@@ -67,6 +67,9 @@ COPY --from=mlocati/php-extension-installer:2.13.1 \
      /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pdo_mysql
 
+# No anunciar la versión de PHP en respuestas HTTP.
+RUN printf 'expose_php=Off\n' > /usr/local/etc/php/conf.d/zz-security.ini
+
 # php-fpm escucha solo en localhost (nginx lo alcanza por 127.0.0.1:9000) y
 # conserva las variables de entorno del contenedor. Su access log se descarta:
 # nginx ya registra cada petición con un formato que omite el query string, y
@@ -101,6 +104,7 @@ RUN chmod +x /opt/docker/entrypoint.sh
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
+    SESSION_DRIVER=database \
     LOG_CHANNEL=stderr \
     LOG_LEVEL=warning \
     PORT=8080
