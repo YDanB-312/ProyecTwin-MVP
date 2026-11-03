@@ -30,7 +30,7 @@ class LoginCuentaSuspendidaTest extends TestCase
         $user = $this->suspendido();
 
         $res = $this->postJson('/v1/auth/login', [
-            'username' => $user->username,
+            'correo' => $user->correo,
             'password' => '123456',
         ])->assertStatus(403)
             ->assertJsonPath('message', 'Cuenta suspendida. Contacta al administrador.');
@@ -38,12 +38,6 @@ class LoginCuentaSuspendidaTest extends TestCase
         $res->assertJsonCount(1);
         $this->assertNull($res->json('token'));
         $this->assertSame(0, $user->tokens()->count());
-
-        $this->postJson('/v1/auth/login', [
-            'correo' => $user->correo,
-            'password' => '123456',
-        ])->assertStatus(403)
-            ->assertJsonPath('message', 'Cuenta suspendida. Contacta al administrador.');
     }
 
     public function test_credenciales_incorrectas_de_cuenta_suspendida_siguen_dando_422(): void
@@ -51,7 +45,7 @@ class LoginCuentaSuspendidaTest extends TestCase
         $user = $this->suspendido();
 
         $this->postJson('/v1/auth/login', [
-            'username' => $user->username,
+            'correo' => $user->correo,
             'password' => 'clave-incorrecta',
         ])->assertStatus(422)
             ->assertJsonPath('message', 'Credenciales incorrectas. Verifica tus datos.');

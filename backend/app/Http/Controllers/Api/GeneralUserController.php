@@ -115,6 +115,14 @@ class GeneralUserController extends Controller
     // nace pendiente y recibe un enlace de activación.
     public function store(Request $request)
     {
+        // Normaliza antes de validar para que la unicidad del correo no dependa
+        // de mayúsculas, espacios ni de la colación del motor.
+        if (is_string($request->input('correo'))) {
+            $request->merge([
+                'correo' => strtolower(trim((string) $request->input('correo'))),
+            ]);
+        }
+
         $request->validate([
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',

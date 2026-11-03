@@ -50,11 +50,11 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->user()?->id ?: $request->ip());
         });
 
-        // Login: además del límite global, se limita por identificador + IP y
-        // por IP. El identificador se normaliza y solo se usa en la clave
-        // efímera del limitador; no se persiste en la base de datos.
+        // Login: además del límite global, se limita por correo + IP y por IP.
+        // El correo se normaliza y solo se usa en la clave efímera del
+        // limitador; no se persiste en la base de datos.
         RateLimiter::for('login', function (Request $request) {
-            $raw = $request->input('correo') ?: $request->input('username');
+            $raw = $request->input('correo');
             $identificador = is_string($raw) ? strtolower(trim($raw)) : '';
 
             return [

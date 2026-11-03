@@ -49,8 +49,8 @@ las tareas que siguen pendientes.
 - **Backend:** Laravel 10, PHP 8.2+, MySQL/MariaDB, Sanctum.
 - **Frontend:** React 19, Vite 8, React Router, CSS Modules.
 - **Infraestructura:** Docker multi-stage (Nginx + PHP-FPM) para despliegue.
-- **Android:** `Movil/`, responsabilidad de Oscar; no se modifica desde este
-  repositorio.
+- **Android:** `Movil/`, app nativa; este repositorio incluye ajustes de
+  paridad y autenticación coordinados con Oscar.
 
 ## Estructura
 
@@ -59,7 +59,7 @@ backend/    API Laravel, migraciones, seeders y pruebas PHPUnit
 frontend/   SPA React, pruebas Vitest y E2E Playwright
 docs/       documentación operativa, decisiones, arquitectura e histórico
 docker/     entrypoint y configuración de Nginx
-Movil/      aplicación Android (fuera del alcance de este equipo)
+Movil/      aplicación Android; cambios coordinados con Oscar
 ```
 
 La documentación está indexada en [`docs/README.md`](docs/README.md).
@@ -221,6 +221,6 @@ APK requiere coordinación y autorización escrita de Oscar.
 - Mantener Laravel 10, React y Vite; no se moderniza el stack en esta fase.
 - Conservar CSS Modules y los tokens visuales existentes.
 - No introducir Tailwind ni rediseñar pantallas.
-- No modificar `Movil/`, APK, certificados ni archivos de Oscar.
+- No reemplazar el trabajo de `Movil/`, el APK, los certificados ni los archivos de Oscar sin coordinación. Los ajustes de paridad y autenticación se revisan con él.
 - No tocar `backend/storage`, `composer.lock` ni `package-lock.json` sin
   necesidad demostrada y autorización.

@@ -23,16 +23,6 @@ class AuthContractTest {
     }
 
     @Test
-    fun `el login por usuario no envia correo`() {
-        val cuerpo = json.encodeToString(
-            LoginRequest(username = "ana", password = "secreta"),
-        )
-
-        assertTrue(cuerpo.contains("\"username\":\"ana\""))
-        assertFalse(cuerpo.contains("\"correo\""))
-    }
-
-    @Test
     fun `el borrado normal no envia hash nulo`() {
         val cuerpo = json.encodeToString(
             DeleteUserRequest(confirmarEliminacion = false),

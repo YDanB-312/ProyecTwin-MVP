@@ -32,10 +32,10 @@ class CredencialesTest extends TestCase
         ], $extra));
     }
 
-    private function token(GeneralUser $user, string $campo = 'correo'): string
+    private function token(GeneralUser $user): string
     {
         return $this->postJson('/v1/auth/login', [
-            $campo => $campo === 'username' ? $user->username : $user->correo,
+            'correo' => $user->correo,
             'password' => '123456',
         ])->assertOk()->json('token');
     }
@@ -90,6 +90,18 @@ class CredencialesTest extends TestCase
         $this->assertNull($user->email_verified_at);
         $this->assertDatabaseHas('account_activations', ['user_id' => $user->id]);
         $this->assertDatabaseHas('audit_logs', ['accion' => 'crear_usuario', 'entidad_id' => $user->id]);
+    }
+
+    public function test_el_alta_normaliza_el_correo_y_rechaza_duplicados_con_otra_capitalizacion(): void
+    {
+        Notification::fake();
+        $correo = 'Persona.' . uniqid() . '@Correo.com';
+        $normalizado = strtolower(trim($correo));
+
+        $this->alta(['correo' => '  ' . strtoupper($correo) . '  '])->assertCreated();
+        $this->assertDatabaseHas('general_users', ['correo' => $normalizado]);
+
+        $this->alta(['correo' => $normalizado])->assertStatus(422);
     }
 
     public function test_dos_altas_con_el_mismo_nombre_generan_usernames_distintos(): void

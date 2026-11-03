@@ -9,8 +9,8 @@ interface AuthRepository {
     val currentUser: Flow<GeneralUser?>
     val isLoggedIn: Flow<Boolean>
 
-    /** Acceso por correo o username (compatibilidad con cuentas antiguas). */
-    suspend fun login(identificador: String, password: String, recordarme: Boolean = false): Result<GeneralUser>
+    /** Acceso exclusivo con el correo registrado y la contraseña. */
+    suspend fun login(correo: String, password: String, recordarme: Boolean = false): Result<GeneralUser>
 
     /** Cierra sesión en el servidor (best effort) y limpia la sesión local. */
     suspend fun logout(): Result<Unit>

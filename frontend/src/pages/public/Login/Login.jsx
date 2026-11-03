@@ -14,7 +14,7 @@ import { RUTA_POR_ROL } from '../../../constants/routes'
 export default function Login() {
   const { user, login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [identificador, setIdentificador] = useState('')
+  const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [recordarme, setRecordarme] = useState(false)
   const [error, setError] = useState('')
@@ -31,13 +31,13 @@ export default function Login() {
     if (cargando) return
     setError('')
 
-    if (!identificador.trim() || !password) {
+    const valor = correo.trim()
+    if (!valor || !password) {
       setError('Ingresa tu correo y contraseña.')
       return
     }
 
-    const valor = identificador.trim()
-    if (valor.includes('@') && !esEmailValido(valor)) {
+    if (!esEmailValido(valor)) {
       setError('Ingresa un correo electrónico válido.')
       return
     }
@@ -75,14 +75,14 @@ export default function Login() {
           <FormField
             label="Correo electrónico"
             required
-            help="Usa el correo registrado. Si aún no lo tienes, puedes escribir tu usuario institucional."
+            help="Usa el correo registrado en tu cuenta."
           >
             <Input
-              type="text"
-              value={identificador}
-              onChange={(e) => setIdentificador(e.target.value)}
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
               placeholder="Correo electrónico"
-              autoComplete="username"
+              autoComplete="email"
               inputMode="email"
               autoFocus
             />

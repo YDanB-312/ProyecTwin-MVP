@@ -275,7 +275,7 @@ class ActivacionCuentaTest extends TestCase
         $this->withToken($tokenPrevio)->getJson('/v1/auth/me')->assertStatus(401);
     }
 
-    public function test_cuentas_existentes_siguen_entrando_por_correo_y_username(): void
+    public function test_cuentas_existentes_entran_por_correo_y_el_username_ya_no_autentica(): void
     {
         $user = $this->usuario('aprendiz');
 
@@ -287,7 +287,8 @@ class ActivacionCuentaTest extends TestCase
         $this->postJson('/v1/auth/login', [
             'username' => strtolower((string) $user->username),
             'password' => 'claveActual123',
-        ])->assertOk();
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('username');
     }
 
     public function test_si_el_correo_de_activacion_falla_la_cuenta_queda_pendiente_y_registra_el_error(): void

@@ -34,7 +34,7 @@ describe('apiDescargar', () => {
     window.removeEventListener(EVENTO_SESION_EXPIRADA, alExpirar)
   })
 
-  it('apiLogin envía correo cuando el identificador tiene @', async () => {
+  it('apiLogin envía siempre el correo normalizado', async () => {
     let cuerpo = null
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, opciones) => {
       if (String(url).includes('sanctum/csrf-cookie')) {
@@ -50,24 +50,7 @@ describe('apiDescargar', () => {
       password: 'Frase segura 2026',
       recordarme: true,
     })
-  })
-
-  it('apiLogin conserva el username legacy cuando no hay @', async () => {
-    let cuerpo = null
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, opciones) => {
-      if (String(url).includes('sanctum/csrf-cookie')) {
-        return { ok: true, status: 204, text: async () => '' }
-      }
-      cuerpo = JSON.parse(opciones.body)
-      return { ok: true, status: 200, text: async () => JSON.stringify({ user: { id: 1 }, token: null }) }
-    })
-
-    await apiLogin('MGonzalez', 'ClaveTest#2026', false)
-    expect(cuerpo).toEqual({
-      username: 'mgonzalez',
-      password: 'ClaveTest#2026',
-      recordarme: false,
-    })
+    expect(cuerpo).not.toHaveProperty('username')
   })
 })
 

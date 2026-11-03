@@ -30,7 +30,7 @@ class DashboardMetricsTest extends TestCase
     private function como(GeneralUser $user): string
     {
         return $this->postJson('/v1/auth/login', [
-            'username' => $user->username,
+            'correo' => $user->correo,
             'password' => '123456',
         ])->assertOk()->json('token');
     }

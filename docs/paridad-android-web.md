@@ -26,7 +26,7 @@ manual de extremo a extremo.
 
 | Flujo web | Implementación Android | Estado | Notas |
 |---|---|---|---|
-| Login por correo o usuario | `LoginScreen`, `AuthRepositoryImpl`, `LoginRequest` | **Completo** | Acepta ambos identificadores y valida localmente los campos vacíos. La política de 12 caracteres se aplica al establecer/restablecer la contraseña. |
+| Login con correo | `LoginScreen`, `AuthRepositoryImpl`, `LoginRequest` | **Completo** | El correo es el único identificador de acceso. Valida localmente el formato y muestra el error del backend para cuentas suspendidas o pendientes. La política de 12 caracteres se aplica al establecer/restablecer la contraseña. |
 | Recuperar contraseña | `ForgotPasswordScreen`, `ConfirmationScreen`, `ResetPasswordScreen` | **Completo** | Conserva el contrato de token/correo y la política de 12 caracteres. |
 | Activar cuenta con enlace | `ActivateAccountScreen`, `/auth/activation/validate`, `/auth/activation` | **Parcial** | Permite pegar el enlace completo o el código y valida antes de mostrar el formulario. La apertura automática desde el correo requiere App Links/asset links y cambios de infraestructura no autorizados. |
 | Cuenta pendiente de activación | Login 403 `cuenta_no_activada` + CTA a activación | **Completo** | El error tipado muestra el botón para pegar el enlace. |
@@ -93,7 +93,7 @@ manual de extremo a extremo.
 
 ## Contratos corregidos
 
-- `POST /v1/auth/login`: `username` o `correo`, ambos opcionales en el DTO.
+- `POST /v1/auth/login`: `{ correo, password, recordarme? }`. El login por `username` queda rechazado y el DTO Android ya no lo envía.
 - `POST /v1/auth/activation/validate` y `POST /v1/auth/activation`.
 - `POST /v1/general-users` → `{usuario, activacion}`.
 - `POST /v1/general-users/{id}/activacion/reenviar`.
@@ -113,16 +113,17 @@ manual de extremo a extremo.
 
 ## Alcance respetado
 
-No se modificaron archivos de `frontend/` ni `backend/` (rutas, autenticación,
-permisos y migraciones del servidor intactos). Todos los cambios de esta fase
-están en `Movil/` y en este documento. No se usaron cuentas reales, datos de
-producción, credenciales ni endpoints inventados.
+La fase inicial de paridad de Oscar no modificó `frontend/` ni `backend/`.
+La fase posterior de autenticación exclusiva por correo sí ajustó el login del
+backend, la SPA, Android, las pruebas y el manual, conservando activación por
+correo, permisos y migraciones no destructivas. No se usaron cuentas reales,
+datos de producción, credenciales ni endpoints inventados.
 
 ## Verificación pendiente en entorno aislado
 
 Cuando exista backend/base aislados, AVD y cuentas de prueba autorizadas:
 
-1. Login por correo y por usuario; cuenta suspendida y cuenta no activada.
+1. Login exclusivamente por correo; rechazo de username, cuenta suspendida y cuenta no activada.
 2. Activación con enlace válido, vencido, reutilizado y con contraseña corta.
 3. Alta de aprendiz e instructor; reenvío, restablecimiento y borrado con y sin
    historial (desactivar vs. eliminación definitiva).

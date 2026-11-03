@@ -100,11 +100,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun login(identificador: String, password: String) {
+    fun login(correo: String, password: String) {
         if (_isSubmitting.value) return // doble toque
         viewModelScope.launch {
             _isSubmitting.value = true
-            authRepository.login(identificador, password).fold(
+            authRepository.login(correo, password).fold(
                 onSuccess = { user ->
                     _uiState.value = AuthUiState.LoggedIn(user)
                 },

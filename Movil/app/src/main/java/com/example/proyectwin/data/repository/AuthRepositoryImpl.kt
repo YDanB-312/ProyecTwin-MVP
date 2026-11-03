@@ -38,11 +38,9 @@ class AuthRepositoryImpl @Inject constructor(
     override val currentUser: Flow<GeneralUser?> = sessionManager.currentUser
     override val isLoggedIn: Flow<Boolean> = sessionManager.isLoggedIn
 
-    override suspend fun login(identificador: String, password: String, recordarme: Boolean): Result<GeneralUser> {
-        val valor = identificador.trim()
+    override suspend fun login(correo: String, password: String, recordarme: Boolean): Result<GeneralUser> {
         val credenciales = LoginRequest(
-            username = valor.lowercase().takeUnless { it.contains('@') },
-            correo = valor.lowercase().takeIf { it.contains('@') },
+            correo = correo.trim().lowercase(),
             password = password,
             recordarme = recordarme,
         )

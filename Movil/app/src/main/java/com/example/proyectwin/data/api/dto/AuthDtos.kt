@@ -5,8 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class LoginRequest(
-    val username: String? = null,
-    val correo: String? = null,
+    val correo: String,
     val password: String,
     /**
      * Solo aplica a la sesión por cookie del SPA (remember_token). En móvil el

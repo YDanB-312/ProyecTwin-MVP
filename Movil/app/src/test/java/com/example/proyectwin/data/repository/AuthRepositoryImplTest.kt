@@ -88,7 +88,7 @@ class AuthRepositoryImplTest {
         val sesion = slot<GeneralUser>()
         coEvery { sessionManager.saveUser(capture(sesion)) } just Runs
 
-        val resultado = repo.login("Ana", "secreta", recordarme = false)
+        val resultado = repo.login("ana@sena.edu.co", "secreta", recordarme = false)
 
         assertTrue(resultado.isSuccess)
         assertEquals(7, resultado.getOrThrow().fichaId)
@@ -108,7 +108,7 @@ class AuthRepositoryImplTest {
     fun login_fallido_noGuardaNada() = runTest {
         coEvery { api.login(any()) } throws IOException("sin red")
 
-        val resultado = repo.login("Ana", "secreta")
+        val resultado = repo.login("ana@sena.edu.co", "secreta")
 
         assertTrue(resultado.isFailure)
         assertTrue(resultado.exceptionOrNull() is ApiException.SinConexion)
@@ -123,7 +123,7 @@ class AuthRepositoryImplTest {
             """{"message":"Cuenta suspendida. Contacta al administrador."}""",
         )
 
-        val resultado = repo.login("Ana", "secreta")
+        val resultado = repo.login("ana@sena.edu.co", "secreta")
 
         val error = resultado.exceptionOrNull() as ApiException.Http
         assertEquals(403, error.status)

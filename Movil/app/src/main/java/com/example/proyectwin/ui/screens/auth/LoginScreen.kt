@@ -1,5 +1,6 @@
 package com.example.proyectwin.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -40,7 +41,7 @@ fun LoginScreen(
     onActivateAccount: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var identificador by remember { mutableStateOf("") }
+    var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorLocal by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
@@ -114,11 +115,11 @@ fun LoginScreen(
             SenaCard(elevation = 12.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     SenaTextField(
-                        value = identificador,
-                        onValueChange = { identificador = it; errorLocal = null; authViewModel.clearError() },
-                        label = "Correo electrónico o usuario",
-                        placeholder = "correo@dominio.com o tu.usuario",
-                        leadingIcon = Icons.Default.Person,
+                        value = correo,
+                        onValueChange = { correo = it; errorLocal = null; authViewModel.clearError() },
+                        label = "Correo electrónico",
+                        placeholder = "correo@dominio.com",
+                        leadingIcon = Icons.Default.Email,
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Email
                     )
 
@@ -176,11 +177,12 @@ fun LoginScreen(
                         text = "ENTRAR AL SISTEMA",
                         onClick = {
                             errorLocal = when {
-                                identificador.isBlank() -> "Ingresa tu correo electrónico o usuario."
+                                correo.isBlank() -> "Ingresa tu correo electrónico."
+                                !Patterns.EMAIL_ADDRESS.matcher(correo.trim()).matches() -> "Ingresa un correo válido."
                                 password.isBlank() -> "Ingresa tu contraseña."
                                 else -> null
                             }
-                            if (errorLocal == null) authViewModel.login(identificador, password)
+                            if (errorLocal == null) authViewModel.login(correo, password)
                         },
                         isLoading = isSubmitting,
                         icon = Icons.AutoMirrored.Filled.Login,

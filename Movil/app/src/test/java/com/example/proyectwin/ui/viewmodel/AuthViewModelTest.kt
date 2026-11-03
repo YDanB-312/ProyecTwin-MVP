@@ -115,7 +115,7 @@ class AuthViewModelTest {
         coEvery { repo.login(any(), any(), any()) } returns Result.success(usuario())
         advanceUntilIdle()
 
-        vm.login("ana", "clave123")
+        vm.login("ana@sena.edu.co", "clave123")
         advanceUntilIdle()
 
         assertEquals(AuthUiState.LoggedIn(usuario()), vm.uiState.value)
@@ -129,7 +129,7 @@ class AuthViewModelTest {
         )
         advanceUntilIdle()
 
-        vm.login("ana", "mala")
+        vm.login("ana@sena.edu.co", "mala")
         advanceUntilIdle()
 
         assertEquals(

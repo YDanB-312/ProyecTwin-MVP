@@ -24,24 +24,24 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        // El correo es el único identificador de acceso. Se normaliza antes de
+        // validar para que la unicidad y la búsqueda usen la misma forma.
+        if (is_string($request->input('correo'))) {
+            $request->merge([
+                'correo' => strtolower(trim((string) $request->input('correo'))),
+            ]);
+        }
+
         $request->validate([
-            // La web usa el correo. Se conserva `username` para Android y
-            // cuentas legacy mientras dure la transición.
-            'username' => 'required_without:correo|nullable|string|max:255',
-            'correo' => 'required_without:username|nullable|email|max:255',
+            'correo' => 'required|string|email|max:255',
+            // El login por username queda retirado. Se rechaza explícitamente
+            // para no aceptar clientes antiguos de forma silenciosa.
+            'username' => 'prohibited',
             'password' => 'required|string|max:255',
             'recordarme' => 'nullable|boolean',
         ]);
 
-        if ($request->filled('correo')) {
-            $user = GeneralUser::where('correo', strtolower(trim((string) $request->correo)))->first();
-        } else {
-            // LOWER evita depender de la colación de la base: los usernames
-            // históricos tienen mayúsculas y el cliente los envía en minúsculas.
-            $user = GeneralUser::whereRaw('LOWER(username) = ?', [
-                strtolower(trim((string) $request->username)),
-            ])->first();
-        }
+        $user = GeneralUser::where('correo', $request->correo)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Credenciales incorrectas. Verifica tus datos.'], 422);
@@ -143,6 +143,12 @@ class AuthController extends Controller
                 'message' => 'La contraseña actual no es correcta.',
                 'errors' => ['password_actual' => ['La contraseña actual no es correcta.']],
             ], 422);
+        }
+
+        if (is_string($request->input('correo'))) {
+            $request->merge([
+                'correo' => strtolower(trim((string) $request->input('correo'))),
+            ]);
         }
 
         $request->validate([

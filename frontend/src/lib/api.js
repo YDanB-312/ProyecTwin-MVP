@@ -320,14 +320,11 @@ export async function apiDescargar(path, { method = "GET", body, nombre = "archi
 
 // ---------------------------------------------------------------- Sesión
 
-export async function apiLogin(identificador, password, remember = false) {
-  // La web usa el correo como identificador principal. Si el valor no tiene
-  // forma de correo, se envía como username para no romper cuentas legacy ni
-  // el hábito de usuarios que aún recuerdan su usuario institucional.
-  const valor = String(identificador || "").trim().toLowerCase();
-  const body = valor.includes("@")
-    ? { correo: valor, password, recordarme: !!remember }
-    : { username: valor, password, recordarme: !!remember };
+export async function apiLogin(correo, password, remember = false) {
+  // El correo es el único identificador de acceso. Se normaliza para que la
+  // comparación no dependa de mayúsculas ni espacios accidentales.
+  const valor = String(correo || "").trim().toLowerCase();
+  const body = { correo: valor, password, recordarme: !!remember };
 
   return apiFetch("/auth/login", {
     method: "POST",
