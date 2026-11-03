@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manual de usuario del frontend · ProyecTWIN</title>
+  <meta name="description" content="Manual de usuario completo del frontend de ProyecTWIN: acceso, aprendiz, instructor y administrador.">
+  <meta name="author" content="Equipo ProyecTWIN">
+  <meta name="keywords" content="ProyecTWIN, manual de usuario, frontend, SENA, aprendiz, instructor, administrador">
+  <link rel="icon" href="assets/logo-proyectwin.png">
+  <link rel="stylesheet" href="styles/frontend-tokens.css">
+  <link rel="stylesheet" href="styles/manual.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Navegación del manual">
+    <div class="side-head">
+      <a href="#inicio" class="side-brand">
+        <img src="assets/logo-proyectwin.png" alt="ProyecTWIN">
+        <span><b>ProyecTWIN</b><small>Manual del frontend</small></span>
+      </a>
+      <button type="button" class="side-close" id="side-close" aria-label="Cerrar menú">×</button>
+    </div>
+
+    <div class="side-search">
+      <label for="search" class="sr-only">Buscar en el manual</label>
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input id="search" type="search" placeholder="Buscar: propuesta, ficha, usuario…" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+
+    <div class="role-filter" role="group" aria-label="Filtrar por rol">
+      <button type="button" class="role-chip active" data-role="todos">Todos</button>
+      <button type="button" class="role-chip" data-role="publico">Público</button>
+      <button type="button" class="role-chip" data-role="aprendiz">Aprendiz</button>
+      <button type="button" class="role-chip" data-role="instructor">Instructor</button>
+      <button type="button" class="role-chip" data-role="admin">Admin</button>
+    </div>
+
+    <nav class="side-nav" id="side-nav" aria-label="Capítulos"></nav>
+
+    <div class="side-foot">
+      <div class="side-progress">
+        <span id="progress-label">0 % leído</span>
+        <div class="progress"><i id="progress-bar"></i></div>
+      </div>
+      <div class="side-links">
+        <button type="button" id="open-glossary">Glosario</button>
+        <a href="Manual_Frontend_ProyecTwin.pdf" download>PDF</a>
+        <button type="button" id="theme-toggle" aria-label="Cambiar tema">◐</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="layout">
+    <header class="topbar">
+      <button type="button" class="menu-btn" id="menu-btn" aria-label="Abrir menú">☰</button>
+      <div class="crumbs" id="crumbs"><span>Manual</span></div>
+      <div class="top-actions">
+        <button type="button" class="icon-btn" id="search-open" aria-label="Buscar">⌕</button>
+        <button type="button" class="icon-btn" id="theme-toggle-2" aria-label="Cambiar tema">◐</button>
+        <a class="pdf-btn" href="Manual_Frontend_ProyecTwin.pdf" download>Descargar PDF</a>
+      </div>
+      <div class="search-results" id="search-results" hidden></div>
+    </header>
+
+    <main id="contenido" class="content">
+      <section class="cover" id="inicio">
+        <div class="cover-top">
+          <div class="cover-copy">
+            <div class="cover-brand">
+              <img src="assets/logo-proyectwin.png" alt="">
+              <span>ProyecTWIN · Manual del frontend</span>
+            </div>
+            <p class="cover-eyebrow">Manual de usuario · Versión 1.0</p>
+            <h1>Aprende ProyecTWIN<br><em>sin miedo y paso a paso</em></h1>
+            <p class="lead">Todo el frontend explicado con capturas reales, recorridos guiados, formularios, validaciones y respuestas a los errores más comunes. Para público, aprendices, instructores y administradores.</p>
+            <div class="cover-actions">
+              <a class="btn btn-primary" href="#control-documental">Empezar a leer <span>→</span></a>
+              <a class="btn btn-ghost" href="#como-usar-este-manual">Cómo usar el manual</a>
+            </div>
+            <div class="cover-stats">
+              <div><b id="stat-chapters">0</b><span>capítulos</span></div>
+              <div><b>55</b><span>capturas</span></div>
+              <div><b>4</b><span>experiencias</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="cover-strip">
+          <div><b>1</b><span>Elige tu rol y aprende solo lo que necesitas</span></div>
+          <div><b>2</b><span>Sigue los pasos sobre capturas anotadas</span></div>
+          <div><b>3</b><span>Practica con los flujos y las listas de verificación</span></div>
+        </div>
+        <div class="cover-meta">
+          <span>Versión 1.0</span>
+          <span>Noviembre de 2026</span>
+          <span>PROYECTWIN-MU-FE-001</span>
+        </div>
+      </section>
+
+      <section class="print-toc" id="print-toc" aria-label="Contenido del manual"></section>
+
+      <section id="chapters" aria-label="Capítulos del manual"></section>
+
+      <section class="back-cover" id="fin" aria-label="Fin del manual">
+        <img src="assets/logo-proyectwin.png" alt="ProyecTWIN">
+        <p class="part-eyebrow">Manual de usuario del frontend</p>
+        <h2>ProyecTWIN</h2>
+        <p class="back-lead">Fin del manual. Cada pantalla, cada rol y cada flujo documentado paso a paso.</p>
+        <p class="back-meta">Versión 1.0 · Noviembre de 2026 · PROYECTWIN-MU-FE-001</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="glossary-modal" id="glossary-modal" hidden>
+    <div class="glossary-card" role="dialog" aria-modal="true" aria-labelledby="glossary-title">
+      <button type="button" id="close-glossary">Cerrar ×</button>
+      <h2 id="glossary-title">Glosario rápido</h2>
+      <dl id="glossary-list"></dl>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button type="button" id="lightbox-close" aria-label="Cerrar imagen">×</button>
+    <img id="lightbox-img" alt="">
+  </div>
+
+  <div class="tour-modal" id="tour-modal" hidden>
+    <div class="tour-dialog" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <header class="tour-head">
+        <div class="tour-head-copy">
+          <p class="tour-kicker">Recorrido guiado</p>
+          <p class="tour-caption" id="tour-caption"></p>
+        </div>
+        <div class="tour-head-meta">
+          <span class="tour-count" id="tour-count"></span>
+          <button type="button" class="tour-close" id="tour-close" aria-label="Cerrar recorrido">×</button>
+        </div>
+      </header>
+      <div class="tour-viewport" id="tour-viewport">
+        <div class="tour-stage" id="tour-stage">
+          <img id="tour-image" alt="">
+          <div class="tour-spotlight" id="tour-spotlight" aria-hidden="true"></div>
+          <div class="tour-pins" id="tour-pins"></div>
+        </div>
+        <div class="tour-card" id="tour-card" aria-live="polite">
+          <p class="tour-card-step" id="tour-card-step"></p>
+          <h2 id="tour-title"></h2>
+          <p class="tour-card-text" id="tour-text"></p>
+          <div class="tour-dots" id="tour-dots" aria-label="Pasos del recorrido"></div>
+          <div class="tour-card-actions">
+            <button type="button" id="tour-prev">← Anterior</button>
+            <button type="button" id="tour-next">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+      <footer class="tour-foot">
+        <span class="tour-hint">Usa ← → para navegar · Esc para cerrar</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="scripts/manual-data.js"></script>
+  <script src="scripts/manual.js"></script>
+</body>
+</html>
