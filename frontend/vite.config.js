@@ -15,7 +15,8 @@ const proxy = {
   '/sanctum': { target: API, changeOrigin: true },
 }
 
-// https://vite.dev/config/
+// El manual de usuario vive en public/manual; Vite lo sirve en /manual/ y lo
+// copia a dist/manual/ durante el build, sin plugins adicionales.
 export default defineConfig({
   plugins: [react()],
   server: { proxy },

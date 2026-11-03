@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Brain, FolderOpen, ChartBar, CheckCircle, Database, Gauge } from 'phosphor-react'
+import { Brain, FolderOpen, ChartBar, CheckCircle, Database, Gauge, BookOpen } from 'phosphor-react'
 import LandingLayout from '../../../layouts/LandingLayout/LandingLayout'
 import SectionHeader from '../../../components/SectionHeader/SectionHeader'
 import ConsoleCard from '../../../components/ConsoleCard/ConsoleCard'
@@ -117,6 +117,16 @@ export default function Home() {
             </ul>
             <div className={`${s.heroCta} fx-rise`} style={{ '--fx-i': 5 }}>
               <Button as="link" to="/login" viewTransition>Iniciar sesión</Button>
+              <Button
+                as="a"
+                href="/manual/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="secondary"
+                className={s.manualBtn}
+              >
+                <BookOpen size={16} aria-hidden="true" /> Ver manual
+              </Button>
             </div>
           </div>
 
