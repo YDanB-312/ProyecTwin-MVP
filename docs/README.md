@@ -3,6 +3,17 @@
 Índice de la documentación vigente. La fuente de verdad del código es el
 repositorio; este índice solo separa lo operativo de lo histórico.
 
+## Entregables documentales
+
+| Entregable | Archivo | Estado |
+|---|---|---|
+| Manual de usuario interactivo | [`frontend/public/manual/index.html`](../frontend/public/manual/index.html) | 67 capítulos; incluye el Cap. 57 ISO. |
+| PDF del manual de usuario | [`frontend/public/manual/Manual_Frontend_ProyecTwin.pdf`](../frontend/public/manual/Manual_Frontend_ProyecTwin.pdf) | 193 páginas. |
+| Manual técnico completo | [`manual-tecnico/Manual_Tecnico_ProyecTwin.docx`](manual-tecnico/Manual_Tecnico_ProyecTwin.docx) | v1.1; 118 páginas; Anexo G integrado. |
+| PDF del manual técnico completo | [`manual-tecnico/Manual_Tecnico_ProyecTwin_verificacion.pdf`](manual-tecnico/Manual_Tecnico_ProyecTwin_verificacion.pdf) | 118 páginas. |
+| Anexo G independiente | [`manual-tecnico/Manual_Tecnico_ProyecTwin_Anexo_G.docx`](manual-tecnico/Manual_Tecnico_ProyecTwin_Anexo_G.docx) | 9 páginas; material complementario. |
+| PDF del Anexo G independiente | [`manual-tecnico/Manual_Tecnico_ProyecTwin_Anexo_G_verificacion.pdf`](manual-tecnico/Manual_Tecnico_ProyecTwin_Anexo_G_verificacion.pdf) | 9 páginas. |
+
 ## Operación
 
 | Documento | Uso |
@@ -36,7 +47,13 @@ apoyo y pueden estar desactualizados si cambia el flujo.
 
 - [`alcance-y-exclusiones.md`](alcance-y-exclusiones.md): límites del MVP.
 - [`APK-APROBACION-OSCAR.md`](APK-APROBACION-OSCAR.md): estado **NO APROBADO**
-  del APK y confirmaciones pendientes.
+  del APK 1.3.0/4 y confirmaciones pendientes.
+- **APK — pendiente de confirmación.** `release-android.md` y
+  `deploy-railway.md` declaran autorizado el APK 1.4.0/5, mientras
+  `APK-APROBACION-OSCAR.md` y `README.md` mantienen el estado no autorizado y
+  sin distribución. No hay una autorización escrita e inequívoca de Oscar en el
+  repositorio; no se considera aprobado ni se distribuye hasta que él lo
+  confirme.
 - [`guion-presentacion.md`](guion-presentacion.md): guion de demostración.
 - [`inventario-pendientes.md`](inventario-pendientes.md): inventario de deuda y
   estado histórico de los lotes. Para el estado vigente, usa la sección
@@ -57,9 +74,12 @@ Los documentos que ya no son guía operativa se conservan en
 
 ## Manual técnico
 
-[`manual-tecnico/`](manual-tecnico/LEEME.md) es un entregable histórico
-generado el 16-oct-2026. No debe usarse como guía de despliegue vigente; para
-operación actual usa `deploy-railway.md` y `release-android.md`.
+[`manual-tecnico/`](manual-tecnico/LEEME.md) contiene el Manual Técnico v1.1
+(2-nov-2026), que conserva el cuerpo histórico del 16-oct-2026 e integra el
+**Anexo G** al final, y la copia independiente del Anexo G. El Anexo G documenta
+la aplicación vigente de las normas ISO y corrige las afirmaciones obsoletas del
+apartado 7.15. El cuerpo histórico no debe usarse como guía de despliegue
+vigente; para operación actual usa `deploy-railway.md` y `release-android.md`.
 
 ## Criterio de mantenimiento
 

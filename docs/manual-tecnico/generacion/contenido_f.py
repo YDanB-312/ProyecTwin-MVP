@@ -116,8 +116,8 @@ def escribir(M, P):
     # =====================================================================
     M.h1("REFERENCIAS BIBLIOGRÁFICAS", salto=True)
     M.p("Fuentes consultadas durante la auditoría y la elaboración del manual (normas APA, séptima edición). "
-        "Solo se listan fuentes efectivamente consultadas entre el 5 y el 16 de octubre de 2026; las normas se "
-        "verificaron directamente en el catálogo oficial de ISO el 16/10/2026.")
+        "Solo se listan fuentes efectivamente consultadas entre el 5 de octubre y el 2 de noviembre de 2026; las normas se "
+        "verificaron directamente en el catálogo oficial de ISO el 2/11/2026.")
 
     M.h3("Normas técnicas (ISO)")
     refs_iso = [
@@ -130,8 +130,9 @@ def escribir(M, P):
         "International Organization for Standardization. (2026). *ISO 9001:2026. Quality management systems — Requirements*. https://www.iso.org/standard/9001",
         "International Organization for Standardization. (2026). *ISO 9001:2015 (retirada el 16/09/2026; reemplazada por ISO 9001:2026)*. https://www.iso.org/standard/62085.html",
         "International Organization for Standardization. (2015). *ISO/IEC 33002:2015. Information technology — Process assessment — Requirements for performing process assessment*. https://www.iso.org/standard/54176.html",
+        "International Organization for Standardization. (2015). *ISO/IEC 33001:2015, 33003:2015 y 33004:2015; ISO/IEC 33020:2019*. Familia de evaluación de procesos. https://www.iso.org/standard/54175.html",
         "International Organization for Standardization. (2026). *ISO/IEC 27000:2026. Information security, cybersecurity and privacy protection — Information security management systems — Overview* (Ed. 6). https://www.iso.org/standard/27000",
-        "International Organization for Standardization. (2026). *ISO/TC 176/SC 2 — Quality systems: catálogo de normas publicadas y retiradas* (consulta del estado de ISO 10005). https://www.iso.org/committee/53896.html",
+        "International Organization for Standardization. (2018). *ISO 10005:2018. Quality management — Guidelines for quality plans* (Ed. 3; corregida en 2019 solo en la versión en español; confirmada en 2023). https://www.iso.org/standard/70398.html",
     ]
     M.bullets(refs_iso)
 
@@ -155,6 +156,8 @@ def escribir(M, P):
         "ProyecTwin. (2026). *Informe de auditoría integral del MVP* [AUDITORIA-INTEGRAL.md, 05/10/2026]. https://github.com/YDanB-312/ProyecTwin-MVP",
         "ProyecTwin. (2026). *Historial de correcciones* [HISTORIAL-FIXES.md]. https://github.com/YDanB-312/ProyecTwin-MVP",
         "ProyecTwin. (2026). *Guion de presentación* [docs/guion-presentacion.md]. https://github.com/YDanB-312/ProyecTwin-MVP",
+        "ProyecTwin. (2026). *Manual de usuario del frontend v1.0* [PROYECTWIN-MU-FE-001], Parte VI, Cap. 57. `frontend/public/manual/Manual_Frontend_ProyecTwin.pdf`",
+        "ProyecTwin. (2026). *Workflow de integración continua* [9 corridas exitosas; última 41572290608, 2-nov-2026]. `.github/workflows/ci.yml`; https://github.com/YDanB-312/ProyecTwin-MVP/actions/runs/41572290608",
     ]
     M.bullets(refs_int)
     M.p("Nota: las fechas entre corchetes corresponden a la fecha del documento interno cuando consta; el "
@@ -358,7 +361,8 @@ def escribir(M, P):
         anchos=[1.2, 3.2, 7.2, 4.4],
         tamano=8,
     )
-    M.p("**Declaración final de alcance:** este manual describe el sistema a partir de su repositorio y de su "
-        "ejecución local verificada. Las afirmaciones se limitan a la evidencia recogida; toda afirmación "
-        "clasificada como «parcialmente verificada», «inferida» o «no verificada» debe tratarse como pendiente "
-        "hasta que el equipo del proyecto la confirme o complete.")
+    M.p("**Declaración de alcance de los capítulos 1–8 y anexos A–F:** este manual describe el sistema a partir de su "
+        "repositorio y de su ejecución local verificada. Las afirmaciones se limitan a la evidencia recogida; toda "
+        "afirmación clasificada como «parcialmente verificada», «inferida» o «no verificada» debe tratarse como "
+        "pendiente hasta que el equipo del proyecto la confirme o complete. El **Anexo G**, incorporado al final, "
+        "documenta la aplicación de las normas ISO y sus límites; no certifica conformidad.")

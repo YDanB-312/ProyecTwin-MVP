@@ -69,6 +69,10 @@ incluirse en la regla correspondiente de `eslint.config.js`.
 
 ## Estado
 
-El workflow está versionado, pero no se ha ejecutado todavía en GitHub Actions
-desde este entorno local. La validación local de las suites no sustituye la
-ejecución real del workflow.
+El workflow está versionado y se ha ejecutado en GitHub Actions: **9 corridas,
+9 exitosas al 2-nov-2026**. La última es la run
+[`41572290608`](https://github.com/YDanB-312/ProyecTwin-MVP/actions/runs/41572290608),
+sobre el commit `99806b5`. Cubre backend (instalación, migración, `php -l` y
+PHPUnit) y frontend (`npm ci`, ESLint, Vitest y build); **no ejecuta E2E,
+Android, cobertura ni auditoría de dependencias**. La validación local de las
+suites no sustituye la ejecución remota.

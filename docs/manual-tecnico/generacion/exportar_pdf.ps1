@@ -21,5 +21,5 @@ try {
         Write-Output "ERROR: el PDF no se creó"
     }
 } finally {
-    $word.Quit()
+    try { $word.Quit() } catch {}
 }

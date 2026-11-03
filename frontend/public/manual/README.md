@@ -25,10 +25,10 @@ Y abrir `http://127.0.0.1:4174/`.
 - `index.html`: sitio del manual.
 - `styles/frontend-tokens.css`: copia de `frontend/src/tokens/index.css`.
 - `styles/manual.css`: estilos del manual; consume los tokens del frontend.
-- `scripts/manual-data.js`: contenido de los 66 capítulos.
+- `scripts/manual-data.js`: contenido de los 67 capítulos, incluido el capítulo de aplicación de las normas ISO en el desarrollo.
 - `scripts/manual.js`: navegación, búsqueda, filtros, pines, recorridos, progreso y lightbox.
 - `assets/capturas/`: 55 capturas del entorno demo/E2E.
-- `Manual_Frontend_ProyecTwin.pdf`: versión PDF de 185 páginas.
+- `Manual_Frontend_ProyecTwin.pdf`: versión PDF de 193 páginas.
 
 ## Integración con el Home
 

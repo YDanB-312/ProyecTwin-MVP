@@ -35,7 +35,7 @@ def escribir(M, P):
     filas_portada = [
         ("Versión del sistema:", "MVP web (React + Laravel) y aplicación Android 1.0 — el repositorio no declara un número de versión semántico único (ver § 2.1)"),
         ("Equipo de desarrollo:", "Autores registrados en el historial de Git del repositorio: «Oscar» y «YDanB-312». La nómina completa, la ficha y los datos institucionales no constan en los archivos del proyecto (ver § 1.9 y Anexo F)"),
-        ("Ciudad y año:", "Popayán, Cauca — Colombia · Octubre de 2026"),
+        ("Ciudad y año:", "Popayán, Cauca — Colombia · Noviembre de 2026"),
     ]
     for etiqueta, valor in filas_portada:
         par = doc.add_paragraph()
@@ -48,8 +48,9 @@ def escribir(M, P):
         par.paragraph_format.space_after = Pt(3)
 
     M.p("", espacio_despues=22)
-    M.p("Documento generado a partir de la auditoría técnica del repositorio realizada el 16 de octubre de 2026. "
-        "Las afirmaciones técnicas se sustentan en el código fuente, los archivos de configuración y las verificaciones ejecutadas que se relacionan en los anexos.",
+    M.p("Documento generado a partir de la auditoría técnica del repositorio realizada el 16 de octubre de 2026 "
+        "y actualizado el 2 de noviembre de 2026 con la integración del Anexo G. Las afirmaciones técnicas se sustentan "
+        "en el código fuente, los archivos de configuración y las verificaciones ejecutadas que se relacionan en los anexos.",
         centrado=True, cursiva=True, espacio_despues=0)
 
     # ================================================================ FICHA
@@ -64,16 +65,16 @@ def escribir(M, P):
             ("Nombre del proyecto", "ProyecTwin (MVP) — plataforma de análisis de similitud para proyectos formativos"),
             ("Nombre del documento", "Manual Técnico de ProyecTwin"),
             ("Identificador documental", "PT-MT-001"),
-            ("Versión del manual", "1.0"),
-            ("Fecha de elaboración", "16 de octubre de 2026"),
-            ("Estado del documento", "Completo para revisión del equipo; generado de forma automatizada y pendiente de validación humana final"),
+            ("Versión del manual", "1.1"),
+            ("Fecha de elaboración", "2 de noviembre de 2026"),
+            ("Estado del documento", "Completo para revisión del equipo; incluye el Anexo G de aplicación ISO integrado al final y no declara certificación"),
             ("Ámbito técnico", "Backend Laravel 10, frontend React 19, aplicación Android (Kotlin), base de datos MySQL, motor de similitud, seguridad, pruebas y despliegue del MVP"),
-            ("Equipo de desarrollo", "«Oscar» y «YDanB-312» (autores de los 46 commits del repositorio). Nómina completa, roles individuales y ficha de formación: no constan en los archivos del proyecto"),
+            ("Equipo de desarrollo", "«Oscar» y «YDanB-312» (autores de los 138 commits del repositorio). Nómina completa, roles individuales y ficha de formación: no constan en los archivos del proyecto"),
             ("Programa de formación", "No confirmado en el repositorio. El sistema gestiona programas SENA (p. ej., ADSO) como datos de su catálogo, lo que no acredita el programa del equipo desarrollador"),
             ("Responsable de elaboración", "Auditoría y generación documental automatizada (asistida por OpenCode) sobre el repositorio real; revisión y correcciones a cargo del equipo del proyecto"),
             ("Repositorio y rama", "https://github.com/YDanB-312/ProyecTwin-MVP — rama master"),
-            ("Revisión auditada", "46 commits; último commit registrado: 3b15f3f (13/10/2026). Al momento de la auditoría existían cambios sin confirmar, documentados en el Anexo F"),
-            ("Entorno de verificación", "Windows, PHP 8.2.12 (XAMPP), Composer 2.10.2, Node 26.3.1, MariaDB 10.4.32, Microsoft Word disponible para validación del DOCX"),
+            ("Revisión auditada", "138 commits; último commit registrado: 99806b5 (2/11/2026). El Anexo G se elaboró sobre el árbol de trabajo con cambios locales documentados en el Anexo F"),
+            ("Entorno de verificación", "Windows, PHP 8.3/8.2, Composer, Node 24, MariaDB; WPS Office para actualización de campos y exportación del PDF (Microsoft Word no instalado)"),
         ],
         fuente="Elaboración propia (auditoría del repositorio ProyecTwin-MVP, 16/10/2026).",
         anchos=[4.6, 11.4],
@@ -104,6 +105,7 @@ def escribir(M, P):
             ("0.5", "16/10/2026", "Ejecución del entorno local (backend, frontend, base de datos), pruebas verificadas y capturas reales de la interfaz", "Generación documental asistida (OpenCode)"),
             ("0.9", "16/10/2026", "Redacción de los ocho capítulos, figuras, tablas, referencias y anexos", "Generación documental asistida (OpenCode)"),
             ("1.0", "16/10/2026", "Versión completa entregada para revisión: campos de índice y listas activados, control de calidad documental ejecutado", "Generación documental asistida (OpenCode)"),
+            ("1.1", "02/11/2026", "Integración del Anexo G de aplicación ISO, actualización del apartado 7.15 y regeneración de DOCX/PDF", "Equipo ProyecTwin / generación documental asistida"),
             ("—", "—", "(Reservado: correcciones y validación del equipo antes de la entrega institucional)", "Equipo ProyecTwin"),
         ],
         fuente="Elaboración propia.",

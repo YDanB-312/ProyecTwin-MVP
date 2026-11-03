@@ -221,7 +221,8 @@ def escribir(M, P):
         "**Re-ejecutar la suite E2E completa** y agregar pruebas de concurrencia (R-11, limitación § 7.10).",
     ])
 
-    M.h2("7.15. Control de calidad y normas ISO (análisis de pertinencia)")
+    M.h2("7.15. Control de calidad y normas ISO (análisis histórico; véase Anexo G)")
+    M.p("**Actualización del 2-nov-2026:** este apartado conserva el análisis de pertinencia del 16-oct-2026 como registro histórico. La aplicación vigente de las normas, con matriz de evidencia, estados, brechas y correcciones, está en el **Anexo G**, al final de este manual. Donde exista diferencia, prevalece el Anexo G.")
     M.p("Las ediciones vigentes y las denominaciones se verificaron **directamente en el catálogo oficial de ISO "
         "el 16 de octubre de 2026** (fuente: iso.org, referencias completas en la bibliografía). Este apartado es "
         "un **análisis de pertinencia con criterios de evaluación propuestos**, no una auditoría ni una "

@@ -27,6 +27,6 @@ try {
     $doc.Close()
     Write-Output "Campos actualizados. Páginas: $paginas | Palabras: $palabras"
 } finally {
-    $word.Quit()
-    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($word) | Out-Null
+    try { $word.Quit() } catch {}
+    try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($word) | Out-Null } catch {}
 }

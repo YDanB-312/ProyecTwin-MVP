@@ -91,7 +91,7 @@
     const part = partById[chapter.part] || { title: '' };
     const figures = (chapter.figures || []).map((fig, i) => figureHtml(fig, chapter, i)).join('');
     const fields = chapter.fields ? `<h3>Campos y validaciones</h3>${tableHtml(chapter.fields)}` : '';
-    const extra = (chapter.extra || []).map((block) => `<h3>${block.title}</h3>${block.html}`).join('');
+    const extra = (chapter.extra || []).map((block) => `<h3${block.id ? ` id="${block.id}"` : ''}>${block.title}</h3>${block.html}`).join('');
     const related = (chapter.related || []).length
       ? `<div class="related">${chapter.related.map((r) => `<a href="#${r.id}">${r.label}</a>`).join('')}</div>`
       : '';

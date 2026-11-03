@@ -23,15 +23,16 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 
 from manual_lib import Manual
-import contenido_a, contenido_b, contenido_c, contenido_d, contenido_e, contenido_f
+import contenido_a, contenido_b, contenido_c, contenido_d, contenido_e, contenido_f, contenido_g
 
 RAIZ_MANUAL = os.path.abspath(os.path.join(AQUI, ".."))
+RAIZ_REPO = os.path.abspath(os.path.join(RAIZ_MANUAL, "..", ".."))
 SALIDA = os.path.join(RAIZ_MANUAL, "Manual_Tecnico_ProyecTwin.docx")
 
 P = {
     "fig": os.path.join(RAIZ_MANUAL, "figuras"),
     "cap": os.path.join(RAIZ_MANUAL, "capturas"),
-    "logo": r"D:\ProyecTwin-MVP\frontend\public\images\Logo-ProyecTwin.png",
+    "logo": os.path.join(RAIZ_REPO, "frontend", "public", "images", "Logo-ProyecTwin.png"),
 }
 
 
@@ -65,7 +66,8 @@ def main():
     contenido_c.escribir(M, P)   # Capítulos 3 y 4
     contenido_d.escribir(M, P)   # Capítulos 5 y 6
     contenido_e.escribir(M, P)   # Capítulos 7 y 8
-    contenido_f.escribir(M, P)   # Referencias y anexos
+    contenido_f.escribir(M, P)   # Referencias y anexos A–F
+    contenido_g.escribir_integrado(M, P)  # Anexo G integrado al final
 
     ruta = M.guardar(SALIDA)
     forzar_tema_arial(ruta)

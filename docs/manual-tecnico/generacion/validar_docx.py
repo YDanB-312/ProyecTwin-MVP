@@ -34,7 +34,7 @@ print(f"Párrafos: {len(doc.paragraphs)} | Tablas: {len(doc.tables)} | Secciones
 # 1) Capítulos presentes
 for cap in ["CAPÍTULO 1", "CAPÍTULO 2", "CAPÍTULO 3", "CAPÍTULO 4",
             "CAPÍTULO 5", "CAPÍTULO 6", "CAPÍTULO 7", "CAPÍTULO 8",
-            "REFERENCIAS BIBLIOGRÁFICAS", "ANEXO A", "ANEXO F"]:
+            "REFERENCIAS BIBLIOGRÁFICAS", "ANEXO A", "ANEXO F", "ANEXO G"]:
     if cap in texto_total:
         ok.append(f"Presente: {cap}")
     else:
@@ -53,12 +53,12 @@ else:
         avisos.append("TOC: no se encontró la entrada del capítulo 8 con número de página (¿campo sin actualizar?)")
 
 # 3) Listas de figuras y tablas diligenciadas
-if re.search(r"Índice de figuras[\s\S]{0,200}?Figura 1\.", texto_total):
+if re.search(r"Índice de figuras[\s\S]{0,200}?Figura 1\s*\.", texto_total):
     ok.append("Lista de figuras diligenciada")
 else:
     avisos.append("Lista de figuras: sin entradas visibles")
 
-if re.search(r"Índice de tablas[\s\S]{0,200}?Tabla 1\.", texto_total):
+if re.search(r"Índice de tablas[\s\S]{0,200}?Tabla 1\s*\.", texto_total):
     ok.append("Lista de tablas diligenciada")
 else:
     avisos.append("Lista de tablas: sin entradas visibles")
@@ -72,10 +72,10 @@ if len(figs) >= 32:
     ok.append(f"32 figuras numeradas (detectadas {len(figs)})")
 else:
     avisos.append(f"Figuras: se esperaban 32, detectadas {len(figs)}")
-if len(tabs) >= 66:
-    ok.append(f"66 tablas numeradas (detectadas {len(tabs)})")
+if len(tabs) >= 73:
+    ok.append(f"73 tablas numeradas (detectadas {len(tabs)})")
 else:
-    avisos.append(f"Tablas: se esperaban 66, detectadas {len(tabs)}")
+    avisos.append(f"Tablas: se esperaban 73, detectadas {len(tabs)}")
 
 # 5) Estilos y tipografías
 n = doc.styles["Normal"]
@@ -104,7 +104,23 @@ xml_settings = doc.settings.element.xml
 if "updateFields" in xml_settings:
     ok.append("Actualización de campos al abrir activada (w:updateFields)")
 
-# 8) Muestra de acentos correctos
+# 8) Referencia al Anexo G en el apartado 7.15 y ubicación al final
+if "Anexo G" in texto_total and "Actualización del 2-nov-2026" in texto_total:
+    ok.append("§7.15 remite al Anexo G vigente")
+else:
+    avisos.append("§7.15 no contiene la referencia al Anexo G")
+
+if texto_total.find("ANEXO G") > texto_total.find("ANEXO F"):
+    ok.append("Anexo G ubicado después del Anexo F")
+else:
+    avisos.append("Anexo G no está después del Anexo F")
+
+if "G.1. Ficha de identificación del Anexo G" in texto_total:
+    ok.append("Anexo G integrado con numeración G.n")
+else:
+    avisos.append("Anexo G sin numeración integrada G.n")
+
+# 9) Muestra de acentos correctos
 for muestra in ["Arquitectura", "Ejecución", "Diseño", "Índice"]:
     if muestra in texto_total:
         ok.append(f"Acentos correctos: «{muestra}»")
