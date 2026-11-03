@@ -39,6 +39,8 @@ class AuthController extends Controller
             'username' => 'prohibited',
             'password' => 'required|string|max:255',
             'recordarme' => 'nullable|boolean',
+        ], [
+            'username.prohibited' => 'El inicio de sesión es con tu correo electrónico.',
         ]);
 
         $user = GeneralUser::where('correo', $request->correo)->first();
