@@ -114,7 +114,7 @@ Permitir recuperar el acceso cuando el único administrador pierde su correo o s
 ## 5. Orden recomendado
 
 1. Auditar datos de producción con `docs/auditoria-datos-produccion.md`.
-2. Definir el corte legacy y corregir la migración de activación con `docs/migracion-activacion-selectiva.md`.
+2. Si existe una base legacy sin `email_verified_at`, repararla manualmente con backup y autorización; no usar un backfill global.
 3. Implementar la guarda de `must_change_password` y el break-glass.
 4. Implementar la verificación del nuevo correo.
 5. Probar en staging con cuentas sintéticas y un backup restaurado.

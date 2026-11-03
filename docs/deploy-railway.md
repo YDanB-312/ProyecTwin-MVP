@@ -267,8 +267,9 @@ Requisitos para una nueva versión:
 El entrypoint ejecuta `php artisan app:migrar-seguro`, que adquiere un lock
 MySQL (`GET_LOCK`) y después ejecuta `migrate --force`. Si no hay migraciones
 pendientes, no se ejecuta DDL. El lock evita carreras entre arranques
-concurrentes; la migración de compatibilidad `2026_11_01_000001` añade
-`email_verified_at` solo si una base anterior no lo tiene.
+concurrentes. Las bases nuevas reciben `email_verified_at` desde la migración
+inicial; una base legacy que no la tenga requiere una reparación manual con
+backup y autorización, no una migración automática.
 
 Alternativa de release: definir `RUN_MIGRATIONS=false` y ejecutar
 `php artisan app:migrar-seguro` en un paso único antes del despliegue. Con ese

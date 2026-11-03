@@ -205,7 +205,7 @@ class DemoPreparar extends Command
         }
 
         if (! Schema::hasColumn('general_users', 'email_verified_at')) {
-            return 'pendiente de adaptación única (falta email_verified_at)';
+            return 'pendiente de reparación manual (falta email_verified_at)';
         }
 
         return 'actualizado';
@@ -218,10 +218,10 @@ class DemoPreparar extends Command
         }
 
         $this->error('ABORTADO antes de migrar: general_users existe pero no tiene email_verified_at.');
-        $this->line('La base conserva el esquema anterior. Para aplicar la compatibilidad idempotente:');
-        $this->line('  1. genera un backup restaurable');
-        $this->line('  2. ejecuta `php artisan migrate --force` (la migración 2026_11_01 añade la columna)');
-        $this->line('  3. si el esquema legacy requiere el ALTER manual, aplícalo y vuelve a migrar');
+        $this->line('La base conserva el esquema anterior. La reparación no es automática:');
+        $this->line('  1. genera un backup restaurable y verifica cómo restaurarlo');
+        $this->line('  2. con autorización, añade email_verified_at mediante ALTER manual; no dupliques la columna');
+        $this->line('  3. vuelve a ejecutar `php artisan migrate --force` y `demo:preparar --migrar`');
         $this->line('No se modificó el esquema.');
 
         return true;

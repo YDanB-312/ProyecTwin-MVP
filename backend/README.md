@@ -92,32 +92,32 @@ No uses `migrate:fresh`, `db:wipe` ni truncamientos sobre la base de desarrollo.
 Para una base existente exige flags explícitos (`--check-only`, `--migrar`,
 `--actualizar-correos`, `--solo-credenciales`, `--sembrar`). `--check-only` es
 siempre de solo lectura. En una base legacy que ya tiene `general_users` sin
-`email_verified_at`, `demo:preparar --migrar` se detiene de forma intencional;
-el propietario decide si aplica la migración idempotente
-`2026_11_01_000001`.
+`email_verified_at`, `demo:preparar --migrar` se detiene de forma intencional.
+La reparación de esa columna requiere un `ALTER` manual con backup restaurable
+y autorización; no se ejecuta automáticamente.
 
 ## Migraciones
 
-El historial local tiene 22 archivos en `database/migrations` más la migración
-de Sanctum que Laravel carga desde `vendor/`. En total son 23 migraciones
-efectivas. `create_general_users_table` incluye `email_verified_at` para bases
-nuevas y `2026_11_01_000001_add_email_verified_at_to_general_users` la añade de
-forma idempotente a bases anteriores. `create_account_activations_table` define
-`expires_at` como `DATETIME`. No reescribas una migración ya aplicada: cualquier
-cambio posterior debe ir en una migración nueva.
+El historial local tiene 20 archivos en `database/migrations` más la migración
+de Sanctum que Laravel carga desde `vendor/`. En total son 21 migraciones
+efectivas. `create_general_users_table` incluye `email_verified_at` y el índice
+`general_users_rol_estado_index` para bases nuevas.
+`create_account_activations_table` define `expires_at` como `DATETIME`. No
+reescribas una migración ya aplicada: cualquier cambio posterior debe ir en una
+migración nueva.
 
 ## Compatibilidad con bases anteriores
 
-Ejecuta las migraciones normales (`php artisan migrate --force`). La migración
-`2026_11_01_000001_add_email_verified_at_to_general_users` comprueba si la
-columna existe y la añade solo cuando falta; no borra filas ni datos.
+Ejecuta las migraciones normales (`php artisan migrate --force`). Las bases
+nuevas reciben `email_verified_at` desde `create_general_users_table`. Si una
+base antigua no tiene esa columna, no hay una migración automática de
+reparación: genera un backup restaurable, verifica que la columna no exista y
+aplica el `ALTER` manual con autorización.
 
 Las columnas legacy (`must_change_password`, `password_temporal`,
 `credenciales_enviadas_en`, `credenciales_error`) pueden seguir presentes en una
 base antigua; el código actual no las usa. Si se desea limpiarlas, hazlo con un
-backup restaurable y fuera de la migración automática. **No ejecutes un ALTER
-manual que añada `email_verified_at` después de `migrate`**: fallaría por columna
-duplicada.
+backup restaurable y fuera de la migración automática.
 
 Después, si aplica a una base demo, continúa con:
 
