@@ -1,5 +1,8 @@
 package com.example.proyectwin.ui.screens.admin
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,18 +13,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.local.ImagenUtils
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminUserAction
 import com.example.proyectwin.ui.viewmodel.AdminUserUiState
 import com.example.proyectwin.ui.viewmodel.UserDetailViewModel
+import kotlinx.coroutines.launch
 
 /**
  * Detalle real de una cuenta (admin): edición, estado, rol, ficha del aprendiz
@@ -39,12 +42,13 @@ fun UserDetailScreen(
     val accion by userDetailViewModel.accion.collectAsState()
     val fichas by userDetailViewModel.fichasDisponibles.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val clipboard = LocalClipboardManager.current
 
     var dialogoEditar by remember { mutableStateOf(false) }
     var dialogoEliminar by remember { mutableStateOf(false) }
+    var dialogoEliminarDefinitivo by remember { mutableStateOf(false) }
     var dialogoFicha by remember { mutableStateOf(false) }
-    var credenciales by remember { mutableStateOf<CredencialesUsuario?>(null) }
+    var decisionEliminacion by remember { mutableStateOf<AdminUserAction.DecisionEliminacion?>(null) }
+    var hashConfirmacion by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
         userId.toIntOrNull()?.let { userDetailViewModel.load(it) }
@@ -61,8 +65,9 @@ fun UserDetailScreen(
                 snackbarHostState.showSnackbar(estado.message)
                 userDetailViewModel.resetAccion()
             }
-            is AdminUserAction.Credenciales -> {
-                credenciales = estado.credenciales
+            is AdminUserAction.DecisionEliminacion -> {
+                decisionEliminacion = estado
+                hashConfirmacion = estado.hash
                 userDetailViewModel.resetAccion()
             }
             is AdminUserAction.Deleted -> {
@@ -71,35 +76,6 @@ fun UserDetailScreen(
             }
             else -> Unit
         }
-    }
-
-    if (credenciales != null) {
-        val datos = credenciales!!
-        AlertDialog(
-            onDismissRequest = { credenciales = null },
-            icon = { Icon(Icons.Default.Key, contentDescription = null, tint = senaColors().green) },
-            title = { Text("Credenciales temporales", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Se muestra una sola vez. El correo no se envía automáticamente.", style = MaterialTheme.typography.bodySmall, color = senaColors().textSecondary)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Usuario: ${datos.username}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { clipboard.setText(AnnotatedString(datos.username)) }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Contraseña: ${datos.passwordTemporal}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { clipboard.setText(AnnotatedString(datos.passwordTemporal)) }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { credenciales = null }) { Text("Entendido", color = senaColors().green) }
-            },
-        )
     }
 
     Scaffold(
@@ -172,13 +148,14 @@ fun UserDetailScreen(
                             DatoCuenta("Usuario", usuario.username.ifBlank { "—" })
                             DatoCuenta("Documento", "${usuario.tipoDocumento ?: ""} ${usuario.documentoIdentidad ?: "—"}".trim())
                             DatoCuenta(
-                                "Credenciales",
+                                "Acceso",
                                 when {
                                     usuario.role == "admin" -> "No aplica para administradores"
-                                    !usuario.mustChangePassword -> "Contraseña ya establecida"
+                                    usuario.emailVerifiedAt != null -> "Contraseña establecida"
                                     usuario.credencialesError != null -> "Falló el envío: ${usuario.credencialesError}"
-                                    usuario.credencialesEnviadasEn != null -> "Enviadas (${usuario.credencialesEnviadasEn.take(10)})"
-                                    else -> "Pendientes de envío"
+                                    usuario.credencialesEnviadasEn != null ->
+                                        "Pendiente de activación (último envío ${usuario.credencialesEnviadasEn.take(10)})"
+                                    else -> "Pendiente de activación"
                                 },
                             )
                             if (data.aprendiz != null) {
@@ -209,23 +186,26 @@ fun UserDetailScreen(
                             containerColor = if (usuario.estado) senaColors().warning10 else senaColors().success10,
                         )
                         if (usuario.role != "admin") {
+                            val pendienteActivacion = usuario.emailVerifiedAt == null
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 SenaButton(
-                                    text = "Restablecer",
+                                    text = if (pendienteActivacion) "Enviar activación" else "Restablecer",
                                     onClick = { userDetailViewModel.restablecerCredenciales() },
                                     isPrimary = false,
                                     enabled = !enProceso,
                                     icon = Icons.Default.LockReset,
                                     modifier = Modifier.weight(1f),
                                 )
-                                SenaButton(
-                                    text = "Reenviar",
-                                    onClick = { userDetailViewModel.reenviarCredenciales() },
-                                    isPrimary = false,
-                                    enabled = !enProceso && usuario.mustChangePassword,
-                                    icon = Icons.Default.Send,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                if (pendienteActivacion) {
+                                    SenaButton(
+                                        text = "Reenviar",
+                                        onClick = { userDetailViewModel.reenviarActivacion() },
+                                        isPrimary = false,
+                                        enabled = !enProceso && usuario.estado,
+                                        icon = Icons.Default.Send,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                             }
                         }
                         if (data.aprendiz != null) {
@@ -299,18 +279,109 @@ fun UserDetailScreen(
                 }
 
                 if (dialogoEliminar) {
+                    var confirmacion by remember(usuario.id) { mutableStateOf("") }
                     AlertDialog(
                         onDismissRequest = { dialogoEliminar = false },
                         title = { Text("Eliminar usuario") },
-                        text = { Text("Se eliminarán sus datos asociados. Esta acción no se puede deshacer.") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    "¿Seguro que deseas eliminar a \"${usuario.name}\"? Se eliminarán su cuenta y los registros asociados. Si tiene historial relacionado, se te pedirá elegir entre desactivar la cuenta o eliminar definitivamente todos sus registros. Esta acción no se puede deshacer.",
+                                )
+                                SenaTextField(
+                                    value = confirmacion,
+                                    onValueChange = { confirmacion = it },
+                                    label = "Escribe ELIMINAR para confirmar",
+                                )
+                            }
+                        },
                         confirmButton = {
-                            TextButton(onClick = {
-                                dialogoEliminar = false
-                                userDetailViewModel.eliminar()
-                            }) { Text("Eliminar", color = senaColors().danger) }
+                            TextButton(
+                                onClick = {
+                                    dialogoEliminar = false
+                                    userDetailViewModel.eliminar()
+                                },
+                                enabled = confirmacion.trim() == "ELIMINAR",
+                            ) { Text("Eliminar", color = senaColors().danger) }
                         },
                         dismissButton = {
                             TextButton(onClick = { dialogoEliminar = false }) { Text("Cancelar") }
+                        },
+                    )
+                }
+
+                decisionEliminacion?.let { decision ->
+                    AlertDialog(
+                        onDismissRequest = { decisionEliminacion = null },
+                        title = { Text("Usuario con historial") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text(
+                                    "${decision.message.ifBlank { "El usuario tiene registros históricos." }} " +
+                                        "Desactivar la cuenta (recomendado) conserva sus registros y bloquea el acceso. " +
+                                        "Eliminar definitivamente borra al usuario y sus registros en cascada.",
+                                )
+                                val resumen = resumenImpacto(decision.impacto)
+                                if (resumen.isNotBlank()) {
+                                    Text(
+                                        "Impacto: $resumen",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = senaColors().textSecondary,
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                enabled = decision.puedeDesactivar,
+                                onClick = {
+                                    decisionEliminacion = null
+                                    userDetailViewModel.cambiarEstado(false)
+                                },
+                            ) { Text("Desactivar cuenta", color = senaColors().green, fontWeight = FontWeight.Bold) }
+                        },
+                        dismissButton = {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { decisionEliminacion = null }) { Text("Cancelar") }
+                                TextButton(
+                                    onClick = {
+                                        decisionEliminacion = null
+                                        dialogoEliminarDefinitivo = true
+                                    },
+                                ) { Text("Eliminar definitivamente…", color = senaColors().danger) }
+                            }
+                        },
+                    )
+                }
+
+                if (dialogoEliminarDefinitivo) {
+                    var confirmacion by remember(usuario.id) { mutableStateOf("") }
+                    AlertDialog(
+                        onDismissRequest = { dialogoEliminarDefinitivo = false },
+                        title = { Text("Eliminar definitivamente") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    "Se eliminará la cuenta de \"${usuario.name}\" y, en cascada, sus propuestas, historial, observaciones, reportes y sesiones. Las similitudes compartidas también se eliminarán. Esta acción no se puede deshacer.",
+                                )
+                                SenaTextField(
+                                    value = confirmacion,
+                                    onValueChange = { confirmacion = it },
+                                    label = "Escribe ELIMINAR DEFINITIVAMENTE",
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    dialogoEliminarDefinitivo = false
+                                    userDetailViewModel.eliminar(confirmar = true, hash = hashConfirmacion)
+                                },
+                                enabled = confirmacion.trim() == "ELIMINAR DEFINITIVAMENTE",
+                            ) { Text("Eliminar definitivamente", color = senaColors().danger) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { dialogoEliminarDefinitivo = false }) { Text("Cancelar") }
                         },
                     )
                 }
@@ -318,6 +389,20 @@ fun UserDetailScreen(
         }
     }
 }
+
+private fun resumenImpacto(impacto: Map<String, Int>): String = listOf(
+    "propuestas" to "propuesta(s) propia(s)",
+    "propuestas_fichas" to "propuesta(s) de sus fichas",
+    "fichas_a_cargo" to "ficha(s) a cargo",
+    "similitudes" to "similitud(es)",
+    "observaciones" to "observación(es)",
+    "reportes" to "reporte(s)",
+    "historial" to "registro(s) de historial",
+    "participaciones" to "participación(es) en equipos",
+    "asignaciones" to "propuesta(s) asignada(s) como instructor",
+).mapNotNull { (clave, etiqueta) ->
+    impacto[clave]?.takeIf { it > 0 }?.let { "$it $etiqueta" }
+}.joinToString(", ")
 
 @Composable
 private fun DatoCuenta(etiqueta: String, valor: String) {
@@ -336,17 +421,80 @@ private fun EditarUsuarioDialog(
     var nombre by remember { mutableStateOf(usuario.nombre ?: usuario.name.substringBefore(' ')) }
     var apellido by remember { mutableStateOf(usuario.apellido ?: usuario.name.substringAfter(' ', "")) }
     var correo by remember { mutableStateOf(usuario.email) }
+    var tipoDocumento by remember { mutableStateOf(usuario.tipoDocumento ?: "CC") }
+    var numeroDocumento by remember { mutableStateOf(usuario.documentoIdentidad.orEmpty()) }
     var rol by remember { mutableStateOf(usuario.role) }
     var estado by remember { mutableStateOf(usuario.estado) }
+    var fotoUrl by remember { mutableStateOf(usuario.fotoPerfil) }
+    var procesandoFoto by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val selectorFoto = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                procesandoFoto = true
+                fotoUrl = ImagenUtils.uriAFotoDataUrl(context, it) ?: fotoUrl
+                procesandoFoto = false
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Editar usuario", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SenaAvatar(
+                        fotoBase64 = fotoUrl,
+                        nombre = "$nombre $apellido".trim(),
+                        modifier = Modifier.size(64.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        TextButton(
+                            enabled = !procesandoFoto,
+                            onClick = { selectorFoto.launch("image/*") },
+                        ) {
+                            Text(
+                                if (procesandoFoto) "Procesando…" else "Cambiar foto",
+                                color = senaColors().green,
+                            )
+                        }
+                        if (fotoUrl != null) {
+                            TextButton(
+                                enabled = !procesandoFoto,
+                                onClick = { fotoUrl = null },
+                            ) {
+                                Text("Quitar foto", color = senaColors().danger)
+                            }
+                        }
+                    }
+                }
                 SenaTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre")
                 SenaTextField(value = apellido, onValueChange = { apellido = it }, label = "Apellido")
                 SenaTextField(value = correo, onValueChange = { correo = it }, label = "Correo")
+                Text("Tipo de documento", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("CC", "TI", "CE", "PPT").forEach { tipo ->
+                        SenaChip(
+                            text = tipo,
+                            color = senaColors().green,
+                            isSelected = tipoDocumento == tipo,
+                            onClick = { tipoDocumento = tipo },
+                        )
+                    }
+                }
+                SenaTextField(
+                    value = numeroDocumento,
+                    onValueChange = { numeroDocumento = it },
+                    label = "Número de documento",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                )
                 Text("Rol", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("aprendiz", "instructor", "admin").forEach { valor ->
@@ -372,6 +520,9 @@ private fun EditarUsuarioDialog(
                         apellido = apellido.trim(),
                         name = "$nombre $apellido".trim(),
                         email = correo.trim().lowercase(),
+                        tipoDocumento = tipoDocumento,
+                        documentoIdentidad = numeroDocumento.trim(),
+                        fotoPerfil = fotoUrl,
                         role = rol,
                         estado = estado,
                     ),

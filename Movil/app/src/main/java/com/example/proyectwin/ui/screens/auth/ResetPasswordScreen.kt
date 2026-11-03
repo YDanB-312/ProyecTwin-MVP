@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.proyectwin.domain.util.PasswordPolicy
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthActionState
@@ -130,7 +131,7 @@ fun ResetPasswordScreen(
                         value = password,
                         onValueChange = { password = it; errorLocal = null; authViewModel.resetResetState() },
                         label = "Contraseña Nueva",
-                        placeholder = "Mínimo 6 caracteres",
+                        placeholder = "Mínimo ${PasswordPolicy.MIN_LENGTH} caracteres",
                         isPassword = true,
                         leadingIcon = Icons.Default.Lock,
                         isError = fieldErrors.containsKey("password"),
@@ -165,7 +166,8 @@ fun ResetPasswordScreen(
                             errorLocal = when {
                                 !Patterns.EMAIL_ADDRESS.matcher(correoLimpio).matches() -> "Ingresa un correo válido."
                                 token.isBlank() -> "Ingresa el código que llegó a tu correo."
-                                password.length < 6 -> "La contraseña debe tener al menos 6 caracteres."
+                                !PasswordPolicy.esValida(password) ->
+                                    "La contraseña debe tener al menos ${PasswordPolicy.MIN_LENGTH} caracteres y no ser demasiado común."
                                 password != confirmPassword -> "La confirmación no coincide con la nueva contraseña."
                                 else -> null
                             }

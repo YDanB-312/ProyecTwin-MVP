@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.proyectwin.domain.util.PasswordPolicy
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthActionState
@@ -173,7 +174,7 @@ private fun PasswordChangeForm(
                         value = nueva,
                         onValueChange = { nueva = it; errorLocal = null; authViewModel.resetPasswordChangeState() },
                         label = "Nueva Contraseña",
-                        placeholder = "Mínimo 6 caracteres",
+                        placeholder = "Mínimo ${PasswordPolicy.MIN_LENGTH} caracteres",
                         isPassword = true,
                         leadingIcon = Icons.Default.LockOpen,
                         isError = (action as? AuthActionState.Error)?.fieldErrors?.containsKey("password") == true
@@ -203,7 +204,8 @@ private fun PasswordChangeForm(
                         onClick = {
                             errorLocal = when {
                                 actual.isBlank() -> "Ingresa tu contraseña actual."
-                                nueva.length < 6 -> "La nueva contraseña debe tener al menos 6 caracteres."
+                                !PasswordPolicy.esValida(nueva) ->
+                                    "La nueva contraseña debe tener al menos ${PasswordPolicy.MIN_LENGTH} caracteres y no ser demasiado común."
                                 nueva != confirmar -> "La confirmación no coincide con la nueva contraseña."
                                 else -> null
                             }

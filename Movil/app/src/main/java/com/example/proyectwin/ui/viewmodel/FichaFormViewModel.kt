@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.api.ApiException
 import com.example.proyectwin.data.local.SessionManager
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.InstructorProfile
 import com.example.proyectwin.data.model.TrainingProgram
@@ -194,7 +194,7 @@ class FichaFormViewModel @Inject constructor(
         tipoDocumento: String,
         numeroDocumento: String,
         correo: String,
-        onResult: (Result<CredencialesUsuario?>) -> Unit,
+        onResult: (Result<ActivacionUsuario?>) -> Unit,
     ) {
         if (_creandoAprendiz.value) return
         viewModelScope.launch {

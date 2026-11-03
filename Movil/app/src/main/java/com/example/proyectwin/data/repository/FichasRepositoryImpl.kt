@@ -9,7 +9,7 @@ import com.example.proyectwin.data.api.service.ApprenticesApi
 import com.example.proyectwin.data.api.service.ClassGroupsApi
 import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.data.mapper.toDomain
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.ResultadoFichaEliminada
 import com.example.proyectwin.domain.repository.FichasRepository
@@ -86,7 +86,7 @@ class FichasRepositoryImpl @Inject constructor(
         tipoDocumento: String,
         numeroDocumento: String,
         correo: String,
-    ): Result<CredencialesUsuario?> = safeApiCall {
+    ): Result<ActivacionUsuario?> = safeApiCall {
         api.agregarAprendiz(
             fichaId,
             AgregarAprendizRequest(
@@ -98,13 +98,13 @@ class FichasRepositoryImpl @Inject constructor(
             ),
         )
     }.map { respuesta ->
-        respuesta.credenciales?.let { credenciales ->
-            CredencialesUsuario(
+        respuesta.activacion?.let { activacion ->
+            ActivacionUsuario(
                 usuario = respuesta.usuario?.toDomain()
                     ?: throw IllegalStateException("El backend no devolvió el usuario creado."),
-                username = credenciales.username,
-                passwordTemporal = credenciales.passwordTemporal,
-                enviadas = credenciales.enviadas,
+                enviada = activacion.enviada,
+                correo = activacion.correo.ifBlank { respuesta.usuario?.correo.orEmpty() },
+                mensaje = activacion.mensaje,
             )
         }
     }

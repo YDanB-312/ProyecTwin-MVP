@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class LoginRequest(
-    val username: String,
+    val username: String? = null,
+    val correo: String? = null,
     val password: String,
     /**
      * Solo aplica a la sesión por cookie del SPA (remember_token). En móvil el
@@ -60,3 +61,26 @@ data class ChangeEmailResponse(
 
 @Serializable
 data class MessageResponse(val message: String = "")
+
+/** Activación de una cuenta nueva a partir del token que llega por correo. */
+@Serializable
+data class ActivationValidateRequest(val token: String)
+
+@Serializable
+data class ActivationValidateResponse(
+    val nombre: String = "",
+    val correo: String = "",
+)
+
+@Serializable
+data class ActivationRequest(
+    val token: String,
+    val password: String,
+    @SerialName("password_confirmation") val passwordConfirmation: String,
+)
+
+@Serializable
+data class ActivationResponse(
+    val message: String = "",
+    val correo: String = "",
+)

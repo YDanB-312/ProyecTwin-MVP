@@ -78,6 +78,7 @@ fun AppUpdatesScreen(
                     onInstalar = viewModel::instalar,
                     onPermiso = viewModel::abrirAjustesPermiso,
                     onMasTarde = viewModel::posponer,
+                    onCancelarDescarga = viewModel::cancelarDescarga,
                 )
             } else if (!estado.consultando && estado.info != null && estado.error == null) {
                 SenaAlertBanner(
@@ -218,6 +219,7 @@ private fun TarjetaActualizacion(
     onInstalar: () -> Unit,
     onPermiso: () -> Unit,
     onMasTarde: () -> Unit,
+    onCancelarDescarga: () -> Unit,
 ) {
     val info = estado.info ?: return
 
@@ -284,6 +286,9 @@ private fun TarjetaActualizacion(
                     color = senaColors().text,
                 )
                 BarraProgreso(estado.progresoDescarga)
+                TextButton(onClick = onCancelarDescarga, modifier = Modifier.fillMaxWidth()) {
+                    Text("Cancelar descarga", color = senaColors().danger)
+                }
             }
 
             if (estado.archivoListo) {

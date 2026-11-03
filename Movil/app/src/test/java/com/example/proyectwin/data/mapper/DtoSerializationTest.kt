@@ -4,6 +4,7 @@ import com.example.proyectwin.data.api.dto.BugReportCreateRequest
 import com.example.proyectwin.data.api.dto.ClassGroupCreateRequest
 import com.example.proyectwin.data.api.dto.ClassGroupUpdateRequest
 import com.example.proyectwin.data.api.dto.GeneralUserDto
+import com.example.proyectwin.data.api.dto.LoginResponse
 import com.example.proyectwin.data.api.dto.DashboardMetricsDto
 import com.example.proyectwin.data.api.dto.NotificationDto
 import com.example.proyectwin.data.api.dto.NotificationReadRequest
@@ -12,6 +13,7 @@ import com.example.proyectwin.data.api.dto.ProjectDto
 import com.example.proyectwin.data.api.dto.SimilarityDto
 import com.example.proyectwin.data.api.dto.TrainingProgramRequest
 import com.example.proyectwin.data.model.NotificationType
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.*
@@ -145,6 +147,58 @@ class DtoSerializationTest {
         assertEquals("CC", dominio.tipoDocumento)
         assertEquals("1098", dominio.documentoIdentidad)
         assertNotNull(dominio.credencialesEnviadasEn)
+    }
+
+    @Test
+    fun loginResponse_toleraUsernameNuloDeCuentasAntiguas() {
+        // La columna `username` es nullable y el login por correo debe seguir
+        // funcionando para cuentas creadas antes de que existiera ese campo.
+        val cuerpo = """
+            {
+              "user": {
+                "id": 19,
+                "nombre": "Ana",
+                "apellido": "Gómez",
+                "correo": "ana@sena.edu.co",
+                "username": null,
+                "email_verified_at": "2026-10-01T12:00:00.000000Z",
+                "foto_url": null,
+                "rol": "aprendiz",
+                "estado": true,
+                "created_at": "2026-10-01T12:00:00.000000Z",
+                "updated_at": "2026-10-01T12:00:00.000000Z"
+              },
+              "token": "19|token-de-prueba",
+              "rol": "aprendiz"
+            }
+        """.trimIndent()
+        val dto = json.decodeFromString<LoginResponse>(cuerpo)
+        assertEquals("", dto.user.username)
+        assertEquals("ana@sena.edu.co", dto.user.correo)
+    }
+
+    @Test
+    fun loginResponse_noAceptaLaBanderaLegacyComoNumero() {
+        // Las bases anteriores al flujo de activación conservan
+        // `must_change_password` como 0/1. El backend debe ocultarla: el
+        // cliente espera un booleano y no puede coercionar números.
+        val cuerpo = """
+            {
+              "user": {
+                "id": 19,
+                "nombre": "Ana",
+                "apellido": "Gómez",
+                "correo": "ana@sena.edu.co",
+                "must_change_password": 0,
+                "rol": "aprendiz",
+                "estado": true
+              },
+              "token": "19|token-de-prueba",
+              "rol": "aprendiz"
+            }
+        """.trimIndent()
+        val error = runCatching { json.decodeFromString<LoginResponse>(cuerpo) }.exceptionOrNull()
+        assertTrue(error is SerializationException)
     }
 
     @Test

@@ -37,10 +37,12 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
+    onActivateAccount: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var username by remember { mutableStateOf("") }
+    var identificador by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var errorLocal by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
     val isSubmitting by authViewModel.isSubmitting.collectAsState()
@@ -112,36 +114,59 @@ fun LoginScreen(
             SenaCard(elevation = 12.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     SenaTextField(
-                        value = username,
-                        onValueChange = { username = it; authViewModel.clearError() },
-                        label = "Usuario",
-                        placeholder = "tu.usuario",
-                        leadingIcon = Icons.Default.Person
+                        value = identificador,
+                        onValueChange = { identificador = it; errorLocal = null; authViewModel.clearError() },
+                        label = "Correo electrónico o usuario",
+                        placeholder = "correo@dominio.com o tu.usuario",
+                        leadingIcon = Icons.Default.Person,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Email
                     )
 
                     SenaTextField(
                         value = password,
-                        onValueChange = { password = it; authViewModel.clearError() },
+                        onValueChange = { password = it; errorLocal = null; authViewModel.clearError() },
                         label = "Contraseña",
                         placeholder = "••••••••",
                         isPassword = true,
                         leadingIcon = Icons.Default.LockPerson
                     )
 
-                    if (uiState is AuthUiState.Error) {
+                    errorLocal?.let {
                         SenaAlertBanner(
-                            title = "Error",
-                            message = (uiState as AuthUiState.Error).message,
+                            title = "Revisa los datos",
+                            message = it,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
                     }
 
+                    if (uiState is AuthUiState.Error) {
+                        val error = uiState as AuthUiState.Error
+                        SenaAlertBanner(
+                            title = "Error",
+                            message = error.message,
+                            icon = Icons.Default.Error,
+                            color = senaColors().danger
+                        )
+                        if (error.code == "cuenta_no_activada") {
+                            SenaButton(
+                                text = "TENGO UN ENLACE DE ACTIVACIÓN",
+                                onClick = onActivateAccount,
+                                isPrimary = false,
+                                icon = Icons.Default.VpnKey,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        TextButton(onClick = onActivateAccount) {
+                            Text("Activar cuenta", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
+                        }
                         TextButton(onClick = onForgotPasswordClick) {
                             Text("Olvidé mi clave", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
                         }
@@ -149,7 +174,14 @@ fun LoginScreen(
 
                     SenaButton(
                         text = "ENTRAR AL SISTEMA",
-                        onClick = { authViewModel.login(username, password) },
+                        onClick = {
+                            errorLocal = when {
+                                identificador.isBlank() -> "Ingresa tu correo electrónico o usuario."
+                                password.isBlank() -> "Ingresa tu contraseña."
+                                else -> null
+                            }
+                            if (errorLocal == null) authViewModel.login(identificador, password)
+                        },
                         isLoading = isSubmitting,
                         icon = Icons.AutoMirrored.Filled.Login,
                         modifier = Modifier.fillMaxWidth()
@@ -193,6 +225,6 @@ fun QuickAccessRow(label: String, color: Color, onClick: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     ProyecTwinTheme {
-        LoginScreen(onForgotPasswordClick = {})
+        LoginScreen(onForgotPasswordClick = {}, onActivateAccount = {})
     }
 }

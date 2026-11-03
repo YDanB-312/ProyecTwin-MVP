@@ -53,8 +53,8 @@ frontend/.env.*
 backend/storage
 backend/bootstrap/cache
 backend/public/storage
-backend/public/apk
 **/*.apk
+!backend/public/apk/ProyecTWin.apk
 **/*.aab
 **/*.keystore
 **/*.jks

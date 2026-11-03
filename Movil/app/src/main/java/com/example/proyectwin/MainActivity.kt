@@ -201,7 +201,12 @@ class MainActivity : ComponentActivity() {
                 val estadoSesion = uiState as? AuthUiState.LoggedIn
                 val sesionActiva = estadoSesion != null && !estadoSesion.user.mustChangePassword
                 LaunchedEffect(sesionActiva) {
-                    if (sesionActiva) appUpdateViewModel.verificar(BuildConfig.VERSION_NAME)
+                    if (sesionActiva) {
+                        appUpdateViewModel.verificar(
+                            BuildConfig.VERSION_NAME,
+                            BuildConfig.VERSION_CODE,
+                        )
+                    }
                 }
 
                 Box(modifier = Modifier.fillMaxSize()) {

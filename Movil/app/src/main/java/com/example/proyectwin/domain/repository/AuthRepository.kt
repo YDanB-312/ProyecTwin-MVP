@@ -9,8 +9,8 @@ interface AuthRepository {
     val currentUser: Flow<GeneralUser?>
     val isLoggedIn: Flow<Boolean>
 
-    /** Acceso por `username` (el correo es solo para recuperación). */
-    suspend fun login(username: String, password: String, recordarme: Boolean = false): Result<GeneralUser>
+    /** Acceso por correo o username (compatibilidad con cuentas antiguas). */
+    suspend fun login(identificador: String, password: String, recordarme: Boolean = false): Result<GeneralUser>
 
     /** Cierra sesión en el servidor (best effort) y limpia la sesión local. */
     suspend fun logout(): Result<Unit>
@@ -35,4 +35,10 @@ interface AuthRepository {
     suspend fun forgotPassword(correo: String): Result<String>
 
     suspend fun resetPassword(token: String, correo: String, password: String, passwordConfirmation: String): Result<Unit>
+
+    /** Datos enmascarados para mostrar el formulario de activación. */
+    suspend fun validarActivacion(token: String): Result<com.example.proyectwin.data.api.dto.ActivationValidateResponse>
+
+    /** Define la contraseña definitiva y activa la cuenta. */
+    suspend fun activarCuenta(token: String, password: String, passwordConfirmation: String): Result<Unit>
 }

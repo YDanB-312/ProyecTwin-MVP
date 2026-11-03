@@ -17,14 +17,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.data.local.DescargasArchivos
-import com.example.proyectwin.data.model.CredencialesUsuario
+import com.example.proyectwin.data.model.ActivacionUsuario
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
 
 /**
- * Alta de usuario (solo admin): documento obligatorio, rol aprendiz/instructor
- * y credenciales temporales generadas por el backend (se muestran una vez).
+ * Alta de usuario (solo admin): la cuenta nace pendiente y el backend envía un
+ * enlace de activación al correo personal. No se generan claves temporales.
  */
 @Composable
 fun NewUserScreen(
@@ -40,33 +40,58 @@ fun NewUserScreen(
     var errorLocal by remember { mutableStateOf<String?>(null) }
     var enviando by remember { mutableStateOf(false) }
     var errorServidor by remember { mutableStateOf<String?>(null) }
-    var credenciales by remember { mutableStateOf<CredencialesUsuario?>(null) }
+    var resultadoAlta by remember { mutableStateOf<ActivacionUsuario?>(null) }
+    var reenviando by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val scrollState = rememberScrollState()
 
-    if (credenciales != null) {
-        val datos = credenciales!!
+    resultadoAlta?.let { datos ->
         AlertDialog(
             onDismissRequest = { },
-            icon = { Icon(Icons.Default.Key, contentDescription = null, tint = senaColors().green) },
-            title = { Text("Credenciales generadas", fontWeight = FontWeight.Bold) },
+            icon = {
+                Icon(
+                    if (datos.enviada) Icons.Default.CheckCircle else Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = if (datos.enviada) senaColors().success else senaColors().warning,
+                )
+            },
+            title = { Text("Usuario creado", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Guárdalas o compártelas: la contraseña temporal no se vuelve a mostrar.",
+                        "La cuenta de ${datos.usuario.name} quedó pendiente de activación.",
                         style = MaterialTheme.typography.bodySmall,
                         color = senaColors().textSecondary,
                     )
-                    CredencialFila("Usuario", datos.username) { clipboard.setText(AnnotatedString(datos.username)) }
-                    CredencialFila("Contraseña temporal", datos.passwordTemporal) { clipboard.setText(AnnotatedString(datos.passwordTemporal)) }
                     Text(
-                        if (datos.enviadas) "El correo con las credenciales fue enviado."
-                        else "El correo no pudo enviarse; usa el reenvío en el detalle del usuario.",
+                        if (datos.enviada) "Enviamos el enlace de activación al correo registrado."
+                        else "El correo no pudo enviarse. Reenvía la activación desde aquí o desde el detalle del usuario.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (datos.enviadas) senaColors().success else senaColors().warning,
+                        color = if (datos.enviada) senaColors().success else senaColors().warning,
                     )
+                    Surface(
+                        color = senaColors().inputBackground,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Correo personal", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                Text(datos.correo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            }
+                            IconButton(onClick = { clipboard.setText(AnnotatedString(datos.correo)) }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
+                            }
+                        }
+                    }
+                    if (datos.mensaje.isNotBlank()) {
+                        Text(datos.mensaje, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                    }
                 }
             },
             confirmButton = {
@@ -75,7 +100,11 @@ fun NewUserScreen(
                         adminViewModel.credencialesPdf(listOf(datos.usuario.id)) { resultado ->
                             val mensaje = resultado.fold(
                                 onSuccess = { bytes ->
-                                    DescargasArchivos.guardarPdf(context, bytes, "credenciales-${datos.username}.pdf")
+                                    DescargasArchivos.guardarPdf(
+                                        context,
+                                        bytes,
+                                        "credenciales-${datos.usuario.username.ifBlank { datos.usuario.id }}.pdf",
+                                    )
                                 },
                                 onFailure = { it.message ?: "No se pudo descargar el PDF." },
                             )
@@ -84,7 +113,33 @@ fun NewUserScreen(
                     }) {
                         Text("PDF", color = senaColors().green)
                     }
-                    TextButton(onClick = { credenciales = null; onBack() }) {
+                    if (!datos.enviada) {
+                        TextButton(
+                            enabled = !reenviando,
+                            onClick = {
+                                reenviando = true
+                                adminViewModel.reenviarActivacion(datos.usuario.id) { resultado ->
+                                    reenviando = false
+                                    resultado.fold(
+                                        onSuccess = { mensaje ->
+                                            resultadoAlta = datos.copy(enviada = true, mensaje = mensaje)
+                                            Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                                        },
+                                        onFailure = { error ->
+                                            Toast.makeText(
+                                                context,
+                                                error.message ?: "No se pudo reenviar la activación.",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        },
+                                    )
+                                }
+                            },
+                        ) {
+                            Text(if (reenviando) "Reenviando…" else "Reenviar activación", color = senaColors().green)
+                        }
+                    }
+                    TextButton(onClick = { resultadoAlta = null; onBack() }) {
                         Text("Listo", color = senaColors().green, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -191,7 +246,7 @@ fun NewUserScreen(
                         ) { resultado ->
                             enviando = false
                             resultado.fold(
-                                onSuccess = { credenciales = it },
+                                onSuccess = { resultadoAlta = it },
                                 onFailure = { errorServidor = it.message ?: "No se pudo crear el usuario." },
                             )
                         }
@@ -202,32 +257,6 @@ fun NewUserScreen(
             )
 
             Spacer(Modifier.height(40.dp))
-        }
-    }
-}
-
-@Composable
-private fun CredencialFila(
-    etiqueta: String,
-    valor: String,
-    onCopiar: () -> Unit,
-) {
-    Surface(
-        color = senaColors().inputBackground,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(etiqueta, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                Text(valor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = senaColors().text)
-            }
-            IconButton(onClick = onCopiar) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = senaColors().green)
-            }
         }
     }
 }

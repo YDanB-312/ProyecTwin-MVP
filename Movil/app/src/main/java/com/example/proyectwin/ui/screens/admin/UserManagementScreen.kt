@@ -35,6 +35,7 @@ data class UserItem(
     val email: String,
     val role: String,
     val status: String,
+    val accessPending: Boolean = false,
     val photo: String? = null,
 )
 
@@ -106,7 +107,8 @@ fun UserManagementScreen(
                 document = user.documentoIdentidad ?: "",
                 email = user.email,
                 role = user.roleDisplayName,
-                status = if (user.estado) "Activo" else "Inactivo",
+                status = if (user.estado) "Activo" else "Suspendido",
+                accessPending = user.emailVerifiedAt == null,
                 photo = user.fotoPerfil,
             )
         }
@@ -317,6 +319,19 @@ fun UserManagementScreen(
                             user = user,
                             onEdit = { onNavigate(AppNavigation.ADMIN_USER_DETAIL.replace("{userId}", user.id.toString())) },
                             onDelete = { userToDelete = user; showDeleteDialog = true },
+                            onResend = if (user.accessPending) {
+                                {
+                                    adminViewModel.reenviarActivacion(user.id) { resultado ->
+                                        val mensaje = resultado.fold(
+                                            onSuccess = { it },
+                                            onFailure = { it.message ?: "No se pudo reenviar la activación." },
+                                        )
+                                        Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } else {
+                                null
+                            },
                             selectionMode = seleccionActiva,
                             selected = user.id in seleccionados,
                             onToggleSelection = { userManagementViewModel.toggleSeleccion(user.id) },
@@ -526,6 +541,7 @@ fun UserCard(
     user: UserItem,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onResend: (() -> Unit)? = null,
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onToggleSelection: () -> Unit = {},
@@ -568,6 +584,11 @@ fun UserCard(
                 }
                 if (!selectionMode) {
                     Row {
+                        if (onResend != null) {
+                            IconButton(onClick = onResend) {
+                                Icon(Icons.Default.Autorenew, contentDescription = "Reenviar activación", tint = senaColors().warning)
+                            }
+                        }
                         IconButton(onClick = onEdit) {
                             Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green)
                         }
@@ -577,7 +598,12 @@ fun UserCard(
                     }
                 }
             }
-            SenaStatusBadge(status = user.status)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SenaStatusBadge(status = user.status)
+                if (user.accessPending) {
+                    SenaStatusBadge(status = "Pendiente")
+                }
+            }
         }
     }
 }

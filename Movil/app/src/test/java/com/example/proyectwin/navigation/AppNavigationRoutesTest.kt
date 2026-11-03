@@ -31,4 +31,5 @@ class AppNavigationRoutesTest {
     fun edicionDePropuesta_declaraElRetorno() {
         assertTrue(AppNavigation.APRENDIZ_NEW_PROJECT.contains("{retorno}"))
     }
+
 }

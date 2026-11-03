@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.api.ApiException
 import com.example.proyectwin.data.model.ApprenticeProfile
-import com.example.proyectwin.data.model.CredencialesUsuario
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.domain.repository.FichasRepository
@@ -34,8 +33,16 @@ sealed class AdminUserAction {
     data object Loading : AdminUserAction()
     data object Saved : AdminUserAction()
     data object Deleted : AdminUserAction()
-    /** Nuevas credenciales para mostrar una sola vez. */
-    data class Credenciales(val credenciales: CredencialesUsuario) : AdminUserAction()
+    /**
+     * El backend bloqueó el borrado (409): hay historial relacionado y se debe
+     * elegir entre desactivar o confirmar la eliminación en cascada.
+     */
+    data class DecisionEliminacion(
+        val message: String,
+        val impacto: Map<String, Int>,
+        val hash: String?,
+        val puedeDesactivar: Boolean,
+    ) : AdminUserAction()
     data class Message(val text: String) : AdminUserAction()
     data class Error(
         val message: String,
@@ -101,43 +108,63 @@ class UserDetailViewModel @Inject constructor(
         guardar(actual.usuario.copy(estado = activo))
     }
 
-    fun eliminar() {
+    fun eliminar(confirmar: Boolean = false, hash: String? = null) {
         if (_accion.value is AdminUserAction.Loading) return
         viewModelScope.launch {
             _accion.value = AdminUserAction.Loading
-            usersRepository.eliminar(idUsuario).fold(
+            usersRepository.eliminar(idUsuario, confirmar = confirmar, hash = hash).fold(
                 onSuccess = { _accion.value = AdminUserAction.Deleted },
                 onFailure = { e ->
-                    _accion.value = AdminUserAction.Error(e.message ?: "No se pudo eliminar el usuario.")
+                    val http = e as? ApiException.Http
+                    if (http != null && http.status == 409 && http.requiereConfirmacion) {
+                        _accion.value = AdminUserAction.DecisionEliminacion(
+                            message = http.message ?: "El usuario tiene historial relacionado.",
+                            impacto = http.impacto,
+                            hash = http.confirmacionHash,
+                            puedeDesactivar = http.puedeDesactivar,
+                        )
+                    } else {
+                        _accion.value = AdminUserAction.Error(
+                            e.message ?: "No se pudo eliminar el usuario.",
+                        )
+                    }
                 },
             )
         }
     }
 
+    /** Restablece la clave (o reenvía activación si aún no está verificada). */
     fun restablecerCredenciales() {
         if (_accion.value is AdminUserAction.Loading) return
         viewModelScope.launch {
             _accion.value = AdminUserAction.Loading
             usersRepository.restablecerCredenciales(idUsuario).fold(
-                onSuccess = { _accion.value = AdminUserAction.Credenciales(it) },
+                onSuccess = { mensaje ->
+                    _accion.value = AdminUserAction.Message(mensaje)
+                    recargar()
+                },
                 onFailure = { e ->
-                    _accion.value = AdminUserAction.Error(e.message ?: "No se pudieron restablecer las credenciales.")
+                    _accion.value = AdminUserAction.Error(
+                        e.message ?: "No se pudo enviar el enlace de restablecimiento.",
+                    )
                 },
             )
         }
     }
 
-    fun reenviarCredenciales() {
+    fun reenviarActivacion() {
         if (_accion.value is AdminUserAction.Loading) return
         viewModelScope.launch {
             _accion.value = AdminUserAction.Loading
-            usersRepository.reenviarCredenciales(idUsuario).fold(
-                onSuccess = {
-                    _accion.value = AdminUserAction.Message("Credenciales reenviadas al correo.")
+            usersRepository.reenviarActivacion(idUsuario).fold(
+                onSuccess = { mensaje ->
+                    _accion.value = AdminUserAction.Message(mensaje)
                     recargar()
                 },
                 onFailure = { e ->
-                    _accion.value = AdminUserAction.Error(e.message ?: "No se pudieron reenviar las credenciales.")
+                    _accion.value = AdminUserAction.Error(
+                        e.message ?: "No se pudo reenviar la activación.",
+                    )
                 },
             )
         }

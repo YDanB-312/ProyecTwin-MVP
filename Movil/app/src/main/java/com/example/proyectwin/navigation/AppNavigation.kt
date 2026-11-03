@@ -27,6 +27,7 @@ object AppNavigation {
     const val AUTH_GRAPH = "auth_graph"
     const val LOGIN = "login"
     const val FORGOT_PASSWORD = "forgot_password"
+    const val ACTIVATE_ACCOUNT = "activate_account?token={token}"
 
     /** Token/correo pueden venir del `reset_url` (modo local) o pegarse a mano. */
     const val RESET_PASSWORD = "reset_password?correo={correo}&token={token}"
@@ -45,6 +46,9 @@ object AppNavigation {
     fun rutaConfirmacion(correo: String, resetUrl: String?): String =
         "confirmation?correo=${android.net.Uri.encode(correo)}&resetUrl=${android.net.Uri.encode(resetUrl ?: "")}"
 
+    fun rutaActivacion(token: String = ""): String =
+        "activate_account?token=${android.net.Uri.encode(token)}"
+
     /**
      * Alta/edición de propuesta. `projectId` vacío = alta; `retorno` decide a
      * qué detalle se vuelve al guardar (el admin edita desde su propio detalle).
@@ -52,12 +56,19 @@ object AppNavigation {
     fun rutaNuevoProyecto(projectId: String = "", retorno: String = "aprendiz"): String =
         "aprendiz_new_project/$projectId?retorno=$retorno"
 
+    fun rutaAnalisis(projectId: Int, miembrosFallidos: Int = 0): String =
+        "aprendiz/analizando/$projectId?fallidos=$miembrosFallidos"
+
+    fun rutaResultadoAnalisis(projectId: Int): String = "aprendiz/resultado/$projectId"
+
     // Aprendiz Graph
     const val APRENDIZ_GRAPH = "aprendiz_graph"
     const val APRENDIZ_DASHBOARD = "aprendiz_dashboard"
     const val APRENDIZ_PROJECTS = "aprendiz_projects"
     const val APRENDIZ_NEW_PROJECT = "aprendiz_new_project/{projectId}?retorno={retorno}"
     const val APRENDIZ_DETAIL = "aprendiz_detail/{projectId}"
+    const val APRENDIZ_ANALYZING = "aprendiz/analizando/{projectId}?fallidos={fallidos}"
+    const val APRENDIZ_ANALYSIS_RESULT = "aprendiz/resultado/{projectId}"
     const val APRENDIZ_SIMILARITY = "aprendiz_similarity/{similarityId}"
     /** Lista completa; [APRENDIZ_SIMILITUDES] agrega el filtro opcional. */
     const val APRENDIZ_SIMILITUDES_BASE = "aprendiz/similitudes"
@@ -67,6 +78,7 @@ object AppNavigation {
     const val APRENDIZ_FICHA_DETAIL = "aprendiz/ficha"
     const val APRENDIZ_JOIN_FICHA = "aprendiz/join-ficha"
     const val APRENDIZ_COMPANERO_DETAIL = "aprendiz/companero/{userId}"
+    const val APRENDIZ_INSTRUCTOR_DETAIL = "aprendiz/instructor/{userId}"
 
     // Instructor Graph
     const val INSTRUCTOR_GRAPH = "instructor_graph"
@@ -142,8 +154,23 @@ object AppNavigation {
     fun NavGraphBuilder.authGraph(navController: NavHostController) {
         navigation(startDestination = LOGIN, route = AUTH_GRAPH) {
             composable(LOGIN) { LoginScreen(
-                onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) }
+                onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) },
+                onActivateAccount = { navController.navigate(rutaActivacion()) },
             ) }
+            composable(
+                route = ACTIVATE_ACCOUNT,
+                arguments = listOf(navArgument("token") { type = NavType.StringType; defaultValue = "" }),
+            ) { entrada ->
+                ActivateAccountScreen(
+                    tokenInicial = entrada.arguments?.getString("token").orEmpty(),
+                    onBackToLogin = {
+                        navController.navigate(LOGIN) {
+                            launchSingleTop = true
+                            popUpTo(AUTH_GRAPH) { inclusive = false }
+                        }
+                    },
+                )
+            }
             composable(FORGOT_PASSWORD) { ForgotPasswordScreen(
                 onBackToLogin = { navController.popBackStack() },
                 onCodeSent = { correo, resetUrl ->
@@ -230,17 +257,59 @@ object AppNavigation {
                     projectId = projectId,
                     onBack = { navController.popBackStack() },
                     onNavigate = { route -> navController.navigateTo(route) },
-                    onSaved = { id ->
-                        // El admin vuelve a SU detalle; el aprendiz al suyo.
-                        val destino = if (retorno == "admin") {
-                            ADMIN_PROJECT_DETAIL.replace("{projectId}", id.toString())
-                        } else {
-                            "aprendiz_detail/$id"
+                    onSaved = { id, enviado, fallidos ->
+                        // El admin vuelve a SU detalle; el aprendiz que envió
+                        // pasa por la confirmación real del motor.
+                        val destino = when {
+                            retorno == "admin" -> ADMIN_PROJECT_DETAIL.replace("{projectId}", id.toString())
+                            enviado -> rutaAnalisis(id, fallidos)
+                            else -> "aprendiz_detail/$id"
                         }
                         navController.navigate(destino) {
                             popUpTo(APRENDIZ_NEW_PROJECT) { inclusive = true }
                         }
                     }
+                )
+            }
+            composable(
+                route = APRENDIZ_ANALYZING,
+                arguments = listOf(
+                    navArgument("projectId") { type = NavType.IntType },
+                    navArgument("fallidos") { type = NavType.IntType; defaultValue = 0 },
+                ),
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getInt("projectId") ?: 0
+                val fallidos = backStackEntry.arguments?.getInt("fallidos") ?: 0
+                AnalizandoProyectoScreen(
+                    projectId = projectId,
+                    miembrosFallidos = fallidos,
+                    onFinished = { id ->
+                        navController.navigate(rutaResultadoAnalisis(id)) {
+                            popUpTo(APRENDIZ_ANALYZING) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(
+                route = APRENDIZ_ANALYSIS_RESULT,
+                arguments = listOf(navArgument("projectId") { type = NavType.IntType }),
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getInt("projectId") ?: 0
+                ResultadoAnalisisScreen(
+                    projectId = projectId,
+                    onBack = {
+                        if (!navController.popBackStack(APRENDIZ_PROJECTS, false)) {
+                            navController.navigate(APRENDIZ_PROJECTS) {
+                                popUpTo(APRENDIZ_DASHBOARD)
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    onProjectDetail = { id -> navController.navigate("aprendiz_detail/$id") },
+                    onSimilarityDetail = { id ->
+                        navController.navigate(AppNavigation.APRENDIZ_SIMILARITY.replace("{similarityId}", id.toString()))
+                    },
                 )
             }
             composable(
@@ -251,7 +320,8 @@ object AppNavigation {
                 ProjectDetailScreen(
                     projectId = projectId, 
                     onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigateTo(route) }
+                    onNavigate = { route -> navController.navigateTo(route) },
+                    onEnviado = { id -> navController.navigate(rutaAnalisis(id)) },
                 )
             }
             composable(
@@ -301,6 +371,21 @@ object AppNavigation {
                 DetalleCompaneroScreen(
                     userId = userId,
                     onBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = APRENDIZ_INSTRUCTOR_DETAIL,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType }),
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                DetalleInstructorScreen(
+                    userId = userId,
+                    onBack = { navController.popBackStack() },
+                    onFichaDetail = { fichaId ->
+                        // El aprendiz solo tiene su propia ficha; el detalle ya
+                        // está accesible desde Mi Ficha.
+                        navController.navigate(APRENDIZ_FICHA_DETAIL)
+                    },
                 )
             }
         }

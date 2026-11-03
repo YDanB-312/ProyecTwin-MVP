@@ -15,12 +15,16 @@ class ActualizacionEvaluatorTest {
         minima: String = "1.0.0",
         enforce: Boolean = false,
         url: String? = "https://descargas.example.com/proyectwin.apk",
+        code: Int? = null,
+        minCode: Int? = null,
     ) = AppVersionInfo(
         versionPublicada = version,
         versionMinima = minima,
         obligatoria = enforce,
         urlDescarga = url,
         notas = "Mejoras",
+        versionCode = code,
+        versionMinimaCode = minCode,
     )
 
     @Test
@@ -66,6 +70,30 @@ class ActualizacionEvaluatorTest {
 
         val sinPolitica = evaluarActualizacion(info("1.4.0", minima = "1.2.0", enforce = false), "1.1.0")
         assertFalse(sinPolitica.obligatoria)
+    }
+
+    @Test
+    fun `versionCode es el criterio principal cuando esta disponible`() {
+        // El nombre instalado es mayor, pero el código publicado es superior.
+        assertTrue(
+            evaluarActualizacion(info("1.4.0", code = 5), "9.9.9", versionCodeInstalada = 4)
+                .hayActualizacion,
+        )
+        // El nombre parece nuevo, pero el código es el mismo.
+        assertFalse(
+            evaluarActualizacion(info("1.4.0", code = 4), "1.3.0", versionCodeInstalada = 4)
+                .hayActualizacion,
+        )
+    }
+
+    @Test
+    fun `version minima se compara por codigo`() {
+        val r = evaluarActualizacion(
+            info("1.4.0", minima = "1.4.0", enforce = true, code = 5, minCode = 5),
+            "1.3.0",
+            versionCodeInstalada = 4,
+        )
+        assertTrue(r.obligatoria)
     }
 
     @Test

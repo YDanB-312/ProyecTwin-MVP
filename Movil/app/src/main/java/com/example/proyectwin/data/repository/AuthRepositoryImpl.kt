@@ -1,6 +1,9 @@
 package com.example.proyectwin.data.repository
 
 import com.example.proyectwin.data.api.TokenProvider
+import com.example.proyectwin.data.api.dto.ActivationRequest
+import com.example.proyectwin.data.api.dto.ActivationValidateRequest
+import com.example.proyectwin.data.api.dto.ActivationValidateResponse
 import com.example.proyectwin.data.api.dto.ChangeEmailRequest
 import com.example.proyectwin.data.api.dto.ChangePasswordRequest
 import com.example.proyectwin.data.api.dto.ForgotPasswordRequest
@@ -35,9 +38,11 @@ class AuthRepositoryImpl @Inject constructor(
     override val currentUser: Flow<GeneralUser?> = sessionManager.currentUser
     override val isLoggedIn: Flow<Boolean> = sessionManager.isLoggedIn
 
-    override suspend fun login(username: String, password: String, recordarme: Boolean): Result<GeneralUser> {
+    override suspend fun login(identificador: String, password: String, recordarme: Boolean): Result<GeneralUser> {
+        val valor = identificador.trim()
         val credenciales = LoginRequest(
-            username = username.trim().lowercase(),
+            username = valor.lowercase().takeUnless { it.contains('@') },
+            correo = valor.lowercase().takeIf { it.contains('@') },
             password = password,
             recordarme = recordarme,
         )
@@ -173,6 +178,23 @@ class AuthRepositoryImpl @Inject constructor(
             ResetPasswordRequest(
                 token = token,
                 correo = correo,
+                password = password,
+                passwordConfirmation = passwordConfirmation,
+            ),
+        )
+    }.map {}
+
+    override suspend fun validarActivacion(token: String): Result<ActivationValidateResponse> =
+        safeApiCall { api.validateActivation(ActivationValidateRequest(token.trim())) }
+
+    override suspend fun activarCuenta(
+        token: String,
+        password: String,
+        passwordConfirmation: String,
+    ): Result<Unit> = safeApiCall {
+        api.activateAccount(
+            ActivationRequest(
+                token = token.trim(),
                 password = password,
                 passwordConfirmation = passwordConfirmation,
             ),

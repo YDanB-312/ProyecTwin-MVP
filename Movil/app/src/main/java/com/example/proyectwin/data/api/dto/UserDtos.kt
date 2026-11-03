@@ -15,6 +15,7 @@ data class GeneralUserDto(
     val correo: String = "",
     val username: String = "",
     @SerialName("must_change_password") val mustChangePassword: Boolean = false,
+    @SerialName("email_verified_at") val emailVerifiedAt: String? = null,
     @SerialName("foto_url") val fotoUrl: String? = null,
     val rol: String = "aprendiz",
     val estado: Boolean = true,
@@ -65,7 +66,12 @@ data class UserUpdateRequest(
     val correo: String,
     val rol: String,
     val estado: Boolean,
-    @SerialName("foto_url") val fotoUrl: String? = null,
+    @SerialName("tipo_documento") val tipoDocumento: String? = null,
+    @SerialName("numero_documento") val numeroDocumento: String? = null,
+    // Sin valor por defecto: `null` debe viajar para retirar una foto. En el
+    // PUT parcial los campos opcionales nulos se omiten, pero este se envía
+    // siempre con el valor actual o con null cuando el admin la retira.
+    @SerialName("foto_url") val fotoUrl: String?,
 )
 
 /** Edición del propio perfil: solo nombre/apellido (el correo va por /auth/email). */
@@ -82,19 +88,38 @@ data class FotoUpdateRequest(
     @SerialName("foto_url") val fotoUrl: String?,
 )
 
-/** Credenciales temporales devueltas por alta/restablecimiento. */
+/** Resultado del envío del enlace de activación. */
 @Serializable
-data class CredencialesDto(
-    val username: String = "",
-    @SerialName("password_temporal") val passwordTemporal: String = "",
-    val enviadas: Boolean = false,
+data class ActivacionDto(
+    val enviada: Boolean = false,
+    val correo: String = "",
+    val mensaje: String = "",
 )
 
-/** Respuesta `{usuario, credenciales}` de alta y restablecimiento. */
+/** Respuesta `{usuario, activacion}` del alta administrativa. */
 @Serializable
-data class UsuarioCredencialesDto(
+data class UsuarioActivacionDto(
     val usuario: GeneralUserDto,
-    val credenciales: CredencialesDto,
+    val activacion: ActivacionDto = ActivacionDto(),
+)
+
+/** Respuesta del reenvío de activación (incluye `activacion`). */
+@Serializable
+data class ReenviarActivacionResponse(
+    val message: String = "",
+    val activacion: ActivacionDto? = null,
+)
+
+/**
+ * Cuerpo del borrado. `confirmar_eliminacion` solo se envía en la segunda
+ * confirmación; el backend responde 409 con impacto y hash si hay historial.
+ */
+@Serializable
+data class DeleteUserRequest(
+    // Sin valor por defecto: `true` también debe viajar (confirmar=true es una
+    // decisión explícita, no el estado inicial). El hash nulo se omite.
+    @SerialName("confirmar_eliminacion") val confirmarEliminacion: Boolean,
+    @SerialName("confirmacion_hash") val confirmacionHash: String? = null,
 )
 
 /** Cuerpo del PDF por lote: `{"ids":[...]}`. */

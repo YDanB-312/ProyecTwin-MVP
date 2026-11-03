@@ -83,6 +83,52 @@ class SafeApiCallTest {
     }
 
     @Test
+    fun `un 403 de cuenta no activada expone el codigo sin cerrar sesion`() = runTest {
+        var expiradas = 0
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            SessionEvents.expired.collect { expiradas++ }
+        }
+
+        val resultado = safeApiCall<Unit> {
+            throw httpError(
+                403,
+                """{"message":"Tu cuenta está pendiente de activación.","code":"cuenta_no_activada"}""",
+            )
+        }
+        advanceUntilIdle()
+
+        val error = resultado.exceptionOrNull() as ApiException.Http
+        assertEquals("cuenta_no_activada", error.code)
+        assertTrue(error.cuentaNoActivada)
+        assertEquals(0, expiradas)
+    }
+
+    @Test
+    fun `un 409 de borrado conserva impacto y hash de confirmacion`() = runTest {
+        val resultado = safeApiCall<Unit> {
+            throw httpError(
+                409,
+                """
+                {
+                  "message":"El usuario tiene propuestas.",
+                  "requiere_confirmacion":true,
+                  "puede_desactivar":true,
+                  "confirmacion_hash":"abc123",
+                  "impacto":{"propuestas":2,"similitudes":1}
+                }
+                """.trimIndent(),
+            )
+        }
+
+        val error = resultado.exceptionOrNull() as ApiException.Http
+        assertTrue(error.requiereConfirmacion)
+        assertTrue(error.puedeDesactivar)
+        assertEquals("abc123", error.confirmacionHash)
+        assertEquals(2, error.impacto["propuestas"])
+        assertEquals(1, error.impacto["similitudes"])
+    }
+
+    @Test
     fun `un 403 de permisos normales no emite eventos de sesion`() = runTest {
         var eventos = 0
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

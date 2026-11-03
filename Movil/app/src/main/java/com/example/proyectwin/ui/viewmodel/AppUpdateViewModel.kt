@@ -61,6 +61,14 @@ class AppUpdateViewModel @Inject constructor(
 
     /** Consulta la versión publicada y decide si corresponde avisar. */
     fun verificar(versionInstalada: String, ahora: Long = System.currentTimeMillis()) {
+        verificar(versionInstalada, null, ahora)
+    }
+
+    fun verificar(
+        versionInstalada: String,
+        versionCodeInstalada: Int?,
+        ahora: Long = System.currentTimeMillis(),
+    ) {
         if (consultaEnSesion) return
         consultaEnSesion = true
         viewModelScope.launch {
@@ -70,22 +78,41 @@ class AppUpdateViewModel @Inject constructor(
             // Silencioso ante cualquier fallo: sin red o con error, la app
             // sigue funcionando y se reintenta en un arranque posterior.
             val info = repository.versionPublicada().getOrNull() ?: return@launch
-            if (!VersionComparator.esValida(info.versionPublicada)) return@launch
+            if (!VersionComparator.esValida(info.versionPublicada) &&
+                (info.versionCode == null || info.versionCode <= 0)
+            ) return@launch
 
             prefs.marcarConsulta(ahora)
-            evaluar(info, versionInstalada, ahora)
+            evaluar(info, versionInstalada, versionCodeInstalada, ahora)
         }
     }
 
-    private suspend fun evaluar(info: AppVersionInfo, versionInstalada: String, ahora: Long) {
+    private suspend fun evaluar(
+        info: AppVersionInfo,
+        versionInstalada: String,
+        versionCodeInstalada: Int?,
+        ahora: Long,
+    ) {
+        val publicado = info.versionCode
+        val hayVersionNueva = if (publicado != null && publicado > 0 && versionCodeInstalada != null) {
+            publicado > versionCodeInstalada
+        } else {
+            VersionComparator.comparar(info.versionPublicada, versionInstalada) > 0
+        }
         // Sin versión más reciente (o instalada más nueva): nada que anunciar.
-        if (VersionComparator.comparar(info.versionPublicada, versionInstalada) <= 0) return
+        if (!hayVersionNueva) return
 
         // Sin enlace https válido no hay acción posible: no se anuncia.
         val url = info.urlDescarga?.takeIf { it.startsWith("https://") } ?: return
 
-        val obligatoria = info.obligatoria &&
+        val minimaCodigo = info.versionMinimaCode
+        val obligatoria = info.obligatoria && if (
+            minimaCodigo != null && minimaCodigo > 0 && versionCodeInstalada != null
+        ) {
+            versionCodeInstalada < minimaCodigo
+        } else {
             VersionComparator.comparar(versionInstalada, info.versionMinima) < 0
+        }
 
         // Posponer aplica solo al aviso opcional: la obligatoria (política
         // explícita del servidor) vuelve a mostrarse en cada arranque.

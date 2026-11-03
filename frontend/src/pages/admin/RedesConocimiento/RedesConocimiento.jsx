@@ -226,14 +226,12 @@ export default function RedesConocimiento() {
     pagina * ITEMS_POR_PAGINA
   )
 
-  // Form state
   const [formNombre, setFormNombre] = useState('')
   const [formProgramas, setFormProgramas] = useState([])
   const [errores, setErrores] = useState({})
   const [alerta, setAlerta] = useState(null) // { tipo, msg }
   const [guardando, setGuardando] = useState(false)
 
-  // Delete confirm
   const [confirmId, setConfirmId] = useState(null)
   const redAEliminar = confirmId ? redesConProgramas.find((r) => Number(r.id) === Number(confirmId)) : null
 

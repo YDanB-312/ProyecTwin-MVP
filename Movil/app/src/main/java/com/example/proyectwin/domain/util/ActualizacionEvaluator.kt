@@ -22,11 +22,24 @@ data class EvaluacionActualizacion(
 fun evaluarActualizacion(
     info: AppVersionInfo,
     versionInstalada: String,
+    versionCodeInstalada: Int? = null,
 ): EvaluacionActualizacion {
-    val valida = VersionComparator.esValida(info.versionPublicada)
-    val hay = valida && VersionComparator.comparar(info.versionPublicada, versionInstalada) > 0
-    val obligatoria = hay && info.obligatoria &&
+    val publicado = info.versionCode?.takeIf { it > 0 }
+    val porCodigo = publicado != null && versionCodeInstalada != null
+    val valida = porCodigo || VersionComparator.esValida(info.versionPublicada)
+    val hay = valida && if (porCodigo) {
+        publicado!! > versionCodeInstalada!!
+    } else {
+        VersionComparator.comparar(info.versionPublicada, versionInstalada) > 0
+    }
+    val minimaPorCodigo = info.versionMinimaCode?.takeIf { it > 0 }
+    val obligatoria = hay && info.obligatoria && if (
+        minimaPorCodigo != null && versionCodeInstalada != null
+    ) {
+        versionCodeInstalada < minimaPorCodigo
+    } else {
         VersionComparator.comparar(versionInstalada, info.versionMinima) < 0
+    }
     val url = info.urlDescarga?.trim()?.takeIf { it.startsWith("https://") }
 
     return EvaluacionActualizacion(

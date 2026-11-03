@@ -91,6 +91,8 @@ sealed class ProjectActionState {
     data object Loading : ProjectActionState()
     data object Success : ProjectActionState()
     data object Deleted : ProjectActionState()
+    /** El envío a revisión terminó y el motor ya dejó el resultado disponible. */
+    data class Enviado(val projectId: Int) : ProjectActionState()
     data class Error(val message: String) : ProjectActionState()
 }
 
@@ -184,7 +186,18 @@ class ProjectDetailViewModel @Inject constructor(
     }
 
     fun enviar() {
-        ejecutar { projectsRepository.enviar(proyectoId) }
+        if (_accion.value is ProjectActionState.Loading) return
+        viewModelScope.launch {
+            _accion.value = ProjectActionState.Loading
+            projectsRepository.enviar(proyectoId).fold(
+                onSuccess = { _accion.value = ProjectActionState.Enviado(proyectoId) },
+                onFailure = { e ->
+                    _accion.value = ProjectActionState.Error(
+                        e.message ?: "No se pudo enviar la propuesta.",
+                    )
+                },
+            )
+        }
     }
 
     /** Aprobación/rechazo (instructor a cargo o admin) con observación opcional. */
