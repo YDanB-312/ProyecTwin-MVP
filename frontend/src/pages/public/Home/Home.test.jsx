@@ -49,6 +49,21 @@ describe('Home Android download', () => {
     renderizar()
 
     expect(screen.queryByRole('link', { name: /descargar aplicación android/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/estará disponible próximamente/i)).toBeInTheDocument()
+  })
+
+  it('muestra la ruta same-origin preparada para el APK', () => {
+    respuestaApi = { ...respuestaApi, download_url: '/apk/ProyecTWin.apk' }
+    renderizar()
+
+    const enlace = screen.getByRole('link', { name: /descargar aplicación android/i })
+    expect(enlace).toHaveAttribute('href', '/apk/ProyecTWin.apk')
+    expect(enlace).toHaveAttribute('download', 'ProyecTWin.apk')
+  })
+
+  it('oculta una URL HTTP no segura', () => {
+    respuestaApi = { ...respuestaApi, download_url: 'http://example.com/app.apk' }
+    renderizar()
+
+    expect(screen.queryByRole('link', { name: /descargar aplicación android/i })).not.toBeInTheDocument()
   })
 })
