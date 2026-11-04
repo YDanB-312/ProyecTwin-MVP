@@ -1,11 +1,11 @@
-# Manual de usuario Android y actualización 3-nov-2026
+# Manual de usuario Android y actualización 4-nov-2026
 
-**Rama:** `master` (`1ebab35`)
+**Rama:** `master` (`56a69e0`)
 **Alcance:** manual integrado, paridad de dashboards aprendiz/instructor,
 notificación local de actualizaciones y capturas reales desde el emulador.
-**Release preparada:** APK `1.4.1 / versionCode 6`, firmado con la identidad
-oficial. El APK estable fue reemplazado en el repositorio; el despliegue en
-Railway queda a cargo del owner desde el dashboard.
+**Release desplegada:** APK `1.4.1 / versionCode 6`, firmado con la identidad
+oficial y publicado en Railway. El endpoint de producción ya responde `1.4.1/6`
+y `/apk/ProyecTWin.apk` devuelve 200.
 
 ## 1. Manual integrado
 
@@ -112,8 +112,10 @@ de la descarga.
 | Login aprendiz/instructor/admin contra producción | Correcto con las cuentas de prueba autorizadas |
 | Dashboards de los 3 roles | Métricas reales visibles y coherentes con el backend |
 | Simulación de actualización (debug 1.4.0/4 sobre publicado 1.4.0/5) | Aviso visible, permiso solicitado, notificación publicada y acción abrió el centro |
-| Reinstalación debug | Sesión local conservada |
-| `GET /v1/app-version/android` | Producción aún responde `1.4.0/5` hasta desplegar; el repositorio ya contiene `1.4.1/6` |
+| Actualización real `1.4.0/5 → 1.4.1/6` | APK descargado y verificado por la app; instalador oficial abierto; sesión y datos conservados |
+| `GET /v1/app-version/android` | Producción responde `1.4.1`, `versionCode 6`, hash y tamaño correctos |
+| `/apk/ProyecTWin.apk` | **200**, `application/vnd.android.package-archive`, 16.392.336 bytes |
+| `/apk/**` no autorizado | 404 |
 
 ### Release 1.4.1 / versionCode 6
 

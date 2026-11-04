@@ -92,7 +92,7 @@ No se modificaron datos de producción. Las capturas reales están en
 | 404 | `NotFoundScreen` | **Completo** | Existente. |
 | Acceso denegado | Estados de error/permiso en cada pantalla | **Parcial** | No hay una pantalla dedicada; cada API 403 se muestra con el mensaje del backend. |
 | Enlace de activación automático | Apertura manual del enlace | **Bloqueado por infraestructura** | Requiere App Links/asset links y cambios de despliegue no autorizados. |
-| Publicación/descarga APK | `GET /v1/app-version/android`, `/apk/ProyecTWin.apk`, Home | **Completo** | APK `1.4.1/6` firmado y guardado en el repositorio. La descarga directa estaba en 404 por Nginx/Docker; se corrigió para servir solo la ruta estable. El despliegue queda pendiente en Railway Dashboard. |
+| Publicación/descarga APK | `GET /v1/app-version/android`, `/apk/ProyecTWin.apk`, Home | **Completo** | APK `1.4.1/6` firmado, desplegado y descargable. El endpoint responde `1.4.1/6`; `/apk/ProyecTWin.apk` responde 200 y el resto de `/apk/**` 404. Actualización `1.4.0/5 → 1.4.1/6` verificada. |
 
 ## Contratos corregidos
 

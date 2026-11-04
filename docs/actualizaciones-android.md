@@ -3,12 +3,10 @@
 Fecha: 2026-11-02 · **Actualizado: 2026-11-04**
 Rama: `master`
 
-> **Estado 4-nov-2026:** el repositorio contiene el APK `1.4.1 / versionCode 6`
-> firmado con la identidad oficial. El endpoint de producción seguirá
-> respondiendo `1.4.0/5` hasta que el owner despliegue desde Railway Dashboard.
-> La verificación Android se hizo en emulador contra producción con cuentas de
-> prueba autorizadas; la actualización release real se validará después del
-> despliegue o en un dispositivo con la versión publicada.
+> **Estado 4-nov-2026:** el APK `1.4.1 / versionCode 6` fue desplegado en
+> Railway. El endpoint de producción responde `1.4.1/6`, la descarga directa
+> responde 200 y la actualización desde `1.4.0/5` fue verificada en emulador
+> conservando sesión y datos.
 
 ## Artefacto
 
@@ -94,11 +92,10 @@ roto. El botón es un enlace accesible y descarga el APK desde la URL estable.
 | `lintDebug` Android | **BUILD SUCCESSFUL** |
 | PHPUnit `AppVersionTest` | **Bloqueado por entorno**: no hay MySQL local; la guarda exige una base desechable `ptwin_test_*` |
 
-## Publicación preparada (4-nov-2026)
+## Publicación desplegada (4-nov-2026)
 
-El APK release `1.4.1/6` ya está en el repositorio. El despliegue en Railway
-queda a cargo del owner desde el dashboard; después hay que verificar las
-variables y la descarga. Valores exactos:
+El APK release `1.4.1/6` está en el repositorio y fue desplegado en Railway.
+Las variables del servicio quedaron con estos valores:
 
 ```text
 ANDROID_APP_VERSION=1.4.1
@@ -134,6 +131,9 @@ Después del despliegue verificar:
 | Reinstalación debug | Sesión local conservada |
 | Fecha de publicación | Visible en el centro de actualizaciones |
 | APK release `1.4.1/6` | SHA-256 `F47D...47BC`, 16.392.336 bytes, firma oficial |
+| Actualización real `1.4.0/5 → 1.4.1/6` | APK descargado y verificado; instalador abierto; sesión y datos conservados |
+| Endpoint de producción | `1.4.1`, `versionCode 6`, hash/tamaño nuevos |
+| Descarga `/apk/ProyecTWin.apk` | 200, MIME correcto, `Cache-Control: no-cache`; rutas no autorizadas 404 |
 
 La notificación es **local**, no push: se emite cuando la app consulta el
 endpoint al abrirse o al entrar a Actualizaciones. Se añadió el canal

@@ -836,7 +836,7 @@ Completar solo con releases reales; no inventar hashes ni fechas.
 
 | Fecha | versionName | versionCode | applicationId | SHA-256 certificado | SHA-256 APK | Responsable | Estado |
 |---|---|---|---|---|---|---|---|
-| 2026-11-04 | 1.4.1 | 6 | com.example.proyectwin | DC:53:...:3D | F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC | OpenCode | Firmado y en repositorio; pendiente despliegue |
+| 2026-11-04 | 1.4.1 | 6 | com.example.proyectwin | DC:53:...:3D | F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC | OpenCode | Firmado, desplegado y verificado en producción |
 |---|---:|---:|---|---|---|---|---|
 | 2026-10-19 | 1.2.0 | 3 | `com.example.proyectwin` | `72:05:D0:E6:E6:13:58:74:A4:20:73:B0:C9:C8:EB:0D:42:D1:34:DA:63:E5:68:FA:74:F1:74:5E:88:F7:80:93` | — | — | Debug, no oficial |
 | 2026-10-22 | 1.3.0 | 4 | `com.example.proyectwin` | `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D` | `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E` | Oscar | Firmado; base anterior usada para prueba de actualización |
