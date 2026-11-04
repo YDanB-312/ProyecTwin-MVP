@@ -10,8 +10,8 @@ use Illuminate\Http\Request;
 class AuditLogController extends Controller
 {
     // Datos mínimos del responsable para la UI de la bitácora. Se excluyen
-    // correo, username y foto (base64): la respuesta no debe transportar PII
-    // innecesaria aunque el log incluya la relación `user`.
+    // correo y foto (base64): la respuesta no debe transportar PII innecesaria
+    // aunque el log incluya la relación `user`.
     private const CAMPOS_USUARIO = ['id', 'nombre', 'apellido', 'rol'];
 
     // Bitácora inmutable (solo admin): filtros, búsqueda, orden y paginación
@@ -56,7 +56,6 @@ class AuditLogController extends Controller
                     ->orWhereHas('user', function ($qq) use ($t) {
                         $qq->where('nombre', 'like', $t)
                             ->orWhere('apellido', 'like', $t)
-                            ->orWhere('username', 'like', $t)
                             ->orWhere('correo', 'like', $t);
                     });
             });

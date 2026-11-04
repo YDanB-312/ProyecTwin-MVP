@@ -27,7 +27,6 @@ object AppNavigation {
     const val AUTH_GRAPH = "auth_graph"
     const val LOGIN = "login"
     const val FORGOT_PASSWORD = "forgot_password"
-    const val ACTIVATE_ACCOUNT = "activate_account?token={token}"
 
     /** Token/correo pueden venir del `reset_url` (modo local) o pegarse a mano. */
     const val RESET_PASSWORD = "reset_password?correo={correo}&token={token}"
@@ -45,9 +44,6 @@ object AppNavigation {
 
     fun rutaConfirmacion(correo: String, resetUrl: String?): String =
         "confirmation?correo=${android.net.Uri.encode(correo)}&resetUrl=${android.net.Uri.encode(resetUrl ?: "")}"
-
-    fun rutaActivacion(token: String = ""): String =
-        "activate_account?token=${android.net.Uri.encode(token)}"
 
     /**
      * Alta/edición de propuesta. `projectId` vacío = alta; `retorno` decide a
@@ -156,23 +152,7 @@ object AppNavigation {
         navigation(startDestination = LOGIN, route = AUTH_GRAPH) {
             composable(LOGIN) { LoginScreen(
                 onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) },
-                onActivateAccount = { navController.navigate(rutaActivacion()) },
-                onOpenManual = { navController.navigate(MANUAL) },
             ) }
-            composable(
-                route = ACTIVATE_ACCOUNT,
-                arguments = listOf(navArgument("token") { type = NavType.StringType; defaultValue = "" }),
-            ) { entrada ->
-                ActivateAccountScreen(
-                    tokenInicial = entrada.arguments?.getString("token").orEmpty(),
-                    onBackToLogin = {
-                        navController.navigate(LOGIN) {
-                            launchSingleTop = true
-                            popUpTo(AUTH_GRAPH) { inclusive = false }
-                        }
-                    },
-                )
-            }
             composable(FORGOT_PASSWORD) { ForgotPasswordScreen(
                 onBackToLogin = { navController.popBackStack() },
                 onCodeSent = { correo, resetUrl ->

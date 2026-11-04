@@ -41,7 +41,6 @@ class DashboardMetricsMesLimiteTest extends TestCase
                 'nombre' => 'Metrica',
                 'apellido' => 'Mes '.uniqid(),
                 'correo' => 'mes.'.uniqid().'@metricas.local',
-                'username' => 'mes_'.uniqid(),
                 'password' => Hash::make(self::PASSWORD),
                 'rol' => 'instructor',
                 'estado' => true,

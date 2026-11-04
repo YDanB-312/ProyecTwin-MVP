@@ -195,12 +195,6 @@ fun AdminProfileScreen(
                             title = "Correo Institucional",
                             description = user?.email ?: "No registrado"
                         )
-                        HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
-                        SenaSettingsItem(
-                            icon = Icons.Default.AccountCircle,
-                            title = "Usuario",
-                            description = user?.username?.ifBlank { "No registrado" } ?: "No registrado"
-                        )
                     }
                 }
 
@@ -211,7 +205,7 @@ fun AdminProfileScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         SenaAlertBanner(
                             title = "Cuenta administrativa",
-                            message = "Usuario: ${user?.username ?: user?.email ?: "—"}. Las sesiones se gestionan por token en el servidor.",
+                            message = "Cuenta: ${user?.email ?: "—"}. Las sesiones se gestionan por token en el servidor.",
                             icon = Icons.Default.Shield,
                             color = senaColors().info
                         )
@@ -290,9 +284,9 @@ fun AdminProfileScreen(
 }
 
 /**
- * Edición de los datos que la API permite: nombre/apellido. Usuario, documento
- * y correo quedan de solo lectura (el correo propio se cambia con su flujo
- * dedicado que exige la contraseña actual).
+ * Edición de los datos que la API permite: nombre/apellido. Documento y correo
+ * quedan de solo lectura (el correo propio se cambia con su flujo dedicado que
+ * exige la contraseña actual).
  */
 @Composable
 private fun EditarPerfilAdminDialog(
@@ -313,7 +307,6 @@ private fun EditarPerfilAdminDialog(
                 error?.let { Text(it, color = senaColors().danger, style = MaterialTheme.typography.labelSmall) }
                 SenaTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre")
                 SenaTextField(value = apellido, onValueChange = { apellido = it }, label = "Apellido")
-                DatoSoloLectura("Usuario", user?.username?.ifBlank { "—" } ?: "—")
                 DatoSoloLectura("Documento", user?.documentoIdentidad ?: "—")
                 DatoSoloLectura("Correo institucional", user?.email ?: "—")
             }

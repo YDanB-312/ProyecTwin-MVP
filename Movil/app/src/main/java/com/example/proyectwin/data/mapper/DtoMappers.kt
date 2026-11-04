@@ -76,7 +76,6 @@ fun GeneralUserDto.toDomain(): GeneralUser = GeneralUser(
     nombre = nombre,
     apellido = apellido,
     estado = estado,
-    username = username,
     mustChangePassword = mustChangePassword,
     emailVerifiedAt = emailVerifiedAt,
     credencialesEnviadasEn = credencialesEnviadasEn,

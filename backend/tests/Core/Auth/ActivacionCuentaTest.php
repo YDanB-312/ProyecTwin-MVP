@@ -285,7 +285,7 @@ class ActivacionCuentaTest extends TestCase
         ])->assertOk();
 
         $this->postJson('/v1/auth/login', [
-            'username' => strtolower((string) $user->username),
+            'username' => 'mgonzalez',
             'password' => 'claveActual123',
         ])->assertStatus(422)
             ->assertJsonValidationErrors('username');

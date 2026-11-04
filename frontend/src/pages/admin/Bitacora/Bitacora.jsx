@@ -72,8 +72,8 @@ const ACCION_LABEL = Object.fromEntries(ACCIONES.filter(([v]) => v))
 const TAMANOS = [10, 15, 25, 50]
 
 function nombreUsuario(u) {
-  // El backend oculta `username`: el responsable se identifica por nombre y
-  // apellido. No se usa el correo como alternativa visible.
+  // El responsable se identifica por nombre y apellido. No se usa el correo
+  // como alternativa visible.
   return u ? nombreCompleto(u, 'Usuario sin nombre') : 'Sistema'
 }
 

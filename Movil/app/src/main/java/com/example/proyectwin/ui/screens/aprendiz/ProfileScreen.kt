@@ -165,16 +165,25 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MetricCardAprendiz(icon = Icons.Default.Folder, value = "$projectCount", label = "Proyectos", modifier = Modifier.weight(1f))
+                    MetricCardAprendiz(
+                        icon = Icons.Default.Folder,
+                        value = "$projectCount",
+                        label = "Proyectos",
+                        modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp),
+                    )
                     Surface(
-                        modifier = Modifier.weight(0.8f).height(80.dp),
+                        modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp),
                         shape = RoundedCornerShape(20.dp),
                         color = senaColors().success.copy(alpha = 0.1f)
                     ) {
-                        Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                             Text("Activo", fontWeight = FontWeight.Bold, color = senaColors().success, style = MaterialTheme.typography.labelLarge)
                         }
                     }
@@ -203,8 +212,6 @@ fun ProfileScreen(
                     } else {
                         Column {
                             SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = user?.name ?: "-")
-                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.AccountCircle, title = "Usuario", description = user?.username?.ifBlank { "No registrado" } ?: "No registrado")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = user?.email ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
@@ -294,8 +301,9 @@ fun MetricCardAprendiz(icon: ImageVector, value: String, label: String, modifier
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxHeight().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(4.dp))

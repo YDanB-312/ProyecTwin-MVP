@@ -56,6 +56,14 @@ class ManualContentTest {
     }
 
     @Test
+    fun `las capturas declaradas son recursos validos`() {
+        val figuras = ManualContent.secciones.flatMap { it.figuras }
+        assertTrue(figuras.isNotEmpty())
+        assertTrue(figuras.any { it.recurso != null })
+        assertTrue(figuras.filter { it.recurso != null }.all { (it.recurso ?: 0) > 0 })
+    }
+
+    @Test
     fun `las preguntas frecuentes estan completas`() {
         assertFalse(ManualContent.preguntasFrecuentes.isEmpty())
         ManualContent.preguntasFrecuentes.forEach { faq ->

@@ -43,7 +43,6 @@ class ProfileViewModelTest {
         name = "Ana María Gómez",
         email = "ana@sena.edu.co",
         role = "instructor",
-        username = "ana",
         nombre = "Ana María",
         apellido = "Gómez",
     )

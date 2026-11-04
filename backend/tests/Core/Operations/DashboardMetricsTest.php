@@ -20,7 +20,6 @@ class DashboardMetricsTest extends TestCase
             'nombre' => 'Metricas ' . ucfirst($rol),
             'apellido' => 'Prueba',
             'correo' => $rol . '.' . uniqid() . '@metricas.local',
-            'username' => 'metricas_' . uniqid(),
             'password' => Hash::make('123456'),
             'rol' => $rol,
             'estado' => true,
@@ -77,7 +76,6 @@ class DashboardMetricsTest extends TestCase
 
         $cuerpo = $res->getContent();
         $this->assertStringNotContainsString($admin->correo, $cuerpo);
-        $this->assertStringNotContainsString((string) $admin->username, $cuerpo);
         $this->assertStringNotContainsString($numero, $cuerpo);
     }
 }

@@ -25,7 +25,6 @@ class CatalogosTest extends TestCase
             'nombre' => ucfirst($rol),
             'apellido' => 'Catalogos',
             'correo' => $rol . '.' . uniqid() . '@catalogos.local',
-            'username' => 'cat_' . uniqid(),
             'password' => Hash::make('ClaveSegura#2026'),
             'rol' => $rol,
             'estado' => true,

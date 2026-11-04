@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.R
 import com.example.proyectwin.ui.components.*
+import com.example.proyectwin.ui.screens.ManualPdfDialog
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -38,13 +39,12 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
-    onActivateAccount: () -> Unit,
-    onOpenManual: () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorLocal by remember { mutableStateOf<String?>(null) }
+    var mostrarManualPdf by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
     val isSubmitting by authViewModel.isSubmitting.collectAsState()
@@ -144,42 +144,35 @@ fun LoginScreen(
 
                     if (uiState is AuthUiState.Error) {
                         val error = uiState as AuthUiState.Error
+                        val mensaje = if (error.code == "cuenta_no_activada") {
+                            "Tu cuenta aún no está habilitada. Contacta al administrador."
+                        } else {
+                            error.message
+                        }
                         SenaAlertBanner(
                             title = "Error",
-                            message = error.message,
+                            message = mensaje,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
-                        if (error.code == "cuenta_no_activada") {
-                            SenaButton(
-                                text = "TENGO UN ENLACE DE ACTIVACIÓN",
-                                onClick = onActivateAccount,
-                                isPrimary = false,
-                                icon = Icons.Default.VpnKey,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = onActivateAccount) {
-                            Text("Activar cuenta", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
-                        }
                         TextButton(onClick = onForgotPasswordClick) {
                             Text("Olvidé mi clave", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
                         }
                     }
 
                     TextButton(
-                        onClick = onOpenManual,
+                        onClick = { mostrarManualPdf = true },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            "Manual de usuario",
+                            "Manual de usuario (PDF)",
                             style = MaterialTheme.typography.labelSmall,
                             color = senaColors().green,
                             fontWeight = FontWeight.Black,
@@ -216,6 +209,10 @@ fun LoginScreen(
 
         Spacer(Modifier.height(40.dp))
     }
+
+    if (mostrarManualPdf) {
+        ManualPdfDialog(onDismiss = { mostrarManualPdf = false })
+    }
 }
 
 @Composable
@@ -240,6 +237,6 @@ fun QuickAccessRow(label: String, color: Color, onClick: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     ProyecTwinTheme {
-        LoginScreen(onForgotPasswordClick = {}, onActivateAccount = {}, onOpenManual = {})
+        LoginScreen(onForgotPasswordClick = {})
     }
 }

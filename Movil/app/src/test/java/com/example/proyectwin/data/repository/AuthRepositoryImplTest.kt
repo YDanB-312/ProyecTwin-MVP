@@ -49,7 +49,6 @@ class AuthRepositoryImplTest {
         name = "Ana Gómez",
         email = "ana@sena.edu.co",
         role = "aprendiz",
-        username = "ana",
         mustChangePassword = mustChange,
     )
 
@@ -155,7 +154,6 @@ class AuthRepositoryImplTest {
             apellido = "Gómez",
             correo = "ana@sena.edu.co",
             rol = "aprendiz",
-            username = "ana",
             mustChangePassword = true,
         )
         coEvery { usersApi.obtener(5, "apprentice,instructor") } returns GeneralUserDto(
@@ -164,7 +162,6 @@ class AuthRepositoryImplTest {
             apellido = "Gómez",
             correo = "ana@sena.edu.co",
             rol = "aprendiz",
-            username = "ana",
             numeroDocumento = "1098",
         )
         coEvery { apprenticesApi.listar("classGroup") } returns emptyList()

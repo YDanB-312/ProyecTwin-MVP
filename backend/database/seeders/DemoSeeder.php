@@ -84,7 +84,6 @@ class DemoSeeder extends Seeder
                     'correo' => $cuenta['correo'],
                     'tipo_documento' => 'CC',
                     'numero_documento' => (string) $numero,
-                    'username' => $username,
                     'password' => Hash::make(CuentasDemo::password()),
                     'rol' => $cuenta['rol'],
                     'estado' => true,
@@ -890,16 +889,15 @@ class DemoSeeder extends Seeder
     {
         $adminId = $this->usuarioId('a');
 
-        foreach (CuentasDemo::CUENTAS as $username => $cuenta) {
-            $usuario = GeneralUser::where('username', $username)->first();
+        foreach (CuentasDemo::CUENTAS as $clave => $cuenta) {
+            $usuario = CuentasDemo::buscaUsuario($clave);
 
             if (! $usuario) {
                 continue;
             }
 
-            $this->registrarAuditoria('usuario:' . $username, 'crear_usuario', 'general_users', $usuario->id, [
+            $this->registrarAuditoria('usuario:' . $clave, 'crear_usuario', 'general_users', $usuario->id, [
                 'correo' => $usuario->correo,
-                'username' => $usuario->username,
                 'documento' => Pii::documento($usuario->tipo_documento, $usuario->numero_documento),
                 'rol' => $usuario->rol,
             ], $adminId, now()->subDays(30));

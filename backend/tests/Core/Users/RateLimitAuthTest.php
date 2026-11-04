@@ -204,7 +204,6 @@ class RateLimitAuthTest extends TestCase
             'nombre' => 'Rate',
             'apellido' => 'Motor',
             'correo' => 'rate.motor.'.uniqid().'@test.local',
-            'username' => 'rate_motor_'.uniqid(),
             'password' => Hash::make(self::PASSWORD),
             'rol' => 'admin',
             'estado' => true,

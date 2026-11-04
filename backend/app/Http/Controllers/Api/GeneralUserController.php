@@ -35,7 +35,7 @@ class GeneralUserController extends Controller
     // Campos institucionales que solo revela la administración (el modelo los
     // oculta por defecto para el resto de la API).
     private const CAMPOS_ADMIN = [
-        'tipo_documento', 'numero_documento', 'username', 'email_verified_at',
+        'tipo_documento', 'numero_documento', 'email_verified_at',
     ];
 
     // Proyección opt-in para selectores que solo necesitan identificar al
@@ -381,7 +381,7 @@ class GeneralUserController extends Controller
 
         // Whitelist: solo campos editables por esta vía. El admin también puede
         // corregir el documento de identidad; los campos internos de acceso
-        // (username, password, email_verified_at) nunca se aceptan del request.
+        // (password, email_verified_at) nunca se aceptan del request.
         $data = $esAdmin
             ? $request->only([
                 'nombre', 'apellido', 'correo', 'foto_url', 'rol', 'estado',

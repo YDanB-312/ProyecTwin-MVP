@@ -3,7 +3,6 @@ package com.example.proyectwin.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.api.ApiException
-import com.example.proyectwin.data.api.dto.ActivationValidateResponse
 import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.domain.repository.AuthRepository
@@ -23,20 +22,6 @@ sealed class AuthUiState {
         val message: String,
         val code: String? = null,
     ) : AuthUiState()
-}
-
-/** Estado del flujo público de activación de una cuenta nueva. */
-sealed class ActivationUiState {
-    data object Idle : ActivationUiState()
-    data object Validating : ActivationUiState()
-    data class Form(
-        val datos: ActivationValidateResponse,
-        val enviando: Boolean = false,
-        val error: String? = null,
-    ) : ActivationUiState()
-    data class Invalid(val message: String) : ActivationUiState()
-    data class Error(val message: String) : ActivationUiState()
-    data object Success : ActivationUiState()
 }
 
 /** Estado de una operación puntual (cambio de clave, recuperación, etc.). */
@@ -70,9 +55,6 @@ class AuthViewModel @Inject constructor(
 
     private val _resetState = MutableStateFlow<AuthActionState>(AuthActionState.Idle)
     val resetState: StateFlow<AuthActionState> = _resetState.asStateFlow()
-
-    private val _activationState = MutableStateFlow<ActivationUiState>(ActivationUiState.Idle)
-    val activationState: StateFlow<ActivationUiState> = _activationState.asStateFlow()
 
     /** Mensaje informativo del último envío (p. ej. reset_url en modo local). */
     private val _forgotMessage = MutableStateFlow<String?>(null)
@@ -117,68 +99,6 @@ class AuthViewModel @Inject constructor(
             )
             _isSubmitting.value = false
         }
-    }
-
-    /** Valida el token y, si es correcto, muestra el formulario de contraseña. */
-    fun validarActivacion(token: String) {
-        val limpio = token.trim()
-        if (limpio.isEmpty()) {
-            _activationState.value = ActivationUiState.Invalid("Ingresa el enlace o código de activación.")
-            return
-        }
-        if (_activationState.value == ActivationUiState.Validating) return
-        viewModelScope.launch {
-            _activationState.value = ActivationUiState.Validating
-            authRepository.validarActivacion(limpio).fold(
-                onSuccess = { _activationState.value = ActivationUiState.Form(it) },
-                onFailure = { e ->
-                    val http = e as? ApiException.Http
-                    _activationState.value = if (http?.status == 422) {
-                        ActivationUiState.Invalid(e.message ?: "El enlace de activación no es válido.")
-                    } else {
-                        ActivationUiState.Error(e.message ?: "No se pudo validar el enlace.")
-                    }
-                },
-            )
-        }
-    }
-
-    fun activarCuenta(token: String, password: String, passwordConfirmation: String) {
-        val formulario = _activationState.value as? ActivationUiState.Form ?: return
-        if (formulario.enviando) return
-        viewModelScope.launch {
-            _activationState.value = formulario.copy(enviando = true, error = null)
-            authRepository.activarCuenta(token, password, passwordConfirmation).fold(
-                onSuccess = { _activationState.value = ActivationUiState.Success },
-                onFailure = { e ->
-                    val http = e as? ApiException.Http
-                    val errorToken = http?.fieldErrors?.get("token")
-                    if (errorToken != null || http?.status == 422 &&
-                        http.message?.contains("enlace", ignoreCase = true) == true
-                    ) {
-                        _activationState.value = ActivationUiState.Invalid(
-                            errorToken ?: e.message ?: "El enlace de activación no es válido.",
-                        )
-                    } else {
-                        _activationState.value = formulario.copy(
-                            enviando = false,
-                            error = http?.fieldErrors?.values?.firstOrNull()
-                                ?: e.message
-                                ?: "No se pudo activar la cuenta.",
-                        )
-                    }
-                },
-            )
-        }
-    }
-
-    fun limpiarErrorActivacion() {
-        val actual = _activationState.value as? ActivationUiState.Form ?: return
-        _activationState.value = actual.copy(error = null)
-    }
-
-    fun resetActivationState() {
-        _activationState.value = ActivationUiState.Idle
     }
 
     fun logout() {

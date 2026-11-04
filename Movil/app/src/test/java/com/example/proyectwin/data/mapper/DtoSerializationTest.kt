@@ -125,7 +125,8 @@ class DtoSerializationTest {
     }
 
     @Test
-    fun generalUser_parsesAdminCredentialFields() {
+    fun generalUser_ignoraUsernameAdicionalDeLaApi() {
+        // La API/web conservan username; Android ya no lo usa y debe ignorarlo.
         val cuerpo = """
             {
               "id": 5,
@@ -142,7 +143,8 @@ class DtoSerializationTest {
             }
         """.trimIndent()
         val dominio = json.decodeFromString<GeneralUserDto>(cuerpo).toDomain()
-        assertEquals("agomezr_12345", dominio.username)
+        assertEquals("Ana", dominio.nombre)
+        assertEquals("ana@sena.edu.co", dominio.email)
         assertTrue(dominio.mustChangePassword)
         assertEquals("CC", dominio.tipoDocumento)
         assertEquals("1098", dominio.documentoIdentidad)
@@ -150,9 +152,8 @@ class DtoSerializationTest {
     }
 
     @Test
-    fun loginResponse_toleraUsernameNuloDeCuentasAntiguas() {
-        // La columna `username` es nullable y el login por correo debe seguir
-        // funcionando para cuentas creadas antes de que existiera ese campo.
+    fun loginResponse_toleraCamposAdicionalesDeCuentasAntiguas() {
+        // `username` puede venir nulo o con valor; el login por correo no falla.
         val cuerpo = """
             {
               "user": {
@@ -173,8 +174,8 @@ class DtoSerializationTest {
             }
         """.trimIndent()
         val dto = json.decodeFromString<LoginResponse>(cuerpo)
-        assertEquals("", dto.user.username)
         assertEquals("ana@sena.edu.co", dto.user.correo)
+        assertEquals("Ana", dto.user.nombre)
     }
 
     @Test

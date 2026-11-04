@@ -39,7 +39,6 @@ class SessionManager @Inject constructor(
         private val KEY_USER_FOTO = stringPreferencesKey("user_foto")
         private val KEY_USER_FICHA_ID = intPreferencesKey("user_ficha_id")
         private val KEY_USER_DOCUMENTO = stringPreferencesKey("user_documento")
-        private val KEY_USER_USERNAME = stringPreferencesKey("user_username")
         private val KEY_USER_MUST_CHANGE_PASSWORD = booleanPreferencesKey("user_must_change_password")
     }
 
@@ -56,7 +55,6 @@ class SessionManager @Inject constructor(
             documentoIdentidad = prefs[KEY_USER_DOCUMENTO],
             nombre = prefs[KEY_USER_NOMBRE],
             apellido = prefs[KEY_USER_APELLIDO],
-            username = prefs[KEY_USER_USERNAME] ?: "",
             mustChangePassword = prefs[KEY_USER_MUST_CHANGE_PASSWORD] ?: false,
         )
     }
@@ -77,7 +75,6 @@ class SessionManager @Inject constructor(
             if (user.fotoPerfil != null) prefs[KEY_USER_FOTO] = user.fotoPerfil
             if (user.fichaId != null) prefs[KEY_USER_FICHA_ID] = user.fichaId
             if (user.documentoIdentidad != null) prefs[KEY_USER_DOCUMENTO] = user.documentoIdentidad
-            prefs[KEY_USER_USERNAME] = user.username
             prefs[KEY_USER_MUST_CHANGE_PASSWORD] = user.mustChangePassword
         }
     }

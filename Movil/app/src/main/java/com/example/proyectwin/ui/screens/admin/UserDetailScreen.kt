@@ -145,7 +145,6 @@ fun UserDetailScreen(
                     SenaSectionHeader(title = "Datos de la cuenta")
                     SenaCard(elevation = 1.dp) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            DatoCuenta("Usuario", usuario.username.ifBlank { "—" })
                             DatoCuenta("Documento", "${usuario.tipoDocumento ?: ""} ${usuario.documentoIdentidad ?: "—"}".trim())
                             DatoCuenta(
                                 "Acceso",

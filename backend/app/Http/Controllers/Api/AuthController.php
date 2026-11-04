@@ -83,7 +83,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'user' => $user->makeVisible(['username', 'email_verified_at']),
+            'user' => $user->makeVisible(['email_verified_at']),
             'token' => $token,
             'rol' => $user->rol,
         ]);
@@ -123,7 +123,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return $request->user()->makeVisible(['username', 'email_verified_at']);
+        return $request->user()->makeVisible(['email_verified_at']);
     }
 
     // Cambio de correo del propio usuario: exige la contraseña actual antes de

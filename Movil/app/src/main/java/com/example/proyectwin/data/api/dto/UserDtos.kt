@@ -13,7 +13,6 @@ data class GeneralUserDto(
     val nombre: String = "",
     val apellido: String = "",
     val correo: String = "",
-    val username: String = "",
     @SerialName("must_change_password") val mustChangePassword: Boolean = false,
     @SerialName("email_verified_at") val emailVerifiedAt: String? = null,
     @SerialName("foto_url") val fotoUrl: String? = null,
@@ -42,7 +41,7 @@ data class PerfilDto(
 
 /**
  * POST /general-users (solo admin): el backend exige documento, genera el
- * username histórico y deja la cuenta pendiente de activación por correo.
+ * identificador interno y deja la cuenta pendiente de activación por correo.
  */
 @Serializable
 data class UserCreateRequest(

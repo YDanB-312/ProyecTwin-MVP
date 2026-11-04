@@ -52,18 +52,6 @@ class Pii
         return mb_substr($local, 0, 1).'***@'.$dominio;
     }
 
-    // Enmascara un username conservando solo sus dos primeros caracteres.
-    public static function username(?string $username): ?string
-    {
-        $username = trim((string) $username);
-
-        if ($username === '') {
-            return null;
-        }
-
-        return mb_substr($username, 0, 2).'***';
-    }
-
     /**
      * Redacta recursivamente las claves sensibles del detalle de auditoría.
      *
@@ -81,8 +69,6 @@ class Pii
                 $salida[$clave] = self::detalle($valor);
             } elseif (in_array($normalizada, self::CLAVES_CORREO, true)) {
                 $salida[$clave] = self::correo(is_string($valor) ? $valor : null);
-            } elseif ($normalizada === 'username') {
-                $salida[$clave] = self::username(is_string($valor) ? $valor : null);
             } elseif (in_array($normalizada, self::CLAVES_CREDENCIAL, true)) {
                 $salida[$clave] = '[redactado]';
             } elseif ($normalizada === 'respuesta') {

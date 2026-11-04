@@ -16,7 +16,6 @@ data class GeneralUser(
     val nombre: String? = null,
     val apellido: String? = null,
     val estado: Boolean = true,
-    val username: String = "",
     val mustChangePassword: Boolean = false,
     /** Null = cuenta pendiente de activación por correo. */
     val emailVerifiedAt: String? = null,

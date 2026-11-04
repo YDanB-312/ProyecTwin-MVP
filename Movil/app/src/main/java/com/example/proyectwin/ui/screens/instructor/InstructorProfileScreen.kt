@@ -214,8 +214,6 @@ fun InstructorProfileScreen(
                         Column {
                             SenaSettingsItem(icon = Icons.Default.Person, title = "Nombre Completo", description = user?.name ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
-                            SenaSettingsItem(icon = Icons.Default.AccountCircle, title = "Usuario", description = user?.username?.ifBlank { "No registrado" } ?: "No registrado")
-                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Institucional", description = user?.email ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Badge, title = "Documento de Identidad", description = user?.documentoIdentidad ?: "-")

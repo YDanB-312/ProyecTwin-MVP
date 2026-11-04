@@ -495,18 +495,6 @@ export default function Usuarios() {
                           : <span className={s.muted}>—</span>
                       ),
                     },
-                    {
-                      key: 'username',
-                      header: 'Usuario institucional',
-                      render: (usr) => (
-                        <code
-                          className={s.codigo}
-                          title="Referencia histórica; no se usa para iniciar sesión."
-                        >
-                          {usr.username}
-                        </code>
-                      ),
-                    },
                     { key: 'correo', header: 'Correo', render: (usr) => usr.correo },
                     {
                       key: 'rol',

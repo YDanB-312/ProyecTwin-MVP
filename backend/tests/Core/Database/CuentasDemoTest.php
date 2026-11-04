@@ -14,13 +14,12 @@ class CuentasDemoTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function cuenta(string $correo, string $username): GeneralUser
+    private function cuenta(string $correo): GeneralUser
     {
         return GeneralUser::create([
             'nombre' => 'Demo',
             'apellido' => 'Transicion',
             'correo' => $correo,
-            'username' => $username,
             'tipo_documento' => 'CC',
             'numero_documento' => (string) random_int(3000000000, 3999999999),
             'password' => Hash::make('claveAnterior#2026'),
@@ -31,7 +30,7 @@ class CuentasDemoTest extends TestCase
 
     public function test_actualiza_el_correo_legacy_y_rota_credenciales(): void
     {
-        $usuario = $this->cuenta('maria.gonzalez@soy.sena.edu.co', 'mgonzalez');
+        $usuario = $this->cuenta('maria.gonzalez@soy.sena.edu.co');
 
         $resultado = CuentasDemo::actualizarCorreos();
 
@@ -49,8 +48,8 @@ class CuentasDemoTest extends TestCase
 
     public function test_no_actualiza_si_el_correo_nuevo_ya_esta_ocupado(): void
     {
-        $legacy = $this->cuenta('maria.gonzalez@soy.sena.edu.co', 'mgonzalez');
-        $this->cuenta('maria.gonzalez@example.com', 'otra.persona');
+        $legacy = $this->cuenta('maria.gonzalez@soy.sena.edu.co');
+        $this->cuenta('maria.gonzalez@example.com');
 
         $resultado = CuentasDemo::actualizarCorreos();
 

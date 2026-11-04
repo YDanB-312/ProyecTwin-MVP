@@ -28,7 +28,6 @@ class NotificacionesTest extends TestCase
             'nombre' => ucfirst($rol),
             'apellido' => 'Notificaciones',
             'correo' => $rol . '.' . uniqid() . '@notificaciones.local',
-            'username' => 'notif_' . uniqid(),
             'password' => Hash::make('ClaveSegura#2026'),
             'rol' => $rol,
             'estado' => true,

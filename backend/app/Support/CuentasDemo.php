@@ -106,16 +106,16 @@ class CuentasDemo
         return (string) config('demo.password');
     }
 
-    public static function buscaUsuario(string $username): ?GeneralUser
+    public static function buscaUsuario(string $clave): ?GeneralUser
     {
-        $cuenta = self::cuentasAdministradas()[$username] ?? null;
+        $cuenta = self::cuentasAdministradas()[$clave] ?? null;
 
         if (! $cuenta) {
             return null;
         }
 
         // Solo se adopta por los correos conocidos del escenario. Nunca por
-        // username: podría coincidir con una cuenta real ajena al demo.
+        // la clave interna del demo: podría coincidir con una cuenta real ajena.
         return GeneralUser::query()
             ->where('correo', $cuenta['correo'])
             ->orWhere('correo', $cuenta['correo_legacy'])
@@ -129,8 +129,8 @@ class CuentasDemo
     {
         $actualizadas = 0;
 
-        foreach (array_keys(self::cuentasAdministradas()) as $username) {
-            $usuario = self::buscaUsuario($username);
+        foreach (array_keys(self::cuentasAdministradas()) as $clave) {
+            $usuario = self::buscaUsuario($clave);
 
             if (! $usuario) {
                 continue;

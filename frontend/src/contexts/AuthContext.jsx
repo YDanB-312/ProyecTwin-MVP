@@ -19,7 +19,6 @@ function aSesion(u) {
   return {
     id: u.id,
     correo: u.correo,
-    username: u.username,
     nombre: [u.nombre, u.apellido].filter(Boolean).join(' ').trim() || u.correo,
     rol: String(u.rol || '').toLowerCase(),
   }

@@ -22,7 +22,7 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
 
     protected $fillable = [
         'nombre', 'apellido', 'tipo_documento', 'numero_documento', 'correo',
-        'username', 'password', 'email_verified_at',
+        'password', 'email_verified_at',
         'foto_url', 'rol', 'estado',
     ];
 
@@ -31,7 +31,7 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
     // (makeVisible); el resto de listados no los expone.
     protected $hidden = [
         'password', 'remember_token',
-        'tipo_documento', 'numero_documento', 'username',
+        'tipo_documento', 'numero_documento',
         'email_verified_at',
         // Columnas heredadas de instalaciones anteriores al flujo de
         // activación. Ya no forman parte del contrato actual; además,
@@ -56,17 +56,9 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         return $this->correo;
     }
 
-    // Toda cuenta nace con username (seed, altas del admin, pruebas).
     protected static function booted(): void
     {
         static::creating(function (GeneralUser $user) {
-            if (empty($user->username)) {
-                $user->username = \App\Support\Credenciales::usernameSeguro(
-                    (string) $user->nombre,
-                    (string) $user->apellido
-                );
-            }
-
             // Compatibilidad: cualquier alta directa que no declare el campo
             // (seeders, pruebas, imports legacy) se considera ya verificada.
             // El flujo de activación pasa null explícitamente y queda pendiente.
@@ -144,7 +136,6 @@ class GeneralUser extends Model implements AuthenticatableContract, CanResetPass
         return $query->where(function (Builder $q) use ($t) {
             $q->where('nombre', 'like', $t)
               ->orWhere('apellido', 'like', $t)
-              ->orWhere('username', 'like', $t)
               ->orWhere('numero_documento', 'like', $t)
               ->orWhere('correo', 'like', $t);
         });

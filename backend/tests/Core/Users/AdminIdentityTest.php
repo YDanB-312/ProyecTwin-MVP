@@ -45,7 +45,6 @@ class AdminIdentityTest extends TestCase
             'tipo_documento' => $tipoDocumento,
             'numero_documento' => $numeroDocumento ?? (string) random_int(10000000, 99999999),
             'correo' => $rol . '.' . uniqid() . '@identidad.local',
-            'username' => 'identidad_' . uniqid(),
             'password' => Hash::make('123456'),
             'rol' => $rol,
             'estado' => true,

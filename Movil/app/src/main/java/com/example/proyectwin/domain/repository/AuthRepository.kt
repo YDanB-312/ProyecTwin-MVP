@@ -35,10 +35,4 @@ interface AuthRepository {
     suspend fun forgotPassword(correo: String): Result<String>
 
     suspend fun resetPassword(token: String, correo: String, password: String, passwordConfirmation: String): Result<Unit>
-
-    /** Datos enmascarados para mostrar el formulario de activación. */
-    suspend fun validarActivacion(token: String): Result<com.example.proyectwin.data.api.dto.ActivationValidateResponse>
-
-    /** Define la contraseña definitiva y activa la cuenta. */
-    suspend fun activarCuenta(token: String, password: String, passwordConfirmation: String): Result<Unit>
 }

@@ -74,13 +74,12 @@ class CredencialesTest extends TestCase
 
     // ---------------------------------------------------------------- Alta
 
-    public function test_el_admin_crea_la_cuenta_pendiente_con_username(): void
+    public function test_el_admin_crea_la_cuenta_pendiente_sin_username(): void
     {
         Notification::fake();
         $respuesta = $this->alta()->assertCreated();
 
-        $username = $respuesta->json('usuario.username');
-        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username);
+        $respuesta->assertJsonMissingPath('usuario.username');
         $respuesta->assertJsonMissingPath('credenciales');
         $respuesta->assertJsonMissingPath('usuario.must_change_password');
         $respuesta->assertJsonMissingPath('usuario.password_temporal');
@@ -102,25 +101,6 @@ class CredencialesTest extends TestCase
         $this->assertDatabaseHas('general_users', ['correo' => $normalizado]);
 
         $this->alta(['correo' => $normalizado])->assertStatus(422);
-    }
-
-    public function test_dos_altas_con_el_mismo_nombre_generan_usernames_distintos(): void
-    {
-        Notification::fake();
-        $primero = $this->alta(['numero_documento' => '81000001'])->assertCreated();
-        $segundo = $this->alta([
-            'nombre' => 'Carlos',
-            'apellido' => 'Martínez',
-            'numero_documento' => '81000002',
-            'correo' => 'carlos2.' . uniqid() . '@correo.com',
-        ])->assertCreated();
-
-        $username1 = $primero->json('usuario.username');
-        $username2 = $segundo->json('usuario.username');
-
-        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username1);
-        $this->assertMatchesRegularExpression('/^CaMz_[A-Za-z0-9]{5}$/', $username2);
-        $this->assertNotSame($username1, $username2);
     }
 
     // ---------------------------------------------------------------- Ficha
@@ -199,22 +179,22 @@ class CredencialesTest extends TestCase
 
     // ---------------------------------------------------------------- Búsqueda y paginación
 
-    public function test_la_busqueda_encuentra_por_documento_y_username(): void
+    public function test_la_busqueda_encuentra_por_documento_y_correo(): void
     {
         $admin = $this->usuario('admin');
-        $username = 'lgomez' . random_int(1000, 9999);
+        $correo = 'lucia.' . uniqid() . '@correo.com';
         $this->usuario('aprendiz', [
             'nombre' => 'Lucía',
             'apellido' => 'Gómez',
-            'username' => $username,
+            'correo' => $correo,
             'numero_documento' => '55667788',
         ]);
 
         $porDocumento = $this->como($admin)->getJson('/v1/general-users?search=55667788')->assertOk()->json();
         $this->assertCount(1, $porDocumento);
 
-        $porUsername = $this->como($admin)->getJson('/v1/general-users?search=' . $username)->assertOk()->json();
-        $this->assertCount(1, $porUsername);
+        $porCorreo = $this->como($admin)->getJson('/v1/general-users?search=' . $correo)->assertOk()->json();
+        $this->assertCount(1, $porCorreo);
     }
 
     public function test_el_listado_paginado_no_devuelve_todo(): void

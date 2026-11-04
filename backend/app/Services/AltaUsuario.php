@@ -6,7 +6,6 @@ use App\Models\Admin;
 use App\Models\GeneralUser;
 use App\Models\Instructor;
 use App\Support\Auditoria;
-use App\Support\Credenciales;
 use App\Support\Pii;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -19,11 +18,8 @@ class AltaUsuario
 {
     public function crear(array $datos, bool $enviarCorreo = true): array
     {
-        $username = Credenciales::usernameSeguro($datos['nombre'], $datos['apellido']);
-
         $data = $datos;
         $data['correo'] = strtolower(trim($datos['correo']));
-        $data['username'] = $username;
         // Hash de un secreto aleatorio descartado: la cuenta no tiene una
         // contraseña utilizable hasta que el usuario activa y define la suya.
         $data['password'] = Hash::make(Str::random(64));
@@ -48,7 +44,6 @@ class AltaUsuario
 
             Auditoria::registrar('crear_usuario', 'general_users', $usuario->id, [
                 'correo' => $usuario->correo,
-                'username' => $usuario->username,
                 'documento' => Pii::documento($usuario->tipo_documento, $usuario->numero_documento),
                 'rol' => $usuario->rol,
                 'modo' => 'activacion',

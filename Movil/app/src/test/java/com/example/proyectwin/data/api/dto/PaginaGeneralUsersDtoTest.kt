@@ -27,7 +27,7 @@ class PaginaGeneralUsersDtoTest {
         assertEquals(20, dto.total)
         assertEquals(1, dto.data.size)
         assertEquals(9, dto.data.first().id)
-        assertEquals("ana1", dto.data.first().username)
+        assertEquals("Ana", dto.data.first().nombre)
     }
 
     @Test

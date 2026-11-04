@@ -90,7 +90,7 @@ class FichaAprendizTest extends TestCase
             'id_class_group' => $ficha->id,
             'id_programa' => $ficha->id_programa,
         ]);
-        // La cuenta existente conserva su contraseña y su username.
+        // La cuenta existente conserva su contraseña.
         $this->assertTrue(Hash::check('123456', $aprendiz->fresh()->password));
     }
 

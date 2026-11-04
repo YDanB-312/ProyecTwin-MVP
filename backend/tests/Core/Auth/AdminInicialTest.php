@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 // Bootstrap del administrador inicial: sin contraseña temporal, sin token en
@@ -96,6 +97,7 @@ class AdminInicialTest extends TestCase
         $user = GeneralUser::where('correo', 'admin.inicial@test.local')->firstOrFail();
         $this->assertSame('admin', $user->rol);
         $this->assertNull($user->email_verified_at);
+        $this->assertFalse(Schema::hasColumn('general_users', 'username'));
         $this->assertDatabaseHas('admins', ['id_usuario' => $user->id]);
         $this->assertDatabaseHas('account_activations', ['user_id' => $user->id]);
         Notification::assertSentTo($user, ActivacionCuentaNotification::class);

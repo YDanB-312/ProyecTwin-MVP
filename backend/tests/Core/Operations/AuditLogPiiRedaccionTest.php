@@ -19,7 +19,6 @@ class AuditLogPiiRedaccionTest extends TestCase
         Auditoria::registrar('prueba_pii', 'general_users', 1, [
             'correo' => 'persona@example.com',
             'correo_anterior' => 'anterior@example.com',
-            'username' => 'usuario_largo',
             'password' => 'secreto',
             'token' => 'token-plano',
             'respuesta' => 'Texto con posible información personal',
@@ -34,7 +33,6 @@ class AuditLogPiiRedaccionTest extends TestCase
 
         $this->assertSame('p***@example.com', $detalle['correo']);
         $this->assertSame('a***@example.com', $detalle['correo_anterior']);
-        $this->assertSame('us***', $detalle['username']);
         $this->assertSame('[redactado]', $detalle['password']);
         $this->assertSame('[redactado]', $detalle['token']);
         $this->assertSame('[texto omitido]', $detalle['respuesta']);

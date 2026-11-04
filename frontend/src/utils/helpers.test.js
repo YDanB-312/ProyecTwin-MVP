@@ -50,7 +50,6 @@ describe('payloads', () => {
     estado: true,
     tipo_documento: 'CC',
     numero_documento: '12345678',
-    username: 'ana123',
     foto_url: 'data:image/jpeg;base64,abc',
   }
 
@@ -75,7 +74,6 @@ describe('payloads', () => {
     expect(resultado).not.toHaveProperty('estado')
     expect(resultado).not.toHaveProperty('tipo_documento')
     expect(resultado).not.toHaveProperty('numero_documento')
-    expect(resultado).not.toHaveProperty('username')
     expect(resultado).not.toHaveProperty('foto_url')
 
     expect(payloadCuenta(cuenta)).toEqual(cuenta)

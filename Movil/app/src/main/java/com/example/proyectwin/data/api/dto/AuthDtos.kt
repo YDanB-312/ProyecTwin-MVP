@@ -60,26 +60,3 @@ data class ChangeEmailResponse(
 
 @Serializable
 data class MessageResponse(val message: String = "")
-
-/** Activación de una cuenta nueva a partir del token que llega por correo. */
-@Serializable
-data class ActivationValidateRequest(val token: String)
-
-@Serializable
-data class ActivationValidateResponse(
-    val nombre: String = "",
-    val correo: String = "",
-)
-
-@Serializable
-data class ActivationRequest(
-    val token: String,
-    val password: String,
-    @SerialName("password_confirmation") val passwordConfirmation: String,
-)
-
-@Serializable
-data class ActivationResponse(
-    val message: String = "",
-    val correo: String = "",
-)

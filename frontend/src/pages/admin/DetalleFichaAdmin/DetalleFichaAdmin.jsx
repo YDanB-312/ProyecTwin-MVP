@@ -139,7 +139,7 @@ export default function DetalleFichaAdmin() {
   const qDisponibles = busquedaAprendiz.trim().toLowerCase()
   const disponiblesFiltrados = qDisponibles
     ? disponibles.filter((u) => {
-        const texto = `${u.nombre || ''} ${u.apellido || ''} ${u.username || ''} ${u.numero_documento || ''} ${u.correo || ''}`.toLowerCase()
+        const texto = `${u.nombre || ''} ${u.apellido || ''} ${u.numero_documento || ''} ${u.correo || ''}`.toLowerCase()
         return texto.includes(qDisponibles)
       })
     : []
@@ -452,7 +452,7 @@ export default function DetalleFichaAdmin() {
                       <Avatar name={nombreCompleto(u)} src={u.foto_url} size="md" />
                       <span className={s.studentInfo}>
                         <span className={s.studentName}>{nombreCompleto(u)}</span>
-                        <span className={s.studentEmail}>{u.username} · {u.correo}</span>
+                        <span className={s.studentEmail}>{u.correo}</span>
                       </span>
                       <Button
                         type="button"

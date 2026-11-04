@@ -332,11 +332,29 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit, onDelete: (() -> 
                 )
 
                 if (onDelete != null) {
-                    Spacer(Modifier.height(4.dp))
-                    TextButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = senaColors().danger)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Eliminar", style = MaterialTheme.typography.labelSmall, color = senaColors().danger)
+                    Spacer(Modifier.height(2.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        TextButton(
+                            onClick = onDelete,
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = senaColors().danger,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Eliminar",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = senaColors().danger,
+                            )
+                        }
                     }
                 }
 

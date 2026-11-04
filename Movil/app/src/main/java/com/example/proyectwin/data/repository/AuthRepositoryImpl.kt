@@ -1,9 +1,6 @@
 package com.example.proyectwin.data.repository
 
 import com.example.proyectwin.data.api.TokenProvider
-import com.example.proyectwin.data.api.dto.ActivationRequest
-import com.example.proyectwin.data.api.dto.ActivationValidateRequest
-import com.example.proyectwin.data.api.dto.ActivationValidateResponse
 import com.example.proyectwin.data.api.dto.ChangeEmailRequest
 import com.example.proyectwin.data.api.dto.ChangePasswordRequest
 import com.example.proyectwin.data.api.dto.ForgotPasswordRequest
@@ -70,9 +67,9 @@ class AuthRepositoryImpl @Inject constructor(
 
         val me = safeApiCall { api.me() }.getOrElse { return Result.failure(it) }
 
-        // `/auth/me` no expone documento ni el username completo; el detalle de
-        // la propia cuenta sí (show hace visibles los campos de credenciales).
-        // Sin esto, el perfil quedaba con documento "No registrado" al reiniciar.
+        // `/auth/me` no expone el documento; el detalle de la propia cuenta sí
+        // (show hace visibles los campos de credenciales). Sin esto, el perfil
+        // quedaba con documento "No registrado" al reiniciar.
         val detalle = runCatching {
             usersApi.obtener(actual.id, INCLUDE_CUENTA).toDomain()
         }.getOrNull()
@@ -80,7 +77,6 @@ class AuthRepositoryImpl @Inject constructor(
         var cuenta = (detalle ?: me.toDomain()).copy(
             token = sessionManager.getToken(),
             mustChangePassword = me.mustChangePassword,
-            username = me.username.ifBlank { detalle?.username.orEmpty() },
         )
 
         if (cuenta.role == UserRole.APRENDIZ.value) {
@@ -121,14 +117,13 @@ class AuthRepositoryImpl @Inject constructor(
     /**
      * `PUT /general-users` responde el usuario SIN los campos de credenciales
      * (van en `$hidden`), por lo que se conservan los de la sesión: de lo
-     * contrario el documento/username desaparecerían del perfil tras guardar.
+     * contrario el documento desaparecería del perfil tras guardar.
      */
     private fun GeneralUserDto.mergeCon(actual: GeneralUser, token: String?): GeneralUser {
         val base = toDomain()
         return base.copy(
             token = token,
             fichaId = actual.fichaId,
-            username = base.username.ifBlank { actual.username },
             documentoIdentidad = base.documentoIdentidad ?: actual.documentoIdentidad,
             tipoDocumento = base.tipoDocumento ?: actual.tipoDocumento,
             credencialesEnviadasEn = base.credencialesEnviadasEn ?: actual.credencialesEnviadasEn,
@@ -176,23 +171,6 @@ class AuthRepositoryImpl @Inject constructor(
             ResetPasswordRequest(
                 token = token,
                 correo = correo,
-                password = password,
-                passwordConfirmation = passwordConfirmation,
-            ),
-        )
-    }.map {}
-
-    override suspend fun validarActivacion(token: String): Result<ActivationValidateResponse> =
-        safeApiCall { api.validateActivation(ActivationValidateRequest(token.trim())) }
-
-    override suspend fun activarCuenta(
-        token: String,
-        password: String,
-        passwordConfirmation: String,
-    ): Result<Unit> = safeApiCall {
-        api.activateAccount(
-            ActivationRequest(
-                token = token.trim(),
                 password = password,
                 passwordConfirmation = passwordConfirmation,
             ),

@@ -37,7 +37,6 @@ class AuthViewModelTest {
         name = "Ana Gómez",
         email = "ana@sena.edu.co",
         role = "aprendiz",
-        username = "ana",
         mustChangePassword = mustChange,
     )
 

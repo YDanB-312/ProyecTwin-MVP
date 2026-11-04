@@ -8,7 +8,6 @@ const { aprendices } = vi.hoisted(() => ({
     id: i + 1,
     nombre: `Aprendiz ${i + 1}`,
     apellido: 'Prueba',
-    username: `aprendiz${i + 1}`,
     numero_documento: String(1000 + i),
   })),
 }))

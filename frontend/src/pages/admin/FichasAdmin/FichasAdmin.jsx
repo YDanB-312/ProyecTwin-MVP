@@ -186,7 +186,7 @@ export default function FichasAdmin() {
   const aprendicesFiltrados = listaAprendices.filter((a) => {
     const q = norm(busquedaAprendiz.trim())
     if (!q) return true
-    const nombre = `${a.nombre || ''} ${a.apellido || ''} ${a.username || ''} ${a.numero_documento || ''}`
+    const nombre = `${a.nombre || ''} ${a.apellido || ''} ${a.numero_documento || ''}`
     return norm(nombre).includes(q)
   })
 
@@ -364,7 +364,7 @@ export default function FichasAdmin() {
                           onChange={() => alternarAprendiz(a.id)}
                         />
                         <span>
-                          {nombreCompleto(a)} · {a.username}
+                          {nombreCompleto(a)}
                           {a.numero_documento ? ` · ${a.numero_documento}` : ''}
                         </span>
                       </label>
