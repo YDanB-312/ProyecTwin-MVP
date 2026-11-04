@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Aviso local de nueva versión; se solicita solo cuando hay una actualización. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Instalación de la actualización APK: la realiza el instalador del sistema
          (nunca de forma silenciosa), previa autorización del usuario. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -22,6 +24,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.ProyecTwin">
             <intent-filter>

@@ -1,14 +1,14 @@
 # Release Android firmado — ProyecTwin MVP
 
 > **Estado actual del APK.** El artefacto `backend/public/apk/ProyecTWin.apk`
-> es **1.4.0 / versionCode 5**, `applicationId com.example.proyectwin`, sin
+> es **1.4.1 / versionCode 6**, `applicationId com.example.proyectwin`, sin
 > `application-debuggable`, firmas v2/v3 y certificado `CN=Oscar` (RSA 2048).
 > SHA-256 del APK:
-> `F462FD283B14D9C7308095131318DB363D9F15F0A667DFB5C65982D183B7A386`.
+> `F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC`.
 > SHA-256 del certificado:
 > `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D`.
 >
-> **Publicación autorizada.** El APK se sirve únicamente en
+> **Publicación preparada.** El APK se sirve únicamente en
 > `/apk/ProyecTWin.apk`; el resto de `/apk/**` responde 404. La Home muestra
 > la descarga solo cuando `/v1/app-version/android` devuelve una URL HTTPS y
 > la app Android valida `versionCode`, tamaño, SHA-256, paquete y firma. No
@@ -30,7 +30,7 @@ propuestas son recomendaciones técnicas, no decisiones ya tomadas.
 | Alias de la clave | `app_ProyecTWin` | Coincide con el alias de la keystore original `C:\Users\Epsilon\ProyecTWin.jks` (fuera del repo) |
 | `applicationId` | Mantener `com.example.proyectwin` en la primera release firmada | El release no se instala sobre instalaciones debug 1.2.0/3 (firma distinta); hay que desinstalar. Si se cambia, es una app nueva |
 | Minify / R8 | `isMinifyEnabled = false` en la primera release firmada | Aísla el cambio de firma; R8 queda como optimización posterior con pruebas completas |
-| Versión de la release actual | `versionName = "1.4.0"`, `versionCode = 5` | Versión nueva firmada con la misma clave; se instala sobre 1.3.0/4 |
+| Versión de la release actual | `versionName = "1.4.1"`, `versionCode = 6` | Versión nueva firmada con la misma clave; se instala sobre 1.4.0/5 |
 | Autorización de publicación | Autorizada expresamente por el owner para esta iteración | El APK se sirve solo en `/apk/ProyecTWin.apk` |
 | Canal de distribución | APK directo servido por Railway en `/apk/ProyecTWin.apk` | No hay Play Store ni App Bundle en este plan |
 | APK en Git | El artefacto autorizado permanece tracked para que el Dockerfile lo incluya | El repo crece ~15 MB por release; valorar artefactos externos |
@@ -451,7 +451,7 @@ servido en producción. No confundir con la huella del certificado:
 
 ## 5. Publicación en Railway
 
-**Estado actual:** el APK **1.4.0/5** está tracked, se incluye en la imagen y
+**Estado actual:** el APK **1.4.1/6** está tracked, se incluye en la imagen y
 Nginx lo sirve únicamente en `/apk/ProyecTWin.apk`; cualquier otra ruta
 `/apk/**` responde 404. El endpoint `/v1/app-version/android` publica la URL
 HTTPS, `versionCode`, SHA-256 y tamaño, y la Home muestra la descarga cuando
@@ -466,7 +466,7 @@ Android.
 
 ### 5.1 Subir versión
 
-La versión actual es **1.4.0 / versionCode 5**, firmada con la clave original.
+La versión actual es **1.4.1 / versionCode 6**, firmada con la clave original.
 Para la próxima release incrementa el `versionCode` (nunca reutilizarlo) y
 actualiza `versionName` junto con las variables del backend.
 
@@ -477,8 +477,8 @@ defaultConfig {
     applicationId = "com.example.proyectwin" // mantener salvo decisión del owner
     minSdk = 26
     targetSdk = 36
-    versionCode = 5        // > 4 (el actual); incrementar en cada publicación
-    versionName = "1.4.0"  // debe coincidir con ANDROID_APP_VERSION
+    versionCode = 6        // > 5 (el actual); incrementar en cada publicación
+    versionName = "1.4.1"  // debe coincidir con ANDROID_APP_VERSION
 }
 ```
 
@@ -814,11 +814,11 @@ Reglas de seguridad del CI:
       sigue funcionando sin clave.
 - [ ] `proyectwin.apiBaseUrl.release=https://<dominio>/v1/`; no se usa el fallback
       HTTP.
-- [ ] `versionCode` 5 y `versionName` 1.4.0 definidos; `ANDROID_APP_VERSION` coincide.
+- [ ] `versionCode` 6 y `versionName` 1.4.1 definidos; `ANDROID_APP_VERSION` coincide.
 - [ ] `aapt dump badging`: versión correcta y sin `application-debuggable`.
 - [ ] `apksigner verify --verbose --print-certs`: v2/v3 y certificado esperado.
 - [ ] SHA-256 del APK calculado y registrado.
-- [ ] `backend/public/apk/ProyecTWin.apk` es el APK autorizado 1.4.0/5 y su hash coincide.
+- [ ] `backend/public/apk/ProyecTWin.apk` es el APK autorizado 1.4.1/6 y su hash coincide.
 - [ ] Variables de Railway actualizadas (`ANDROID_APP_VERSION`, `VERSION_CODE`,
       mínimo, URL, hash/tamaño y notas) y redeploy correcto.
 - [ ] `/up` y `/v1/app-version/android` verificados con URL HTTPS, `versionCode`,
@@ -835,6 +835,8 @@ Reglas de seguridad del CI:
 Completar solo con releases reales; no inventar hashes ni fechas.
 
 | Fecha | versionName | versionCode | applicationId | SHA-256 certificado | SHA-256 APK | Responsable | Estado |
+|---|---|---|---|---|---|---|---|
+| 2026-11-04 | 1.4.1 | 6 | com.example.proyectwin | DC:53:...:3D | F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC | OpenCode | Firmado y en repositorio; pendiente despliegue |
 |---|---:|---:|---|---|---|---|---|
 | 2026-10-19 | 1.2.0 | 3 | `com.example.proyectwin` | `72:05:D0:E6:E6:13:58:74:A4:20:73:B0:C9:C8:EB:0D:42:D1:34:DA:63:E5:68:FA:74:F1:74:5E:88:F7:80:93` | — | — | Debug, no oficial |
 | 2026-10-22 | 1.3.0 | 4 | `com.example.proyectwin` | `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D` | `A6C63BFE0B01C1020509649B8B163715AA8F21852D664740392FB8256B69B99E` | Oscar | Firmado; base anterior usada para prueba de actualización |
@@ -848,5 +850,5 @@ Completar solo con releases reales; no inventar hashes ni fechas.
   debug en desarrollo.
 - `Movil/app/build.gradle.kts` — `applicationId`, versiones, URL de API y firma.
 - `backend/config/app_version.php` — contrato de `/v1/app-version/android`.
-- `backend/public/apk/ProyecTWin.apk` - APK autorizado 1.4.0/5; servido en
+- `backend/public/apk/ProyecTWin.apk` - APK autorizado 1.4.1/6; servido en
   `/apk/ProyecTWin.apk`.

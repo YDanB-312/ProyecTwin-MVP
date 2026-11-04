@@ -1,19 +1,26 @@
 # Actualizaciones Android — implementación y verificación
 
-Fecha: 2026-11-02
+Fecha: 2026-11-02 · **Actualizado: 2026-11-04**
 Rama: `master`
+
+> **Estado 4-nov-2026:** el repositorio contiene el APK `1.4.1 / versionCode 6`
+> firmado con la identidad oficial. El endpoint de producción seguirá
+> respondiendo `1.4.0/5` hasta que el owner despliegue desde Railway Dashboard.
+> La verificación Android se hizo en emulador contra producción con cuentas de
+> prueba autorizadas; la actualización release real se validará después del
+> despliegue o en un dispositivo con la versión publicada.
 
 ## Artefacto
 
 - `applicationId`: `com.example.proyectwin`
-- Versión publicada: `1.4.0`
-- `versionCode`: `5`
+- Versión preparada: `1.4.1`
+- `versionCode`: `6`
 - `minSdk`: 26
 - `targetSdk`: 36
 - APK: `backend/public/apk/ProyecTWin.apk`
-- Tamaño: `14.920.772` bytes
+- Tamaño: `16.392.336` bytes
 - SHA-256 del APK:
-  `F462FD283B14D9C7308095131318DB363D9F15F0A667DFB5C65982D183B7A386`
+  `F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC`
 - Certificado: `CN=Oscar`, RSA 2048, firma v2 y v3
 - SHA-256 del certificado:
   `DC:53:39:53:7A:01:85:C7:F8:08:C4:58:7A:7E:FB:1B:12:03:41:54:E2:B1:F6:A8:B0:DB:67:7D:A1:E9:77:3D`
@@ -63,7 +70,10 @@ La Home consulta `appVersion.android()` y muestra
 Si no hay versión publicada, muestra un aviso informativo en lugar de un enlace
 roto. El botón es un enlace accesible y descarga el APK desde la URL estable.
 
-## Pruebas ejecutadas
+## Pruebas ejecutadas (histórico 2-nov-2026)
+
+> Las cifras de esta tabla corresponden a la sesión del 2-nov-2026. El estado
+> vigente del 3-nov-2026 está en la sección “Verificación Android 3-nov-2026”.
 
 | Prueba | Resultado |
 |---|---|
@@ -84,23 +94,23 @@ roto. El botón es un enlace accesible y descarga el APK desde la URL estable.
 | `lintDebug` Android | **BUILD SUCCESSFUL** |
 | PHPUnit `AppVersionTest` | **Bloqueado por entorno**: no hay MySQL local; la guarda exige una base desechable `ptwin_test_*` |
 
-## Pendiente de despliegue
+## Publicación preparada (4-nov-2026)
 
-No se hizo commit, push ni despliegue. Para activar el flujo en producción hay
-que autorizar y ejecutar el despliegue, actualizando antes las variables de
-Railway:
+El APK release `1.4.1/6` ya está en el repositorio. El despliegue en Railway
+queda a cargo del owner desde el dashboard; después hay que verificar las
+variables y la descarga. Valores exactos:
 
 ```text
-ANDROID_APP_VERSION=1.4.0
-ANDROID_APP_VERSION_CODE=5
+ANDROID_APP_VERSION=1.4.1
+ANDROID_APP_VERSION_CODE=6
 ANDROID_APP_MIN_VERSION=1.3.0
 ANDROID_APP_MIN_VERSION_CODE=4
 ANDROID_APP_DOWNLOAD_URL=https://proyectwin-mvp-production.up.railway.app/apk/ProyecTWin.apk
-ANDROID_APP_APK_SHA256=F462FD283B14D9C7308095131318DB363D9F15F0A667DFB5C65982D183B7A386
-ANDROID_APP_APK_SIZE=14920772
-ANDROID_APP_PUBLISHED_AT=2026-11-02T00:00:00Z
+ANDROID_APP_APK_SHA256=F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC
+ANDROID_APP_APK_SIZE=16392336
+ANDROID_APP_PUBLISHED_AT=2026-11-04T06:34:14Z
 ANDROID_APP_ENFORCE_MINIMUM=false
-ANDROID_APP_RELEASE_NOTES=<notas breves de la versión>
+ANDROID_APP_RELEASE_NOTES=Actualización 1.4.1: manual de usuario integrado, nuevas métricas en los paneles de aprendiz e instructor y notificaciones locales de actualización.
 ```
 
 Después del despliegue verificar:
@@ -110,6 +120,25 @@ Después del despliegue verificar:
 3. La Home muestra el botón.
 4. Un dispositivo con 1.3.0/4 recibe el aviso, descarga y abre el instalador.
 5. La sesión y los datos locales se conservan tras la actualización.
+
+## Verificación Android 4-nov-2026
+
+| Prueba | Resultado |
+|---|---|
+| `testDebugUnitTest` | **207 pruebas, 33 suites, 0 fallos, 0 errores** |
+| `lintDebug` | **BUILD SUCCESSFUL** |
+| `assembleDebug` | **BUILD SUCCESSFUL** |
+| `assembleRelease` | **BUILD SUCCESSFUL:** APK `1.4.1/6`, v2/v3, certificado `CN=Oscar` |
+| Login y dashboards aprendiz/instructor/admin | Verificados en emulador contra producción |
+| Actualización simulada debug 1.4.0/4 sobre publicado 1.4.0/5 | Aviso visible, permiso de Android 13 solicitado, notificación publicada y acción abierta al centro |
+| Reinstalación debug | Sesión local conservada |
+| Fecha de publicación | Visible en el centro de actualizaciones |
+| APK release `1.4.1/6` | SHA-256 `F47D...47BC`, 16.392.336 bytes, firma oficial |
+
+La notificación es **local**, no push: se emite cuando la app consulta el
+endpoint al abrirse o al entrar a Actualizaciones. Se añadió el canal
+`proyectwin_updates`, el permiso `POST_NOTIFICATIONS`, un marcador por versión
+para no repetirla y una acción que abre el centro de actualizaciones.
 
 ## Bloqueos/limitaciones
 

@@ -1,9 +1,15 @@
 package com.example.proyectwin
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -17,8 +23,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,9 +41,11 @@ import com.example.proyectwin.navigation.AppNavigation.instructorGraph
 import com.example.proyectwin.navigation.AppNavigation.adminGraph
 import com.example.proyectwin.navigation.NavIntent
 import com.example.proyectwin.navigation.NavIntents
+import com.example.proyectwin.notifications.UpdateNotificationManager
 import com.example.proyectwin.ui.components.AppUpdateHost
 import com.example.proyectwin.ui.screens.AppUpdatesScreen
 import com.example.proyectwin.ui.screens.EditProfileScreen
+import com.example.proyectwin.ui.screens.ManualScreen
 import com.example.proyectwin.ui.screens.ReportIssueScreen
 import com.example.proyectwin.ui.screens.SplashScreen
 import com.example.proyectwin.ui.screens.auth.CambioObligatorioScreen
@@ -47,17 +57,59 @@ import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var updateNotificationManager: UpdateNotificationManager
+
+    /** La notificación pide abrir el centro de actualizaciones al tocar. */
+    private val solicitudActualizaciones = MutableStateFlow(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(
+                UpdateNotificationManager.EXTRA_ABRIR_ACTUALIZACIONES,
+                false,
+            )
+        ) {
+            solicitudActualizaciones.value = true
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.getBooleanExtra(
+                UpdateNotificationManager.EXTRA_ABRIR_ACTUALIZACIONES,
+                false,
+            ) == true
+        ) {
+            solicitudActualizaciones.value = true
+        }
         enableEdgeToEdge()
         setContent {
             ProyecTwinTheme {
                 val navController = rememberNavController()
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val uiState by authViewModel.uiState.collectAsState()
+                val context = LocalContext.current
+                var permisoNotificaciones by remember {
+                    mutableStateOf(
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS,
+                            ) == PackageManager.PERMISSION_GRANTED,
+                    )
+                }
+                var permisoSolicitado by remember { mutableStateOf(false) }
+                val lanzadorPermiso = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) { concedido -> permisoNotificaciones = concedido }
 
                 // Verificación de actualización (una vez por proceso) y aviso.
                 val appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
@@ -209,6 +261,46 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // El permiso se pide solo cuando hay una actualización visible.
+                LaunchedEffect(estadoActualizacion.mostrar, sesionActiva) {
+                    if (sesionActiva &&
+                        estadoActualizacion.mostrar &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        !permisoNotificaciones &&
+                        !permisoSolicitado
+                    ) {
+                        permisoSolicitado = true
+                        lanzadorPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+
+                // Notificación local una vez por versión; no es un push.
+                LaunchedEffect(
+                    sesionActiva,
+                    estadoActualizacion.mostrar,
+                    estadoActualizacion.versionNueva,
+                    permisoNotificaciones,
+                ) {
+                    if (sesionActiva && estadoActualizacion.mostrar && permisoNotificaciones) {
+                        updateNotificationManager.notificarSiCorresponde(
+                            estadoActualizacion.versionNueva,
+                            estadoActualizacion.notas,
+                        )
+                    }
+                }
+
+                val solicitudActualizacion by solicitudActualizaciones.collectAsState()
+                LaunchedEffect(solicitudActualizacion, arranqueListo, sesionActiva) {
+                    if (solicitudActualizacion && arranqueListo && sesionActiva) {
+                        if (navController.currentDestination?.route != AppNavigation.APP_UPDATES) {
+                            navController.navigate(AppNavigation.APP_UPDATES) {
+                                launchSingleTop = true
+                            }
+                        }
+                        solicitudActualizaciones.value = false
+                    }
+                }
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!arranqueListo) {
                         SplashScreen()
@@ -240,6 +332,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(AppNavigation.APP_UPDATES) {
                             AppUpdatesScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable(AppNavigation.MANUAL) {
+                            ManualScreen(onBack = { navController.popBackStack() })
                         }
 
                         composable(AppNavigation.CAMBIO_OBLIGATORIO) {

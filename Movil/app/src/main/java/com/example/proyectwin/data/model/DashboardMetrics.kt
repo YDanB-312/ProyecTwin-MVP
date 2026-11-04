@@ -8,8 +8,34 @@ data class DashboardMetrics(
     val fichasTotal: Int,
     val aprendicesTotal: Int,
     val propuestas: PropuestasMetricas,
+    val fichasDetalle: List<FichaMetrica> = emptyList(),
+    val similitudesPropuestas: List<SimilitudPropuestaMetrica> = emptyList(),
     val evolucion: List<PuntoEvolucion>,
     val actividad: List<ActividadReciente>,
+)
+
+/** Detalle real por ficha que devuelve el panel del instructor. */
+data class FichaMetrica(
+    val id: Int,
+    val codigo: String,
+    val nombre: String,
+    val aprendices: Int,
+    val propuestas: Int,
+    val borradores: Int,
+    val pendientes: Int,
+    val aprobadas: Int,
+    val rechazadas: Int,
+    val revisables: Int,
+    val revisadas: Int,
+    val cobertura: Int?,
+)
+
+/** Máximo porcentaje y número de coincidencias por propuesta del aprendiz. */
+data class SimilitudPropuestaMetrica(
+    val id: Int,
+    val titulo: String,
+    val max: Int,
+    val count: Int,
 )
 
 data class UsuariosMetricas(

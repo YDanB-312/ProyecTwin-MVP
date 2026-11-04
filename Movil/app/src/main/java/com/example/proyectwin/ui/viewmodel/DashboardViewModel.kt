@@ -4,9 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
+import com.example.proyectwin.domain.repository.SimilaritiesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +22,8 @@ sealed class DashboardUiState {
     data class Success(
         val projects: List<Project>,
         val notifications: List<Notification> = emptyList(),
-        val unreadCount: Int = 0
+        val unreadCount: Int = 0,
+        val similarities: List<Similarity> = emptyList(),
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }
@@ -27,11 +32,15 @@ sealed class DashboardUiState {
  * Dashboards de aprendiz/instructor/admin. `GET /projects` ya viene acotado por
  * rol del lado del backend (`paraUsuario`), por lo que los tres flujos cargan
  * el mismo listado y el servidor devuelve lo que corresponde.
+ *
+ * Las similitudes y las notificaciones se cargan en paralelo y su fallo no
+ * tumba el dashboard: se conservan listas vacías y el estado sigue siendo útil.
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val projectsRepository: ProjectsRepository,
     private val notificationsRepository: NotificationsRepository,
+    private val similaritiesRepository: SimilaritiesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
@@ -39,22 +48,40 @@ class DashboardViewModel @Inject constructor(
 
     private var ultimaCarga: (() -> Unit)? = null
 
-    fun loadStudentDashboard(studentId: Int) = cargarProyectos()
+    fun loadStudentDashboard(studentId: Int) = cargarProyectos(studentId)
 
-    fun loadInstructorDashboard(instructorId: Int) = cargarProyectos()
+    fun loadInstructorDashboard(instructorId: Int) = cargarProyectos(instructorId)
 
-    fun loadAdminDashboard() = cargarProyectos()
+    fun loadAdminDashboard() = cargarProyectos(null)
 
-    private fun cargarProyectos() {
-        ultimaCarga = { cargarProyectos() }
+    private fun cargarProyectos(idUsuario: Int?) {
+        ultimaCarga = { cargarProyectos(idUsuario) }
         viewModelScope.launch {
             _uiState.value = DashboardUiState.Loading
-            projectsRepository.listar().fold(
-                onSuccess = { proyectos -> _uiState.value = conProyectos(proyectos) },
-                onFailure = { e ->
-                    _uiState.value = DashboardUiState.Error(e.message ?: "Error al cargar el dashboard")
-                },
-            )
+            coroutineScope {
+                val proyectosDeferred = async { projectsRepository.listar() }
+                val notificacionesDeferred = async { notificationsRepository.listar(idUsuario) }
+                val similitudesDeferred = async { similaritiesRepository.listar() }
+
+                val notificaciones = notificacionesDeferred.await().getOrElse { emptyList() }
+                val similitudes = similitudesDeferred.await().getOrElse { emptyList() }
+
+                proyectosDeferred.await().fold(
+                    onSuccess = { proyectos ->
+                        _uiState.value = DashboardUiState.Success(
+                            projects = proyectos,
+                            notifications = notificaciones,
+                            unreadCount = notificaciones.count { !it.leido },
+                            similarities = similitudes,
+                        )
+                    },
+                    onFailure = { e ->
+                        _uiState.value = DashboardUiState.Error(
+                            e.message ?: "Error al cargar el dashboard",
+                        )
+                    },
+                )
+            }
         }
     }
 
@@ -81,14 +108,5 @@ class DashboardViewModel @Inject constructor(
 
     fun refresh() {
         ultimaCarga?.invoke()
-    }
-
-    private fun conProyectos(projects: List<Project>): DashboardUiState {
-        val actual = _uiState.value
-        return if (actual is DashboardUiState.Success) {
-            actual.copy(projects = projects)
-        } else {
-            DashboardUiState.Success(projects)
-        }
     }
 }

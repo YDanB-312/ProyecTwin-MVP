@@ -26,6 +26,7 @@ class UpdatePreferences @Inject constructor(
         private val KEY_ULTIMA_CONSULTA = longPreferencesKey("ultima_consulta_millis")
         private val KEY_VERSION_POSPUESTA = stringPreferencesKey("version_pospuesta")
         private val KEY_POSPUESTA_EN = longPreferencesKey("pospuesta_en_millis")
+        private val KEY_VERSION_NOTIFICADA = stringPreferencesKey("version_notificada")
     }
 
     /** Última consulta exitosa al endpoint de versiones (epoch millis). */
@@ -47,5 +48,13 @@ class UpdatePreferences @Inject constructor(
             prefs[KEY_VERSION_POSPUESTA] = version
             prefs[KEY_POSPUESTA_EN] = ts
         }
+    }
+
+    /** Evita repetir la notificación del sistema para la misma versión. */
+    suspend fun versionNotificada(): String? =
+        context.updateDataStore.data.first()[KEY_VERSION_NOTIFICADA]
+
+    suspend fun marcarNotificada(version: String) {
+        context.updateDataStore.edit { it[KEY_VERSION_NOTIFICADA] = version }
     }
 }

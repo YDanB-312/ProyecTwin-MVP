@@ -126,6 +126,7 @@ object AppNavigation {
     const val REPORT_ISSUE = "report_issue"
     const val CHANGE_EMAIL = "change_email"
     const val APP_UPDATES = "app_updates"
+    const val MANUAL = "manual"
 
     // Containers
     const val ADMIN_MAIN = "admin_main"
@@ -156,6 +157,7 @@ object AppNavigation {
             composable(LOGIN) { LoginScreen(
                 onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) },
                 onActivateAccount = { navController.navigate(rutaActivacion()) },
+                onOpenManual = { navController.navigate(MANUAL) },
             ) }
             composable(
                 route = ACTIVATE_ACCOUNT,

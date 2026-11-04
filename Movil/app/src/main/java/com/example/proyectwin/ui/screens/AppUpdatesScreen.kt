@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.util.formatearFechaHoraLocal
 import com.example.proyectwin.ui.viewmodel.UpdateCenterUiState
 import com.example.proyectwin.ui.viewmodel.UpdateCenterViewModel
 
@@ -192,6 +193,23 @@ private fun TarjetaEstado(
                     fontWeight = FontWeight.Bold,
                     color = senaColors().text,
                 )
+            }
+
+            estado.info?.fechaPublicacion?.let { fecha ->
+                Row {
+                    Text(
+                        "Fecha de publicación",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senaColors().textSecondary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        formatearFechaHoraLocal(fecha),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = senaColors().text,
+                    )
+                }
             }
 
             if (estado.consultando) {

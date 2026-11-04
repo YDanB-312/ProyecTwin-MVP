@@ -39,6 +39,7 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
     onActivateAccount: () -> Unit,
+    onOpenManual: () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var correo by remember { mutableStateOf("") }
@@ -173,6 +174,18 @@ fun LoginScreen(
                         }
                     }
 
+                    TextButton(
+                        onClick = onOpenManual,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            "Manual de usuario",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = senaColors().green,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+
                     SenaButton(
                         text = "ENTRAR AL SISTEMA",
                         onClick = {
@@ -227,6 +240,6 @@ fun QuickAccessRow(label: String, color: Color, onClick: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     ProyecTwinTheme {
-        LoginScreen(onForgotPasswordClick = {}, onActivateAccount = {})
+        LoginScreen(onForgotPasswordClick = {}, onActivateAccount = {}, onOpenManual = {})
     }
 }

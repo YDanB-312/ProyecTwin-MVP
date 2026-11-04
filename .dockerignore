@@ -56,9 +56,9 @@ backend/storage
 backend/bootstrap/cache
 backend/public/storage
 
-# APK histórico: se conserva en el repositorio, pero nunca se copia a la imagen.
-backend/public/apk
+# APK: solo se incluye el artefacto autorizado en la ruta estable.
 **/*.apk
+!backend/public/apk/ProyecTWin.apk
 **/*.aab
 **/*.keystore
 **/*.jks

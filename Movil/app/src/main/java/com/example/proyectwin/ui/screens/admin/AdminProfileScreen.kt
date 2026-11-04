@@ -245,6 +245,13 @@ fun AdminProfileScreen(
                         )
                         HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                         SenaSettingsItem(
+                            icon = Icons.AutoMirrored.Filled.MenuBook,
+                            title = "Manual de usuario",
+                            description = "Guía paso a paso de ProyecTwin",
+                            onClick = { onNavigate(AppNavigation.MANUAL) }
+                        )
+                        HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                        SenaSettingsItem(
                             icon = Icons.Default.SystemUpdate,
                             title = "Actualizaciones",
                             description = "Versión instalada y nuevas versiones de ProyecTwin",

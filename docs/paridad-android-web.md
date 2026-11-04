@@ -15,10 +15,13 @@ copia el CSS ni se rediseña la web.
 | **Bloqueado por API/infraestructura** | No se puede completar sin un cambio externo no autorizado. |
 | **No aplica** | Elemento propio de la web que no tiene equivalente necesario en la app. |
 
-La verificación funcional por rol está pendiente: este checkout no tiene un
-backend/base aislados, AVD ni cuentas de prueba autorizadas. Por eso los estados
-"Completo" significan contrato + compilación + pruebas unitarias, no una prueba
-manual de extremo a extremo.
+**Actualización 3-nov-2026:** la verificación por rol se realizó contra el
+backend desplegado usando únicamente cuentas de prueba autorizadas y el emulador
+`Medium_Phone_API_36.1`. Se verificaron login, dashboards de aprendiz, instructor
+y administrador, centro de actualizaciones y aviso/notificación de nueva versión.
+No se modificaron datos de producción. Las capturas reales están en
+`Movil/app/src/main/res/drawable-nodpi/manual_*.jpg` y el detalle está en
+`docs/manual-usuario-android.md`.
 
 ## Matriz
 
@@ -89,7 +92,7 @@ manual de extremo a extremo.
 | 404 | `NotFoundScreen` | **Completo** | Existente. |
 | Acceso denegado | Estados de error/permiso en cada pantalla | **Parcial** | No hay una pantalla dedicada; cada API 403 se muestra con el mensaje del backend. |
 | Enlace de activación automático | Apertura manual del enlace | **Bloqueado por infraestructura** | Requiere App Links/asset links y cambios de despliegue no autorizados. |
-| Publicación/descarga APK | `GET /v1/app-version/android`, `/apk/ProyecTWin.apk`, Home | **Completo (código)** | APK 1.4.0/5 firmado y validado; pendiente desplegar a Railway con autorización. |
+| Publicación/descarga APK | `GET /v1/app-version/android`, `/apk/ProyecTWin.apk`, Home | **Completo** | APK `1.4.1/6` firmado y guardado en el repositorio. La descarga directa estaba en 404 por Nginx/Docker; se corrigió para servir solo la ruta estable. El despliegue queda pendiente en Railway Dashboard. |
 
 ## Contratos corregidos
 
@@ -101,7 +104,10 @@ manual de extremo a extremo.
 - `DELETE /v1/general-users/{id}` con `confirmar_eliminacion` y `confirmacion_hash`; parseo de `409`, `impacto` y `puede_desactivar`.
 - `POST /v1/class-groups/{id}/apprentices` → `activacion`, sin `credenciales`.
 
-## Pruebas ejecutadas
+## Pruebas ejecutadas (histórico 2-nov-2026)
+
+> La tabla siguiente conserva los resultados del 2-nov-2026. La verificación
+> vigente del 3-nov-2026 está en la sección “Actualización 3-nov-2026”.
 
 | Comando | Resultado |
 |---|---|
@@ -110,6 +116,23 @@ manual de extremo a extremo.
 | `.\gradlew.bat :app:compileDebugAndroidTestKotlin --console=plain` | **Éxito**; pruebas instrumentadas compiladas. |
 | `adb install -r` 1.3.0/4 → 1.4.0/5 | **Éxito** en emulador; `versionCode=5`, `versionName=1.4.0`, `firstInstallTime` conservado. |
 | `.\gradlew.bat :app:lintDebug --console=plain` | **Éxito**; reporte en `Movil/app/build/reports/lint-results-debug.html`. |
+
+## Actualización 3-nov-2026
+
+- **Dashboards aprendiz e instructor:** se incorporaron los KPIs, la dona de
+  estados, las barras por ficha/similitud, la serie temporal con selector de
+  periodo y la actividad reciente que ya mostraba la web. El dashboard admin no
+  se rediseñó.
+- **Manual Android:** ruta compartida y accesos desde los 3 perfiles y el login.
+  Incluye índice, búsqueda, contenido por rol, FAQ y solución de problemas.
+- **Actualizaciones:** fecha de publicación visible, notificación local por
+  versión, permiso Android 13+, acción para abrir el centro y marcador
+  anti-repetición. Sin push ni cambios al backend.
+- **Verificación:** 207 pruebas unitarias (33 suites, 0 fallos), `lintDebug` y
+  `assembleDebug` correctos; login y dashboards de los 3 roles en emulador;
+  actualización simulada con debug `1.4.0/4` sobre publicado `1.4.0/5`.
+- **Release:** `assembleRelease` correcto con la keystore oficial; APK `1.4.1/6`
+  en el repositorio. El despliegue queda a cargo del owner en Railway Dashboard.
 
 ## Alcance respetado
 
@@ -133,20 +156,25 @@ Cuando exista backend/base aislados, AVD y cuentas de prueba autorizadas:
 
 ## Bloqueos reales
 
-1. **Prueba funcional por rol**: falta backend/base aislados, AVD y cuentas de
-   prueba autorizadas. No se usaron cuentas reales ni producción.
+1. **Prueba funcional por rol: resuelta el 3-nov-2026** en emulador contra el
+   backend desplegado, con cuentas de prueba autorizadas. Quedan sin recorrer
+   los flujos que crearían o modificarían datos (activación, alta de propuesta,
+   revisión, borrado y configuración del motor).
 2. **Activación automática desde el correo**: App Links/asset links y cambios de
    infraestructura no autorizados.
-3. **APK**: el 1.4.0/5 se generó, firmó y validó localmente; no se desplegó a
-   Railway ni se publicó en producción.
-4. **Cobertura de dispositivo**: se probó la instalación/actualización con
-   `adb install -r` en emulador; no se recorrió login real ni sesión por falta
-   de cuentas de prueba autorizadas.
+3. **APK: producción verificada** el 3-nov-2026 (`1.4.0`/`versionCode 5`, URL
+   HTTPS, SHA-256 y tamaño coincidentes). No se reemplazó el APK en esta sesión.
+4. **Cobertura de dispositivo**: login y dashboards verificados en emulador; no
+   se probó una actualización release firmada porque la keystore no está en este
+   equipo. La simulación con debug `versionCode 4` confirmó aviso, permiso,
+   notificación y navegación al centro.
 
 ## Nota de entorno
 
-Para compilar se creó `Movil/local.properties` con `sdk.dir` apuntando al SDK
-Android local. El archivo está ignorado por Git y no forma parte del cambio.
+En la sesión del 3-nov-2026 no se creó `Movil/local.properties`: se usó
+`ANDROID_HOME` temporal y `-Pproyectwin.apiBaseUrl.debug` para apuntar al
+backend desplegado. El JDK 17 se tomó de `~/.gradle/jdks`; no se versionó ninguna
+ruta de máquina. `Movil/local.properties` sigue ignorado por Git.
 
 ## Archivos principales modificados
 
@@ -177,3 +205,24 @@ Android local. El archivo está ignorado por Git y no forma parte del cambio.
 - `Movil/app/src/main/java/com/example/proyectwin/ui/viewmodel/UserDetailViewModel.kt`
 - `Movil/app/src/main/java/com/example/proyectwin/ui/viewmodel/ResultadoAnalisisViewModel.kt`
 - `Movil/app/src/main/java/com/example/proyectwin/ui/viewmodel/DetalleInstructorViewModel.kt`
+
+### Archivos de la actualización 3-nov-2026
+
+- `Movil/app/src/main/AndroidManifest.xml`
+- `Movil/app/src/main/java/com/example/proyectwin/MainActivity.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ProyecTwinApp.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/notifications/UpdateNotificationManager.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/domain/util/UpdateNotificationPolicy.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/data/local/UpdatePreferences.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/data/api/dto/DashboardDtos.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/data/model/DashboardMetrics.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/data/mapper/DtoMappers.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/components/DashboardCharts.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/viewmodel/DashboardViewModel.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/screens/aprendiz/DashboardScreen.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/screens/instructor/InstructorDashboardScreen.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/screens/ManualScreen.kt`
+- `Movil/app/src/main/java/com/example/proyectwin/ui/manual/ManualContent.kt`
+- `Movil/app/src/main/res/drawable-nodpi/manual_*.jpg`
+- `Movil/app/src/test/java/com/example/proyectwin/domain/util/UpdateNotificationPolicyTest.kt`
+- `Movil/app/src/test/java/com/example/proyectwin/data/mapper/DtoSerializationTest.kt`

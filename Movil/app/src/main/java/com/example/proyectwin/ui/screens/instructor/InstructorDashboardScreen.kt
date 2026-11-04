@@ -33,6 +33,8 @@ import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.util.formatearFechaHoraLocal
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardMetricsUiState
+import com.example.proyectwin.ui.viewmodel.DashboardMetricsViewModel
 import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 
@@ -42,17 +44,25 @@ fun InstructorDashboardScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
-    dashboardViewModel: DashboardViewModel = hiltViewModel()
+    dashboardViewModel: DashboardViewModel = hiltViewModel(),
+    metricsViewModel: DashboardMetricsViewModel = hiltViewModel(),
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
+    val metricsState by metricsViewModel.uiState.collectAsState()
+    val periodoMetricas by metricsViewModel.periodo.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(user?.id, refreshTrigger) {
+    LaunchedEffect(user?.id) {
         user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
+    }
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) {
+            metricsViewModel.refrescar()
+        }
     }
 
     val isLoading = dashState is DashboardUiState.Loading
@@ -131,6 +141,67 @@ fun InstructorDashboardScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             InstructorSummaryMetric("$aprobadasCount", "Aprobadas", senaColors().accent)
                             InstructorSummaryMetric("$pendingCount", "Pendientes", senaColors().warning)
+                        }
+                    }
+                }
+            }
+
+            // --- MÉTRICAS Y GRÁFICAS (paridad con el panel web) ---
+            item {
+                PaddingRow {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column {
+                            Text(
+                                "Métricas",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Text(
+                                "Datos reales de tu gestión",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = senaColors().textLight,
+                            )
+                        }
+
+                        when (val estado = metricsState) {
+                            is DashboardMetricsUiState.Loading -> {
+                                SenaSkeletonStats(count = 2)
+                                SenaSkeletonCard(lines = 3, hasImage = true)
+                            }
+
+                            is DashboardMetricsUiState.Error -> {
+                                SenaAlertBanner(
+                                    title = "No se pudieron cargar las métricas",
+                                    message = estado.message,
+                                    icon = Icons.Default.Error,
+                                    color = senaColors().danger,
+                                    actionText = "Reintentar",
+                                    onAction = { metricsViewModel.reintentar() },
+                                )
+                            }
+
+                            is DashboardMetricsUiState.Success -> {
+                                val metrics = estado.metrics
+                                MetricasKpiInstructor(metrics)
+                                DonaPropuestas(metrics.propuestas)
+                                PropuestasPorFicha(metrics.fichasDetalle)
+                                EvolucionPropuestas(
+                                    puntos = metrics.evolucion,
+                                    periodo = periodoMetricas,
+                                    actualizando = estado.actualizando,
+                                    onPeriodo = { metricsViewModel.cambiarPeriodo(it) },
+                                    tituloMes = "Revisiones por mes",
+                                    tituloDia = "Revisiones por día",
+                                    unidadSingular = "revisión",
+                                    unidadPlural = "revisiones",
+                                )
+                                ActividadRecienteCard(
+                                    actividad = metrics.actividad,
+                                    onProyectoClick = { id ->
+                                        onNavigate("instructor_detail/$id")
+                                    },
+                                )
+                            }
                         }
                     }
                 }

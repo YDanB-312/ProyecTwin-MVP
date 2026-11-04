@@ -304,4 +304,38 @@ class DtoSerializationTest {
         assertFalse(texto.contains("estado"))
         assertFalse(texto.contains("id_usuario"))
     }
+
+    @Test
+    fun dashboardMetrics_parseaFichasYSimilitudesDelContratoReal() {
+        val cuerpo = """
+            {
+              "rol": "instructor",
+              "periodo": "3m",
+              "fichas": {
+                "total": 2,
+                "detalle": [
+                  {"id":1,"codigo":"2568","nombre":"ADSO 2568","aprendices":8,"propuestas":5,
+                   "borradores":1,"pendientes":2,"aprobadas":2,"rechazadas":0,
+                   "revisables":4,"revisadas":2,"cobertura":50}
+                ]
+              },
+              "aprendices": {"total": 8},
+              "propuestas": {"total":5,"borrador":1,"pendiente":2,"aprobado":2,"rechazado":0},
+              "similitudesPropuestas": [
+                {"id":7,"titulo":"Sistema de inventario","max":64,"count":3}
+              ],
+              "evolucion": [],
+              "actividad": []
+            }
+        """.trimIndent()
+
+        val dominio = json.decodeFromString<DashboardMetricsDto>(cuerpo).toDomain()
+
+        assertEquals(2, dominio.fichasTotal)
+        assertEquals(1, dominio.fichasDetalle.size)
+        assertEquals("2568", dominio.fichasDetalle.first().codigo)
+        assertEquals(50, dominio.fichasDetalle.first().cobertura)
+        assertEquals(1, dominio.similitudesPropuestas.size)
+        assertEquals(64, dominio.similitudesPropuestas.first().max)
+    }
 }

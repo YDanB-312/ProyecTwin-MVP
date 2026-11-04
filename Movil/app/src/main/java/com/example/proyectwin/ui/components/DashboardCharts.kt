@@ -36,8 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyectwin.data.model.ActividadReciente
 import com.example.proyectwin.data.model.DashboardMetrics
+import com.example.proyectwin.data.model.FichaMetrica
 import com.example.proyectwin.data.model.PropuestasMetricas
 import com.example.proyectwin.data.model.PuntoEvolucion
+import com.example.proyectwin.data.model.SimilitudPropuestaMetrica
 import com.example.proyectwin.data.model.UsuariosMetricas
 import com.example.proyectwin.ui.theme.senaColors
 import com.example.proyectwin.ui.util.formatearFechaHoraLocal
@@ -85,6 +87,90 @@ fun MetricasKpiGrid(metrics: DashboardMetrics, modifier: Modifier = Modifier) {
                 valor = metrics.fichasTotal,
                 icon = Icons.Default.Groups,
                 color = senaColors().accent,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/** KPIs reales del instructor (mismos indicadores que el panel web). */
+@Composable
+fun MetricasKpiInstructor(metrics: DashboardMetrics, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            KpiCard(
+                titulo = "Fichas a cargo",
+                valor = metrics.fichasTotal,
+                icon = Icons.Default.School,
+                color = senaColors().info,
+                modifier = Modifier.weight(1f),
+            )
+            KpiCard(
+                titulo = "Aprendices",
+                valor = metrics.aprendicesTotal,
+                icon = Icons.Default.Groups,
+                color = senaColors().success,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            KpiCard(
+                titulo = "Propuestas",
+                valor = metrics.propuestas.total,
+                icon = Icons.Default.Folder,
+                color = senaColors().accent,
+                modifier = Modifier.weight(1f),
+            )
+            KpiCard(
+                titulo = "Por revisar",
+                valor = metrics.propuestas.pendiente,
+                icon = Icons.Default.Pending,
+                color = senaColors().warning,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/** Resumen del aprendiz con datos reales de sus propuestas y alertas. */
+@Composable
+fun MetricasKpiAprendiz(
+    propuestas: Int,
+    aprobadas: Int,
+    similitudes: Int,
+    sinLeer: Int,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            KpiCard(
+                titulo = "Propuestas registradas",
+                valor = propuestas,
+                icon = Icons.Default.Folder,
+                color = senaColors().info,
+                modifier = Modifier.weight(1f),
+            )
+            KpiCard(
+                titulo = "Aprobadas",
+                valor = aprobadas,
+                icon = Icons.Default.CheckCircle,
+                color = senaColors().success,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            KpiCard(
+                titulo = "Similitudes detectadas",
+                valor = similitudes,
+                icon = Icons.Default.Compare,
+                color = senaColors().warning,
+                modifier = Modifier.weight(1f),
+            )
+            KpiCard(
+                titulo = "Notificaciones sin leer",
+                valor = sinLeer,
+                icon = Icons.Default.Notifications,
+                color = senaColors().info,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -304,6 +390,124 @@ fun CuentasPorRol(usuarios: UsuariosMetricas, modifier: Modifier = Modifier) {
     }
 }
 
+private data class FilaBarra(val etiqueta: String, val valor: Int, val color: Color)
+
+@Composable
+private fun BarrasCard(
+    titulo: String,
+    filas: List<FilaBarra>,
+    vacio: String,
+    sufijo: String = "",
+    valorMaximo: Int? = null,
+    modifier: Modifier = Modifier,
+) {
+    val maximo = max(1, valorMaximo ?: filas.maxOfOrNull { it.valor } ?: 1)
+    SenaCard(modifier = modifier, elevation = 1.dp) {
+        Column {
+            Text(
+                titulo,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = senaColors().text,
+            )
+            Spacer(Modifier.height(16.dp))
+            if (filas.isEmpty()) {
+                Text(
+                    vacio,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = senaColors().textSecondary,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    filas.forEach { fila ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                fila.etiqueta,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = senaColors().textSecondary,
+                                modifier = Modifier.width(112.dp),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(10.dp)
+                                    .background(senaColors().borderSoft, CircleShape),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(
+                                            (fila.valor.toFloat() / maximo).coerceIn(0f, 1f),
+                                        )
+                                        .fillMaxHeight()
+                                        .background(fila.color, CircleShape),
+                                )
+                            }
+                            Text(
+                                "${fila.valor}$sufijo",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = senaColors().text,
+                                modifier = Modifier.width(48.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Propuestas por ficha del instructor (máx. 6, como el panel web). */
+@Composable
+fun PropuestasPorFicha(fichas: List<FichaMetrica>, modifier: Modifier = Modifier) {
+    val filas = fichas
+        .filter { it.propuestas > 0 }
+        .sortedByDescending { it.propuestas }
+        .take(6)
+        .map { FilaBarra(it.codigo, it.propuestas, senaColors().green) }
+    BarrasCard(
+        titulo = "Propuestas por ficha",
+        filas = filas,
+        vacio = "Sin propuestas en tus fichas.",
+        modifier = modifier,
+    )
+}
+
+/** Similitud máxima por propuesta del aprendiz (0–100 %). */
+@Composable
+fun SimilitudPorPropuesta(
+    propuestas: List<SimilitudPropuestaMetrica>,
+    modifier: Modifier = Modifier,
+) {
+    val filas = propuestas.map { item ->
+        val valor = item.max.coerceIn(0, 100)
+        FilaBarra(
+            etiqueta = if (item.titulo.length > 28) {
+                item.titulo.take(28).trimEnd() + "…"
+            } else {
+                item.titulo.ifBlank { "Propuesta" }
+            },
+            valor = valor,
+            color = when {
+                valor >= 70 -> senaColors().danger
+                valor >= 30 -> senaColors().warning
+                else -> senaColors().success
+            },
+        )
+    }
+    BarrasCard(
+        titulo = "Similitud máxima por propuesta",
+        filas = filas,
+        vacio = "Sin similitudes visibles en tus propuestas.",
+        sufijo = "%",
+        valorMaximo = 100,
+        modifier = modifier,
+    )
+}
+
 // ------------------------------------------------------------------ Serie temporal
 
 @Composable
@@ -312,8 +516,13 @@ fun EvolucionPropuestas(
     periodo: PeriodoMetricas,
     actualizando: Boolean,
     onPeriodo: (PeriodoMetricas) -> Unit,
+    tituloMes: String = "Propuestas por mes",
+    tituloDia: String = "Propuestas por día",
+    unidadSingular: String = "propuesta",
+    unidadPlural: String = "propuestas",
     modifier: Modifier = Modifier,
 ) {
+    val titulo = if (periodo == PeriodoMetricas.TRES_MESES) tituloMes else tituloDia
     var seleccionado by remember(puntos) { mutableStateOf<Int?>(null) }
     // Los colores del tema se leen una vez en contexto composable y se usan
     // dentro de Canvas (que no puede invocar @Composable).
@@ -326,7 +535,7 @@ fun EvolucionPropuestas(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Propuestas por mes",
+                        titulo,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = senaColors().text,
@@ -401,8 +610,8 @@ fun EvolucionPropuestas(
                             .fillMaxWidth()
                             .height(alturaGrafica)
                             .semantics {
-                                contentDescription = "Gráfica de propuestas por periodo. " +
-                                    "$resumenSerie. Toca un punto para ver fecha, cantidad y propuestas."
+                                contentDescription = "Gráfica de $unidadPlural por periodo. " +
+                                    "$resumenSerie. Toca un punto para ver fecha, cantidad y $unidadPlural."
                             },
                     ) {
                         Canvas(
@@ -558,7 +767,11 @@ fun EvolucionPropuestas(
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
-                                        if (p.total == 1) "1 propuesta" else "${p.total} propuestas",
+                                        if (p.total == 1) {
+                                            "1 $unidadSingular"
+                                        } else {
+                                            "${p.total} $unidadPlural"
+                                        },
                                         color = Color(0xFFFAFAFA),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,

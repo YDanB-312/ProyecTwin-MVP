@@ -23,11 +23,12 @@ repositorio; este índice solo separa lo operativo de lo histórico.
 | [`../frontend/README.md`](../frontend/README.md) | Instalación, scripts y pruebas del frontend. |
 | [`INSTALACION-LOCAL.md`](INSTALACION-LOCAL.md) | Instalación local; cada desarrollador crea su propia base vacía. `proyectwin_mvp` es solo el nombre de ejemplo y la base del propietario. |
 | [`CHECKLIST-INSTALACION-WINDOWS.md`](CHECKLIST-INSTALACION-WINDOWS.md) | Aceptación de instalación en un segundo equipo Windows. |
-| [`deploy-railway.md`](deploy-railway.md) | Despliegue en Railway. El APK histórico no se distribuye ni se incluye en imágenes. |
+| [`deploy-railway.md`](deploy-railway.md) | Despliegue en Railway. Incluye el APK autorizado `1.4.1/6` servido en `/apk/ProyecTWin.apk`. |
 | [`entorno-pruebas-seguro.md`](entorno-pruebas-seguro.md) | Aislamiento de PHPUnit/E2E con bases desechables. |
 | [`E2E-GATE.md`](E2E-GATE.md) | Evidencia de las corridas E2E 6AN/6AP y Fase 6. |
 | [`CI.md`](../CI.md) | Workflow de GitHub Actions. |
 | [`release-android.md`](release-android.md) | Release y firma del APK (responsabilidad de Oscar). |
+| [`manual-usuario-android.md`](manual-usuario-android.md) | Manual Android integrado, capturas reales, paridad de dashboards y notificaciones de actualización. |
 | [`ejecutar-android.md`](ejecutar-android.md) | Ejecución local de la app Android. |
 | [`normativa-visual.md`](normativa-visual.md) | Tokens y criterios visuales compartidos. |
 
@@ -46,14 +47,13 @@ apoyo y pueden estar desactualizados si cambia el flujo.
 ## Decisiones y estado
 
 - [`alcance-y-exclusiones.md`](alcance-y-exclusiones.md): límites del MVP.
-- [`APK-APROBACION-OSCAR.md`](APK-APROBACION-OSCAR.md): estado **NO APROBADO**
-  del APK 1.3.0/4 y confirmaciones pendientes.
-- **APK — pendiente de confirmación.** `release-android.md` y
-  `deploy-railway.md` declaran autorizado el APK 1.4.0/5, mientras
-  `APK-APROBACION-OSCAR.md` y `README.md` mantienen el estado no autorizado y
-  sin distribución. No hay una autorización escrita e inequívoca de Oscar en el
-  repositorio; no se considera aprobado ni se distribuye hasta que él lo
-  confirme.
+- [`APK-APROBACION-OSCAR.md`](APK-APROBACION-OSCAR.md): antecedente del APK
+  1.3.0/4.
+- **APK `1.4.1/6` preparado.** El owner autorizó la actualización y el despliegue
+  desde Railway Dashboard. El APK firmado está en
+  `backend/public/apk/ProyecTWin.apk`; la descarga se corrigió para servir solo
+  `/apk/ProyecTWin.apk`. El despliegue y la actualización de variables quedan a
+  cargo del owner.
 - [`guion-presentacion.md`](guion-presentacion.md): guion de demostración.
 - [`inventario-pendientes.md`](inventario-pendientes.md): inventario de deuda y
   estado histórico de los lotes. Para el estado vigente, usa la sección

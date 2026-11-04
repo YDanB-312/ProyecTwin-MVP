@@ -3,7 +3,7 @@
 Guía del despliegue del MVP completo (**SPA React + API Laravel**) en un solo
 servicio de Railway, con MySQL como base de datos.
 
-> **Política del APK.** El APK autorizado **1.4.0 / versionCode 5** se incluye
+> **Política del APK.** El APK autorizado **1.4.1 / versionCode 6** se incluye
 > en la imagen y se sirve únicamente en `/apk/ProyecTWin.apk`. El endpoint
 > `/v1/app-version/android` publica URL HTTPS, versión, hash y tamaño. No
 > re-firmes ni cambies de identidad el APK sin autorización del owner.
@@ -101,7 +101,7 @@ clave cruda de 32 caracteres. Si `APP_URL` falta, intenta derivarlo de
 También deriva `FRONTEND_URL` de `APP_URL` si falta, exige HTTPS para ambas,
 rechaza cualquier `APP_DEBUG` distinto de `false`/`0`, exige `TRUSTED_PROXIES` distinto de `*` y advierte si
 `SESSION_DRIVER` no es compartido. La imagen fija `SESSION_DRIVER=database` y
-no copia el APK histórico.
+copia únicamente el APK autorizado en `backend/public/apk/ProyecTWin.apk`.
 
 No definas `RUN_SEED=true` en producción: el entrypoint lo ignora y
 `DemoSeeder` está bloqueado. No uses `MAIL_MAILER=log` para cuentas reales:
@@ -217,7 +217,7 @@ una ejecución única del owner.
 - `/` carga el SPA y las rutas internas no dan 404 al recargar.
 - Login con cookie, recarga del SPA, `/v1/auth/me` y logout.
 - Activación de una cuenta nueva y recuperación de contraseña.
-- `/v1/app-version/android` responde `1.4.0`, `versionCode 5` y una URL HTTPS.
+- `/v1/app-version/android` responde `1.4.1`, `versionCode 6` y una URL HTTPS.
 - `/apk/ProyecTWin.apk` responde 200; `/apk/otro.apk`, `/apk/` y
   `/apk/ProyecTWin.apk.php` responden 404.
 - El Home muestra el botón de descarga cuando la URL es válida.
@@ -249,7 +249,7 @@ verificado, IP no autorizada). No se registra la clave.
 
 ## APK en Railway
 
-**Estado actual:** el APK **1.4.0 / versionCode 5**, firmado con `CN=Oscar`, está
+**Estado actual:** el APK **1.4.1 / versionCode 6**, firmado con `CN=Oscar`, está
 tracked en `backend/public/apk/ProyecTWin.apk` y se incluye en la imagen.
 `.dockerignore` y `.railwayignore` excluyen cualquier APK salvo ese archivo;
 Nginx lo sirve únicamente en `/apk/ProyecTWin.apk` y responde 404 para el resto

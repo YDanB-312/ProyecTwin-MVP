@@ -33,6 +33,8 @@ import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardMetricsUiState
+import com.example.proyectwin.ui.viewmodel.DashboardMetricsViewModel
 import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import java.text.SimpleDateFormat
@@ -45,10 +47,13 @@ fun DashboardScreen(
     onNavigate: (String) -> Unit,
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
-    dashboardViewModel: DashboardViewModel = hiltViewModel()
+    dashboardViewModel: DashboardViewModel = hiltViewModel(),
+    metricsViewModel: DashboardMetricsViewModel = hiltViewModel(),
 ) {
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
+    val metricsState by metricsViewModel.uiState.collectAsState()
+    val periodoMetricas by metricsViewModel.periodo.collectAsState()
 
     val user = (authState as? AuthUiState.LoggedIn)?.user
     val userName = user?.name?.split(" ")?.firstOrNull() ?: "Usuario"
@@ -59,8 +64,11 @@ fun DashboardScreen(
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(user, refreshTrigger) {
+    LaunchedEffect(user?.id) {
         user?.let { dashboardViewModel.loadStudentDashboard(it.id) }
+    }
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) metricsViewModel.refrescar()
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "rocket")
@@ -140,6 +148,76 @@ fun DashboardScreen(
                                     Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text(todayDate, style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    val misPropuestas = state.projects.filter { proyecto ->
+                        proyecto.studentId == user?.id || proyecto.equipo.any { it.id == user?.id }
+                    }
+                    val idsPropios = misPropuestas.map { it.id }.toSet()
+                    val similitudesPropias = state.similarities.count { par ->
+                        par.projectId1 in idsPropios || par.projectId2 in idsPropios
+                    }
+                    PaddingRow {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Column {
+                                Text(
+                                    "Métricas",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                )
+                                Text(
+                                    "Datos reales de tus propuestas",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = senaColors().textLight,
+                                )
+                            }
+
+                            MetricasKpiAprendiz(
+                                propuestas = misPropuestas.size,
+                                aprobadas = misPropuestas.count {
+                                    it.estado == ProjectStatus.APROBADO.value
+                                },
+                                similitudes = similitudesPropias,
+                                sinLeer = state.unreadCount,
+                            )
+
+                            when (val estado = metricsState) {
+                                is DashboardMetricsUiState.Loading -> {
+                                    SenaSkeletonCard(lines = 3, hasImage = true)
+                                }
+
+                                is DashboardMetricsUiState.Error -> {
+                                    SenaAlertBanner(
+                                        title = "No se pudieron cargar las métricas",
+                                        message = estado.message,
+                                        icon = Icons.Default.Error,
+                                        color = senaColors().danger,
+                                        actionText = "Reintentar",
+                                        onAction = { metricsViewModel.reintentar() },
+                                    )
+                                }
+
+                                is DashboardMetricsUiState.Success -> {
+                                    val metrics = estado.metrics
+                                    DonaPropuestas(metrics.propuestas)
+                                    SimilitudPorPropuesta(metrics.similitudesPropuestas)
+                                    EvolucionPropuestas(
+                                        puntos = metrics.evolucion,
+                                        periodo = periodoMetricas,
+                                        actualizando = estado.actualizando,
+                                        onPeriodo = { metricsViewModel.cambiarPeriodo(it) },
+                                    )
+                                    ActividadRecienteCard(
+                                        actividad = metrics.actividad,
+                                        onProyectoClick = { id ->
+                                            onNavigate("aprendiz_detail/$id")
+                                        },
+                                    )
                                 }
                             }
                         }

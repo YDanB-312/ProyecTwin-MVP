@@ -33,6 +33,7 @@ import com.example.proyectwin.data.model.DetalleSimilitud
 import com.example.proyectwin.data.model.DemoCoincidencia
 import com.example.proyectwin.data.model.DemoResultado
 import com.example.proyectwin.data.model.Ficha
+import com.example.proyectwin.data.model.FichaMetrica
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.KnowledgeNetwork
 import com.example.proyectwin.data.model.MotorConfig
@@ -44,6 +45,7 @@ import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.data.model.PropuestasMetricas
 import com.example.proyectwin.data.model.PuntoEvolucion
 import com.example.proyectwin.data.model.ResumenPublico
+import com.example.proyectwin.data.model.SimilitudPropuestaMetrica
 import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.data.model.TeamMember
 import com.example.proyectwin.data.model.TrainingProgram
@@ -455,6 +457,30 @@ fun DashboardMetricsDto.toDomain(): DashboardMetrics = DashboardMetrics(
         aprobado = propuestas?.aprobado ?: 0,
         rechazado = propuestas?.rechazado ?: 0,
     ),
+    fichasDetalle = fichas?.detalle.orEmpty().map {
+        FichaMetrica(
+            id = it.id,
+            codigo = it.codigo,
+            nombre = it.nombre,
+            aprendices = it.aprendices,
+            propuestas = it.propuestas,
+            borradores = it.borradores,
+            pendientes = it.pendientes,
+            aprobadas = it.aprobadas,
+            rechazadas = it.rechazadas,
+            revisables = it.revisables,
+            revisadas = it.revisadas,
+            cobertura = it.cobertura,
+        )
+    },
+    similitudesPropuestas = similitudesPropuestas.map {
+        SimilitudPropuestaMetrica(
+            id = it.id,
+            titulo = it.titulo,
+            max = it.max.coerceIn(0, 100),
+            count = it.count,
+        )
+    },
     evolucion = evolucion.map {
         PuntoEvolucion(
             clave = it.clave,
