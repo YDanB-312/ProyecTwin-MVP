@@ -23,6 +23,7 @@ import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
 import com.example.proyectwin.ui.viewmodel.AdminUiState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +37,15 @@ fun AdminSimilarityListScreen(
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedStatus by rememberSaveable { mutableStateOf("Todos") }
+    var similitudParaEliminar by remember { mutableStateOf<Similarity?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var estadoPropuesta by rememberSaveable { mutableStateOf("Todos") }
+    var fichaFiltro by rememberSaveable { mutableStateOf("") }
+    var programaFiltro by rememberSaveable { mutableStateOf("") }
+    var minSimilitud by rememberSaveable { mutableIntStateOf(0) }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
+    val porPagina = 8
     val statusFilterItems = listOf(
         "Todos" to "Todos",
         "Vigentes" to "Vigentes",
@@ -69,9 +79,25 @@ fun AdminSimilarityListScreen(
         val consulta = searchQuery.trim()
         val matchesSearch = consulta.isEmpty() ||
             group.project1Title.orEmpty().contains(consulta, ignoreCase = true) ||
-            group.project2Title.orEmpty().contains(consulta, ignoreCase = true)
-        matchesProyecto && matchesEstado && matchesSearch
+            group.project2Title.orEmpty().contains(consulta, ignoreCase = true) ||
+            group.project1Student.orEmpty().contains(consulta, ignoreCase = true) ||
+            group.project2Student.orEmpty().contains(consulta, ignoreCase = true)
+        val matchesPropuesta = estadoPropuesta == "Todos" ||
+            group.project1?.estado == estadoPropuesta.lowercase() ||
+            group.project2?.estado == estadoPropuesta.lowercase()
+        val matchesFicha = fichaFiltro.isBlank() ||
+            group.project1?.fichaId?.toString() == fichaFiltro.trim() ||
+            group.project2?.fichaId?.toString() == fichaFiltro.trim()
+        val matchesPrograma = programaFiltro.isBlank() ||
+            group.project1?.programa.orEmpty().contains(programaFiltro, true) ||
+            group.project2?.programa.orEmpty().contains(programaFiltro, true)
+        val matchesUmbral = (group.similitud * 100).toInt() >= minSimilitud
+        matchesProyecto && matchesEstado && matchesSearch && matchesPropuesta &&
+            matchesFicha && matchesPrograma && matchesUmbral
     }
+    val totalPaginas = ((filteredGroups.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+    val paginaActual = pagina.coerceIn(1, totalPaginas)
+    val visibles = filteredGroups.drop((paginaActual - 1) * porPagina).take(porPagina)
 
     Scaffold(
         topBar = {
@@ -83,7 +109,8 @@ fun AdminSimilarityListScreen(
             )
         },
         containerColor = senaColors().background,
-        bottomBar = bottomBar
+        bottomBar = bottomBar,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -146,7 +173,52 @@ fun AdminSimilarityListScreen(
                                         else -> senaColors().green
                                     },
                                     isSelected = selectedStatus == statusKey,
-                                    onClick = { selectedStatus = statusKey }
+                                    onClick = { selectedStatus = statusKey; pagina = 1 }
+                                )
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            SenaTextField(
+                                value = programaFiltro,
+                                onValueChange = { programaFiltro = it; pagina = 1 },
+                                label = "",
+                                placeholder = "Programa",
+                                leadingIcon = Icons.Default.School,
+                                modifier = Modifier.weight(1f),
+                            )
+                            SenaTextField(
+                                value = fichaFiltro,
+                                onValueChange = { fichaFiltro = it; pagina = 1 },
+                                label = "",
+                                placeholder = "ID de ficha",
+                                leadingIcon = Icons.Default.Groups,
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf("Todos", "Pendiente", "Aprobado", "Rechazado").forEach { estado ->
+                                SenaChip(
+                                    text = estado,
+                                    color = senaColors().green,
+                                    isSelected = estadoPropuesta == estado,
+                                    onClick = { estadoPropuesta = estado; pagina = 1 },
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(0, 30, 50, 75).forEach { umbral ->
+                                SenaChip(
+                                    text = if (umbral == 0) "Similitud: todas" else "≥ $umbral%",
+                                    color = senaColors().green,
+                                    isSelected = minSimilitud == umbral,
+                                    onClick = { minSimilitud = umbral; pagina = 1 },
                                 )
                             }
                         }
@@ -193,9 +265,10 @@ fun AdminSimilarityListScreen(
                     )
                 }
             } else {
-                items(filteredGroups, key = { it.id }) { similarity ->
+                items(visibles, key = { it.id }) { similarity ->
                     SenaCard(
                         modifier = Modifier.fillMaxWidth(),
+                        selected = LocalSelectedListItemId.current == similarity.id,
                         onClick = {
                             onNavigate(
                                 AppNavigation.ADMIN_SIMILARITY_DETAIL.replace("{similarityId}", similarity.id.toString())
@@ -250,6 +323,12 @@ fun AdminSimilarityListScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = if (similarity.vigente) senaColors().success else senaColors().warning,
                             )
+                            TextButton(
+                                onClick = { similitudParaEliminar = similarity },
+                                modifier = Modifier.align(Alignment.End),
+                            ) {
+                                Text("Eliminar par", color = senaColors().danger)
+                            }
                         }
                     }
                 }
@@ -257,8 +336,61 @@ fun AdminSimilarityListScreen(
                 }
             }
 
+            if (totalPaginas > 1) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(enabled = paginaActual > 1, onClick = { pagina = paginaActual - 1 }) {
+                            Text("Anterior")
+                        }
+                        Text(
+                            "Página $paginaActual de $totalPaginas",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = senaColors().textSecondary,
+                        )
+                        TextButton(enabled = paginaActual < totalPaginas, onClick = { pagina = paginaActual + 1 }) {
+                            Text("Siguiente")
+                        }
+                    }
+                }
+            }
+
             item { Spacer(Modifier.height(40.dp)) }
         }
+    }
+
+    similitudParaEliminar?.let { similarity ->
+        AlertDialog(
+            onDismissRequest = { similitudParaEliminar = null },
+            title = { Text("Eliminar similitud") },
+            text = {
+                Text(
+                    "Se eliminará el par #${similarity.id}. El motor podría volver a detectarlo al recalcular.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        similitudParaEliminar = null
+                        adminViewModel.eliminarSimilitud(similarity.id) { resultado ->
+                            resultado.onFailure { error ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        error.message ?: "No se pudo eliminar la similitud.",
+                                    )
+                                }
+                            }
+                        }
+                    },
+                ) { Text("Eliminar", color = senaColors().danger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { similitudParaEliminar = null }) { Text("Cancelar") }
+            },
+        )
     }
 }
 

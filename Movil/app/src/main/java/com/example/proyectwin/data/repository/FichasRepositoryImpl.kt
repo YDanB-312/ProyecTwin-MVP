@@ -136,7 +136,7 @@ class FichasRepositoryImpl @Inject constructor(
     companion object {
         // El roster viaja también en el listado: evita una llamada por ficha y
         // permite mostrar integrantes/counts de inmediato.
-        private const val INCLUDE_LISTA = "program,instructor.generalUser,apprentices.generalUser"
-        private const val INCLUDE_DETALLE = "program,instructor.generalUser,apprentices.generalUser"
+        private const val INCLUDE_LISTA = "program.knowledgeNetwork,instructor.generalUser,apprentices.generalUser"
+        private const val INCLUDE_DETALLE = "program.knowledgeNetwork,instructor.generalUser,apprentices.generalUser"
     }
 }

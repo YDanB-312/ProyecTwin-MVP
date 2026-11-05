@@ -24,6 +24,8 @@ import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminUserAction
 import com.example.proyectwin.ui.viewmodel.AdminUserUiState
+import com.example.proyectwin.ui.viewmodel.AuthUiState
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.UserDetailViewModel
 import kotlinx.coroutines.launch
 
@@ -38,10 +40,13 @@ fun UserDetailScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     userDetailViewModel: UserDetailViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by userDetailViewModel.uiState.collectAsState()
     val accion by userDetailViewModel.accion.collectAsState()
     val fichas by userDetailViewModel.fichasDisponibles.collectAsState()
+    val authState by authViewModel.uiState.collectAsState()
+    val usuarioActualId = (authState as? AuthUiState.LoggedIn)?.user?.id
     val snackbarHostState = remember { SnackbarHostState() }
 
     var dialogoEditar by rememberSaveable { mutableStateOf(false) }
@@ -164,6 +169,48 @@ fun UserDetailScreen(
                                     "Ficha",
                                     ficha?.let { "${it.nombre ?: it.programa} (${it.codigo})" } ?: "Sin ficha",
                                 )
+                                DatoCuenta("Programa", ficha?.programa ?: "Sin programa")
+                            }
+                        }
+                    }
+
+                    if (data.aprendiz != null) {
+                        SenaSectionHeader(title = "Propuestas del aprendiz (${data.propuestas.size})")
+                        if (data.propuestas.isEmpty()) {
+                            SenaEmptyState(
+                                message = "Este aprendiz aún no tiene propuestas.",
+                                icon = Icons.Default.FolderOpen,
+                            )
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                data.propuestas.forEach { propuesta ->
+                                    SenaCard(
+                                        elevation = 0.5.dp,
+                                        onClick = {
+                                            onNavigate(
+                                                com.example.proyectwin.navigation.AppNavigation
+                                                    .ADMIN_PROJECT_DETAIL
+                                                    .replace("{projectId}", propuesta.id.toString()),
+                                            )
+                                        },
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    propuesta.title,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                                Text(
+                                                    propuesta.programa ?: "Sin programa",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = senaColors().textSecondary,
+                                                )
+                                            }
+                                            SenaStatusBadge(status = propuesta.statusDisplay)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -235,6 +282,7 @@ fun UserDetailScreen(
                 if (dialogoEditar) {
                     EditarUsuarioDialog(
                         usuario = usuario,
+                        esPropiaCuenta = usuarioActualId == usuario.id,
                         onDismiss = { dialogoEditar = false },
                         onGuardar = { editado ->
                             dialogoEditar = false
@@ -417,6 +465,7 @@ private fun DatoCuenta(etiqueta: String, valor: String) {
 @Composable
 private fun EditarUsuarioDialog(
     usuario: GeneralUser,
+    esPropiaCuenta: Boolean,
     onDismiss: () -> Unit,
     onGuardar: (GeneralUser) -> Unit,
 ) {
@@ -480,7 +529,15 @@ private fun EditarUsuarioDialog(
                 }
                 SenaTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre")
                 SenaTextField(value = apellido, onValueChange = { apellido = it }, label = "Apellido")
-                SenaTextField(value = correo, onValueChange = { correo = it }, label = "Correo")
+                SenaTextField(
+                    value = correo,
+                    onValueChange = { correo = it },
+                    label = "Correo",
+                    enabled = !esPropiaCuenta,
+                    supportingText = if (esPropiaCuenta) {
+                        "Tu propio correo se cambia desde Perfil > Cambiar correo (con tu contraseña)."
+                    } else null,
+                )
                 Text("Tipo de documento", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("CC", "TI", "CE", "PPT").forEach { tipo ->

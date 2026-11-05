@@ -19,7 +19,7 @@ interface ProjectsRepository {
 
     suspend fun crear(draft: ProjectDraft): Result<Project>
 
-    suspend fun actualizar(id: Int, draft: ProjectDraft): Result<Project>
+    suspend fun actualizar(id: Int, draft: ProjectDraft, version: String? = null): Result<Project>
 
     /** Envío/reenvío explícito; el backend valida y ejecuta el motor. */
     suspend fun enviar(id: Int): Result<Project>

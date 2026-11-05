@@ -21,9 +21,19 @@ class SimilaritiesRepositoryImpl @Inject constructor(
         search: String?,
         fichaId: Int?,
         programa: String?,
+        supervision: Boolean?,
     ): Result<List<Similarity>> =
         safeApiCall {
-            api.listar(proyectoId, historial, relatedTo, search, fichaId, programa, INCLUDE)
+            api.listar(
+                proyectoId,
+                historial,
+                relatedTo,
+                search,
+                fichaId,
+                programa,
+                INCLUDE,
+                supervision,
+            )
         }.map { lista -> lista.map { it.toDomain() } }
 
     override suspend fun obtener(id: Int): Result<Similarity> =

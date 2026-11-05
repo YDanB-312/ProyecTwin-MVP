@@ -1,5 +1,9 @@
 package com.example.proyectwin.data.api.service
 
+import com.example.proyectwin.data.api.dto.ActivationRequest
+import com.example.proyectwin.data.api.dto.ActivationResponse
+import com.example.proyectwin.data.api.dto.ActivationValidateRequest
+import com.example.proyectwin.data.api.dto.ActivationValidateResponse
 import com.example.proyectwin.data.api.dto.ChangeEmailRequest
 import com.example.proyectwin.data.api.dto.ChangeEmailResponse
 import com.example.proyectwin.data.api.dto.ChangePasswordRequest
@@ -32,6 +36,14 @@ interface AuthApi {
 
     @POST("auth/reset-password")
     suspend fun resetPassword(@Body body: ResetPasswordRequest): MessageResponse
+
+    /** Valida el token de activación y devuelve nombre/correo enmascarado. */
+    @POST("auth/activation/validate")
+    suspend fun validateActivation(@Body body: ActivationValidateRequest): ActivationValidateResponse
+
+    /** Define la contraseña definitiva y activa la cuenta. */
+    @POST("auth/activation")
+    suspend fun activateAccount(@Body body: ActivationRequest): ActivationResponse
 
     @PUT("auth/password")
     suspend fun changePassword(@Body body: ChangePasswordRequest): MessageResponse

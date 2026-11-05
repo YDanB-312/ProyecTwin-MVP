@@ -2,18 +2,17 @@ package com.example.proyectwin.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.domain.repository.FichasRepository
+import com.example.proyectwin.domain.repository.MembersRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
 import com.example.proyectwin.domain.repository.UsersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,7 +34,7 @@ class DetalleCompaneroViewModel @Inject constructor(
     private val usersRepository: UsersRepository,
     private val fichasRepository: FichasRepository,
     private val projectsRepository: ProjectsRepository,
-    private val sessionManager: SessionManager,
+    private val membersRepository: MembersRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CompaneroUiState>(CompaneroUiState.Loading)
@@ -54,7 +53,8 @@ class DetalleCompaneroViewModel @Inject constructor(
                 return@launch
             }
 
-            val fichaId = sessionManager.currentUser.first()?.fichaId
+            // La ficha debe ser la del perfil consultado, no la del observador.
+            val fichaId = membersRepository.aprendizPorUsuario(id).getOrNull()?.idClassGroup
             val ficha = fichaId?.let { fichasRepository.obtener(it).getOrNull() }
 
             // Solo proyectos visibles para el solicitante; se filtra por autor/equipo.

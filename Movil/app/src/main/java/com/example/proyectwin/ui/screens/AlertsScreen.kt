@@ -52,6 +52,8 @@ fun AlertsScreen(
     fichaRoute: String = "aprendiz/ficha",
     /** Ruta al reporte; vacía = los no-admin solo marcan la lectura. */
     reporteRoute: String = "",
+    /** En modo dos paneles selecciona la alerta en vez de navegar. */
+    onSelectAlert: ((Notification) -> Unit)? = null,
     bottomBar: @Composable () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -76,6 +78,7 @@ fun AlertsScreen(
     }
 
     var selectedFilter by rememberSaveable { mutableStateOf("Todos") }
+    var alertaParaEliminar by remember { mutableStateOf<Notification?>(null) }
     val filters = listOf("Todos", "Similitud", "Instructor", "Sistema")
 
     val allAlerts = (notificationsState as? NotificationsUiState.Success)?.notifications
@@ -202,18 +205,22 @@ fun AlertsScreen(
                     NotificationCard(alert, onClick = {
                         notificationsViewModel.marcarComoLeida(alert)
                         refreshTrigger++
-                        // Enlace inválido/antiguo → null: solo se marca leída.
-                        NotificationRoutes.resolverDestino(
-                            tipo = alert.notifType,
-                            enlaceModulo = alert.enlaceModulo,
-                            enlaceId = alert.enlaceId,
-                            similitudesRoute = similitudesRoute,
-                            detailRoute = detailRoute,
-                            fichaRoute = fichaRoute,
-                            reporteRoute = reporteRoute,
-                        )?.let(onNavigate)
+                        if (onSelectAlert != null) {
+                            onSelectAlert(alert)
+                        } else {
+                            // Enlace inválido/antiguo → null: solo se marca leída.
+                            NotificationRoutes.resolverDestino(
+                                tipo = alert.notifType,
+                                enlaceModulo = alert.enlaceModulo,
+                                enlaceId = alert.enlaceId,
+                                similitudesRoute = similitudesRoute,
+                                detailRoute = detailRoute,
+                                fichaRoute = fichaRoute,
+                                reporteRoute = reporteRoute,
+                            )?.let(onNavigate)
+                        }
                     }, onDelete = if (esAdmin) {
-                        { notificationsViewModel.eliminar(alert.id) }
+                        { alertaParaEliminar = alert }
                     } else {
                         null
                     })
@@ -225,6 +232,25 @@ fun AlertsScreen(
         }
             }
         }
+    }
+
+    alertaParaEliminar?.let { alerta ->
+        AlertDialog(
+            onDismissRequest = { alertaParaEliminar = null },
+            title = { Text("Eliminar notificación") },
+            text = { Text("Esta acción es permanente. ¿Eliminar la notificación seleccionada?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        alertaParaEliminar = null
+                        notificationsViewModel.eliminar(alerta.id)
+                    },
+                ) { Text("Eliminar", color = senaColors().danger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { alertaParaEliminar = null }) { Text("Cancelar") }
+            },
+        )
     }
 
     LaunchedEffect(refreshTrigger) {
@@ -266,7 +292,8 @@ fun NotificationCard(alert: Notification, onClick: () -> Unit, onDelete: (() -> 
     SenaCard(
         elevation = if (!alert.leido) 2.dp else 0.5.dp,
         onClick = onClick,
-        containerColor = senaColors().backgroundElevated
+        containerColor = senaColors().backgroundElevated,
+        selected = LocalSelectedListItemId.current == alert.id,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

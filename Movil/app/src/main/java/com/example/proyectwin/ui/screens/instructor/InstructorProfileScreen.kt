@@ -69,7 +69,7 @@ fun InstructorProfileScreen(
 
     LaunchedEffect(Unit) {
         fichasViewModel.loadAllFichas()
-        user?.let { dashboardViewModel.loadProjectCounts(it.id) }
+        dashboardViewModel.loadInstructorProjectCounts()
     }
 
     LaunchedEffect(saveSuccess) {
@@ -162,6 +162,11 @@ fun InstructorProfileScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 TextButton(onClick = { photoPickerLauncher.launch("image/*") }) {
                     Text("Cambiar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().green)
+                }
+                if (!user?.fotoPerfil.isNullOrBlank()) {
+                    TextButton(onClick = { profileViewModel.updateFoto(null) }) {
+                        Text("Quitar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().danger)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

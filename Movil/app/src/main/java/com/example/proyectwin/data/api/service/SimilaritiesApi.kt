@@ -22,6 +22,8 @@ interface SimilaritiesApi {
         @Query("ficha_id") fichaId: Int? = null,
         @Query("programa") programa: String? = null,
         @Query("included") included: String? = null,
+        /** Solo admin: todos los pares vigentes, sin la regla de ambas aprobadas. */
+        @Query("supervision") supervision: Boolean? = null,
     ): List<SimilarityDto>
 
     @GET("similarities/{id}")

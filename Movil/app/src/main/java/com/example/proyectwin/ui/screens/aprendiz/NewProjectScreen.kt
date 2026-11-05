@@ -49,6 +49,7 @@ private val AREAS = listOf(
 @Composable
 fun NewProjectScreen(
     projectId: String = "",
+    retorno: String = "aprendiz",
     onBack: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
     onSaved: (Int, Boolean, Int) -> Unit = { _, _, _ -> },
@@ -58,6 +59,8 @@ fun NewProjectScreen(
 ) {
     val idEdicion = projectId.toIntOrNull()
     val esEdicion = idEdicion != null
+    // La web limita al admin a título, resumen y palabras clave.
+    val esAdminEdit = esEdicion && retorno == "admin"
 
     val authState by authViewModel.uiState.collectAsState()
     val sessionUser = (authState as? AuthUiState.LoggedIn)?.user
@@ -426,6 +429,7 @@ fun NewProjectScreen(
                 }
             }
 
+            if (!esAdminEdit) {
             SenaSectionHeader(title = "Área de Aplicación")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -448,6 +452,8 @@ fun NewProjectScreen(
                 }
             }
 
+            }
+            if (!esAdminEdit) {
             SenaSectionHeader(title = "Objetivos")
             SenaCard {
                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -475,6 +481,7 @@ fun NewProjectScreen(
                 }
             }
 
+            }
             if (!esEdicion) {
                 SenaSectionHeader(title = "Equipo (opcional)")
                 SenaCard {

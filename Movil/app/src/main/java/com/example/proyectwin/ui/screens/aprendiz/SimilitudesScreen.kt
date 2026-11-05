@@ -1,8 +1,10 @@
 package com.example.proyectwin.ui.screens.aprendiz
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,10 +28,13 @@ fun SimilitudesScreen(
     proyectoId: Int? = null,
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    bottomBar: @Composable () -> Unit = {},
     misSimilitudesViewModel: MisSimilitudesViewModel = hiltViewModel(),
 ) {
     var busqueda by remember { mutableStateOf("") }
     var umbralMinimo by remember { mutableIntStateOf(0) }
+    var umbralTexto by remember { mutableStateOf("0") }
+    var expandidos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val uiState by misSimilitudesViewModel.uiState.collectAsState()
 
     LaunchedEffect(proyectoId) {
@@ -45,6 +50,7 @@ fun SimilitudesScreen(
                 showNotifications = true,
             )
         },
+        bottomBar = bottomBar,
         containerColor = senaColors().background,
     ) { paddingValues ->
         when (val estado = uiState) {
@@ -95,13 +101,26 @@ fun SimilitudesScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = senaColors().textLight,
                                 )
+                                SenaTextField(
+                                    value = umbralTexto,
+                                    onValueChange = { texto ->
+                                        umbralTexto = texto.filter { it.isDigit() }.take(3)
+                                        umbralMinimo = umbralTexto.toIntOrNull()?.coerceIn(0, 100) ?: 0
+                                    },
+                                    label = "Umbral mínimo (%)",
+                                    placeholder = "0",
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                )
                                 SenaChipRow {
                                     listOf(0, 30, 50, 75).forEach { umbral ->
                                         SenaChip(
                                             text = if (umbral == 0) "Todas" else "≥ $umbral%",
                                             color = senaColors().green,
                                             isSelected = umbralMinimo == umbral,
-                                            onClick = { umbralMinimo = umbral },
+                                            onClick = {
+                                                umbralMinimo = umbral
+                                                umbralTexto = umbral.toString()
+                                            },
                                         )
                                     }
                                 }
@@ -125,6 +144,14 @@ fun SimilitudesScreen(
                         items(filas, key = { it.proyecto.id }) { fila ->
                             FilaSimilitudes(
                                 fila = fila,
+                                expandida = fila.proyecto.id in expandidos,
+                                onToggle = {
+                                    expandidos = if (fila.proyecto.id in expandidos) {
+                                        expandidos - fila.proyecto.id
+                                    } else {
+                                        expandidos + fila.proyecto.id
+                                    }
+                                },
                                 onNavigate = onNavigate,
                             )
                         }
@@ -140,6 +167,8 @@ fun SimilitudesScreen(
 @Composable
 private fun FilaSimilitudes(
     fila: SimilitudesDeProyecto,
+    expandida: Boolean,
+    onToggle: () -> Unit,
     onNavigate: (String) -> Unit,
 ) {
     SenaCard(elevation = 1.dp) {
@@ -156,13 +185,40 @@ private fun FilaSimilitudes(
                 )
                 SenaStatusBadge(status = fila.proyecto.estado)
             }
+            val maximo = fila.pares.maxOfOrNull { it.similitud } ?: 0.0
+            Text(
+                "Máximo ${"%.1f%%".format(java.util.Locale.US, maximo * 100)} · ${fila.pares.size} coincidencia(s)",
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().textSecondary,
+            )
+            TextButton(onClick = onToggle) {
+                Icon(
+                    if (expandida) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(if (expandida) "Ocultar coincidencias" else "Ver coincidencias")
+            }
+            if (expandida) {
             HorizontalDivider(color = senaColors().borderSoft)
             fila.pares.forEach { par: Similarity ->
                 val esMia1 = par.projectId1 == fila.proyecto.id
                 val tituloContraparte = if (esMia1) par.project2Title ?: "Propuesta" else par.project1Title ?: "Propuesta"
                 val aprendizContraparte = if (esMia1) par.project2Student else par.project1Student
+                val seleccionado = LocalSelectedListItemId.current == par.id
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (seleccionado) {
+                                Modifier
+                                    .border(1.dp, senaColors().green, RoundedCornerShape(8.dp))
+                                    .padding(4.dp)
+                            } else {
+                                Modifier
+                            },
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -202,5 +258,6 @@ private fun FilaSimilitudes(
                 }
             }
         }
+    }
     }
 }

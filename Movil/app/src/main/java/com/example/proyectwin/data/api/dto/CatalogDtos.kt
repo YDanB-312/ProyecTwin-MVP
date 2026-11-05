@@ -78,6 +78,14 @@ data class CoincidenciaDemo(
 // ------------------------------------------------------------ Bitácora
 
 @Serializable
+data class PaginaAuditoriaDto(
+    val data: List<AuditLogDto> = emptyList(),
+    @SerialName("current_page") val currentPage: Int = 1,
+    @SerialName("last_page") val lastPage: Int = 1,
+    val total: Int = 0,
+)
+
+@Serializable
 data class AuditLogDto(
     val id: Int = 0,
     @SerialName("id_usuario") val idUsuario: Int? = null,

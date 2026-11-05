@@ -5,6 +5,7 @@ import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.domain.repository.FichasRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
+import com.example.proyectwin.domain.repository.UsersRepository
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +35,9 @@ class AdminFichaDetailViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val fichas = mockk<FichasRepository>(relaxed = true)
     private val projects = mockk<ProjectsRepository>(relaxed = true)
+    private val users = mockk<UsersRepository>(relaxed = true)
 
-    private fun viewModel() = AdminFichaDetailViewModel(fichas, projects)
+    private fun viewModel() = AdminFichaDetailViewModel(fichas, projects, users)
 
     private fun ficha(id: Int = 1) = Ficha(
         id = id,

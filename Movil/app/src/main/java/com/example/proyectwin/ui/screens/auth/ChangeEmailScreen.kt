@@ -1,5 +1,6 @@
 package com.example.proyectwin.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +34,7 @@ fun ChangeEmailScreen(
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var errorLocal by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
 
     val isSaving by profileViewModel.isSaving.collectAsState()
@@ -100,7 +102,7 @@ fun ChangeEmailScreen(
 
                     SenaTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = { email = it; errorLocal = null },
                         label = "Nuevo Correo Electrónico",
                         placeholder = "ejemplo@sena.edu.co",
                         leadingIcon = Icons.Default.Email,
@@ -109,17 +111,18 @@ fun ChangeEmailScreen(
 
                     SenaTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { password = it; errorLocal = null },
                         label = "Contraseña Actual",
                         placeholder = "••••••••",
                         isPassword = true,
                         leadingIcon = Icons.Default.Lock
                     )
 
-                    if (saveError != null) {
+                    val mensajeError = errorLocal ?: saveError
+                    if (mensajeError != null) {
                         SenaAlertBanner(
                             title = "Error",
-                            message = saveError!!,
+                            message = mensajeError,
                             icon = Icons.Default.Error,
                             color = senaColors().danger
                         )
@@ -128,8 +131,14 @@ fun ChangeEmailScreen(
                     SenaButton(
                         text = "Cambiar Correo Electrónico",
                         onClick = {
-                            if (email.isNotBlank() && password.isNotBlank()) {
-                                profileViewModel.changeEmail(email, password)
+                            errorLocal = when {
+                                !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() ->
+                                    "Ingresa un correo electrónico válido."
+                                password.isBlank() -> "Ingresa tu contraseña actual."
+                                else -> null
+                            }
+                            if (errorLocal == null) {
+                                profileViewModel.changeEmail(email.trim().lowercase(), password)
                             }
                         },
                         isLoading = isSaving,

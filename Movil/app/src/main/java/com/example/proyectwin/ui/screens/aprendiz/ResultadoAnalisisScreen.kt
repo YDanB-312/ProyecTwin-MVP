@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -248,10 +250,12 @@ private fun ResultadoContenido(
             SenaSectionHeader(title = "Proyectos con similitud (${data.pares.size})")
         }
 
-        items(data.pares, key = { it.id }) { par ->
+        itemsIndexed(data.pares, key = { _, par -> par.id }) { index, par ->
             FilaResultado(
                 par = par,
                 baseId = data.proyecto.id,
+                posicion = index + 1,
+                esMaxima = index == 0,
                 onClick = { onSimilarityDetail(par.id) },
             )
         }
@@ -303,6 +307,8 @@ private fun ResultadoContenido(
 private fun FilaResultado(
     par: Similarity,
     baseId: Int,
+    posicion: Int,
+    esMaxima: Boolean,
     onClick: () -> Unit,
 ) {
     val contraparteEsSegunda = par.projectId1 == baseId
@@ -313,8 +319,21 @@ private fun FilaResultado(
     val estudiante = if (contraparteEsSegunda) par.project2Student else par.project1Student
     val pct = (par.similitud * 100).roundToInt().coerceIn(0, 100)
 
-    SenaCard(elevation = 1.dp, onClick = onClick) {
+    SenaCard(elevation = if (esMaxima) 3.dp else 1.dp, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = if (esMaxima) senaColors().success.copy(alpha = 0.15f) else senaColors().backgroundElevated,
+            ) {
+                Text(
+                    posicion.toString(),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Black,
+                    color = if (esMaxima) senaColors().success else senaColors().textSecondary,
+                )
+            }
+            Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     titulo,
@@ -322,6 +341,14 @@ private fun FilaResultado(
                     fontWeight = FontWeight.Bold,
                     color = senaColors().text,
                 )
+                if (esMaxima) {
+                    Text(
+                        "Mayor coincidencia",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = senaColors().success,
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     estudiante?.takeIf { it.isNotBlank() }?.let {
                         Text(

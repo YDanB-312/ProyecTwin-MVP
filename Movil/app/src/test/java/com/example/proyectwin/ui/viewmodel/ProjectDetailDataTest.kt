@@ -19,11 +19,13 @@ class ProjectDetailDataTest {
         usuarioActualId: Int? = 10,
         esCreador: Boolean = false,
         fichaActiva: Boolean = true,
+        perteneceAFicha: Boolean = true,
     ) = ProjectDetailData(
         project = Project(id = 5, title = "Propuesta", estado = "pendiente"),
         esAdmin = esAdmin,
         esCreador = esCreador,
         fichaActiva = fichaActiva,
+        perteneceAFicha = perteneceAFicha,
         usuarioActualId = usuarioActualId,
     )
 
@@ -47,5 +49,25 @@ class ProjectDetailDataTest {
     @Test
     fun `otro usuario no puede gestionar observaciones ajenas`() {
         assertFalse(data(esCreador = true).puedeGestionarComentario(comentario(de = 77)))
+    }
+
+    @Test
+    fun `el creador que salio de la ficha no puede editar ni enviar`() {
+        val fuera = data(esCreador = true, perteneceAFicha = false)
+
+        assertFalse(fuera.puedeEditar)
+        assertFalse(fuera.puedeEnviar)
+        assertFalse(fuera.puedeGestionarEquipo)
+        assertFalse(fuera.puedeComentar)
+        assertFalse(fuera.puedeEliminar)
+    }
+
+    @Test
+    fun `el admin no envia propuestas ni gestiona el equipo`() {
+        val admin = data(esAdmin = true)
+
+        assertFalse(admin.puedeEnviar)
+        assertFalse(admin.puedeGestionarEquipo)
+        assertTrue(admin.puedeEditar)
     }
 }

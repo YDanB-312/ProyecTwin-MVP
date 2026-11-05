@@ -1,6 +1,8 @@
 package com.example.proyectwin.data.repository
 
 import com.example.proyectwin.data.api.TokenProvider
+import com.example.proyectwin.data.api.dto.ActivationRequest
+import com.example.proyectwin.data.api.dto.ActivationValidateRequest
 import com.example.proyectwin.data.api.dto.ChangeEmailRequest
 import com.example.proyectwin.data.api.dto.ChangePasswordRequest
 import com.example.proyectwin.data.api.dto.ForgotPasswordRequest
@@ -15,6 +17,7 @@ import com.example.proyectwin.data.api.service.UsersApi
 import com.example.proyectwin.data.api.safeApiCall
 import com.example.proyectwin.data.local.SessionManager
 import com.example.proyectwin.data.mapper.toDomain
+import com.example.proyectwin.data.model.ActivacionCuentaInfo
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.UserRole
 import com.example.proyectwin.domain.repository.AuthRepository
@@ -176,6 +179,24 @@ class AuthRepositoryImpl @Inject constructor(
             ),
         )
     }.map {}
+
+    override suspend fun validateActivation(token: String): Result<ActivacionCuentaInfo> =
+        safeApiCall { api.validateActivation(ActivationValidateRequest(token.trim())) }
+            .map { ActivacionCuentaInfo(nombre = it.nombre, correo = it.correo) }
+
+    override suspend fun activateAccount(
+        token: String,
+        password: String,
+        passwordConfirmation: String,
+    ): Result<String> = safeApiCall {
+        api.activateAccount(
+            ActivationRequest(
+                token = token.trim(),
+                password = password,
+                passwordConfirmation = passwordConfirmation,
+            ),
+        )
+    }.map { it.message }
 
     // ---------------------------------------------------------------- Internos
 

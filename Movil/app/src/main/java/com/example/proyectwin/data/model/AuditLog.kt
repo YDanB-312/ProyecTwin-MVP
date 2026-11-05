@@ -11,6 +11,7 @@ data class AuditLog(
     val entidadId: Int? = null,
     val usuarioId: Int? = null,
     val usuarioNombre: String? = null,
+    val usuarioRol: String? = null,
     val detalle: String? = null,
     val ip: String? = null,
     val createdAt: String? = null

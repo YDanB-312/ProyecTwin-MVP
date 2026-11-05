@@ -121,6 +121,12 @@ fun CrearFichaScreen(
                 val data = estadoUi.data
                 val guardando = saveState is FichaSaveState.Loading
                 val errores = (saveState as? FichaSaveState.Error)?.fieldErrors.orEmpty()
+                val numeroError = when {
+                    numero.isBlank() && !esEdicion -> "Ingresa el número de ficha."
+                    numero.isNotBlank() && !Regex("^\\d{4,8}$").matches(numero.trim()) ->
+                        "Solo dígitos (4 a 8 caracteres)."
+                    else -> null
+                }
 
                 Column(
                     modifier = Modifier
@@ -182,19 +188,21 @@ fun CrearFichaScreen(
                                 label = "Número de ficha *",
                                 placeholder = "Ej: 3067030",
                                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                                isError = errores.containsKey("numero"),
-                                supportingText = errores["numero"],
+                                isError = errores.containsKey("numero") || numeroError != null,
+                                supportingText = errores["numero"] ?: numeroError,
                             )
 
-                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("activo" to "Activo", "finalizado" to "Finalizado").forEach { (valor, etiqueta) ->
-                                    SenaChip(
-                                        text = etiqueta,
-                                        color = if (valor == "activo") senaColors().success else senaColors().warning,
-                                        isSelected = estado == valor,
-                                        onClick = { estado = valor },
-                                    )
+                            if (esEdicion) {
+                                Text("Estado", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("activo" to "Activo", "finalizado" to "Finalizado").forEach { (valor, etiqueta) ->
+                                        SenaChip(
+                                            text = etiqueta,
+                                            color = if (valor == "activo") senaColors().success else senaColors().warning,
+                                            isSelected = estado == valor,
+                                            onClick = { estado = valor },
+                                        )
+                                    }
                                 }
                             }
 
@@ -398,13 +406,16 @@ fun CrearFichaScreen(
                                         estado = estado,
                                         idPrograma = idPrograma!!,
                                         idInstructor = idInstructor!!,
-                                        aprendices = aprendicesSeleccionados.toList(),
+                                        // Solo el admin gestiona el roster. El instructor
+                                        // edita datos escalares: enviar su copia local
+                                        // desvincularía aprendices si otra sesión cambió la ficha.
+                                        aprendices = if (esAdmin) aprendicesSeleccionados.toList() else null,
                                     )
                                 }
                             },
                             isLoading = guardando,
                             enabled = !guardando && idPrograma != null && idInstructor != null &&
-                                nombre.isNotBlank() && numero.isNotBlank(),
+                                nombre.isNotBlank() && numeroError == null,
                             icon = Icons.Default.Save,
                             modifier = Modifier.weight(1f),
                             minWidth = 0.dp,

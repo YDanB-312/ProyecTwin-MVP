@@ -108,7 +108,12 @@ class AdminViewModel @Inject constructor(
                     ?: projectsRepository.listar().getOrDefault(emptyList())
 
                 val porId = LinkedHashMap<Int, Similarity>()
-                similaritiesRepository.listar().getOrDefault(emptyList()).forEach { porId[it.id] = it }
+                // Supervisión global: incluye todos los pares vigentes, también
+                // los de propuestas aún pendientes. Sin este parámetro el listado
+                // solo trae pares con ambas propuestas aprobadas.
+                similaritiesRepository.listar(supervision = true)
+                    .getOrDefault(emptyList())
+                    .forEach { porId[it.id] = it }
 
                 if (proyectos.size <= MAX_PROYECTOS_AGREGADOS) {
                     // Por lotes pequeños: con muchos proyectos juntos, las
@@ -182,6 +187,25 @@ class AdminViewModel @Inject constructor(
     fun reenviarActivacion(id: Int, onResult: (Result<String>) -> Unit) {
         viewModelScope.launch {
             onResult(usersRepository.reenviarActivacion(id))
+        }
+    }
+
+    /** Elimina un par de similitud desde la supervisión admin. */
+    fun eliminarSimilitud(id: Int, onResult: (Result<Unit>) -> Unit = {}) {
+        viewModelScope.launch {
+            similaritiesRepository.eliminar(id).fold(
+                onSuccess = {
+                    _similitudesCompletas.value = _similitudesCompletas.value?.filterNot { it.id == id }
+                    val actual = _uiState.value as? AdminUiState.Success
+                    if (actual != null) {
+                        _uiState.value = actual.copy(
+                            similarities = actual.similarities.filterNot { it.id == id },
+                        )
+                    }
+                    onResult(Result.success(Unit))
+                },
+                onFailure = { onResult(Result.failure(it)) },
+            )
         }
     }
 

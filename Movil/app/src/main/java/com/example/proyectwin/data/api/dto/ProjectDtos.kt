@@ -66,6 +66,8 @@ data class ProjectUpdateRequest(
     @SerialName("id_class_group") val idClassGroup: Int?,
     /** Observación del instructor al rechazar (opcional; null no viaja). */
     val observacion: String? = null,
+    /** `updated_at` leído: el backend responde 409 si cambió mientras editabas. */
+    val version: String? = null,
 )
 
 /** Fila del historial de la propuesta (`GET /projects/{id}/historial`). */

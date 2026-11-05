@@ -41,7 +41,8 @@ fun RevisionPropuestasScreen(
     revisionViewModel: RevisionViewModel = hiltViewModel(),
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var selectedStatus by rememberSaveable { mutableStateOf("Pendiente") }
+    var selectedStatus by rememberSaveable { mutableStateOf("Todos") }
+    var selectedFicha by rememberSaveable { mutableStateOf<Int?>(null) }
     val uiState by revisionViewModel.uiState.collectAsState()
     val statuses = listOf("Todos", "Pendiente", "Aprobado", "Rechazado")
 
@@ -81,8 +82,12 @@ fun RevisionPropuestasScreen(
                     }
                     val matchesSearch = propuesta.proyecto.title.contains(searchQuery, ignoreCase = true) ||
                         propuesta.proyecto.studentName.orEmpty().contains(searchQuery, ignoreCase = true)
-                    matchesEstado && matchesSearch
+                    val matchesFicha = selectedFicha == null || propuesta.proyecto.fichaId == selectedFicha
+                    matchesEstado && matchesSearch && matchesFicha
                 }
+                val fichasDisponibles = estado.propuestas
+                    .mapNotNull { it.proyecto.fichaId }
+                    .distinct()
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -124,6 +129,27 @@ fun RevisionPropuestasScreen(
                                     )
                                 }
                             }
+                            if (fichasDisponibles.size > 1) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    SenaChip(
+                                        text = "Todas las fichas",
+                                        color = senaColors().info,
+                                        isSelected = selectedFicha == null,
+                                        onClick = { selectedFicha = null },
+                                    )
+                                    fichasDisponibles.forEach { fichaId ->
+                                        SenaChip(
+                                            text = "Ficha #$fichaId",
+                                            color = senaColors().info,
+                                            isSelected = selectedFicha == fichaId,
+                                            onClick = { selectedFicha = fichaId },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -156,7 +182,7 @@ fun ProposalReviewCard(
     onDetailClick: () -> Unit,
 ) {
     val proposal: Project = propuesta.proyecto
-    SenaCard {
+    SenaCard(selected = LocalSelectedListItemId.current == proposal.id) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

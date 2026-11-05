@@ -148,6 +148,7 @@ fun ClassGroupDto.toDomain(): Ficha = Ficha(
     nombre = nombre,
     numero = numero,
     idPrograma = idPrograma.takeIf { it != 0 },
+    redNombre = program?.knowledgeNetwork?.nombre,
 )
 
 // ------------------------------------------------------------ Catálogos
@@ -216,7 +217,7 @@ fun ProjectDraft.toCreateRequest(): ProjectCreateRequest = ProjectCreateRequest(
     idClassGroup = idClassGroup,
 )
 
-fun ProjectDraft.toUpdateRequest(): ProjectUpdateRequest = ProjectUpdateRequest(
+fun ProjectDraft.toUpdateRequest(version: String? = null): ProjectUpdateRequest = ProjectUpdateRequest(
     titulo = titulo,
     resumen = resumen,
     palabrasClave = palabrasClave,
@@ -228,6 +229,7 @@ fun ProjectDraft.toUpdateRequest(): ProjectUpdateRequest = ProjectUpdateRequest(
     idInstructorAsignado = idInstructorAsignado,
     idClassGroup = idClassGroup,
     observacion = observacion,
+    version = version,
 )
 
 /** Equipo: fila del pivote + usuario embebido (incluye `apprentice.generalUser`). */
@@ -408,6 +410,7 @@ fun AuditLogDto.toDomain(): AuditLog = AuditLog(
     entidadId = entidadId,
     usuarioId = idUsuario,
     usuarioNombre = user?.nombreCompleto(),
+    usuarioRol = user?.rol,
     detalle = detalle?.let { detalleAuditoriaTexto(it) },
     ip = ip,
     createdAt = createdAt,

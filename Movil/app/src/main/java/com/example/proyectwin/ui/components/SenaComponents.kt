@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -52,6 +53,15 @@ import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.navigation.NavIntents
 import com.example.proyectwin.ui.theme.*
 import dagger.hilt.android.EntryPointAccessors
+
+/** true en tabletas: la navegación principal se muestra como rail lateral. */
+val LocalIsExpanded = staticCompositionLocalOf { false }
+
+/** true en ventanas anchas donde la lista y el detalle caben lado a lado. */
+val LocalIsTwoPane = staticCompositionLocalOf { false }
+
+/** Id del elemento resaltado en la lista del panel maestro. */
+val LocalSelectedListItemId = staticCompositionLocalOf<Int?> { null }
 
 // --- PREMIUM COMPONENTS (EMERALD LUSH EDITION) ---
 
@@ -202,10 +212,19 @@ fun SenaCard(
     onClick: (() -> Unit)? = null,
     elevation: Dp = 4.dp,
     containerColor: Color = senaColors().backgroundElevated,
+    selected: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (selected) {
+                    Modifier.border(2.dp, senaColors().green, RoundedCornerShape(16.dp))
+                } else {
+                    Modifier
+                },
+            ),
         onClick = onClick ?: {},
         enabled = onClick != null,
         shape = RoundedCornerShape(16.dp),
@@ -734,10 +753,13 @@ fun SenaBottomNavigationBar(
     onNavigate: (String) -> Unit,
     items: List<SenaBottomNavItem>
 ) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
     NavigationBar(
         containerColor = senaColors().backgroundElevated,
         tonalElevation = 8.dp,
-        modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+        // En tabletas la barra no se estira de borde a borde: se centra con un
+        // ancho máximo legible, manteniendo los mismos destinos y gestos.
+        modifier = Modifier.widthIn(max = 640.dp).windowInsetsPadding(WindowInsets.navigationBars)
     ) {
         items.forEach { item ->
             // Los destinos pueden declarar query args opcionales (p. ej. filtros);
@@ -764,6 +786,46 @@ fun SenaBottomNavigationBar(
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = senaColors().green.copy(alpha = 0.1f)
                 )
+            )
+        }
+    }
+    }
+}
+
+@Composable
+fun SenaNavigationRail(
+    currentRoute: String?,
+    onNavigate: (String) -> Unit,
+    items: List<SenaBottomNavItem>,
+    modifier: Modifier = Modifier,
+) {
+    NavigationRail(
+        containerColor = senaColors().backgroundElevated,
+        modifier = modifier.fillMaxHeight().windowInsetsPadding(WindowInsets.navigationBars),
+    ) {
+        Spacer(Modifier.height(24.dp))
+        items.forEach { item ->
+            val selected = currentRoute?.substringBefore('?') == item.route.substringBefore('?')
+            NavigationRailItem(
+                selected = selected,
+                onClick = { if (!selected) onNavigate(item.route) },
+                icon = {
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.label,
+                        tint = if (selected) senaColors().green else senaColors().textMuted,
+                    )
+                },
+                label = {
+                    Text(
+                        item.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (selected) FontWeight.Black else FontWeight.Medium,
+                    )
+                },
+                colors = NavigationRailItemDefaults.colors(
+                    indicatorColor = senaColors().green.copy(alpha = 0.12f),
+                ),
             )
         }
     }

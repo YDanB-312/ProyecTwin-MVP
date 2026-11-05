@@ -3,9 +3,11 @@ package com.example.proyectwin.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.model.Ficha
+import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.domain.repository.FichasRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
+import com.example.proyectwin.domain.repository.UsersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +38,13 @@ sealed class AdminFichaDetailUiState {
 class AdminFichaDetailViewModel @Inject constructor(
     private val fichasRepository: FichasRepository,
     private val projectsRepository: ProjectsRepository,
+    private val usersRepository: UsersRepository,
 ) : ViewModel() {
+
+    private val _candidatos = MutableStateFlow<List<GeneralUser>>(emptyList())
+    val candidatos: StateFlow<List<GeneralUser>> = _candidatos.asStateFlow()
+    private val _accionError = MutableStateFlow<String?>(null)
+    val accionError: StateFlow<String?> = _accionError.asStateFlow()
 
     private val _uiState = MutableStateFlow<AdminFichaDetailUiState>(AdminFichaDetailUiState.Loading)
     val uiState: StateFlow<AdminFichaDetailUiState> = _uiState.asStateFlow()
@@ -54,6 +62,90 @@ class AdminFichaDetailViewModel @Inject constructor(
 
     fun recargar() {
         if (fichaId != 0) load(fichaId)
+    }
+
+    fun cargarCandidatos() {
+        viewModelScope.launch {
+            usersRepository.listar(role = "aprendiz").onSuccess { usuarios ->
+                val enFicha = (_uiState.value as? AdminFichaDetailUiState.Success)
+                    ?.data?.ficha?.estudiantes?.map { it.id }?.toSet().orEmpty()
+                _candidatos.value = usuarios.filter { it.id !in enFicha }
+            }
+        }
+    }
+
+    fun agregarAprendiz(usuarioId: Int, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            _accionError.value = null
+            fichasRepository.agregarAprendiz(fichaId, usuarioId).fold(
+                onSuccess = {
+                    recargar()
+                    cargarCandidatos()
+                    onDone()
+                },
+                onFailure = { _accionError.value = it.message ?: "No se pudo agregar el aprendiz." },
+            )
+        }
+    }
+
+    fun crearAprendiz(
+        nombre: String,
+        apellido: String,
+        tipoDocumento: String,
+        numeroDocumento: String,
+        correo: String,
+        onDone: (String?) -> Unit = {},
+    ) {
+        viewModelScope.launch {
+            _accionError.value = null
+            fichasRepository.crearAprendizEnFicha(
+                fichaId = fichaId,
+                nombre = nombre,
+                apellido = apellido,
+                tipoDocumento = tipoDocumento,
+                numeroDocumento = numeroDocumento,
+                correo = correo,
+            ).fold(
+                onSuccess = { activacion ->
+                    recargar()
+                    cargarCandidatos()
+                    onDone(
+                        activacion?.mensaje
+                            ?: "Aprendiz creado y matriculado en la ficha.",
+                    )
+                },
+                onFailure = { _accionError.value = it.message ?: "No se pudo crear el aprendiz." },
+            )
+        }
+    }
+
+    fun quitarAprendiz(usuarioId: Int, onDone: () -> Unit = {}) {
+        val ficha = (_uiState.value as? AdminFichaDetailUiState.Success)?.data?.ficha ?: return
+        val programa = ficha.idPrograma ?: return
+        val instructor = ficha.instructorId ?: return
+        viewModelScope.launch {
+            _accionError.value = null
+            fichasRepository.actualizar(
+                id = ficha.id,
+                nombre = ficha.nombre.orEmpty(),
+                numero = ficha.numero.orEmpty(),
+                estado = ficha.estado,
+                idPrograma = programa,
+                idInstructor = instructor,
+                aprendices = ficha.estudiantes.map { it.id }.filterNot { it == usuarioId },
+            ).fold(
+                onSuccess = {
+                    recargar()
+                    cargarCandidatos()
+                    onDone()
+                },
+                onFailure = { _accionError.value = it.message ?: "No se pudo retirar el aprendiz." },
+            )
+        }
+    }
+
+    fun limpiarAccionError() {
+        _accionError.value = null
     }
 
     /** Refresco silencioso (pull-to-refresh): mantiene el contenido visible. */

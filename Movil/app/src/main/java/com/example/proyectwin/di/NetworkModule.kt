@@ -40,6 +40,10 @@ object NetworkModule {
 
     private const val TIMEOUT_SECONDS = 15L
 
+    // Enviar una propuesta y recalcular similitudes son operaciones síncronas
+    // que en la web usan 120/180 s. El cliente Android necesita el mismo margen.
+    private const val LONG_TIMEOUT_SECONDS = 180L
+
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
@@ -52,8 +56,9 @@ object NetworkModule {
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(LONG_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(LONG_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(LONG_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             // La API responde JSON y emite el 401 como JSON solo si el cliente
             // declara `Accept: application/json`. Sin esta cabecera, Laravel
             // convierte el no-autenticado en un redirect a la ruta web `login`

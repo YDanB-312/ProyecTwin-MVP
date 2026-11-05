@@ -66,6 +66,7 @@ fun ProjectDetailScreen(
     var comentarioEditando by remember { mutableStateOf<Comment?>(null) }
     var textoEdicionComentario by rememberSaveable { mutableStateOf("") }
     var comentarioParaEliminar by remember { mutableStateOf<Comment?>(null) }
+    var estadoAdmin by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(projectId) {
         projectId.toIntOrNull()?.let { projectDetailViewModel.load(it) }
@@ -151,16 +152,33 @@ fun ProjectDetailScreen(
                         onRechazar = { dialogoRechazo = true },
                     )
 
+                    if (data.esAdmin) {
+                        LaunchedEffect(data.project.estado) { estadoAdmin = data.project.estado }
+                        SelectorEstadoAdmin(
+                            estadoActual = data.project.estado,
+                            estadoSeleccionado = estadoAdmin,
+                            puedeAprobar = data.puedeAprobar,
+                            enProceso = enProceso,
+                            onSeleccionar = { estadoAdmin = it },
+                            onGuardar = { projectDetailViewModel.cambiarEstado(estadoAdmin) },
+                        )
+                    }
+
                     ResumenPropuesta(data)
 
-                    SimilitudesPropuesta(data, similarityRoute, onNavigate)
-
-                    EquipoPropuesta(
-                        data = data,
-                        enProceso = enProceso,
-                        onAgregar = { mostrarHojaEquipo = true },
-                        onQuitar = { projectDetailViewModel.quitarIntegrante(it) },
-                    )
+                    val puedeVerSimilitudes = data.esAdmin || data.esCreador ||
+                        data.perteneceAlEquipo || data.esInstructorACargo
+                    if (puedeVerSimilitudes) {
+                        SimilitudesPropuesta(data, similarityRoute, onNavigate)
+                    }
+                    if (!data.esAdmin && (data.esCreador || data.perteneceAlEquipo || data.esInstructorACargo)) {
+                        EquipoPropuesta(
+                            data = data,
+                            enProceso = enProceso,
+                            onAgregar = { mostrarHojaEquipo = true },
+                            onQuitar = { projectDetailViewModel.quitarIntegrante(it) },
+                        )
+                    }
 
                     ObservacionesPropuesta(
                         data = data,
@@ -364,11 +382,18 @@ private fun CabeceraPropuesta(data: ProjectDetailData) {
                 color = senaColors().warning,
             )
         }
-        if (!data.esCreador && !data.perteneceAlEquipo && !data.esAdmin) {
+        if (!data.esCreador && !data.perteneceAlEquipo && !data.esAdmin && !data.esInstructorACargo) {
             Text(
                 "Vista de contraparte · solo lectura",
                 style = MaterialTheme.typography.labelSmall,
                 color = senaColors().info,
+            )
+        }
+        if (!data.perteneceAFicha && !data.esAdmin && !data.esInstructorACargo) {
+            Text(
+                "Ya no perteneces a esta ficha · solo lectura",
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().warning,
             )
         }
     }
@@ -896,6 +921,55 @@ private fun HistorialPropuesta(historial: List<ProjectHistory>) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SelectorEstadoAdmin(
+    estadoActual: String,
+    estadoSeleccionado: String,
+    puedeAprobar: Boolean,
+    enProceso: Boolean,
+    onSeleccionar: (String) -> Unit,
+    onGuardar: () -> Unit,
+) {
+    SenaSectionHeader(title = "Estado de la propuesta")
+    SenaCard(elevation = 1.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    ProjectStatus.PENDIENTE.value to "Pendiente",
+                    ProjectStatus.APROBADO.value to "Aprobado",
+                    ProjectStatus.RECHAZADO.value to "Rechazado",
+                ).forEach { (valor, etiqueta) ->
+                    SenaChip(
+                        text = etiqueta,
+                        color = when (valor) {
+                            ProjectStatus.APROBADO.value -> senaColors().success
+                            ProjectStatus.RECHAZADO.value -> senaColors().danger
+                            else -> senaColors().warning
+                        },
+                        isSelected = estadoSeleccionado == valor,
+                        onClick = { onSeleccionar(valor) },
+                    )
+                }
+            }
+            val bloqueado = estadoSeleccionado == ProjectStatus.APROBADO.value && !puedeAprobar
+            if (bloqueado) {
+                Text(
+                    "No puedes aprobar mientras el resultado de similitud esté pendiente o con error.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = senaColors().warning,
+                )
+            }
+            SenaButton(
+                text = "Actualizar estado",
+                onClick = onGuardar,
+                enabled = !enProceso && !bloqueado && estadoSeleccionado != estadoActual,
+                isLoading = enProceso,
+                icon = Icons.Default.Save,
+            )
         }
     }
 }

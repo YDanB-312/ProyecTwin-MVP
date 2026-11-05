@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.proyectwin.data.model.ClassGroupStatus
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -38,13 +39,6 @@ fun UnirseFichaAprendizScreen(
     var codigoFicha by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
     val actionState by fichasViewModel.actionState.collectAsState()
-
-    LaunchedEffect(actionState.codigoValido, actionState.codigoValidado) {
-        val codigo = actionState.codigoValidado
-        if (actionState.codigoValido == true && actionState.selectedFicha != null && codigo != null) {
-            fichasViewModel.joinFicha(codigo)
-        }
-    }
 
     LaunchedEffect(actionState.joinSuccess) {
         if (actionState.joinSuccess) {
@@ -64,12 +58,26 @@ fun UnirseFichaAprendizScreen(
         },
         containerColor = senaColors().background,
         bottomBar = {
+            val ficha = actionState.selectedFicha
+            val puedeUnirse = ficha != null &&
+                ficha.classGroupStatus == ClassGroupStatus.ACTIVO &&
+                !actionState.joinSuccess
             SenaBottomBar {
                 SenaButton(
-                    text = "Unirse a la Ficha",
-                    icon = Icons.AutoMirrored.Filled.Login,
+                    text = when {
+                        actionState.joinSuccess -> "Unido"
+                        ficha == null -> "Validar código"
+                        puedeUnirse -> "Confirmar y unirme"
+                        else -> "Ficha no disponible"
+                    },
+                    icon = if (ficha == null) Icons.Default.Search else Icons.AutoMirrored.Filled.Login,
+                    enabled = !actionState.joinSuccess && (ficha == null || puedeUnirse),
                     onClick = {
-                        fichasViewModel.validarCodigo(codigoFicha)
+                        if (ficha == null) {
+                            if (codigoFicha.isNotBlank()) fichasViewModel.validarCodigo(codigoFicha)
+                        } else {
+                            actionState.codigoValidado?.let { fichasViewModel.joinFicha(it) }
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -112,11 +120,72 @@ fun UnirseFichaAprendizScreen(
 
                     SenaTextField(
                         value = codigoFicha,
-                        onValueChange = { codigoFicha = it },
+                        onValueChange = {
+                            codigoFicha = it
+                            fichasViewModel.limpiarValidacionCodigo()
+                        },
                         label = "Ingresa el código *",
                         placeholder = "Ej: abc-defg",
                         leadingIcon = Icons.Default.Key
                     )
+
+                    actionState.selectedFicha?.let { ficha ->
+                        SenaCard(elevation = 0.dp) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        ficha.nombre ?: "Ficha de formación",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    Text(
+                                        ficha.statusDisplay,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (ficha.classGroupStatus == ClassGroupStatus.ACTIVO) {
+                                            senaColors().success
+                                        } else {
+                                            senaColors().danger
+                                        },
+                                    )
+                                }
+                                Text(
+                                    "Programa: ${ficha.programa}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = senaColors().textSecondary,
+                                )
+                                ficha.numero?.takeIf { it.isNotBlank() }?.let {
+                                    Text(
+                                        "Número: $it",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = senaColors().textSecondary,
+                                    )
+                                }
+                                Text(
+                                    "Instructor: ${ficha.instructorName ?: "Sin asignar"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = senaColors().textSecondary,
+                                )
+                                Text(
+                                    "Aprendices: ${ficha.estudiantes.size}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = senaColors().textSecondary,
+                                )
+                                if (ficha.classGroupStatus != ClassGroupStatus.ACTIVO) {
+                                    SenaAlertBanner(
+                                        title = "Ficha no activa",
+                                        message = "Esta ficha no admite nuevas uniones. Solicita un código vigente a tu instructor.",
+                                        icon = Icons.Default.Info,
+                                        color = senaColors().warning,
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     if (actionState.codigoValido == false) {
                         SenaAlertBanner(

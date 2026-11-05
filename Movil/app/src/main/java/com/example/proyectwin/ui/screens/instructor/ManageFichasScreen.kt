@@ -63,6 +63,8 @@ fun ManageFichasScreen(
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("Todas") }
+    var programaFiltro by rememberSaveable { mutableStateOf("") }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
     // -1 = ninguna expandida (sentinel para rememberSaveable).
     var fichaExpandida by rememberSaveable { mutableIntStateOf(-1) }
     var inicializado by rememberSaveable { mutableStateOf(false) }
@@ -112,11 +114,19 @@ fun ManageFichasScreen(
         )
     } ?: emptyList()
 
-    val filteredFichas = fichas.filter { ficha ->
+    val filtradas = fichas.filter { ficha ->
         val matchesFilter = if (selectedFilter == "Todas") true else ficha.status == selectedFilter
-        val matchesSearch = ficha.code.contains(searchQuery, ignoreCase = true) || ficha.name.contains(searchQuery, ignoreCase = true)
-        matchesFilter && matchesSearch
+        val matchesSearch = ficha.code.contains(searchQuery, ignoreCase = true) ||
+            ficha.name.contains(searchQuery, ignoreCase = true) ||
+            ficha.program.contains(searchQuery, ignoreCase = true)
+        val matchesPrograma = programaFiltro.isBlank() ||
+            ficha.program.contains(programaFiltro, ignoreCase = true)
+        matchesFilter && matchesSearch && matchesPrograma
     }
+    val porPagina = 8
+    val totalPaginas = ((filtradas.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+    val paginaActual = pagina.coerceIn(1, totalPaginas)
+    val filteredFichas = filtradas.drop((paginaActual - 1) * porPagina).take(porPagina)
 
     Scaffold(
         topBar = {
@@ -189,10 +199,17 @@ fun ManageFichasScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         SenaTextField(
                             value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            onValueChange = { searchQuery = it; pagina = 1 },
                             label = "Búsqueda rápida",
-                            placeholder = "Buscar por código o nombre...",
+                            placeholder = "Buscar por código, nombre o programa...",
                             leadingIcon = Icons.Default.Search
+                        )
+                        SenaTextField(
+                            value = programaFiltro,
+                            onValueChange = { programaFiltro = it; pagina = 1 },
+                            label = "",
+                            placeholder = "Filtrar por programa...",
+                            leadingIcon = Icons.Default.School,
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -208,7 +225,7 @@ fun ManageFichasScreen(
                                         else -> senaColors().green
                                     },
                                     isSelected = selectedFilter == filter,
-                                    onClick = { selectedFilter = filter }
+                                    onClick = { selectedFilter = filter; pagina = 1 }
                                 )
                             }
                         }
@@ -264,6 +281,28 @@ fun ManageFichasScreen(
                 }
             }
             
+            if (totalPaginas > 1) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(enabled = paginaActual > 1, onClick = { pagina = paginaActual - 1 }) {
+                            Text("Anterior")
+                        }
+                        Text(
+                            "Página $paginaActual de $totalPaginas",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = senaColors().textSecondary,
+                        )
+                        TextButton(enabled = paginaActual < totalPaginas, onClick = { pagina = paginaActual + 1 }) {
+                            Text("Siguiente")
+                        }
+                    }
+                }
+            }
+
             item { Spacer(Modifier.height(80.dp)) }
         }
     }
@@ -297,7 +336,10 @@ fun InstructorFichaCard(
     onEliminar: () -> Unit = {},
     eliminando: Boolean = false,
 ) {
-    SenaCard(elevation = 1.dp) {
+    SenaCard(
+        elevation = 1.dp,
+        selected = LocalSelectedListItemId.current == ficha.id,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

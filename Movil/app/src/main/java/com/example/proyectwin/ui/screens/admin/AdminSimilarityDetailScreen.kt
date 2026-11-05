@@ -132,6 +132,7 @@ fun AdminSimilarityDetailScreen(
                         porcentaje = (par.similitud * 100).roundToInt().coerceIn(0, 100),
                     )
                     NotaSimilitud()
+                    DetalleMotorSimilitud(par.detalles)
 
                     // A = propuesta pendiente (o de la izquierda), B = aprobada.
                     val aprobado = ProjectStatus.APROBADO.value
@@ -181,6 +182,17 @@ fun AdminSimilarityDetailScreen(
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = senaColors().textSecondary,
                                             )
+                                            val origen = listOfNotNull(
+                                                relacionada.project1Student,
+                                                relacionada.project1?.programa,
+                                            ).distinct().joinToString(" · ")
+                                            if (origen.isNotBlank()) {
+                                                Text(
+                                                    origen,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = senaColors().textLight,
+                                                )
+                                            }
                                         }
                                         Text(
                                             relacionada.similitudPercent,

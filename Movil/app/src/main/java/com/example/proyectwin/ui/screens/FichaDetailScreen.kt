@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +45,7 @@ fun FichaDetailScreen(
     val actionState by fichasViewModel.actionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmarSalida by remember { mutableStateOf(false) }
+    var busquedaCompaneros by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(user?.fichaId) {
         user?.fichaId?.let { fichasViewModel.loadFichaById(it) }
@@ -176,6 +178,15 @@ fun FichaDetailScreen(
                         }
 
                         item {
+                            SenaButton(
+                                text = "Ver detalle completo de la ficha",
+                                onClick = { onNavigate(AppNavigation.rutaFichaDetalle(ficha.id)) },
+                                isPrimary = false,
+                                icon = Icons.Default.OpenInNew,
+                            )
+                        }
+
+                        item {
                             SenaSectionHeader(title = "Instructor Encargado")
                             SenaCard(
                                 elevation = 1.dp,
@@ -218,12 +229,35 @@ fun FichaDetailScreen(
                             SenaSectionHeader(title = "Compañeros (${ficha.estudiantes.size})")
                         }
 
-                        if (ficha.estudiantes.isEmpty()) {
+                        item {
+                            SenaTextField(
+                                value = busquedaCompaneros,
+                                onValueChange = { busquedaCompaneros = it },
+                                label = "",
+                                placeholder = "Buscar compañero por nombre o correo...",
+                                leadingIcon = Icons.Default.Search,
+                            )
+                        }
+
+                        val companeros = ficha.estudiantes.filter {
+                            busquedaCompaneros.isBlank() ||
+                                it.name.contains(busquedaCompaneros, true) ||
+                                it.email.contains(busquedaCompaneros, true)
+                        }
+
+                        if (companeros.isEmpty()) {
                             item {
-                                SenaEmptyState(message = "No hay aprendices en esta ficha.", icon = Icons.Default.Groups)
+                                SenaEmptyState(
+                                    message = if (ficha.estudiantes.isEmpty()) {
+                                        "No hay aprendices en esta ficha."
+                                    } else {
+                                        "No hay compañeros que coincidan con la búsqueda."
+                                    },
+                                    icon = Icons.Default.Groups,
+                                )
                             }
                         } else {
-                            items(ficha.estudiantes, key = { it.id }) { estudiante ->
+                            items(companeros, key = { it.id }) { estudiante ->
                                 SenaCard(
                                     elevation = 0.5.dp,
                                     onClick = {
@@ -259,14 +293,12 @@ fun FichaDetailScreen(
                         }
 
                         item {
-                            if (ficha.estado == "activo") {
-                                SenaButton(
-                                    text = "SALIR DE LA FICHA",
-                                    onClick = { confirmarSalida = true },
-                                    isPrimary = false,
-                                    icon = Icons.Default.Logout,
-                                )
-                            }
+                            SenaButton(
+                                text = "SALIR DE LA FICHA",
+                                onClick = { confirmarSalida = true },
+                                isPrimary = false,
+                                icon = Icons.Default.Logout,
+                            )
                         }
 
                         item { Spacer(Modifier.height(40.dp)) }

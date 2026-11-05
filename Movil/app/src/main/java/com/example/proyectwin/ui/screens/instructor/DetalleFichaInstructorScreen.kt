@@ -22,6 +22,10 @@ import com.example.proyectwin.data.model.ClassGroupStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
+import com.example.proyectwin.ui.viewmodel.AuthUiState
+import com.example.proyectwin.ui.viewmodel.AuthViewModel
+import com.example.proyectwin.ui.viewmodel.DashboardUiState
+import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
 
@@ -34,15 +38,26 @@ import com.example.proyectwin.ui.viewmodel.FichasViewModel
 fun DetalleFichaInstructorScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    onCompaneroDetail: (Int) -> Unit = {},
     fichaId: String = "",
     fichasViewModel: FichasViewModel = hiltViewModel(),
+    dashboardViewModel: DashboardViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by fichasViewModel.uiState.collectAsState()
+    val dashState by dashboardViewModel.uiState.collectAsState()
+    val authState by authViewModel.uiState.collectAsState()
+    val usuarioId = (authState as? AuthUiState.LoggedIn)?.user?.id
 
-    LaunchedEffect(fichaId) {
+    LaunchedEffect(fichaId, usuarioId) {
         val id = fichaId.toIntOrNull()
         if (id != null) fichasViewModel.loadFichaById(id) else fichasViewModel.loadAllFichas()
+        usuarioId?.let { dashboardViewModel.loadInstructorDashboard(it) }
     }
+
+    val propuestas = (dashState as? DashboardUiState.Success)?.projects
+        .orEmpty()
+        .filter { it.fichaId?.toString() == fichaId }
 
     val ficha = when (val estado = uiState) {
         is FichasUiState.Success -> estado.fichas.firstOrNull {
@@ -66,15 +81,34 @@ fun DetalleFichaInstructorScreen(
             // conserva el detalle (histórico) pero no la acción de edición.
             if (ficha != null && ficha.classGroupStatus != ClassGroupStatus.ANULADA) {
                 SenaBottomBar {
-                    SenaButton(
-                        text = "Editar Ficha",
-                        onClick = {
-                            onNavigate(
-                                AppNavigation.INSTRUCTOR_CREAR_FICHA.replace("{fichaId}", ficha.id.toString()),
-                            )
-                        },
-                        icon = Icons.Default.Edit,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SenaButton(
+                            text = "Directorio",
+                            onClick = {
+                                onNavigate(
+                                    AppNavigation.INSTRUCTOR_DIRECTORIO.replace(
+                                        "{fichaId}",
+                                        ficha.id.toString(),
+                                    ),
+                                )
+                            },
+                            isPrimary = false,
+                            icon = Icons.Default.People,
+                            modifier = Modifier.weight(1f),
+                            minWidth = 0.dp,
+                        )
+                        SenaButton(
+                            text = "Editar Ficha",
+                            onClick = {
+                                onNavigate(
+                                    AppNavigation.INSTRUCTOR_CREAR_FICHA.replace("{fichaId}", ficha.id.toString()),
+                                )
+                            },
+                            icon = Icons.Default.Edit,
+                            modifier = Modifier.weight(1f),
+                            minWidth = 0.dp,
+                        )
+                    }
                 }
             }
         },
@@ -135,6 +169,13 @@ fun DetalleFichaInstructorScreen(
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = Color.White.copy(alpha = 0.85f),
                                             )
+                                            ficha.redNombre?.let {
+                                                Text(
+                                                    "Red: $it",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color.White.copy(alpha = 0.8f),
+                                                )
+                                            }
                                         }
                                         Surface(color = Color.White.copy(alpha = 0.2f), shape = CircleShape) {
                                             Text(
@@ -173,7 +214,7 @@ fun DetalleFichaInstructorScreen(
                             }
                         } else {
                             items(ficha.estudiantes, key = { it.id }) { estudiante ->
-                                SenaCard(elevation = 0.5.dp) {
+                                SenaCard(elevation = 0.5.dp, onClick = { onCompaneroDetail(estudiante.id) }) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         SenaAvatar(
                                             fotoBase64 = estudiante.fotoPerfil,
@@ -194,6 +235,48 @@ fun DetalleFichaInstructorScreen(
                                                 color = senaColors().textLight,
                                             )
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            SenaSectionHeader(title = "Propuestas de la ficha (${propuestas.size})")
+                        }
+                        if (propuestas.isEmpty()) {
+                            item {
+                                SenaEmptyState(
+                                    message = "Esta ficha aún no tiene propuestas.",
+                                    icon = Icons.Default.FolderOpen,
+                                )
+                            }
+                        } else {
+                            items(propuestas, key = { it.id }) { propuesta ->
+                                SenaCard(
+                                    elevation = 0.5.dp,
+                                    onClick = {
+                                        onNavigate(
+                                            AppNavigation.INSTRUCTOR_DETAIL.replace(
+                                                "{projectId}",
+                                                propuesta.id.toString(),
+                                            ),
+                                        )
+                                    },
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                propuesta.title,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                            Text(
+                                                propuesta.studentName ?: "Sin aprendiz",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = senaColors().textSecondary,
+                                            )
+                                        }
+                                        SenaStatusBadge(status = propuesta.statusDisplay)
                                     }
                                 }
                             }

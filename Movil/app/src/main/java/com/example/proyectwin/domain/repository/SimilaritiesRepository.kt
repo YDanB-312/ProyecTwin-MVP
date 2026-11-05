@@ -14,6 +14,8 @@ interface SimilaritiesRepository {
         search: String? = null,
         fichaId: Int? = null,
         programa: String? = null,
+        /** Solo admin: supervisión global de pares vigentes. */
+        supervision: Boolean? = null,
     ): Result<List<Similarity>>
 
     suspend fun obtener(id: Int): Result<Similarity>

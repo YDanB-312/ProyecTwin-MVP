@@ -9,6 +9,7 @@ import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
 import com.example.proyectwin.domain.repository.SimilaritiesRepository
+import com.example.proyectwin.domain.usecase.MarkAllNotificationsReadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -42,6 +43,7 @@ class DashboardViewModel @Inject constructor(
     private val projectsRepository: ProjectsRepository,
     private val notificationsRepository: NotificationsRepository,
     private val similaritiesRepository: SimilaritiesRepository,
+    private val markAllNotificationsRead: MarkAllNotificationsReadUseCase,
 ) : ViewModel() {
 
     data class ProjectCounts(val total: Int, val aprobados: Int)
@@ -80,6 +82,23 @@ class DashboardViewModel @Inject constructor(
                 _projectCounts.value = ProjectCounts(
                     total = propios.size,
                     aprobados = propios.count { it.estado == ProjectStatus.APROBADO.value },
+                )
+            }
+        }
+    }
+
+    /**
+     * Conteo para el perfil del instructor: el backend ya limita la lista a
+     * sus fichas/asignaciones, así que se cuentan todas las propuestas visibles.
+     */
+    fun loadInstructorProjectCounts(force: Boolean = false) {
+        if (!force && countsCargadosPara == -1 && _projectCounts.value != null) return
+        countsCargadosPara = -1
+        viewModelScope.launch {
+            projectsRepository.listar().onSuccess { proyectos ->
+                _projectCounts.value = ProjectCounts(
+                    total = proyectos.size,
+                    aprobados = proyectos.count { it.estado == ProjectStatus.APROBADO.value },
                 )
             }
         }
@@ -138,6 +157,14 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun loadUnreadCount(userId: Int) = loadNotifications(userId)
+
+    fun markAllRead(userId: Int) {
+        viewModelScope.launch {
+            markAllNotificationsRead(userId).onSuccess {
+                loadNotifications(userId)
+            }
+        }
+    }
 
     fun refresh() {
         ultimaCarga?.invoke()

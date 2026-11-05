@@ -28,6 +28,8 @@ import com.example.proyectwin.ui.viewmodel.DetalleCompaneroViewModel
 fun DetalleCompaneroScreen(
     userId: String = "",
     onBack: () -> Unit,
+    onProjectDetail: (Int) -> Unit = {},
+    onFichaDetail: (Int) -> Unit = {},
     companeroViewModel: DetalleCompaneroViewModel = hiltViewModel(),
 ) {
     val uiState by companeroViewModel.uiState.collectAsState()
@@ -114,7 +116,7 @@ fun DetalleCompaneroScreen(
                     data.ficha?.let { ficha ->
                         item {
                             SenaSectionHeader(title = "Ficha")
-                            SenaCard(elevation = 1.dp) {
+                            SenaCard(elevation = 1.dp, onClick = { onFichaDetail(ficha.id) }) {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
                                         ficha.nombre ?: ficha.programa.ifBlank { "Ficha de formación" },
@@ -151,7 +153,7 @@ fun DetalleCompaneroScreen(
                         }
                     } else {
                         items(data.proyectos, key = { it.id }) { proyecto ->
-                            ProyectoCompaneroCard(proyecto)
+                            ProyectoCompaneroCard(proyecto) { onProjectDetail(proyecto.id) }
                         }
                     }
 
@@ -163,8 +165,8 @@ fun DetalleCompaneroScreen(
 }
 
 @Composable
-private fun ProyectoCompaneroCard(proyecto: Project) {
-    SenaCard(elevation = 0.5.dp) {
+private fun ProyectoCompaneroCard(proyecto: Project, onClick: () -> Unit) {
+    SenaCard(elevation = 0.5.dp, onClick = onClick) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

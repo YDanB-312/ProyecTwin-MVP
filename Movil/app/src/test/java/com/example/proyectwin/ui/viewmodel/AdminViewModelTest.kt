@@ -62,16 +62,20 @@ class AdminViewModelTest {
         val porPropuesta = Similarity(id = 1, projectId1 = 1, projectId2 = 4, vigente = true)
         val historica = Similarity(id = 8, projectId1 = 2, projectId2 = 4, vigente = false)
 
-        coEvery { sims.listar(any(), any(), any(), any(), any(), any()) } answers {
+        coEvery { sims.listar(any(), any(), any(), any(), any(), any(), any()) } answers {
             val proyectoId = firstArg<Int?>()
             val historial = secondArg<Boolean?>()
-            val encontrados = listOf(global, porPropuesta, historica).filter { par ->
-                (par.projectId1 == proyectoId || par.projectId2 == proyectoId) &&
-                    if (historial == true) !par.vigente else par.vigente
+            val supervision = arg<Boolean?>(6)
+            val encontrados = if (supervision == true) {
+                listOf(global)
+            } else {
+                listOf(global, porPropuesta, historica).filter { par ->
+                    (par.projectId1 == proyectoId || par.projectId2 == proyectoId) &&
+                        if (historial == true) !par.vigente else par.vigente
+                }
             }
             Result.success(encontrados)
         }
-        coEvery { sims.listar() } returns Result.success(listOf(global))
 
         val vm = AdminViewModel(users, projects, bugs, sims)
         advanceUntilIdle()

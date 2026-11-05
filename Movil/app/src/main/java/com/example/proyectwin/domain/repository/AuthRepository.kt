@@ -1,5 +1,6 @@
 package com.example.proyectwin.domain.repository
 
+import com.example.proyectwin.data.model.ActivacionCuentaInfo
 import com.example.proyectwin.data.model.GeneralUser
 import kotlinx.coroutines.flow.Flow
 
@@ -35,4 +36,14 @@ interface AuthRepository {
     suspend fun forgotPassword(correo: String): Result<String>
 
     suspend fun resetPassword(token: String, correo: String, password: String, passwordConfirmation: String): Result<Unit>
+
+    /** Valida el enlace de activación y devuelve los datos enmascarados. */
+    suspend fun validateActivation(token: String): Result<ActivacionCuentaInfo>
+
+    /** Activa la cuenta con la contraseña definitiva. */
+    suspend fun activateAccount(
+        token: String,
+        password: String,
+        passwordConfirmation: String,
+    ): Result<String>
 }

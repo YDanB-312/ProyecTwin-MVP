@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.perteneceA
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -43,9 +44,11 @@ fun ProjectsScreen(
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("Todos") }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
     val filters = listOf("Todos", "Borrador", "En revisión", "Aprobado", "Rechazado")
+    val porPagina = 6
 
     val authState by authViewModel.uiState.collectAsState()
     val dashState by dashboardViewModel.uiState.collectAsState()
@@ -62,13 +65,29 @@ fun ProjectsScreen(
         if (!isLoading) isRefreshing = false
     }
 
-    val filteredProjects = (dashState as? DashboardUiState.Success)?.projects?.filter { project ->
+    val proyectosPropios = (dashState as? DashboardUiState.Success)?.projects
+        ?.filter { it.perteneceA(user?.id) }
+        ?: emptyList()
+
+    LaunchedEffect(searchQuery, selectedFilter) { pagina = 1 }
+
+    val filteredProjects = proyectosPropios.filter { project ->
         val matchesFilter = if (selectedFilter == "Todos") true else {
             project.statusDisplay == selectedFilter
         }
-        val matchesSearch = project.title.contains(searchQuery, ignoreCase = true)
+        val texto = searchQuery.trim()
+        val matchesSearch = texto.isBlank() ||
+            project.title.contains(texto, ignoreCase = true) ||
+            project.description.contains(texto, ignoreCase = true) ||
+            project.palabrasClave.orEmpty().contains(texto, ignoreCase = true)
         matchesFilter && matchesSearch
-    } ?: emptyList()
+    }
+
+    val totalPaginas = ((filteredProjects.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+    val paginaActual = pagina.coerceIn(1, totalPaginas)
+    val proyectosPagina = filteredProjects
+        .drop((paginaActual - 1) * porPagina)
+        .take(porPagina)
 
     Scaffold(
         topBar = {
@@ -125,7 +144,7 @@ fun ProjectsScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = "",
-                            placeholder = "Buscar por nombre...",
+                            placeholder = "Buscar por nombre, resumen o palabras clave...",
                             leadingIcon = Icons.Default.Search
                         )
 
@@ -174,13 +193,20 @@ fun ProjectsScreen(
                     if (filteredProjects.isEmpty()) {
                         item {
                             SenaEmptyState(
-                                message = "No se encontraron proyectos que coincidan con tu búsqueda.",
-                                icon = Icons.Default.SearchOff
+                                message = if (proyectosPropios.isEmpty()) {
+                                    "Aún no tienes propuestas. Crea la primera desde el botón +."
+                                } else {
+                                    "No se encontraron proyectos que coincidan con tu búsqueda."
+                                },
+                                icon = if (proyectosPropios.isEmpty()) Icons.Default.FolderOpen else Icons.Default.SearchOff
                             )
                         }
                     } else {
-                        items(filteredProjects) { project ->
-                    SenaCard(onClick = { onProjectDetail(project.id.toString()) }) {
+                        items(proyectosPagina) { project ->
+                    SenaCard(
+                        onClick = { onProjectDetail(project.id.toString()) },
+                        selected = LocalSelectedListItemId.current == project.id,
+                    ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -218,6 +244,29 @@ fun ProjectsScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+                if (totalPaginas > 1) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TextButton(
+                                enabled = paginaActual > 1,
+                                onClick = { pagina = paginaActual - 1 },
+                            ) { Text("Anterior") }
+                            Text(
+                                "Página $paginaActual de $totalPaginas",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = senaColors().textSecondary,
+                            )
+                            TextButton(
+                                enabled = paginaActual < totalPaginas,
+                                onClick = { pagina = paginaActual + 1 },
+                            ) { Text("Siguiente") }
                         }
                     }
                 }

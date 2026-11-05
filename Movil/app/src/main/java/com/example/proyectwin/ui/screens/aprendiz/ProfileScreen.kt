@@ -146,6 +146,11 @@ fun ProfileScreen(
                 TextButton(onClick = { photoPickerLauncher.launch("image/*") }) {
                     Text("Cambiar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().green)
                 }
+                if (!user?.fotoPerfil.isNullOrBlank()) {
+                    TextButton(onClick = { profileViewModel.updateFoto(null) }) {
+                        Text("Quitar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().danger)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -156,7 +161,7 @@ fun ProfileScreen(
                     color = senaColors().text
                 )
                 Text(
-                    text = "${user?.roleDisplayName ?: "Aprendiz"} — ADSO",
+                    text = user?.roleDisplayName ?: "Aprendiz",
                     style = MaterialTheme.typography.bodyMedium,
                     color = senaColors().textLight
                 )
@@ -183,7 +188,12 @@ fun ProfileScreen(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Text("Activo", fontWeight = FontWeight.Bold, color = senaColors().success, style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                if (user?.estado == false) "Suspendido" else "Activo",
+                                fontWeight = FontWeight.Bold,
+                                color = if (user?.estado == false) senaColors().danger else senaColors().success,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
                         }
                     }
                 }
@@ -215,6 +225,13 @@ fun ProfileScreen(
                             SenaSettingsItem(icon = Icons.Default.Email, title = "Correo Electrónico", description = user?.email ?: "-")
                             HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                             SenaSettingsItem(icon = Icons.Default.Badge, title = "Documento de Identidad", description = user?.documentoIdentidad ?: "-")
+                            HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                            SenaSettingsItem(
+                                icon = Icons.Default.Groups,
+                                title = "Ficha actual",
+                                description = user?.fichaId?.let { "Ficha #$it" } ?: "Sin ficha",
+                                onClick = { onNavigate(AppNavigation.APRENDIZ_FICHA_DETAIL) },
+                            )
 
                             Spacer(modifier = Modifier.height(16.dp))
                             SenaButton(text = "Editar Perfil", onClick = {

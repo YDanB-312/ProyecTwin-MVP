@@ -43,23 +43,56 @@ fun BugReportsScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedType by rememberSaveable { mutableStateOf<BugReportType?>(null) }
     var selectedStatus by rememberSaveable { mutableStateOf<BugReportStatus?>(null) }
+    var selectedPrioridad by rememberSaveable { mutableStateOf<String?>(null) }
+    var desdeMascara by rememberSaveable { mutableStateOf("") }
+    var hastaMascara by rememberSaveable { mutableStateOf("") }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
     var reporteParaEliminar by remember { mutableStateOf<BugReport?>(null) }
 
     val reportsState by bugReportsViewModel.uiState.collectAsState()
+    val accionError by bugReportsViewModel.accionError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { bugReportsViewModel.load() }
+    LaunchedEffect(accionError) {
+        accionError?.let {
+            snackbarHostState.showSnackbar(it)
+            bugReportsViewModel.limpiarError()
+        }
+    }
     val reports = (reportsState as? BugReportsUiState.Success)?.reports ?: emptyList()
 
     val typeFilters = remember { listOf(null) + BugReportType.entries.toList() }
     val statusFilters = remember { listOf(null) + BugReportStatus.entries.toList() }
 
+    fun fechaApi(mascara: String): String? = runCatching {
+        val partes = mascara.trim().split("/")
+        if (partes.size != 3) return@runCatching null
+        java.time.LocalDate.of(
+            partes[2].toInt(),
+            partes[1].toInt(),
+            partes[0].toInt(),
+        ).toString()
+    }.getOrNull()
+
+    val desdeApi = fechaApi(desdeMascara)
+    val hastaApi = fechaApi(hastaMascara)
     val filteredReports = reports.filter { report ->
         val matchesType = selectedType == null || report.bugType == selectedType
         val matchesStatus = selectedStatus == null || report.bugStatus == selectedStatus
+        val matchesPrioridad = selectedPrioridad == null || report.prioridadDisplay == selectedPrioridad
+        val fechaReporte = report.fecha ?: report.createdAt?.take(10)
+        val matchesDesde = desdeApi == null || (fechaReporte != null && fechaReporte >= desdeApi)
+        val matchesHasta = hastaApi == null || (fechaReporte != null && fechaReporte <= hastaApi)
         val matchesSearch = report.reporterName?.contains(searchQuery, ignoreCase = true) == true ||
                 report.descripcion.contains(searchQuery, ignoreCase = true) ||
-                report.titulo.contains(searchQuery, ignoreCase = true)
-        matchesType && matchesStatus && matchesSearch
+                report.titulo.contains(searchQuery, ignoreCase = true) ||
+                report.numeroFicha?.contains(searchQuery, ignoreCase = true) == true
+        matchesType && matchesStatus && matchesPrioridad && matchesSearch && matchesDesde && matchesHasta
     }
+    val porPagina = 8
+    val totalPaginas = ((filteredReports.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+    val paginaActual = pagina.coerceIn(1, totalPaginas)
+    val visibles = filteredReports.drop((paginaActual - 1) * porPagina).take(porPagina)
 
     Scaffold(
         topBar = {
@@ -70,7 +103,8 @@ fun BugReportsScreen(
                 showNotifications = true
             )
         },
-        containerColor = senaColors().background
+        containerColor = senaColors().background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -98,7 +132,7 @@ fun BugReportsScreen(
                         )
                         SenaTextField(
                             value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            onValueChange = { searchQuery = it; pagina = 1 },
                             label = "",
                             placeholder = "Buscar por usuario o descripción...",
                             leadingIcon = Icons.Default.Search
@@ -161,9 +195,39 @@ fun BugReportsScreen(
                                         else -> senaColors().green
                                     },
                                     isSelected = selectedStatus == status,
-                                    onClick = { selectedStatus = status }
+                                    onClick = { selectedStatus = status; pagina = 1 }
                                 )
                             }
+                        }
+                        Text(
+                            "Prioridad",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = senaColors().textLight,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(null, "Alta", "Media", "Baja").forEach { prioridad ->
+                                SenaChip(
+                                    text = prioridad ?: "Todas",
+                                    color = senaColors().green,
+                                    isSelected = selectedPrioridad == prioridad,
+                                    onClick = { selectedPrioridad = prioridad; pagina = 1 },
+                                )
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            SenaTextField(
+                                value = desdeMascara,
+                                onValueChange = { desdeMascara = it; pagina = 1 },
+                                label = "Desde (DD/MM/AAAA)",
+                                modifier = Modifier.weight(1f),
+                            )
+                            SenaTextField(
+                                value = hastaMascara,
+                                onValueChange = { hastaMascara = it; pagina = 1 },
+                                label = "Hasta (DD/MM/AAAA)",
+                                modifier = Modifier.weight(1f),
+                            )
                         }
                     }
                 }
@@ -187,7 +251,7 @@ fun BugReportsScreen(
                             )
                         }
                     } else {
-                        items(filteredReports) { report ->
+                        items(visibles) { report ->
                     BugReportCard(
                         report = report,
                         onClick = {
@@ -198,6 +262,28 @@ fun BugReportsScreen(
                 }
             }
             }
+            }
+
+            if (totalPaginas > 1) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(enabled = paginaActual > 1, onClick = { pagina = paginaActual - 1 }) {
+                            Text("Anterior")
+                        }
+                        Text(
+                            "Página $paginaActual de $totalPaginas",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = senaColors().textSecondary,
+                        )
+                        TextButton(enabled = paginaActual < totalPaginas, onClick = { pagina = paginaActual + 1 }) {
+                            Text("Siguiente")
+                        }
+                    }
+                }
             }
 
             item { Spacer(Modifier.height(40.dp)) }
@@ -228,7 +314,10 @@ fun BugReportCard(
     onClick: () -> Unit,
     onDelete: () -> Unit = {},
 ) {
-    SenaCard(elevation = 1.dp) {
+    SenaCard(
+        elevation = 1.dp,
+        selected = LocalSelectedListItemId.current == report.id,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -251,6 +340,11 @@ fun BugReportCard(
             }
 
             Column {
+                Text(
+                    "Prioridad ${report.prioridadDisplay} · Ficha ${report.numeroFicha ?: "—"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = senaColors().textLight,
+                )
                 Text(
                     report.descripcion,
                     style = MaterialTheme.typography.bodySmall,

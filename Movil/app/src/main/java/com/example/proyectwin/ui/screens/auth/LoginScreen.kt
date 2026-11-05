@@ -39,6 +39,7 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
+    onActivateAccountClick: () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var correo by rememberSaveable { mutableStateOf("") }
@@ -145,7 +146,7 @@ fun LoginScreen(
                     if (uiState is AuthUiState.Error) {
                         val error = uiState as AuthUiState.Error
                         val mensaje = if (error.code == "cuenta_no_activada") {
-                            "Tu cuenta aún no está habilitada. Contacta al administrador."
+                            "Tu cuenta aún no está habilitada. Usa \"Activar cuenta\" con el código del correo o solicita al administrador que reenvíe el enlace."
                         } else {
                             error.message
                         }
@@ -159,9 +160,12 @@ fun LoginScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        TextButton(onClick = onActivateAccountClick) {
+                            Text("Activar cuenta", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
+                        }
                         TextButton(onClick = onForgotPasswordClick) {
                             Text("Olvidé mi clave", style = MaterialTheme.typography.labelSmall, color = senaColors().green, fontWeight = FontWeight.Black)
                         }
@@ -190,6 +194,7 @@ fun LoginScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                 }
             }
 

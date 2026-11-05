@@ -24,39 +24,33 @@ data class BitacoraFiltros(
     val idUsuario: Int? = null,
     val desde: String? = null,
     val hasta: String? = null,
+    val buscar: String? = null,
+    val rol: String? = null,
+    val orden: String? = null,
 ) {
     val hayFiltros: Boolean
-        get() = accion != null || entidad != null || idUsuario != null || desde != null || hasta != null
+        get() = accion != null || entidad != null || idUsuario != null || desde != null ||
+            hasta != null || !buscar.isNullOrBlank() || rol != null || orden != null
 }
 
 sealed class BitacoraUiState {
     data object Loading : BitacoraUiState()
 
-    /**
-     * El backend entrega la bitácora completa (array plano, máximo 500 filas,
-     * sin paginación de servidor), así que la paginación es en cliente, igual
-     * que en la web.
-     */
     data class Success(
         val registros: List<AuditLog>,
         val filtros: BitacoraFiltros = BitacoraFiltros(),
         val pagina: Int = 1,
+        val totalPaginas: Int = 1,
+        val totalRegistros: Int = 0,
     ) : BitacoraUiState() {
-        val totalPaginas: Int
-            get() = if (registros.isEmpty()) {
-                1
-            } else {
-                (registros.size + REGISTROS_POR_PAGINA - 1) / REGISTROS_POR_PAGINA
-            }
-
-        val visibles: List<AuditLog>
-            get() = registros.drop((pagina - 1) * REGISTROS_POR_PAGINA).take(REGISTROS_POR_PAGINA)
+        /** El servidor ya entregó solo la página solicitada. */
+        val visibles: List<AuditLog> get() = registros
     }
 
     data class Error(val message: String) : BitacoraUiState()
 }
 
-/** Bitácora inmutable (`GET /audit-logs`) con filtros del backend. */
+/** Bitácora inmutable (`GET /audit-logs?paginado=1`) con filtros del servidor. */
 @HiltViewModel
 class BitacoraViewModel @Inject constructor(
     private val auditRepository: AuditRepository,
@@ -66,14 +60,12 @@ class BitacoraViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<BitacoraUiState>(BitacoraUiState.Loading)
     val uiState: StateFlow<BitacoraUiState> = _uiState.asStateFlow()
 
-    /** Catálogo de responsables para el filtro (mejor esfuerzo). */
     private val _usuarios = MutableStateFlow<List<GeneralUser>>(emptyList())
     val usuarios: StateFlow<List<GeneralUser>> = _usuarios.asStateFlow()
 
     private var filtros = BitacoraFiltros()
+    private var paginaActual = 1
     private var trabajoCarga: Job? = null
-
-    /** Descarta respuestas de solicitudes que ya no corresponden al estado. */
     private var versionSolicitud = 0
 
     init {
@@ -81,58 +73,85 @@ class BitacoraViewModel @Inject constructor(
         cargarUsuarios()
     }
 
-    /** Aplica filtros nuevos y vuelve siempre a la primera página. */
     fun load(
         accion: String? = null,
         entidad: String? = null,
         idUsuario: Int? = null,
         desde: String? = null,
         hasta: String? = null,
+        buscar: String? = null,
+        rol: String? = null,
+        orden: String? = null,
     ) {
-        filtros = BitacoraFiltros(accion, entidad, idUsuario, desde, hasta)
+        filtros = BitacoraFiltros(
+            accion = accion,
+            entidad = entidad,
+            idUsuario = idUsuario,
+            desde = desde,
+            hasta = hasta,
+            buscar = buscar?.trim()?.ifBlank { null },
+            rol = rol,
+            orden = orden,
+        )
+        paginaActual = 1
         cargar()
     }
 
-    /** Limpia todos los filtros y recarga la bitácora completa. */
     fun limpiar() {
         filtros = BitacoraFiltros()
+        paginaActual = 1
         cargar()
     }
 
-    /** Reintento con los filtros vigentes (misma consulta). */
     fun recargar() = cargar()
 
-    // Paginación en cliente: cambiar de página NO repite la consulta.
-
     fun irAPagina(pagina: Int) {
-        val actual = _uiState.value as? BitacoraUiState.Success ?: return
-        val destino = pagina.coerceIn(1, actual.totalPaginas)
-        if (destino != actual.pagina) {
-            _uiState.value = actual.copy(pagina = destino)
+        val destino = pagina.coerceAtLeast(1)
+        if (destino != paginaActual) {
+            paginaActual = destino
+            cargar()
         }
     }
 
     fun paginaSiguiente() {
         val actual = _uiState.value as? BitacoraUiState.Success ?: return
-        irAPagina(actual.pagina + 1)
+        if (paginaActual < actual.totalPaginas) irAPagina(paginaActual + 1)
     }
 
     fun paginaAnterior() {
-        val actual = _uiState.value as? BitacoraUiState.Success ?: return
-        irAPagina(actual.pagina - 1)
+        if (paginaActual > 1) irAPagina(paginaActual - 1)
     }
 
     private fun cargar() {
         val f = filtros
+        val pagina = paginaActual
         val version = ++versionSolicitud
         trabajoCarga?.cancel()
         trabajoCarga = viewModelScope.launch {
             _uiState.value = BitacoraUiState.Loading
-            auditRepository.listar(f.accion, f.entidad, f.idUsuario, f.desde, f.hasta).fold(
-                onSuccess = { registros ->
-                    // Una respuesta vieja jamás pisa el estado de una más reciente.
+            auditRepository.listarPaginado(
+                page = pagina,
+                porPagina = REGISTROS_POR_PAGINA,
+                buscar = f.buscar,
+                accion = f.accion,
+                entidad = f.entidad,
+                idUsuario = f.idUsuario,
+                rol = f.rol,
+                desde = f.desde,
+                hasta = f.hasta,
+                orden = f.orden,
+            ).fold(
+                onSuccess = { resultado ->
                     if (version != versionSolicitud) return@launch
-                    _uiState.value = BitacoraUiState.Success(registros, f, pagina = 1)
+                    // Si el servidor corrige la página (p. ej. borrado), se refleja.
+                    paginaActual = resultado.pagina
+                    _uiState.value = BitacoraUiState.Success(
+                        registros = resultado.registros,
+                        filtros = f,
+                        pagina = resultado.pagina,
+                        totalPaginas = resultado.totalPaginas.coerceAtLeast(1),
+                        totalRegistros = resultado.totalRegistros,
+                    )
                 },
                 onFailure = { e ->
                     if (version == versionSolicitud) {

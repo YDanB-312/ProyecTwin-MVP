@@ -7,14 +7,20 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.example.proyectwin.ui.components.LocalIsExpanded
+import com.example.proyectwin.ui.components.LocalIsTwoPane
 
 import androidx.compose.material3.Shapes
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -108,16 +114,32 @@ fun senaColors(): SenaColorScheme = LocalSenaColorScheme.current
 
 @Composable
 fun ProyecTwinTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val isDarkState = rememberSaveable { mutableStateOf(darkTheme) }
+    val context = LocalContext.current
+    val prefs = remember(context) {
+        context.getSharedPreferences("proyectwin_theme", Context.MODE_PRIVATE)
+    }
+    // Dark-first como la web; la preferencia del usuario se conserva.
+    val expanded = LocalConfiguration.current.screenWidthDp >= 600
+    val twoPane = LocalConfiguration.current.screenWidthDp >= 840
+    val isDarkState = rememberSaveable {
+        mutableStateOf(
+            if (prefs.contains("dark")) prefs.getBoolean("dark", true) else darkTheme,
+        )
+    }
+    LaunchedEffect(isDarkState.value) {
+        prefs.edit().putBoolean("dark", isDarkState.value).apply()
+    }
 
     CompositionLocalProvider(
         LocalThemeIsDark provides isDarkState,
-        LocalSenaColorScheme provides if (isDarkState.value) darkSenaColors() else lightSenaColors()
+        LocalSenaColorScheme provides if (isDarkState.value) darkSenaColors() else lightSenaColors(),
+        LocalIsExpanded provides expanded,
+        LocalIsTwoPane provides twoPane,
     ) {
         val currentDark = LocalThemeIsDark.current.value
         val colorScheme = when {

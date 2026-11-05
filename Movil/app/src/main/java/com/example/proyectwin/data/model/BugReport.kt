@@ -21,6 +21,12 @@ data class BugReport(
     val bugType: BugReportType get() = BugReportType.fromValue(tipo)
     val bugStatus: BugReportStatus get() = BugReportStatus.fromValue(estado)
     val typeDisplay: String get() = bugType.typeDisplay
+    /** Prioridad derivada del tipo, igual que la web (no se edita). */
+    val prioridadDisplay: String get() = when (bugType) {
+        BugReportType.SISTEMA, BugReportType.SEGURIDAD -> "Alta"
+        BugReportType.DATOS, BugReportType.RENDIMIENTO -> "Media"
+        else -> "Baja"
+    }
     val statusDisplay: String get() = when (bugStatus) {
         BugReportStatus.PENDIENTE -> "Pendiente"
         BugReportStatus.EN_REVISION -> "En Revisión"

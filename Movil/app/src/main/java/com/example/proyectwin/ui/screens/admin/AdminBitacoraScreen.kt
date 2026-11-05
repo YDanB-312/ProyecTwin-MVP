@@ -1,6 +1,7 @@
 package com.example.proyectwin.ui.screens.admin
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -97,6 +98,9 @@ fun AdminBitacoraScreen(
     var usuarioId by remember { mutableStateOf<Int?>(null) }
     var accion by remember { mutableStateOf<String?>(null) }
     var entidad by remember { mutableStateOf<String?>(null) }
+    var rolFiltro by remember { mutableStateOf<String?>(null) }
+    var ordenFiltro by remember { mutableStateOf("recientes") }
+    var busquedaTexto by remember { mutableStateOf("") }
     var desdeMascara by remember { mutableStateOf("") }
     var hastaMascara by remember { mutableStateOf("") }
     var errorFecha by remember { mutableStateOf<String?>(null) }
@@ -106,15 +110,19 @@ fun AdminBitacoraScreen(
     val etiquetaAccion = ACCIONES_BITACORA.firstOrNull { it.first == accion }?.second ?: "Todas"
     val etiquetaEntidad = ENTIDADES_BITACORA.firstOrNull { it.first == entidad }?.second ?: "Todas"
     val hayFiltrosFormulario = usuarioId != null || accion != null || entidad != null ||
-        desdeMascara.isNotBlank() || hastaMascara.isNotBlank()
+        rolFiltro != null || desdeMascara.isNotBlank() || hastaMascara.isNotBlank() ||
+        busquedaTexto.isNotBlank() || ordenFiltro != "recientes"
 
     /** Restablece el formulario y pide la bitácora sin filtros. */
     val limpiarTodo: () -> Unit = {
         usuarioId = null
         accion = null
         entidad = null
+        rolFiltro = null
         desdeMascara = ""
         hastaMascara = ""
+        busquedaTexto = ""
+        ordenFiltro = "recientes"
         errorFecha = null
         bitacoraViewModel.limpiar()
     }
@@ -145,6 +153,13 @@ fun AdminBitacoraScreen(
             item {
                 SenaCard(elevation = 1.dp) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SenaTextField(
+                            value = busquedaTexto,
+                            onValueChange = { busquedaTexto = it },
+                            label = "",
+                            placeholder = "Buscar por acción, entidad, usuario o detalle...",
+                            leadingIcon = Icons.Default.Search,
+                        )
                         SelectorCampo(
                             etiqueta = "Responsable",
                             valor = etiquetaUsuario,
@@ -160,6 +175,33 @@ fun AdminBitacoraScreen(
                             valor = etiquetaEntidad,
                             onClick = { hojaAbierta = FiltroBitacora.ENTIDAD },
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(null to "Todos", "aprendiz" to "Aprendiz", "instructor" to "Instructor", "admin" to "Admin").forEach { (valor, etiqueta) ->
+                                SenaChip(
+                                    text = etiqueta,
+                                    color = senaColors().green,
+                                    isSelected = rolFiltro == valor,
+                                    onClick = { rolFiltro = valor },
+                                )
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SenaChip(
+                                text = "Recientes",
+                                color = senaColors().green,
+                                isSelected = ordenFiltro == "recientes",
+                                onClick = { ordenFiltro = "recientes" },
+                            )
+                            SenaChip(
+                                text = "Antiguos",
+                                color = senaColors().green,
+                                isSelected = ordenFiltro == "antiguos",
+                                onClick = { ordenFiltro = "antiguos" },
+                            )
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             CampoFechaNumerico(
                                 valor = desdeMascara,
@@ -201,6 +243,9 @@ fun AdminBitacoraScreen(
                                                 // El backend filtra por fecha ISO (Y-m-d).
                                                 desde = desdeApi,
                                                 hasta = hastaApi,
+                                                buscar = busquedaTexto,
+                                                rol = rolFiltro,
+                                                orden = ordenFiltro,
                                             )
                                         }
                                     },
@@ -228,14 +273,15 @@ fun AdminBitacoraScreen(
                     SenaErrorState(message = estado.message, onRetry = { bitacoraViewModel.recargar() })
                 }
                 is BitacoraUiState.Success -> {
+                    val visibles = estado.visibles
                     item {
                         Text(
-                            "${estado.registros.size} registros",
+                            "${estado.totalRegistros} registros",
                             style = MaterialTheme.typography.labelSmall,
                             color = senaColors().textLight,
                         )
                     }
-                    if (estado.registros.isEmpty()) {
+                    if (visibles.isEmpty()) {
                         item {
                             val accionLimpiar: (@Composable () -> Unit)? = if (estado.filtros.hayFiltros) {
                                 {
@@ -257,12 +303,13 @@ fun AdminBitacoraScreen(
                             )
                         }
                     } else {
-                        items(estado.visibles, key = { it.id }) { registro ->
+                        items(visibles, key = { it.id }) { registro ->
                             SenaCard(elevation = 0.5.dp) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            registro.accion,
+                                            ACCIONES_BITACORA.firstOrNull { it.first == registro.accion }?.second
+                                                ?: registro.accion,
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = senaColors().text,
@@ -282,6 +329,13 @@ fun AdminBitacoraScreen(
                                     registro.detalle?.let {
                                         Text(it, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                                     }
+                                    registro.ip?.let {
+                                        Text(
+                                            "IP: $it",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = senaColors().textMuted,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -290,7 +344,7 @@ fun AdminBitacoraScreen(
                             PaginacionBitacora(
                                 currentPage = estado.pagina,
                                 lastPage = estado.totalPaginas,
-                                total = estado.registros.size,
+                                total = estado.totalRegistros,
                                 onAnterior = { bitacoraViewModel.paginaAnterior() },
                                 onSiguiente = { bitacoraViewModel.paginaSiguiente() },
                             )

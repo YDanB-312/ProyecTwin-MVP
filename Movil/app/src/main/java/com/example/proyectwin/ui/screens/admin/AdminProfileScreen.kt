@@ -143,6 +143,11 @@ fun AdminProfileScreen(
                 TextButton(onClick = { photoPickerLauncher.launch("image/*") }) {
                     Text("Cambiar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().green)
                 }
+                if (!user?.fotoPerfil.isNullOrBlank()) {
+                    TextButton(onClick = { profileViewModel.updateFoto(null) }) {
+                        Text("Quitar foto", style = MaterialTheme.typography.labelSmall, color = senaColors().danger)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -219,6 +224,13 @@ fun AdminProfileScreen(
                             title = "Cambiar Contraseña",
                             description = "Actualiza tu clave con la actual",
                             onClick = { onNavigate(AppNavigation.CHANGE_PASSWORD) }
+                        )
+                        HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                        SenaSettingsItem(
+                            icon = Icons.Default.Email,
+                            title = "Cambiar Correo",
+                            description = "Requiere tu contraseña actual",
+                            onClick = { onNavigate(AppNavigation.CHANGE_EMAIL) }
                         )
                     }
                 }

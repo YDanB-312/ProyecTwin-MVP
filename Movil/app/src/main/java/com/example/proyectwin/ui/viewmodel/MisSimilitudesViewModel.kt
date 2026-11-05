@@ -59,14 +59,19 @@ class MisSimilitudesViewModel @Inject constructor(
                     proyecto.studentId == usuarioId || proyecto.equipo.any { it.id == usuarioId }
                 }
 
+            // Un par que toca dos propuestas propias no debe aparecer dos veces.
+            val vistos = mutableSetOf<Int>()
             val filas = proyectos.mapNotNull { proyecto ->
-                val suyos = pares.filter { it.projectId1 == proyecto.id || it.projectId2 == proyecto.id }
+                val suyos = pares
+                    .filter { it.projectId1 == proyecto.id || it.projectId2 == proyecto.id }
+                    .filter { vistos.add(it.id) }
+                    .sortedByDescending { it.similitud }
                 if (suyos.isEmpty()) null else SimilitudesDeProyecto(proyecto, suyos)
-            }
+            }.sortedByDescending { fila -> fila.pares.maxOfOrNull { it.similitud } ?: 0.0 }
 
             _uiState.value = MisSimilitudesUiState.Success(
                 filas = filas,
-                totalPares = pares.size,
+                totalPares = pares.distinctBy { it.id }.size,
             )
         }
     }

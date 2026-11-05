@@ -17,6 +17,7 @@ import com.example.proyectwin.ui.screens.aprendiz.*
 import com.example.proyectwin.ui.screens.instructor.*
 import com.example.proyectwin.ui.screens.admin.*
 import com.example.proyectwin.ui.screens.auth.*
+import com.example.proyectwin.ui.screens.adaptive.*
 import com.example.proyectwin.ui.screens.AlertsScreen
 import com.example.proyectwin.ui.screens.EditProfileScreen
 import com.example.proyectwin.ui.screens.FichaDetailScreen
@@ -27,6 +28,7 @@ object AppNavigation {
     const val AUTH_GRAPH = "auth_graph"
     const val LOGIN = "login"
     const val FORGOT_PASSWORD = "forgot_password"
+    const val ACTIVATE_ACCOUNT = "activate_account?token={token}"
 
     /** Token/correo pueden venir del `reset_url` (modo local) o pegarse a mano. */
     const val RESET_PASSWORD = "reset_password?correo={correo}&token={token}"
@@ -38,12 +40,16 @@ object AppNavigation {
     /** Cambio obligatorio (must_change_password): destino de nivel raíz. */
     const val CAMBIO_OBLIGATORIO = "cambio_obligatorio"
     const val NOT_FOUND = "not_found"
+    const val ACCESO_DENEGADO = "acceso_denegado"
 
     fun rutaResetPassword(correo: String, token: String): String =
         "reset_password?correo=${android.net.Uri.encode(correo)}&token=${android.net.Uri.encode(token)}"
 
     fun rutaConfirmacion(correo: String, resetUrl: String?): String =
         "confirmation?correo=${android.net.Uri.encode(correo)}&resetUrl=${android.net.Uri.encode(resetUrl ?: "")}"
+
+    fun rutaActivacion(token: String = ""): String =
+        "activate_account?token=${android.net.Uri.encode(token)}"
 
     /**
      * Alta/edición de propuesta. `projectId` vacío = alta; `retorno` decide a
@@ -56,6 +62,9 @@ object AppNavigation {
         "aprendiz/analizando/$projectId?fallidos=$miembrosFallidos"
 
     fun rutaResultadoAnalisis(projectId: Int): String = "aprendiz/resultado/$projectId"
+
+    fun rutaFichaDetalle(fichaId: Int): String =
+        APRENDIZ_FICHA_DETALLE.replace("{fichaId}", fichaId.toString())
 
     // Aprendiz Graph
     const val APRENDIZ_GRAPH = "aprendiz_graph"
@@ -72,6 +81,8 @@ object AppNavigation {
     const val APRENDIZ_PROFILE = "aprendiz_profile"
     const val APRENDIZ_ALERTS = "aprendiz/alerts"
     const val APRENDIZ_FICHA_DETAIL = "aprendiz/ficha"
+    /** Detalle de una ficha concreta (propia, de un compañero o del instructor). */
+    const val APRENDIZ_FICHA_DETALLE = "aprendiz/ficha/{fichaId}"
     const val APRENDIZ_JOIN_FICHA = "aprendiz/join-ficha"
     const val APRENDIZ_COMPANERO_DETAIL = "aprendiz/companero/{userId}"
     const val APRENDIZ_INSTRUCTOR_DETAIL = "aprendiz/instructor/{userId}"
@@ -93,6 +104,8 @@ object AppNavigation {
     const val INSTRUCTOR_MANAGE_FICHAS = "instructor/fichas/manage"
     const val INSTRUCTOR_ALERTS = "instructor/alerts"
     const val INSTRUCTOR_FICHA_DETAIL = "instructor_ficha_detail/{fichaId}"
+    const val INSTRUCTOR_DIRECTORIO = "instructor/directorio/{fichaId}"
+    const val INSTRUCTOR_COMPANERO_DETAIL = "instructor/companero/{userId}"
 
     // Admin Graph
     const val ADMIN_GRAPH = "admin_graph"
@@ -152,7 +165,24 @@ object AppNavigation {
         navigation(startDestination = LOGIN, route = AUTH_GRAPH) {
             composable(LOGIN) { LoginScreen(
                 onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) },
+                onActivateAccountClick = { navController.navigate(rutaActivacion()) },
             ) }
+            composable(
+                route = ACTIVATE_ACCOUNT,
+                arguments = listOf(
+                    navArgument("token") { type = NavType.StringType; defaultValue = "" },
+                ),
+            ) { entrada ->
+                ActivateAccountScreen(
+                    tokenInicial = entrada.arguments?.getString("token").orEmpty(),
+                    onBackToLogin = { navController.popBackStack() },
+                    onActivated = {
+                        navController.navigate(LOGIN) {
+                            popUpTo(AUTH_GRAPH) { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable(FORGOT_PASSWORD) { ForgotPasswordScreen(
                 onBackToLogin = { navController.popBackStack() },
                 onCodeSent = { correo, resetUrl ->
@@ -196,6 +226,20 @@ object AppNavigation {
                 onGoHome = { navController.navigate(LOGIN) { popUpTo(AUTH_GRAPH) { inclusive = true } } },
                 onGoLogin = { navController.navigate(LOGIN) }
             ) }
+            composable(ACCESO_DENEGADO) {
+                AccessDeniedScreen(
+                    onLogout = {
+                        navController.navigate(LOGIN) {
+                            popUpTo(AUTH_GRAPH) { inclusive = true }
+                        }
+                    },
+                    onGoToLogin = {
+                        navController.navigate(LOGIN) {
+                            popUpTo(AUTH_GRAPH) { inclusive = true }
+                        }
+                    },
+                )
+            }
         }
     }
 
@@ -203,29 +247,26 @@ object AppNavigation {
         val bottomBar = @Composable {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-            SenaBottomNavigationBar(
-                currentRoute = currentRoute,
-                onNavigate = { route -> 
-                    navController.navigate(route) {
-                        popUpTo(APRENDIZ_DASHBOARD) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                items = aprendizTabs
-            )
+            if (!LocalIsExpanded.current) {
+                SenaBottomNavigationBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(APRENDIZ_DASHBOARD) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    items = aprendizTabs,
+                )
+            }
         }
 
         navigation(startDestination = APRENDIZ_DASHBOARD, route = APRENDIZ_GRAPH) {
             composable(APRENDIZ_DASHBOARD) { 
                 DashboardScreen(onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) 
             }
-            composable(APRENDIZ_PROJECTS) { ProjectsScreen(
-                onNavigate = { route -> navController.navigateTo(route) },
-                onNewProject = { navController.navigate(rutaNuevoProyecto()) },
-                onProjectDetail = { id -> navController.navigate("aprendiz_detail/$id") },
-                bottomBar = { bottomBar() }
-            ) }
+            composable(APRENDIZ_PROJECTS) { AprendizProjectsAdaptive(navController, bottomBar = { bottomBar() }) }
             composable(
                 route = APRENDIZ_NEW_PROJECT,
                 arguments = listOf(
@@ -237,6 +278,7 @@ object AppNavigation {
                 val retorno = backStackEntry.arguments?.getString("retorno") ?: "aprendiz"
                 NewProjectScreen(
                     projectId = projectId,
+                    retorno = retorno,
                     onBack = { navController.popBackStack() },
                     onNavigate = { route -> navController.navigateTo(route) },
                     onSaved = { id, enviado, fallidos ->
@@ -325,16 +367,14 @@ object AppNavigation {
                 )
             ) { backStackEntry ->
                 val proyectoId = backStackEntry.arguments?.getInt("proyectoId") ?: 0
-                SimilitudesScreen(
+                AprendizSimilaritiesAdaptive(
+                    navController = navController,
                     proyectoId = proyectoId.takeIf { it > 0 },
-                    onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigateTo(route) },
                 )
             }
             composable(APRENDIZ_PROFILE) { ProfileScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) }
-            composable(APRENDIZ_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigateTo(route) },
-                onBack = { navController.popBackStack() },
+            composable(APRENDIZ_ALERTS) { AlertsAdaptive(
+                navController = navController,
                 profileRoute = APRENDIZ_PROFILE,
                 similitudesRoute = APRENDIZ_SIMILITUDES,
                 detailRoute = "aprendiz_detail/{id}",
@@ -342,7 +382,33 @@ object AppNavigation {
                 bottomBar = { bottomBar() },
             ) }
             composable(APRENDIZ_FICHA_DETAIL) { FichaDetailScreen(onBack = { navController.popBackStack() }, onNavigate = { route -> navController.navigateTo(route) }) }
-            composable(APRENDIZ_JOIN_FICHA) { UnirseFichaAprendizScreen(onBack = { navController.popBackStack() }, onJoined = { navController.popBackStack() }) }
+            composable(
+                route = APRENDIZ_FICHA_DETALLE,
+                arguments = listOf(navArgument("fichaId") { type = NavType.IntType }),
+            ) { entrada ->
+                val fichaId = entrada.arguments?.getInt("fichaId") ?: 0
+                DetalleFichaScreen(
+                    fichaId = fichaId,
+                    onBack = { navController.popBackStack() },
+                    onCompaneroDetail = { id ->
+                        navController.navigate(APRENDIZ_COMPANERO_DETAIL.replace("{userId}", id.toString()))
+                    },
+                    onInstructorDetail = { id ->
+                        navController.navigate(APRENDIZ_INSTRUCTOR_DETAIL.replace("{userId}", id.toString()))
+                    },
+                    onProjectDetail = { id -> navController.navigate("aprendiz_detail/$id") },
+                )
+            }
+            composable(APRENDIZ_JOIN_FICHA) {
+                UnirseFichaAprendizScreen(
+                    onBack = { navController.popBackStack() },
+                    onJoined = {
+                        navController.navigate(APRENDIZ_FICHA_DETAIL) {
+                            popUpTo(APRENDIZ_JOIN_FICHA) { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable(
                 route = APRENDIZ_COMPANERO_DETAIL,
                 arguments = listOf(
@@ -352,7 +418,9 @@ object AppNavigation {
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
                 DetalleCompaneroScreen(
                     userId = userId,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onProjectDetail = { id -> navController.navigate("aprendiz_detail/$id") },
+                    onFichaDetail = { id -> navController.navigate(rutaFichaDetalle(id)) },
                 )
             }
             composable(
@@ -364,9 +432,7 @@ object AppNavigation {
                     userId = userId,
                     onBack = { navController.popBackStack() },
                     onFichaDetail = { fichaId ->
-                        // El aprendiz solo tiene su propia ficha; el detalle ya
-                        // está accesible desde Mi Ficha.
-                        navController.navigate(APRENDIZ_FICHA_DETAIL)
+                        navController.navigate(rutaFichaDetalle(fichaId))
                     },
                 )
             }
@@ -377,17 +443,19 @@ object AppNavigation {
         val bottomBar = @Composable {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-            SenaBottomNavigationBar(
-                currentRoute = currentRoute,
-                onNavigate = { route -> 
-                    navController.navigate(route) {
-                        popUpTo(INSTRUCTOR_DASHBOARD) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                items = instructorTabs
-            )
+            if (!LocalIsExpanded.current) {
+                SenaBottomNavigationBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(INSTRUCTOR_DASHBOARD) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    items = instructorTabs,
+                )
+            }
         }
 
         navigation(startDestination = INSTRUCTOR_DASHBOARD, route = INSTRUCTOR_GRAPH) {
@@ -410,11 +478,7 @@ object AppNavigation {
                     onSaved = { navController.popBackStack() },
                 )
             }
-            composable(INSTRUCTOR_REVISION) { RevisionPropuestasScreen(
-                onBack = { navController.popBackStack() },
-                onProjectDetail = { id -> navController.navigate("instructor_detail/$id") },
-                bottomBar = { bottomBar() }
-            ) }
+            composable(INSTRUCTOR_REVISION) { InstructorRevisionAdaptive(navController, bottomBar = { bottomBar() }) }
             composable(
                 route = INSTRUCTOR_DETAIL,
                 arguments = listOf(navArgument("projectId") { type = NavType.StringType })
@@ -454,23 +518,42 @@ object AppNavigation {
                 ),
             ) { backStackEntry ->
                 val proyectoId = backStackEntry.arguments?.getInt("proyectoId") ?: 0
-                SimilitudesInstructorScreen(
+                InstructorSimilaritiesAdaptive(
+                    navController = navController,
                     proyectoId = proyectoId.takeIf { it > 0 },
-                    onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigateTo(route) },
                 )
             }
-            composable(INSTRUCTOR_MANAGE_FICHAS) { ManageFichasScreen(
-                onBack = { navController.popBackStack() },
-                onViewDetail = { fichaId -> navController.navigate(INSTRUCTOR_FICHA_DETAIL.replace("{fichaId}", fichaId)) },
-                onViewDirectory = { navController.navigate(INSTRUCTOR_FICHAS) },
-                onCreateFicha = { navController.navigate(INSTRUCTOR_CREAR_FICHA_BASE) },
-                onNavigate = { route -> navController.navigateTo(route) },
-                bottomBar = { bottomBar() }
-            ) }
-            composable(INSTRUCTOR_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigateTo(route) },
-                onBack = { navController.popBackStack() },
+            composable(INSTRUCTOR_MANAGE_FICHAS) { InstructorFichasAdaptive(navController, bottomBar = { bottomBar() }) }
+            composable(
+                route = INSTRUCTOR_DIRECTORIO,
+                arguments = listOf(navArgument("fichaId") { type = NavType.IntType }),
+            ) { entrada ->
+                DirectorioFichaInstructorScreen(
+                    fichaId = entrada.arguments?.getInt("fichaId") ?: 0,
+                    onBack = { navController.popBackStack() },
+                    onCompaneroDetail = { id ->
+                        navController.navigate(
+                            INSTRUCTOR_COMPANERO_DETAIL.replace("{userId}", id.toString()),
+                        )
+                    },
+                )
+            }
+            composable(
+                route = INSTRUCTOR_COMPANERO_DETAIL,
+                arguments = listOf(navArgument("userId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                DetalleCompaneroScreen(
+                    userId = userId,
+                    onBack = { navController.popBackStack() },
+                    onProjectDetail = { id -> navController.navigate("instructor_detail/$id") },
+                    onFichaDetail = { id ->
+                        navController.navigate(INSTRUCTOR_FICHA_DETAIL.replace("{fichaId}", id.toString()))
+                    },
+                )
+            }
+            composable(INSTRUCTOR_ALERTS) { AlertsAdaptive(
+                navController = navController,
                 profileRoute = INSTRUCTOR_PROFILE,
                 similitudesRoute = INSTRUCTOR_SIMILITUDES,
                 detailRoute = "instructor_detail/{id}",
@@ -484,7 +567,12 @@ object AppNavigation {
                 DetalleFichaInstructorScreen(
                     fichaId = fichaId,
                     onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigateTo(route) }
+                    onNavigate = { route -> navController.navigateTo(route) },
+                    onCompaneroDetail = { id ->
+                        navController.navigate(
+                            INSTRUCTOR_COMPANERO_DETAIL.replace("{userId}", id.toString()),
+                        )
+                    },
                 )
             }
         }
@@ -494,34 +582,26 @@ object AppNavigation {
         val bottomBar = @Composable {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-            SenaBottomNavigationBar(
-                currentRoute = currentRoute,
-                onNavigate = { route -> 
-                    navController.navigate(route) {
-                        popUpTo(ADMIN_DASHBOARD) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                items = adminTabs
-            )
+            if (!LocalIsExpanded.current) {
+                SenaBottomNavigationBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(ADMIN_DASHBOARD) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    items = adminTabs,
+                )
+            }
         }
 
         navigation(startDestination = ADMIN_DASHBOARD, route = ADMIN_GRAPH) {
             composable(ADMIN_DASHBOARD) { AdminDashboardScreen(onNavigate = { route -> navController.navigateTo(route) }, bottomBar = { bottomBar() }) }
-            composable(ADMIN_USERS) { UserManagementScreen(
-                onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigateTo(route) },
-                bottomBar = { bottomBar() }
-            ) }
-            composable(ADMIN_BUGS) { BugReportsScreen(
-                onBack = { navController.popBackStack() },
-                onNavigate = { route -> navController.navigateTo(route) }
-            ) }
-            composable(ADMIN_PROJECTS) { AdminProjectsScreen(
-                onBack = { navController.popBackStack() },
-                onProjectDetail = { id -> navController.navigate(ADMIN_PROJECT_DETAIL.replace("{projectId}", id.toString())) },
-            ) }
+            composable(ADMIN_USERS) { AdminUsersAdaptive(navController, bottomBar = { bottomBar() }) }
+            composable(ADMIN_BUGS) { AdminBugReportsAdaptive(navController) }
+            composable(ADMIN_PROJECTS) { AdminProjectsAdaptive(navController) }
             composable(
                 route = ADMIN_PROJECT_DETAIL,
                 arguments = listOf(navArgument("projectId") { type = NavType.StringType })
@@ -538,6 +618,9 @@ object AppNavigation {
                     similarityRoute = ADMIN_SIMILARITY_DETAIL,
                 )
             }
+            composable(ADMIN_SIMILARITY_LIST) {
+                AdminSimilaritiesAdaptive(navController, bottomBar = { bottomBar() })
+            }
             composable(
                 route = ADMIN_SIMILARITY_LIST_FILTRO,
                 arguments = listOf(
@@ -545,11 +628,10 @@ object AppNavigation {
                 ),
             ) { backStackEntry ->
                 val proyectoId = backStackEntry.arguments?.getInt("proyectoId") ?: 0
-                AdminSimilarityListScreen(
+                AdminSimilaritiesAdaptive(
+                    navController = navController,
                     proyectoId = proyectoId.takeIf { it > 0 },
-                    onBack = { navController.popBackStack() },
-                    onNavigate = { route -> navController.navigateTo(route) },
-                    bottomBar = { bottomBar() }
+                    bottomBar = { bottomBar() },
                 )
             }
             composable(
@@ -592,23 +674,15 @@ object AppNavigation {
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable(ADMIN_ALERTS) { AlertsScreen(
-                onNavigate = { route -> navController.navigateTo(route) },
-                onBack = { navController.popBackStack() },
+            composable(ADMIN_ALERTS) { AlertsAdaptive(
+                navController = navController,
                 profileRoute = ADMIN_PROFILE,
                 similitudesRoute = ADMIN_SIMILARITY_LIST_FILTRO,
                 detailRoute = "admin/project/{id}",
                 fichaRoute = ADMIN_FICHA_DETAIL,
                 reporteRoute = ADMIN_BUG_DETAIL,
             ) }
-            composable(ADMIN_FICHAS) { AdminFichasScreen(
-                onBack = { navController.popBackStack() },
-                onCreateFicha = { navController.navigate(INSTRUCTOR_CREAR_FICHA_BASE) },
-                onNavigate = { route -> navController.navigateTo(route) },
-                onFichaDetail = { id ->
-                    navController.navigate(ADMIN_FICHA_DETAIL.replace("{fichaId}", id.toString()))
-                },
-            ) }
+            composable(ADMIN_FICHAS) { AdminFichasAdaptive(navController) }
             composable(
                 route = ADMIN_FICHA_DETAIL,
                 arguments = listOf(navArgument("fichaId") { type = NavType.StringType }),

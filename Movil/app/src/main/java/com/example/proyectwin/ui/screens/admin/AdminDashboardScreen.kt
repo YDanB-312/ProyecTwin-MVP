@@ -35,6 +35,8 @@ import com.example.proyectwin.ui.viewmodel.AuthViewModel
 import com.example.proyectwin.ui.viewmodel.DashboardMetricsUiState
 import com.example.proyectwin.ui.viewmodel.DashboardMetricsViewModel
 import com.example.proyectwin.ui.viewmodel.MotorConfigViewModel
+import com.example.proyectwin.ui.viewmodel.NotificationsUiState
+import com.example.proyectwin.ui.viewmodel.NotificationsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +48,7 @@ fun AdminDashboardScreen(
     adminViewModel: AdminViewModel = hiltViewModel(),
     metricsViewModel: DashboardMetricsViewModel = hiltViewModel(),
     motorConfigViewModel: MotorConfigViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -54,10 +57,12 @@ fun AdminDashboardScreen(
     val metricsState by metricsViewModel.uiState.collectAsState()
     val periodoMetricas by metricsViewModel.periodo.collectAsState()
     val motorState by motorConfigViewModel.uiState.collectAsState()
+    val notificationsState by notificationsViewModel.uiState.collectAsState()
     val user = (authState as? AuthUiState.LoggedIn)?.user
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { motorConfigViewModel.cargar() }
+    LaunchedEffect(user?.id) { user?.id?.let { notificationsViewModel.load(it) } }
 
     val isLoading = adminState is AdminUiState.Loading
     LaunchedEffect(isLoading) {
@@ -94,7 +99,8 @@ fun AdminDashboardScreen(
             SenaTopBar(
                 title = "ProyecTwin Master",
                 onNavigateToProfile = { onNavigate(AppNavigation.ADMIN_PROFILE) },
-                onNavigateToAlerts = { onNavigate(AppNavigation.ADMIN_ALERTS) }
+                onNavigateToAlerts = { onNavigate(AppNavigation.ADMIN_ALERTS) },
+                onLogout = { authViewModel.logout() },
             )
         },
         containerColor = senaColors().background,
@@ -154,6 +160,87 @@ fun AdminDashboardScreen(
                                 Icons.Default.FolderSpecial,
                                 modifier = Modifier.weight(1f),
                             )
+                        }
+                    }
+                }
+            }
+
+            item {
+                PaddingRow {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SenaSectionHeader(title = "Colas de trabajo")
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ColaAdminCard(
+                                valor = adminSuccess.projects.count { it.estado == ProjectStatus.PENDIENTE.value },
+                                etiqueta = "Propuestas pendientes",
+                                color = senaColors().warning,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onNavigate(AppNavigation.ADMIN_PROJECTS) },
+                            )
+                            ColaAdminCard(
+                                valor = adminSuccess.bugReports.count {
+                                    it.estado == "pendiente" || it.estado == "en_revision"
+                                },
+                                etiqueta = "Reportes abiertos",
+                                color = senaColors().danger,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onNavigate(AppNavigation.ADMIN_BUGS) },
+                            )
+                            ColaAdminCard(
+                                valor = adminSuccess.users.count { !it.estado },
+                                etiqueta = "Cuentas suspendidas",
+                                color = senaColors().info,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onNavigate(AppNavigation.ADMIN_USERS) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                PaddingRow {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SenaSectionHeader(
+                            title = "Notificaciones recientes",
+                            actionText = "Ver todas",
+                            onActionClick = { onNavigate(AppNavigation.ADMIN_ALERTS) },
+                        )
+                        val recientes = (notificationsState as? NotificationsUiState.Success)
+                            ?.notifications.orEmpty().take(5)
+                        SenaCard(elevation = 1.dp) {
+                            if (recientes.isEmpty()) {
+                                Text(
+                                    "No hay notificaciones recientes.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = senaColors().textSecondary,
+                                )
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    recientes.forEach { notificacion ->
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                if (notificacion.leido) Icons.Default.NotificationsNone else Icons.Default.NotificationsActive,
+                                                contentDescription = null,
+                                                tint = if (notificacion.leido) senaColors().textMuted else senaColors().green,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                notificacion.mensaje,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = senaColors().text,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                            Text(
+                                                formatearFechaHoraLocal(notificacion.createdAt),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = senaColors().textLight,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -479,6 +566,31 @@ fun ManagementActionCard(title: String, desc: String, icon: ImageVector, color: 
                 Text(desc, style = MaterialTheme.typography.bodySmall, color = senaColors().textLight)
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = senaColors().border)
+        }
+    }
+}
+
+@Composable
+private fun ColaAdminCard(
+    valor: Int,
+    etiqueta: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    SenaCard(elevation = 1.dp, onClick = onClick, modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                valor.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Black,
+                color = color,
+            )
+            Text(
+                etiqueta,
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().textSecondary,
+            )
         }
     }
 }

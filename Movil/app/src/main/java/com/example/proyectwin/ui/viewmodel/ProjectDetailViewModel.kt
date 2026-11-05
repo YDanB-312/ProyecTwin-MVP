@@ -42,6 +42,8 @@ data class ProjectDetailData(
     val esCreador: Boolean = false,
     val perteneceAlEquipo: Boolean = false,
     val fichaActiva: Boolean = false,
+    /** El aprendiz sigue matriculado en la ficha activa de la propuesta. */
+    val perteneceAFicha: Boolean = true,
     val esAdmin: Boolean = false,
     /** Instructor asignado a la propuesta o responsable de su ficha. */
     val esInstructorACargo: Boolean = false,
@@ -50,21 +52,22 @@ data class ProjectDetailData(
 ) {
     /** Editable por el aprendiz cuando la propuesta y su ficha lo permiten. */
     val puedeEditar: Boolean
-        get() = esAdmin || ((esCreador || perteneceAlEquipo) && fichaActiva && project.esEditable)
+        get() = esAdmin || ((esCreador || perteneceAlEquipo) && fichaActiva && perteneceAFicha && project.esEditable)
 
     val puedeEnviar: Boolean
-        get() = esAdmin || ((esCreador || perteneceAlEquipo) && fichaActiva && project.puedeEnviar)
+        get() = !esAdmin && ((esCreador || perteneceAlEquipo) && fichaActiva && perteneceAFicha && project.puedeEnviar)
 
-    /** El equipo solo lo administra el creador (regla del backend). */
+    /** El equipo solo lo administra el creador aprendiz (regla del backend). */
     val puedeGestionarEquipo: Boolean
-        get() = esAdmin || (esCreador && fichaActiva && project.esEditable)
+        get() = !esAdmin && esCreador && fichaActiva && perteneceAFicha && project.esEditable
 
-    /** Comentar exige `puedeEscribir` (ficha activa), sin importar el estado. */
+    /** Comentar exige `puedeEscribir` (ficha activa y pertenencia), sin importar el estado. */
     val puedeComentar: Boolean
-        get() = esAdmin || esInstructorACargo || ((esCreador || perteneceAlEquipo) && fichaActiva)
+        get() = esAdmin || esInstructorACargo ||
+            ((esCreador || perteneceAlEquipo) && fichaActiva && perteneceAFicha)
 
     val puedeEliminar: Boolean
-        get() = esAdmin || (esCreador && fichaActiva)
+        get() = esAdmin || (esCreador && fichaActiva && perteneceAFicha)
 
     /** Revisar (aprobar/rechazar) solo en revisión y dentro de su alcance. */
     val puedeRevisar: Boolean
@@ -176,6 +179,8 @@ class ProjectDetailViewModel @Inject constructor(
                     perteneceAlEquipo = equipo.any { it.usuario.id == usuario?.id },
                     fichaActiva = proyecto.fichaEstado == null ||
                         proyecto.fichaEstado == ClassGroupStatus.ACTIVO.value,
+                    perteneceAFicha = usuario?.role != UserRole.APRENDIZ.value ||
+                        (usuario?.fichaId != null && usuario.fichaId == proyecto.fichaId),
                     esAdmin = usuario?.role == UserRole.ADMINISTRADOR.value,
                     esInstructorACargo = esInstructorACargo,
                     usuarioActualId = usuario?.id,
@@ -214,7 +219,26 @@ class ProjectDetailViewModel @Inject constructor(
                     estado = estado,
                     observacion = observacion?.trim()?.ifBlank { null },
                 ),
+                version = actual.project.updatedAt,
             )
+        }
+    }
+
+    /** Admin: fija pendiente/aprobado/rechazado respetando las reglas del backend. */
+    fun cambiarEstado(nuevo: String) {
+        val actual = (_uiState.value as? ProjectDetailUiState.Success)?.data ?: return
+        if (nuevo == actual.project.estado) return
+        val esPendiente = ProjectStatus.fromValue(actual.project.estado) == ProjectStatus.PENDIENTE
+        if (esPendiente && (nuevo == ProjectStatus.APROBADO.value || nuevo == ProjectStatus.RECHAZADO.value)) {
+            revisar(aprobar = nuevo == ProjectStatus.APROBADO.value)
+        } else {
+            ejecutar {
+                projectsRepository.actualizar(
+                    proyectoId,
+                    actual.project.toDraft().copy(estado = nuevo),
+                    version = actual.project.updatedAt,
+                )
+            }
         }
     }
 

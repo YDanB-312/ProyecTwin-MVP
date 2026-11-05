@@ -1,7 +1,9 @@
 package com.example.proyectwin.ui.screens.admin
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,10 @@ fun AdminFichasScreen(
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
     var busqueda by rememberSaveable { mutableStateOf("") }
+    var estadoFiltro by rememberSaveable { mutableStateOf("Todos") }
+    var programaFiltro by rememberSaveable { mutableStateOf("") }
+    var instructorFiltro by rememberSaveable { mutableStateOf("") }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
     // -1 = ninguna expandida (sentinel para rememberSaveable).
     var fichaExpandida by rememberSaveable { mutableIntStateOf(-1) }
     var fichaParaEliminar by remember { mutableStateOf<Ficha?>(null) }
@@ -106,11 +112,22 @@ fun AdminFichasScreen(
                 SenaErrorState(message = estado.message, onRetry = { adminFichasViewModel.load() })
             }
             is AdminFichasUiState.Success -> {
-                val fichas = estado.fichas.filter {
-                    busqueda.isBlank() ||
+                val filtradas = estado.fichas.filter {
+                    val porTexto = busqueda.isBlank() ||
                         it.codigo.contains(busqueda, true) ||
+                        it.numero.orEmpty().contains(busqueda, true) ||
                         (it.nombre ?: it.programa).contains(busqueda, true)
+                    val porEstado = estadoFiltro == "Todos" || it.statusDisplay == estadoFiltro
+                    val porPrograma = programaFiltro.isBlank() ||
+                        it.programa.contains(programaFiltro, true)
+                    val porInstructor = instructorFiltro.isBlank() ||
+                        it.instructorName.orEmpty().contains(instructorFiltro, true)
+                    porTexto && porEstado && porPrograma && porInstructor
                 }
+                val porPagina = 8
+                val totalPaginas = ((filtradas.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+                val paginaActual = pagina.coerceIn(1, totalPaginas)
+                val fichas = filtradas.drop((paginaActual - 1) * porPagina).take(porPagina)
 
                 LazyColumn(
                     state = listState,
@@ -126,13 +143,46 @@ fun AdminFichasScreen(
                         )
                     }
                     item {
-                        SenaTextField(
-                            value = busqueda,
-                            onValueChange = { busqueda = it },
-                            label = "",
-                            placeholder = "Buscar por código o nombre...",
-                            leadingIcon = Icons.Default.Search,
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            SenaTextField(
+                                value = busqueda,
+                                onValueChange = { busqueda = it; pagina = 1 },
+                                label = "",
+                                placeholder = "Buscar por código, nombre o número...",
+                                leadingIcon = Icons.Default.Search,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                SenaTextField(
+                                    value = programaFiltro,
+                                    onValueChange = { programaFiltro = it; pagina = 1 },
+                                    label = "",
+                                    placeholder = "Programa",
+                                    leadingIcon = Icons.Default.School,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SenaTextField(
+                                    value = instructorFiltro,
+                                    onValueChange = { instructorFiltro = it; pagina = 1 },
+                                    label = "",
+                                    placeholder = "Instructor",
+                                    leadingIcon = Icons.Default.Person,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                listOf("Todos", "Activo", "Finalizado", "Anulada").forEach { estadoOpcion ->
+                                    SenaChip(
+                                        text = estadoOpcion,
+                                        color = senaColors().green,
+                                        isSelected = estadoFiltro == estadoOpcion,
+                                        onClick = { estadoFiltro = estadoOpcion; pagina = 1 },
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (fichas.isEmpty()) {
@@ -155,6 +205,28 @@ fun AdminFichasScreen(
                                 },
                                 onEliminar = { fichaParaEliminar = ficha },
                             )
+                        }
+                    }
+
+                    if (totalPaginas > 1) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TextButton(enabled = paginaActual > 1, onClick = { pagina = paginaActual - 1 }) {
+                                    Text("Anterior")
+                                }
+                                Text(
+                                    "Página $paginaActual de $totalPaginas",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = senaColors().textSecondary,
+                                )
+                                TextButton(enabled = paginaActual < totalPaginas, onClick = { pagina = paginaActual + 1 }) {
+                                    Text("Siguiente")
+                                }
+                            }
                         }
                     }
 
@@ -205,13 +277,17 @@ private fun TarjetaFichaAdmin(
     onEditar: () -> Unit,
     onEliminar: () -> Unit,
 ) {
-    SenaCard(elevation = 1.dp, onClick = onVerDetalle) {
+    SenaCard(
+        elevation = 1.dp,
+        onClick = onVerDetalle,
+        selected = LocalSelectedListItemId.current == ficha.id,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(ficha.nombre ?: ficha.programa, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "${ficha.codigo} · ${ficha.programa.ifBlank { "Sin programa" }}",
+                        "${ficha.codigo} · N° ${ficha.numero ?: "—"} · ${ficha.programa.ifBlank { "Sin programa" }}",
                         style = MaterialTheme.typography.labelSmall,
                         color = senaColors().textLight,
                     )

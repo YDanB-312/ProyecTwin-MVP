@@ -37,8 +37,8 @@ class ProjectsRepositoryImpl @Inject constructor(
     override suspend fun crear(draft: ProjectDraft): Result<Project> =
         safeApiCall { api.crear(draft.toCreateRequest()) }.map { it.toDomain() }
 
-    override suspend fun actualizar(id: Int, draft: ProjectDraft): Result<Project> =
-        safeApiCall { api.actualizar(id, draft.toUpdateRequest()) }.map { it.toDomain() }
+    override suspend fun actualizar(id: Int, draft: ProjectDraft, version: String?): Result<Project> =
+        safeApiCall { api.actualizar(id, draft.toUpdateRequest(version)) }.map { it.toDomain() }
 
     override suspend fun enviar(id: Int): Result<Project> =
         safeApiCall { api.enviar(id) }.map { it.toDomain() }

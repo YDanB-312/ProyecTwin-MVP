@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.data.model.ProjectStatus
+import com.example.proyectwin.data.model.perteneceA
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
 import com.example.proyectwin.ui.theme.*
@@ -68,7 +69,10 @@ fun DashboardScreen(
         user?.let { dashboardViewModel.loadStudentDashboard(it.id) }
     }
     LaunchedEffect(refreshTrigger) {
-        if (refreshTrigger > 0) metricsViewModel.refrescar()
+        if (refreshTrigger > 0) {
+            user?.let { dashboardViewModel.loadStudentDashboard(it.id) }
+            metricsViewModel.refrescar()
+        }
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "rocket")
@@ -84,7 +88,8 @@ fun DashboardScreen(
                 title = "ProyecTwin",
                 notificationBadgeCount = (dashState as? DashboardUiState.Success)?.unreadCount ?: 0,
                 onNavigateToProfile = { onNavigate(AppNavigation.APRENDIZ_PROFILE) },
-                onNavigateToAlerts = { onNavigate(AppNavigation.APRENDIZ_ALERTS) }
+                onNavigateToAlerts = { onNavigate(AppNavigation.APRENDIZ_ALERTS) },
+                onLogout = { authViewModel.logout() },
             )
         },
         containerColor = senaColors().background,
@@ -266,14 +271,24 @@ fun DashboardScreen(
                 item {
                     Column {
                         PaddingRow {
-                            SenaSectionHeader(
-                                title = "Proyectos Activos",
-                                actionText = "Ver todos",
-                                onActionClick = { onNavigate(AppNavigation.APRENDIZ_PROJECTS) }
-                            )
+                            Column {
+                                SenaSectionHeader(
+                                    title = "Proyectos Activos",
+                                    actionText = "Ver todos",
+                                    onActionClick = { onNavigate(AppNavigation.APRENDIZ_PROJECTS) }
+                                )
+                                if (state.unreadCount > 0) {
+                                    TextButton(
+                                        onClick = { user?.id?.let { dashboardViewModel.markAllRead(it) } },
+                                    ) {
+                                        Text("Marcar alertas leídas (${state.unreadCount})", color = senaColors().green)
+                                    }
+                                }
+                            }
                         }
 
-                        if (state.projects.isEmpty()) {
+                        val misPropuestas = state.projects.filter { it.perteneceA(user?.id) }
+                        if (misPropuestas.isEmpty()) {
                             PaddingRow {
                                 SenaEmptyState(
                                     message = "No hay misiones activas. Inicia una nueva propuesta ahora.",
@@ -281,11 +296,15 @@ fun DashboardScreen(
                                 )
                             }
                         } else {
-                            state.projects.forEach { project ->
+                            misPropuestas.take(5).forEach { project ->
                                 PaddingRow(Modifier.padding(bottom = 16.dp)) {
+                                    val maxSim = state.similarities
+                                        .filter { it.projectId1 == project.id || it.projectId2 == project.id }
+                                        .maxOfOrNull { (it.similitud * 100).toInt() }
                                     DashboardProjectCard(
                                         title = project.title,
                                         status = project.statusDisplay,
+                                        similitudMax = maxSim?.takeIf { it > 0 },
                                         onClick = { onNavigate("aprendiz_detail/${project.id}") }
                                     )
                                 }
@@ -386,13 +405,21 @@ fun PremiumActionCard(title: String, icon: ImageVector, color: Color, onClick: (
 }
 
 @Composable
-fun DashboardProjectCard(title: String, status: String, onClick: () -> Unit) {
+fun DashboardProjectCard(title: String, status: String, similitudMax: Int? = null, onClick: () -> Unit) {
     SenaCard(onClick = onClick, elevation = 2.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 SenaStatusBadge(status = status)
                 Spacer(Modifier.height(12.dp))
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = senaColors().text)
+                similitudMax?.let {
+                    Text(
+                        "Similitud máxima: $it%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = senaColors().warning,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = senaColors().border)
         }

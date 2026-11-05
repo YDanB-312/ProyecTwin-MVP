@@ -33,6 +33,8 @@ fun ReportIssueScreen(
     bugReportsViewModel: BugReportsViewModel = hiltViewModel()
 ) {
     var title by rememberSaveable { mutableStateOf("") }
+    var numeroFicha by rememberSaveable { mutableStateOf("") }
+    var motivo by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var tipo by rememberSaveable { mutableStateOf(BugReportType.BUG_UI) }
     var isLoading by remember { mutableStateOf(false) }
@@ -49,6 +51,8 @@ fun ReportIssueScreen(
     LaunchedEffect(creado) {
         if (creado) {
             title = ""
+            numeroFicha = ""
+            motivo = ""
             description = ""
             tipo = BugReportType.BUG_UI
             isLoading = false
@@ -81,15 +85,20 @@ fun ReportIssueScreen(
                     onClick = {
                         val titulo = title.trim()
                         val desc = description.trim()
-                        if (titulo.isBlank() || desc.isBlank()) {
-                            errorMsg = "Completa el título y la descripción del reporte."
+                        val ficha = numeroFicha.trim()
+                        if (desc.isBlank()) {
+                            errorMsg = "Describe el problema que encontraste."
+                        } else if (titulo.isBlank() && ficha.isBlank()) {
+                            errorMsg = "Indica un título o el número de ficha relacionado."
                         } else {
                             errorMsg = null
                             isLoading = true
                             bugReportsViewModel.crear(
-                                titulo = titulo,
+                                titulo = titulo.ifBlank { null },
                                 descripcion = desc,
                                 tipo = tipo.value,
+                                numeroFicha = ficha.ifBlank { null },
+                                motivo = motivo.trim().ifBlank { null },
                             )
                         }
                     },
@@ -119,11 +128,28 @@ fun ReportIssueScreen(
                     SenaTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = "Título de la falla *",
+                        label = "Título de la falla (opcional si indicas ficha)",
                         placeholder = "Ej: Error al cargar proyectos",
                         leadingIcon = Icons.Default.Title
                     )
-                    
+
+                    SenaTextField(
+                        value = numeroFicha,
+                        onValueChange = { numeroFicha = it },
+                        label = "Número de ficha relacionado",
+                        placeholder = "Ej: 3067030",
+                        leadingIcon = Icons.Default.Numbers,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    )
+
+                    SenaTextField(
+                        value = motivo,
+                        onValueChange = { motivo = it },
+                        label = "Motivo o trámite relacionado",
+                        placeholder = "Ej: No puedo unirme a la ficha",
+                        leadingIcon = Icons.Default.Info,
+                    )
+
                     SenaTextField(
                         value = description,
                         onValueChange = { description = it },

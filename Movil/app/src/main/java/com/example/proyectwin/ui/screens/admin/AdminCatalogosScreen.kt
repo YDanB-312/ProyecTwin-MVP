@@ -177,13 +177,23 @@ fun AdminCatalogosScreen(
         var nivel by remember(programa) { mutableStateOf(programa.nivel.orEmpty()) }
         var redSeleccionada by remember(programa) { mutableStateOf(redParaPrograma) }
         var redesExpanded by remember { mutableStateOf(false) }
+        val programasExistentes = (uiState as? CatalogosUiState.Success)?.data?.programas.orEmpty()
+        val nombreDuplicado = programasExistentes.any {
+            it.id != programa.id && it.nombre.trim().equals(nombre.trim(), ignoreCase = true)
+        }
 
         AlertDialog(
             onDismissRequest = { dialogoPrograma = null },
             title = { Text(if (editando) "Editar programa" else "Nuevo programa", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SenaTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre")
+                    SenaTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = "Nombre",
+                        isError = nombreDuplicado,
+                        supportingText = if (nombreDuplicado) "Ya existe un programa con ese nombre." else null,
+                    )
                     SenaTextField(value = nivel, onValueChange = { nivel = it }, label = "Nivel * (ej: Tecnólogo)")
                     Text("Red de conocimiento", style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
                     Box {
@@ -207,7 +217,7 @@ fun AdminCatalogosScreen(
                     val red = redSeleccionada
                     val nivelLimpio = nivel.trim()
                     // El backend exige `nivel`: sin él, el request daría 422.
-                    if (nombre.trim().isNotBlank() && nivelLimpio.isNotBlank() && red != null) {
+                    if (nombre.trim().isNotBlank() && !nombreDuplicado && nivelLimpio.isNotBlank() && red != null) {
                         if (editando) {
                             catalogosViewModel.actualizarPrograma(programa.id, nombre.trim(), nivelLimpio, red.id)
                         } else {
@@ -225,7 +235,7 @@ fun AdminCatalogosScreen(
         AlertDialog(
             onDismissRequest = { redParaEliminar = null },
             title = { Text("Eliminar red") },
-            text = { Text("Se eliminarán sus programas y fichas asociadas (cascada del backend).") },
+            text = { Text("Se eliminarán sus programas y fichas asociadas. Los aprendices y sus propuestas se conservan sin ficha/programa.") },
             confirmButton = {
                 TextButton(onClick = {
                     redParaEliminar = null
@@ -240,7 +250,7 @@ fun AdminCatalogosScreen(
         AlertDialog(
             onDismissRequest = { programaParaEliminar = null },
             title = { Text("Eliminar programa") },
-            text = { Text("Se eliminarán sus fichas y aprendices asociados (cascada del backend).") },
+            text = { Text("Se eliminarán sus fichas asociadas. Los aprendices conservan su cuenta y quedan sin ficha.") },
             confirmButton = {
                 TextButton(onClick = {
                     programaParaEliminar = null

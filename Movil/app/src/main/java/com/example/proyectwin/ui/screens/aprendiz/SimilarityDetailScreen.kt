@@ -129,6 +129,7 @@ fun SimilarityDetailScreen(
                         porcentaje = (par.similitud * 100).roundToInt().coerceIn(0, 100),
                     )
                     NotaSimilitud()
+                    DetalleMotorSimilitud(par.detalles)
 
                     if (data.miProyecto != null) {
                         SenaSectionHeader(title = "Tu propuesta (A)")
@@ -205,6 +206,17 @@ fun SimilarityDetailScreen(
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = senaColors().textSecondary,
                                             )
+                                            val origen = listOfNotNull(
+                                                relacionada.project1Student,
+                                                relacionada.project1?.programa,
+                                            ).distinct().joinToString(" · ")
+                                            if (origen.isNotBlank()) {
+                                                Text(
+                                                    origen,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = senaColors().textLight,
+                                                )
+                                            }
                                         }
                                         Text(
                                             relacionada.similitudPercent,

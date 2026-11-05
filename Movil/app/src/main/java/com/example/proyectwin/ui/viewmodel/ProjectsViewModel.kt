@@ -114,7 +114,11 @@ class ProjectsViewModel @Inject constructor(
                     onFailure = { Result.failure(it) },
                 )
             } else {
-                projectsRepository.actualizar(proyectoExistente, draft)
+                projectsRepository.actualizar(
+                    proyectoExistente,
+                    draft,
+                    version = _proyectoEdicion.value?.updatedAt,
+                )
             }
 
             guardado.fold(

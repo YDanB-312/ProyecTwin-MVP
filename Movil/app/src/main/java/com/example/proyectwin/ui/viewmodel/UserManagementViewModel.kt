@@ -2,6 +2,7 @@ package com.example.proyectwin.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.proyectwin.data.api.ApiException
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.PaginaUsuarios
 import com.example.proyectwin.data.model.TrainingProgram
@@ -155,7 +156,30 @@ class UserManagementViewModel @Inject constructor(
                     cargar()
                 },
                 onFailure = { e ->
-                    _errorAccion.value = e.message ?: "No se pudo eliminar el usuario."
+                    _errorAccion.value = if (e is ApiException.Http && e.status == 409) {
+                        "La cuenta tiene historial. Abre su detalle para desactivarla o confirmar la eliminación definitiva."
+                    } else {
+                        e.message ?: "No se pudo eliminar el usuario."
+                    }
+                },
+            )
+        }
+    }
+
+    /** Activa o suspende una cuenta (el backend valida autogestión y rol). */
+    fun cambiarEstadoUsuario(id: Int, activo: Boolean) {
+        viewModelScope.launch {
+            usersRepository.obtener(id).fold(
+                onSuccess = { usuario ->
+                    usersRepository.actualizar(id, usuario.copy(estado = activo)).fold(
+                        onSuccess = { cargar() },
+                        onFailure = { e ->
+                            _errorAccion.value = e.message ?: "No se pudo cambiar el estado."
+                        },
+                    )
+                },
+                onFailure = { e ->
+                    _errorAccion.value = e.message ?: "No se pudo cargar el usuario."
                 },
             )
         }

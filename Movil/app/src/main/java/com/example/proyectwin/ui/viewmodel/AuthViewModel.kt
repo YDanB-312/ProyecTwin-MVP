@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.api.ApiException
 import com.example.proyectwin.data.local.SessionManager
+import com.example.proyectwin.data.model.ActivacionCuentaInfo
 import com.example.proyectwin.data.model.GeneralUser
 import com.example.proyectwin.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,17 @@ sealed class AuthActionState {
     ) : AuthActionState()
 }
 
+/** Flujo público de activación de una cuenta creada por el administrador. */
+sealed class ActivationState {
+    data object Idle : ActivationState()
+    data object Validating : ActivationState()
+    data class Ready(val info: ActivacionCuentaInfo) : ActivationState()
+    data class Invalid(val message: String) : ActivationState()
+    data object Activating : ActivationState()
+    data class Success(val message: String) : ActivationState()
+    data class Error(val message: String) : ActivationState()
+}
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -55,6 +67,9 @@ class AuthViewModel @Inject constructor(
 
     private val _resetState = MutableStateFlow<AuthActionState>(AuthActionState.Idle)
     val resetState: StateFlow<AuthActionState> = _resetState.asStateFlow()
+
+    private val _activationState = MutableStateFlow<ActivationState>(ActivationState.Idle)
+    val activationState: StateFlow<ActivationState> = _activationState.asStateFlow()
 
     /** Mensaje informativo del último envío (p. ej. reset_url en modo local). */
     private val _forgotMessage = MutableStateFlow<String?>(null)
@@ -187,6 +202,44 @@ class AuthViewModel @Inject constructor(
 
     fun resetResetState() {
         _resetState.value = AuthActionState.Idle
+    }
+
+    fun validateActivation(token: String) {
+        if (_activationState.value == ActivationState.Validating) return
+        viewModelScope.launch {
+            _activationState.value = ActivationState.Validating
+            authRepository.validateActivation(token).fold(
+                onSuccess = { _activationState.value = ActivationState.Ready(it) },
+                onFailure = { e ->
+                    _activationState.value = ActivationState.Invalid(
+                        e.message ?: "El enlace es inválido o venció.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun activateAccount(token: String, password: String, passwordConfirmation: String) {
+        if (_activationState.value == ActivationState.Activating) return
+        viewModelScope.launch {
+            _activationState.value = ActivationState.Activating
+            authRepository.activateAccount(token, password, passwordConfirmation).fold(
+                onSuccess = { mensaje ->
+                    _activationState.value = ActivationState.Success(
+                        mensaje.ifBlank { "Cuenta activada. Ya puedes iniciar sesión." },
+                    )
+                },
+                onFailure = { e ->
+                    _activationState.value = ActivationState.Error(
+                        e.message ?: "No se pudo activar la cuenta.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun resetActivationState() {
+        _activationState.value = ActivationState.Idle
     }
 
     fun clearError() {

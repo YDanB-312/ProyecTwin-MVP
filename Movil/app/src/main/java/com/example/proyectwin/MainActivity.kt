@@ -22,8 +22,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.core.view.WindowCompat
 import com.example.proyectwin.data.api.SessionEvents
@@ -43,6 +46,7 @@ import com.example.proyectwin.navigation.AppNavigation.adminGraph
 import com.example.proyectwin.navigation.NavIntent
 import com.example.proyectwin.navigation.NavIntents
 import com.example.proyectwin.notifications.UpdateNotificationManager
+import com.example.proyectwin.ui.components.SenaNavigationRail
 import com.example.proyectwin.ui.components.AppUpdateHost
 import com.example.proyectwin.ui.screens.AppUpdatesScreen
 import com.example.proyectwin.ui.screens.EditProfileScreen
@@ -183,8 +187,26 @@ class MainActivity : ComponentActivity() {
                 val startDestination = when (val estado = uiState) {
                     is AuthUiState.LoggedIn ->
                         if (estado.user.mustChangePassword) AppNavigation.CAMBIO_OBLIGATORIO
-                        else grafoDeRol(estado.user.role)
+                        else when (estado.user.role) {
+                            "aprendiz", "instructor", "admin" -> grafoDeRol(estado.user.role)
+                            else -> AppNavigation.ACCESO_DENEGADO
+                        }
                     else -> AUTH_GRAPH
+                }
+                val expanded = LocalConfiguration.current.screenWidthDp >= 600
+                val loggedUser = (uiState as? AuthUiState.LoggedIn)?.user
+                val mostrarRail = expanded && loggedUser != null && !loggedUser.mustChangePassword
+                val railBackStackEntry by navController.currentBackStackEntryAsState()
+                val railRoute = railBackStackEntry?.destination?.route
+                val railItems = when (loggedUser?.role) {
+                    "instructor" -> AppNavigation.instructorTabs
+                    "admin" -> AppNavigation.adminTabs
+                    else -> AppNavigation.aprendizTabs
+                }
+                val railStart = when (loggedUser?.role) {
+                    "instructor" -> AppNavigation.INSTRUCTOR_DASHBOARD
+                    "admin" -> AppNavigation.ADMIN_DASHBOARD
+                    else -> AppNavigation.APRENDIZ_DASHBOARD
                 }
 
                 // Clave del "flujo" de sesión: solo cambia cuando corresponde ir
@@ -306,9 +328,19 @@ class MainActivity : ComponentActivity() {
                     if (!arranqueListo) {
                         SplashScreen()
                     } else {
+                        // En tabletas el contenido no se estira al infinito:
+                        // se limita y centra, conservando la navegación nativa.
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopCenter,
+                        ) {
                         NavHost(
                             navController = navController,
-                            startDestination = startDestination
+                            startDestination = startDestination,
+                            modifier = Modifier
+                                .widthIn(max = 1100.dp)
+                                .fillMaxSize()
+                                .padding(start = if (mostrarRail) 80.dp else 0.dp),
                         ) {
                         authGraph(navController)
                         aprendizGraph(navController)
@@ -349,6 +381,21 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
+                            )
+                        }
+                        }
+                        if (mostrarRail) {
+                            SenaNavigationRail(
+                                currentRoute = railRoute,
+                                onNavigate = { route ->
+                                    navController.navigate(route) {
+                                        popUpTo(railStart) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                items = railItems,
+                                modifier = Modifier.align(Alignment.CenterStart),
                             )
                         }
                     }

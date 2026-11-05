@@ -52,3 +52,11 @@ data class Project(
     val puedeAprobarConSimilitud: Boolean get() =
         similitudConError.not() && similitudPendiente.not()
 }
+
+/**
+ * Una propuesta es del usuario si la creó o si figura en su equipo. El backend
+ * devuelve al aprendiz también las propuestas de su ficha; la UI de "Mis
+ * proyectos" debe filtrarlas igual que la web.
+ */
+fun Project.perteneceA(usuarioId: Int?): Boolean =
+    usuarioId != null && (studentId == usuarioId || equipo.any { it.id == usuarioId })

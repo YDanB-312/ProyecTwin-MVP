@@ -62,6 +62,7 @@ fun InstructorDashboardScreen(
     }
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger > 0) {
+            user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
             metricsViewModel.refrescar()
         }
     }
@@ -82,6 +83,7 @@ fun InstructorDashboardScreen(
                 it.title.contains(busqueda, true) ||
                 it.studentName.orEmpty().contains(busqueda, true)
         }
+        .take(5)
 
     Scaffold(
         topBar = {
@@ -237,8 +239,15 @@ fun InstructorDashboardScreen(
                         modifier = Modifier.padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        inboxProjects.forEach { project ->
-                            ProductivityInboxCard(project, onClick = { onNavigate("instructor_detail/${project.id}") })
+                        if (inboxProjects.isEmpty()) {
+                            SenaEmptyState(
+                                message = "No hay propuestas pendientes de revisión.",
+                                icon = Icons.Default.NotificationsNone,
+                            )
+                        } else {
+                            inboxProjects.forEach { project ->
+                                ProductivityInboxCard(project, onClick = { onNavigate("instructor_detail/${project.id}") })
+                            }
                         }
                     }
                 }

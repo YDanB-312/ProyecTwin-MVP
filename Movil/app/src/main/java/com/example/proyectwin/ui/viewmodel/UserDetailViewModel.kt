@@ -6,8 +6,10 @@ import com.example.proyectwin.data.api.ApiException
 import com.example.proyectwin.data.model.ApprenticeProfile
 import com.example.proyectwin.data.model.Ficha
 import com.example.proyectwin.data.model.GeneralUser
+import com.example.proyectwin.data.model.Project
 import com.example.proyectwin.domain.repository.FichasRepository
 import com.example.proyectwin.domain.repository.MembersRepository
+import com.example.proyectwin.domain.repository.ProjectsRepository
 import com.example.proyectwin.domain.repository.UsersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,7 @@ data class AdminUserDetail(
     val usuario: GeneralUser,
     val aprendiz: ApprenticeProfile? = null,
     val fichaActual: Ficha? = null,
+    val propuestas: List<Project> = emptyList(),
 )
 
 sealed class AdminUserUiState {
@@ -56,6 +59,7 @@ class UserDetailViewModel @Inject constructor(
     private val usersRepository: UsersRepository,
     private val membersRepository: MembersRepository,
     private val fichasRepository: FichasRepository,
+    private val projectsRepository: ProjectsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AdminUserUiState>(AdminUserUiState.Loading)
@@ -85,10 +89,26 @@ class UserDetailViewModel @Inject constructor(
             val aprendiz = membersRepository.aprendizPorUsuario(id).getOrNull()
             val ficha = aprendiz?.idClassGroup?.let { fichasRepository.obtener(it).getOrNull() }
             if (aprendiz != null && _fichasDisponibles.value.isEmpty()) {
-                _fichasDisponibles.value = fichasRepository.listar().getOrDefault(emptyList())
+                // Solo fichas activas: mover a una finalizada/anulada deja al
+                // aprendiz en un estado que el backend rechaza o considera histórico.
+                _fichasDisponibles.value = fichasRepository.listar()
+                    .getOrDefault(emptyList())
+                    .filter {
+                        it.estado == "activo" || it.id == aprendiz.idClassGroup
+                    }
             }
+            val propuestas = projectsRepository.listar()
+                .getOrDefault(emptyList())
+                .filter { proyecto ->
+                    proyecto.studentId == id || proyecto.equipo.any { it.id == id }
+                }
             _uiState.value = AdminUserUiState.Success(
-                AdminUserDetail(usuario = usuario, aprendiz = aprendiz, fichaActual = ficha),
+                AdminUserDetail(
+                    usuario = usuario,
+                    aprendiz = aprendiz,
+                    fichaActual = ficha,
+                    propuestas = propuestas,
+                ),
             )
         }
     }

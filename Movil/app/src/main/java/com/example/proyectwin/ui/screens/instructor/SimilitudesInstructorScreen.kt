@@ -1,7 +1,9 @@
 package com.example.proyectwin.ui.screens.instructor
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,10 +31,14 @@ fun SimilitudesInstructorScreen(
     onNavigate: (String) -> Unit,
     /** Filtro por propuesta (viene del detalle o de una notificación). */
     proyectoId: Int? = null,
+    bottomBar: @Composable () -> Unit = {},
     similitudesViewModel: SimilitudesInstructorViewModel = hiltViewModel(),
 ) {
     var busqueda by rememberSaveable { mutableStateOf("") }
     var umbralMinimo by rememberSaveable { mutableIntStateOf(0) }
+    var estadoPropuesta by rememberSaveable { mutableStateOf("Todos") }
+    var fichaFiltro by rememberSaveable { mutableStateOf("") }
+    var pagina by rememberSaveable { mutableIntStateOf(1) }
     val uiState by similitudesViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) { similitudesViewModel.load() }
@@ -46,6 +52,7 @@ fun SimilitudesInstructorScreen(
                 showNotifications = true,
             )
         },
+        bottomBar = bottomBar,
         containerColor = senaColors().background,
     ) { paddingValues ->
         when (val estado = uiState) {
@@ -58,13 +65,27 @@ fun SimilitudesInstructorScreen(
                 SenaErrorState(message = estado.message, onRetry = { similitudesViewModel.retry() })
             }
             is SimilitudesInstructorUiState.Success -> {
-                val pares = estado.pares.filter { par ->
-                    (proyectoId == null || par.projectId1 == proyectoId || par.projectId2 == proyectoId) &&
-                        par.similitud * 100 >= umbralMinimo && (
-                            par.project1Title.orEmpty().contains(busqueda, true) ||
-                                par.project2Title.orEmpty().contains(busqueda, true)
-                            )
+                val filtrados = estado.pares.filter { par ->
+                    val porProyecto = proyectoId == null ||
+                        par.projectId1 == proyectoId || par.projectId2 == proyectoId
+                    val porUmbral = par.similitud * 100 >= umbralMinimo
+                    val porTexto = busqueda.isBlank() ||
+                        par.project1Title.orEmpty().contains(busqueda, true) ||
+                        par.project2Title.orEmpty().contains(busqueda, true) ||
+                        par.project1Student.orEmpty().contains(busqueda, true) ||
+                        par.project2Student.orEmpty().contains(busqueda, true)
+                    val porEstado = estadoPropuesta == "Todos" ||
+                        par.project1?.estado == estadoPropuesta.lowercase() ||
+                        par.project2?.estado == estadoPropuesta.lowercase()
+                    val porFicha = fichaFiltro.isBlank() ||
+                        par.project1?.fichaId?.toString() == fichaFiltro.trim() ||
+                        par.project2?.fichaId?.toString() == fichaFiltro.trim()
+                    porProyecto && porUmbral && porTexto && porEstado && porFicha
                 }
+                val porPagina = 8
+                val totalPaginas = ((filtrados.size + porPagina - 1) / porPagina).coerceAtLeast(1)
+                val paginaActual = pagina.coerceIn(1, totalPaginas)
+                val pares = filtrados.drop((paginaActual - 1) * porPagina).take(porPagina)
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -88,18 +109,39 @@ fun SimilitudesInstructorScreen(
                             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 SenaTextField(
                                     value = busqueda,
-                                    onValueChange = { busqueda = it },
+                                    onValueChange = { busqueda = it; pagina = 1 },
                                     label = "",
-                                    placeholder = "Buscar por título...",
+                                    placeholder = "Buscar por título o aprendiz...",
                                     leadingIcon = Icons.Default.Search,
                                 )
+                                SenaTextField(
+                                    value = fichaFiltro,
+                                    onValueChange = { fichaFiltro = it; pagina = 1 },
+                                    label = "",
+                                    placeholder = "Filtrar por ID de ficha...",
+                                    leadingIcon = Icons.Default.Groups,
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    listOf("Todos", "Pendiente", "Aprobado", "Rechazado").forEach { estadoOpcion ->
+                                        SenaChip(
+                                            text = estadoOpcion,
+                                            color = senaColors().green,
+                                            isSelected = estadoPropuesta == estadoOpcion,
+                                            onClick = { estadoPropuesta = estadoOpcion; pagina = 1 },
+                                        )
+                                    }
+                                }
                                 SenaChipRow {
                                     listOf(0, 30, 50, 75).forEach { umbral ->
                                         SenaChip(
                                             text = if (umbral == 0) "Todas" else "≥ $umbral%",
                                             color = senaColors().green,
                                             isSelected = umbralMinimo == umbral,
-                                            onClick = { umbralMinimo = umbral },
+                                            onClick = { umbralMinimo = umbral; pagina = 1 },
                                         )
                                     }
                                 }
@@ -126,6 +168,28 @@ fun SimilitudesInstructorScreen(
                         }
                     }
 
+                    if (totalPaginas > 1) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TextButton(enabled = paginaActual > 1, onClick = { pagina = paginaActual - 1 }) {
+                                    Text("Anterior")
+                                }
+                                Text(
+                                    "Página $paginaActual de $totalPaginas",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = senaColors().textSecondary,
+                                )
+                                TextButton(enabled = paginaActual < totalPaginas, onClick = { pagina = paginaActual + 1 }) {
+                                    Text("Siguiente")
+                                }
+                            }
+                        }
+                    }
+
                     item { Spacer(Modifier.height(40.dp)) }
                 }
             }
@@ -135,7 +199,11 @@ fun SimilitudesInstructorScreen(
 
 @Composable
 private fun ParCard(par: Similarity, onClick: () -> Unit) {
-    SenaCard(elevation = 0.5.dp, onClick = onClick) {
+    SenaCard(
+        elevation = 0.5.dp,
+        onClick = onClick,
+        selected = LocalSelectedListItemId.current == par.id,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

@@ -34,6 +34,7 @@ data class UserItem(
     val status: String,
     val accessPending: Boolean = false,
     val photo: String? = null,
+    val ficha: String? = null,
 )
 
 /**
@@ -93,7 +94,7 @@ fun UserManagementScreen(
 
     val pagina = (uiState as UserManagementUiState.Success).pagina
 
-    val usersList = remember(pagina.items) {
+    val usersList = remember(pagina.items, fichas) {
         pagina.items.map { user ->
             UserItem(
                 id = user.id,
@@ -104,6 +105,7 @@ fun UserManagementScreen(
                 status = if (user.estado) "Activo" else "Suspendido",
                 accessPending = user.emailVerifiedAt == null,
                 photo = user.fotoPerfil,
+                ficha = user.fichaId?.let { id -> fichas.firstOrNull { it.id == id }?.codigo },
             )
         }
     }
@@ -267,6 +269,12 @@ fun UserManagementScreen(
                             } else {
                                 null
                             },
+                            onToggleEstado = {
+                                userManagementViewModel.cambiarEstadoUsuario(
+                                    id = user.id,
+                                    activo = user.status != "Activo",
+                                )
+                            },
                         )
                     }
 
@@ -399,8 +407,9 @@ fun UserCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onResend: (() -> Unit)? = null,
+    onToggleEstado: (() -> Unit)? = null,
 ) {
-    SenaCard {
+    SenaCard(selected = LocalSelectedListItemId.current == user.id) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -430,6 +439,15 @@ fun UserCard(
                             Icon(Icons.Default.Autorenew, contentDescription = "Reenviar activación", tint = senaColors().warning)
                         }
                     }
+                    if (onToggleEstado != null) {
+                        IconButton(onClick = onToggleEstado) {
+                            Icon(
+                                if (user.status == "Activo") Icons.Default.Block else Icons.Default.CheckCircle,
+                                contentDescription = if (user.status == "Activo") "Suspender" else "Activar",
+                                tint = if (user.status == "Activo") senaColors().danger else senaColors().success,
+                            )
+                        }
+                    }
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar", tint = senaColors().green)
                     }
@@ -442,6 +460,27 @@ fun UserCard(
                 SenaStatusBadge(status = user.status)
                 if (user.accessPending) {
                     SenaStatusBadge(status = "Pendiente")
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    user.role,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = senaColors().textSecondary,
+                )
+                if (user.document.isNotBlank()) {
+                    Text(
+                        "Doc. ${user.document}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = senaColors().textSecondary,
+                    )
+                }
+                user.ficha?.let {
+                    Text(
+                        "Ficha $it",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = senaColors().textSecondary,
+                    )
                 }
             }
         }

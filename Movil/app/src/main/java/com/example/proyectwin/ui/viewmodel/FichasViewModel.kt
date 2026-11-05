@@ -136,6 +136,15 @@ class FichasViewModel @Inject constructor(
         }
     }
 
+    /** Limpia la preview cuando el usuario cambia el código digitado. */
+    fun limpiarValidacionCodigo() {
+        _actionState.value = _actionState.value.copy(
+            codigoValido = null,
+            codigoValidado = null,
+            selectedFicha = null,
+        )
+    }
+
     /**
      * Une a la ficha usando el código ya validado en la preview. No depende de
      * `selectedFicha.codigo` (el backend puede omitirlo en la respuesta).
