@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +44,7 @@ fun UserDetailScreen(
     val fichas by userDetailViewModel.fichasDisponibles.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var dialogoEditar by remember { mutableStateOf(false) }
+    var dialogoEditar by rememberSaveable { mutableStateOf(false) }
     var dialogoEliminar by remember { mutableStateOf(false) }
     var dialogoEliminarDefinitivo by remember { mutableStateOf(false) }
     var dialogoFicha by remember { mutableStateOf(false) }
@@ -194,6 +195,7 @@ fun UserDetailScreen(
                                     enabled = !enProceso,
                                     icon = Icons.Default.LockReset,
                                     modifier = Modifier.weight(1f),
+                                    minWidth = 0.dp,
                                 )
                                 if (pendienteActivacion) {
                                     SenaButton(
@@ -203,6 +205,7 @@ fun UserDetailScreen(
                                         enabled = !enProceso && usuario.estado,
                                         icon = Icons.Default.Send,
                                         modifier = Modifier.weight(1f),
+                                        minWidth = 0.dp,
                                     )
                                 }
                             }
@@ -417,14 +420,15 @@ private fun EditarUsuarioDialog(
     onDismiss: () -> Unit,
     onGuardar: (GeneralUser) -> Unit,
 ) {
-    var nombre by remember { mutableStateOf(usuario.nombre ?: usuario.name.substringBefore(' ')) }
-    var apellido by remember { mutableStateOf(usuario.apellido ?: usuario.name.substringAfter(' ', "")) }
-    var correo by remember { mutableStateOf(usuario.email) }
-    var tipoDocumento by remember { mutableStateOf(usuario.tipoDocumento ?: "CC") }
-    var numeroDocumento by remember { mutableStateOf(usuario.documentoIdentidad.orEmpty()) }
-    var rol by remember { mutableStateOf(usuario.role) }
-    var estado by remember { mutableStateOf(usuario.estado) }
-    var fotoUrl by remember { mutableStateOf(usuario.fotoPerfil) }
+    var nombre by rememberSaveable(usuario.id) { mutableStateOf(usuario.nombre ?: usuario.name.substringBefore(' ')) }
+    var apellido by rememberSaveable(usuario.id) { mutableStateOf(usuario.apellido ?: usuario.name.substringAfter(' ', "")) }
+    var correo by rememberSaveable(usuario.id) { mutableStateOf(usuario.email) }
+    var tipoDocumento by rememberSaveable(usuario.id) { mutableStateOf(usuario.tipoDocumento ?: "CC") }
+    var numeroDocumento by rememberSaveable(usuario.id) { mutableStateOf(usuario.documentoIdentidad.orEmpty()) }
+    var rol by rememberSaveable(usuario.id) { mutableStateOf(usuario.role) }
+    var estado by rememberSaveable(usuario.id) { mutableStateOf(usuario.estado) }
+    // La foto puede ser Base64 grande: no se guarda en el Bundle.
+    var fotoUrl by remember(usuario.id) { mutableStateOf(usuario.fotoPerfil) }
     var procesandoFoto by remember { mutableStateOf(false) }
 
     val context = LocalContext.current

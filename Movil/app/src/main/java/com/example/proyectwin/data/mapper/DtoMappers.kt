@@ -185,6 +185,8 @@ fun ProjectDto.toDomain(): Project = Project(
     objetivosEspecificos = objetivosEspecificos ?: emptyList(),
     programa = classGroup?.program?.nombre,
     fichaEstado = classGroup?.estado,
+    similitudEstado = similitudEstado,
+    similitudActualizadaEn = similitudActualizadaEn,
     equipo = apprentices?.mapNotNull { it.toGeneralUser() } ?: emptyList(),
 )
 

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -39,9 +40,9 @@ fun BugReportDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val bugIdNum = bugId.toIntOrNull() ?: 0
 
-    var estadoSeleccionado by remember { mutableStateOf(BugReportStatus.PENDIENTE) }
-    var respuesta by remember { mutableStateOf("") }
-    var precargado by remember { mutableStateOf(false) }
+    var estadoSeleccionado by rememberSaveable { mutableStateOf(BugReportStatus.PENDIENTE) }
+    var respuesta by rememberSaveable { mutableStateOf("") }
+    var precargado by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(bugIdNum) {
         if (bugIdNum > 0) bugReportsViewModel.cargarDetalle(bugIdNum)

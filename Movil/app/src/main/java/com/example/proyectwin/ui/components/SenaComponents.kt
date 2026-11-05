@@ -107,6 +107,8 @@ fun SenaButton(
                             color = colorContenido
                         ),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -293,7 +295,8 @@ fun SenaTopBar(
     onBack: (() -> Unit)? = null,
     onLogout: (() -> Unit)? = null,
     onNavigateToProfile: (() -> Unit)? = null,
-    onNavigateToAlerts: (() -> Unit)? = null
+    onNavigateToAlerts: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     val backgroundBrush = Brush.linearGradient(colors = listOf(senaColors().header, senaColors().darkGreen))
     val isDarkState = LocalThemeIsDark.current
@@ -345,6 +348,7 @@ fun SenaTopBar(
                     titleContentColor = Color.White
                 ),
                 actions = {
+                    actions()
                     IconButton(onClick = { isDarkState.value = !isDarkState.value }) {
                         Icon(
                             if (isDarkState.value) Icons.Default.LightMode else Icons.Default.DarkMode,
@@ -373,8 +377,8 @@ fun SenaTopBar(
                     }
                     if (showProfile) {
                         Surface(
-                            modifier = Modifier.padding(end = 8.dp).size(44.dp),
-                            shape = CircleShape, 
+                            modifier = Modifier.padding(end = 8.dp).size(48.dp),
+                            shape = CircleShape,
                             color = Color.White.copy(alpha = 0.2f)
                         ) {
                             IconButton(onClick = { onNavigateToProfile?.invoke() ?: NavIntents.pedirPerfil() }) { 

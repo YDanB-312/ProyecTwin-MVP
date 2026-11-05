@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,10 +31,10 @@ import com.example.proyectwin.data.local.ImagenUtils
 import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
+import com.example.proyectwin.ui.screens.ManualPdfProfileEntry
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
@@ -70,18 +71,16 @@ fun ProfileScreen(
         }
     }
 
-    var isEditing by remember { mutableStateOf(false) }
-    var editName by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
-    var editLastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
-    var editEmail by remember(user) { mutableStateOf(user?.email ?: "") }
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+    var editName by rememberSaveable(user?.id) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
+    var editLastName by rememberSaveable(user?.id) { mutableStateOf(user?.name?.split(" ")?.getOrNull(1) ?: "") }
+    var editEmail by rememberSaveable(user?.id) { mutableStateOf(user?.email ?: "") }
 
-    val dashState by dashboardViewModel.uiState.collectAsState()
+    val counts by dashboardViewModel.projectCounts.collectAsState()
     LaunchedEffect(user?.id) {
-        if (user != null) dashboardViewModel.loadStudentDashboard(user.id)
+        if (user != null) dashboardViewModel.loadProjectCounts(user.id)
     }
-    val projectCount = (dashState as? DashboardUiState.Success)?.projects
-        ?.count { it.studentId == user?.id || it.equipo.any { miembro -> miembro.id == user?.id } }
-        ?: 0
+    val projectCount = counts?.total ?: 0
 
     val context = LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -202,11 +201,11 @@ fun ProfileScreen(
                             SenaTextField(value = editEmail, onValueChange = { editEmail = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email, enabled = false)
 
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                SenaButton(text = "Cerrar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
+                                SenaButton(text = "Cerrar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f), minWidth = 0.dp)
                                 SenaButton(text = "Guardar", onClick = {
                                     profileViewModel.updateProfileNombres(editName.trim(), editLastName.trim())
                                     isEditing = false
-                                }, modifier = Modifier.weight(1f))
+                                }, modifier = Modifier.weight(1f), minWidth = 0.dp)
                             }
                         }
                     } else {
@@ -223,7 +222,7 @@ fun ProfileScreen(
                                 editLastName = user?.name?.split(" ")?.getOrNull(1) ?: ""
                                 editEmail = user?.email ?: ""
                                 isEditing = true
-                            }, isPrimary = false, icon = Icons.Default.Edit, modifier = Modifier.height(44.dp))
+                            }, isPrimary = false, icon = Icons.Default.Edit)
                         }
                     }
                 }
@@ -258,6 +257,7 @@ fun ProfileScreen(
                             description = "Guía paso a paso de ProyecTwin",
                             onClick = { onNavigate(AppNavigation.MANUAL) }
                         )
+                        ManualPdfProfileEntry()
                         SenaSettingsItem(
                             icon = Icons.Default.SystemUpdate,
                             title = "Actualizaciones",

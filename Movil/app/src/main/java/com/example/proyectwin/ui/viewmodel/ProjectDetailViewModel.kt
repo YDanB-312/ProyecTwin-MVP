@@ -71,6 +71,9 @@ data class ProjectDetailData(
         get() = (esAdmin || esInstructorACargo) &&
             ProjectStatus.fromValue(project.estado) == ProjectStatus.PENDIENTE
 
+    val puedeAprobar: Boolean
+        get() = puedeRevisar && project.puedeAprobarConSimilitud
+
     /**
      * Editar/eliminar una observación: el autor (o un admin). Para no-admin el
      * backend exige además `puedeEscribir` (ficha activa), igual que comentar.
@@ -93,7 +96,7 @@ sealed class ProjectActionState {
     data object Deleted : ProjectActionState()
     /** El envío a revisión terminó y el motor ya dejó el resultado disponible. */
     data class Enviado(val projectId: Int) : ProjectActionState()
-    data class Error(val message: String) : ProjectActionState()
+    data class Error(val message: String, val code: String? = null) : ProjectActionState()
 }
 
 @HiltViewModel
@@ -261,9 +264,14 @@ class ProjectDetailViewModel @Inject constructor(
                     recargar()
                 },
                 onFailure = { e ->
+                    val http = e as? ApiException.Http
                     _accion.value = ProjectActionState.Error(
                         (e as? ApiException)?.message ?: "No se pudo completar la acción.",
+                        http?.code,
                     )
+                    // El backend recalculó esta propuesta y exige confirmación
+                    // con la lista actualizada.
+                    if (http?.code == "similitud_desactualizada") recargar()
                 },
             )
         }

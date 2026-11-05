@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -42,9 +43,9 @@ fun EditProfileScreen(
     val saveError by profileViewModel.saveError.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var name by remember(user) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
-    var lastName by remember(user) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
-    var email by remember(user) { mutableStateOf(user?.email ?: "") }
+    var name by rememberSaveable(user?.id) { mutableStateOf(user?.name?.split(" ")?.firstOrNull() ?: "") }
+    var lastName by rememberSaveable(user?.id) { mutableStateOf(user?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
+    var email by rememberSaveable(user?.id) { mutableStateOf(user?.email ?: "") }
 
 
     LaunchedEffect(saveSuccess) {
@@ -71,7 +72,8 @@ fun EditProfileScreen(
                     text = "Cancelar", 
                     onClick = onBack, 
                     isPrimary = false, 
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    minWidth = 0.dp,
                 )
                 SenaButton(
                     text = "Guardar Cambios", 
@@ -80,6 +82,7 @@ fun EditProfileScreen(
                     }, 
                     isLoading = isSaving,
                     modifier = Modifier.weight(1f),
+                    minWidth = 0.dp,
                     icon = Icons.Default.Save
                 )
             }

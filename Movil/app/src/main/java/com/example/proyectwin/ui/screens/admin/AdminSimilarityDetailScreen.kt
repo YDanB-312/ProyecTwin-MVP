@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,8 +47,8 @@ fun AdminSimilarityDetailScreen(
     val motorState by motorConfigViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmarEliminar by remember { mutableStateOf(false) }
-    var comentarioProyecto by remember { mutableIntStateOf(0) }
-    var nuevoComentario by remember { mutableStateOf("") }
+    var comentarioProyecto by rememberSaveable { mutableIntStateOf(0) }
+    var nuevoComentario by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(similarityId) {
         similarityId.toIntOrNull()?.let { adminSimilarityViewModel.load(it) }

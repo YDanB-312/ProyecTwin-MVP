@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,9 +32,9 @@ fun ReportIssueScreen(
     onNavigate: (String) -> Unit,
     bugReportsViewModel: BugReportsViewModel = hiltViewModel()
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf(BugReportType.BUG_UI) }
+    var title by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var tipo by rememberSaveable { mutableStateOf(BugReportType.BUG_UI) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()

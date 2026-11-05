@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,8 +31,8 @@ fun SimilitudesInstructorScreen(
     proyectoId: Int? = null,
     similitudesViewModel: SimilitudesInstructorViewModel = hiltViewModel(),
 ) {
-    var busqueda by remember { mutableStateOf("") }
-    var umbralMinimo by remember { mutableIntStateOf(0) }
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    var umbralMinimo by rememberSaveable { mutableIntStateOf(0) }
     val uiState by similitudesViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) { similitudesViewModel.load() }

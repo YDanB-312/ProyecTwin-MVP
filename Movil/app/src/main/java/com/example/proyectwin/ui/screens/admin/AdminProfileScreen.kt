@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +30,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.data.local.ImagenUtils
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
+import com.example.proyectwin.ui.screens.ManualPdfProfileEntry
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AdminUiState
 import com.example.proyectwin.ui.viewmodel.AdminViewModel
@@ -57,7 +59,7 @@ fun AdminProfileScreen(
 
     val saveSuccess by profileViewModel.saveSuccess.collectAsState()
     val saveError by profileViewModel.saveError.collectAsState()
-    var dialogoEditar by remember { mutableStateOf(false) }
+    var dialogoEditar by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
@@ -149,7 +151,9 @@ fun AdminProfileScreen(
                         text = user?.name ?: "Admin Sistema",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = senaColors().text
+                        color = senaColors().text,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 2,
                     )
                     Spacer(Modifier.width(8.dp))
                     IconButton(onClick = { dialogoEditar = true }) {
@@ -170,12 +174,12 @@ fun AdminProfileScreen(
 
                 // Métricas Admin
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MetricCardAdmin(icon = Icons.Default.People, value = "${adminData?.users?.size ?: 0}", label = "Usuarios", modifier = Modifier.weight(1f))
-                    MetricCardAdmin(icon = Icons.Default.BugReport, value = "${adminData?.bugReports?.size ?: 0}", label = "Reportes", modifier = Modifier.weight(1f))
-                    MetricCardAdmin(icon = Icons.Default.Compare, value = "${adminData?.similarities?.size ?: 0}", label = "Similitudes", modifier = Modifier.weight(1f))
+                    MetricCardAdmin(icon = Icons.Default.People, value = "${adminData?.users?.size ?: 0}", label = "Usuarios", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
+                    MetricCardAdmin(icon = Icons.Default.BugReport, value = "${adminData?.bugReports?.size ?: 0}", label = "Reportes", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
+                    MetricCardAdmin(icon = Icons.Default.Compare, value = "${adminData?.similarities?.size ?: 0}", label = "Similitudes", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -245,6 +249,8 @@ fun AdminProfileScreen(
                             onClick = { onNavigate(AppNavigation.MANUAL) }
                         )
                         HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                        ManualPdfProfileEntry()
+                        HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                         SenaSettingsItem(
                             icon = Icons.Default.SystemUpdate,
                             title = "Actualizaciones",
@@ -294,8 +300,8 @@ private fun EditarPerfilAdminDialog(
     onDismiss: () -> Unit,
     onGuardar: (nombre: String, apellido: String) -> Unit,
 ) {
-    var nombre by remember(user) { mutableStateOf(user?.nombre ?: user?.name?.substringBefore(' ') ?: "") }
-    var apellido by remember(user) { mutableStateOf(user?.apellido ?: user?.name?.substringAfter(' ', "") ?: "") }
+    var nombre by rememberSaveable(user?.id) { mutableStateOf(user?.nombre ?: user?.name?.substringBefore(' ') ?: "") }
+    var apellido by rememberSaveable(user?.id) { mutableStateOf(user?.apellido ?: user?.name?.substringAfter(' ', "") ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
@@ -341,13 +347,20 @@ fun MetricCardAdmin(icon: ImageVector, value: String, label: String, modifier: M
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().border)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxHeight().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = senaColors().text)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().textLight,
+                maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }

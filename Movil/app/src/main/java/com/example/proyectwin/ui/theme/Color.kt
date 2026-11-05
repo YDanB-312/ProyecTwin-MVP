@@ -45,6 +45,9 @@ data class SenaColorScheme(
     val header10: Color,
     val info10: Color,
     val filaZebra: Color,
+    /** Contenido sobre el header verde (siempre oscuro). */
+    val onHeader: Color,
+    val onHeaderMuted: Color,
 )
 
 fun lightSenaColors() = SenaColorScheme(
@@ -77,6 +80,8 @@ fun lightSenaColors() = SenaColorScheme(
     header10 = Color(0x1A1F5E00),
     info10 = Color(0x1A0E7490),
     filaZebra = Color(0x05000000),
+    onHeader = Color(0xFFFFFFFF),
+    onHeaderMuted = Color(0xFFE2F0E5),
 )
 
 fun darkSenaColors() = SenaColorScheme(
@@ -109,4 +114,6 @@ fun darkSenaColors() = SenaColorScheme(
     header10 = Color(0x1A12261B),
     info10 = Color(0x1A5CD4F2),
     filaZebra = Color(0x08FFFFFF),
+    onHeader = Color(0xFFFFFFFF),
+    onHeaderMuted = Color(0xFFE2F0E5),
 )

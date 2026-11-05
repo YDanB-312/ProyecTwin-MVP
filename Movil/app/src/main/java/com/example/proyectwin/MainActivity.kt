@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -106,7 +107,7 @@ class MainActivity : ComponentActivity() {
                             ) == PackageManager.PERMISSION_GRANTED,
                     )
                 }
-                var permisoSolicitado by remember { mutableStateOf(false) }
+                var permisoSolicitado by rememberSaveable { mutableStateOf(false) }
                 val lanzadorPermiso = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
                 ) { concedido -> permisoNotificaciones = concedido }
@@ -172,7 +173,7 @@ class MainActivity : ComponentActivity() {
                 // corto para apreciar la animación del logo. Nunca atrapa al
                 // usuario: en cuanto el estado deja de ser Loading, continúa al
                 // destino que corresponda (login o el inicio de su rol).
-                var splashMinimoListo by remember { mutableStateOf(false) }
+                var splashMinimoListo by rememberSaveable { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
                     delay(1100)
                     splashMinimoListo = true
@@ -197,7 +198,7 @@ class MainActivity : ComponentActivity() {
                         if (estado.user.mustChangePassword) "cambio" else "rol:${estado.user.role}"
                     else -> null
                 }
-                var claveAplicada by remember { mutableStateOf<String?>(null) }
+                var claveAplicada by rememberSaveable { mutableStateOf("") }
                 LaunchedEffect(claveNavegacion, arranqueListo) {
                     val clave = claveNavegacion ?: return@LaunchedEffect
                     if (!arranqueListo || clave == claveAplicada) return@LaunchedEffect

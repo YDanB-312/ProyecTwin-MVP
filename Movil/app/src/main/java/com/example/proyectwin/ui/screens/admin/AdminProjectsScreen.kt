@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -27,8 +28,8 @@ fun AdminProjectsScreen(
     onProjectDetail: (Int) -> Unit,
     adminViewModel: AdminViewModel = hiltViewModel(),
 ) {
-    var busqueda by remember { mutableStateOf("") }
-    var estadoFiltro by remember { mutableStateOf("Todos") }
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    var estadoFiltro by rememberSaveable { mutableStateOf("Todos") }
     val adminState by adminViewModel.uiState.collectAsState()
     val filtros = listOf("Todos", "Borrador", "En revisión", "Aprobado", "Rechazado")
 

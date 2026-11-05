@@ -82,6 +82,7 @@ fun DashboardScreen(
         topBar = {
             SenaTopBar(
                 title = "ProyecTwin",
+                notificationBadgeCount = (dashState as? DashboardUiState.Success)?.unreadCount ?: 0,
                 onNavigateToProfile = { onNavigate(AppNavigation.APRENDIZ_PROFILE) },
                 onNavigateToAlerts = { onNavigate(AppNavigation.APRENDIZ_ALERTS) }
             )

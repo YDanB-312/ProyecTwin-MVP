@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -52,15 +53,15 @@ fun CrearFichaScreen(
     val saveState by fichaFormViewModel.saveState.collectAsState()
     val creandoAprendiz by fichaFormViewModel.creandoAprendiz.collectAsState()
 
-    var precargado by remember { mutableStateOf(false) }
-    var nombre by remember { mutableStateOf("") }
-    var numero by remember { mutableStateOf("") }
-    var estado by remember { mutableStateOf("activo") }
-    var idPrograma by remember { mutableStateOf<Int?>(null) }
-    var idInstructor by remember { mutableStateOf<Int?>(null) }
+    var precargado by rememberSaveable { mutableStateOf(false) }
+    var nombre by rememberSaveable { mutableStateOf("") }
+    var numero by rememberSaveable { mutableStateOf("") }
+    var estado by rememberSaveable { mutableStateOf("activo") }
+    var idPrograma by rememberSaveable { mutableStateOf<Int?>(null) }
+    var idInstructor by rememberSaveable { mutableStateOf<Int?>(null) }
 
     // Roster en edición: se guarda con el PUT (el backend sincroniza altas/bajas).
-    var aprendicesSeleccionados by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var aprendicesSeleccionados by rememberSaveable { mutableStateOf<List<Int>>(emptyList()) }
     var mostrarCandidatos by remember { mutableStateOf(false) }
     var dialogoCrearAprendiz by remember { mutableStateOf(false) }
     var activacionAprendiz by remember { mutableStateOf<ActivacionUsuario?>(null) }
@@ -79,7 +80,7 @@ fun CrearFichaScreen(
                 estado = ficha.estado
                 idPrograma = ficha.idPrograma
                 idInstructor = ficha.instructorId
-                aprendicesSeleccionados = ficha.estudiantes.map { it.id }.toSet()
+                aprendicesSeleccionados = ficha.estudiantes.map { it.id }
             } ?: run {
                 // Alta: el instructor usa su propia fila; el admin elige.
                 idInstructor = if (esAdmin) null else ready.data.miInstructor?.id
@@ -357,6 +358,7 @@ fun CrearFichaScreen(
                                         isPrimary = false,
                                         icon = Icons.Default.PersonAdd,
                                         modifier = Modifier.weight(1f),
+                                        minWidth = 0.dp,
                                     )
                                     if (esEdicion) {
                                         SenaButton(
@@ -367,6 +369,7 @@ fun CrearFichaScreen(
                                             isLoading = creandoAprendiz,
                                             icon = Icons.Default.PersonAddAlt,
                                             modifier = Modifier.weight(1f),
+                                            minWidth = 0.dp,
                                         )
                                     }
                                 }
@@ -380,6 +383,7 @@ fun CrearFichaScreen(
                             onClick = onBack,
                             isPrimary = false,
                             modifier = Modifier.weight(1f),
+                            minWidth = 0.dp,
                         )
                         SenaButton(
                             text = if (esEdicion) "Guardar cambios" else "Crear ficha",
@@ -403,6 +407,7 @@ fun CrearFichaScreen(
                                 nombre.isNotBlank() && numero.isNotBlank(),
                             icon = Icons.Default.Save,
                             modifier = Modifier.weight(1f),
+                            minWidth = 0.dp,
                         )
                     }
 

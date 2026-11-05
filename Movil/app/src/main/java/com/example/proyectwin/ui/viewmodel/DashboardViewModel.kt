@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectwin.data.model.Notification
 import com.example.proyectwin.data.model.Project
+import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.data.model.Similarity
 import com.example.proyectwin.domain.repository.NotificationsRepository
 import com.example.proyectwin.domain.repository.ProjectsRepository
@@ -43,14 +44,46 @@ class DashboardViewModel @Inject constructor(
     private val similaritiesRepository: SimilaritiesRepository,
 ) : ViewModel() {
 
+    data class ProjectCounts(val total: Int, val aprobados: Int)
+
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    private val _projectCounts = MutableStateFlow<ProjectCounts?>(null)
+    val projectCounts: StateFlow<ProjectCounts?> = _projectCounts.asStateFlow()
+
+    private var countsCargadosPara: Int? = null
     private var ultimaCarga: (() -> Unit)? = null
 
     fun loadStudentDashboard(studentId: Int) = cargarProyectos(studentId)
 
     fun loadInstructorDashboard(instructorId: Int) = cargarProyectos(instructorId)
+
+    /**
+     * Contador de proyectos para los perfiles. Usa una sola petición y evita
+     * volver a pedirla al recrear la Activity; el ViewModel se recrea cuando
+     * se entra de nuevo a la pantalla.
+     */
+    fun loadProjectCounts(idUsuario: Int?, force: Boolean = false) {
+        if (!force && countsCargadosPara == idUsuario && _projectCounts.value != null) return
+        countsCargadosPara = idUsuario
+        viewModelScope.launch {
+            projectsRepository.listar().onSuccess { proyectos ->
+                val propios = if (idUsuario == null) {
+                    proyectos
+                } else {
+                    proyectos.filter { proyecto ->
+                        proyecto.studentId == idUsuario ||
+                            proyecto.equipo.any { miembro -> miembro.id == idUsuario }
+                    }
+                }
+                _projectCounts.value = ProjectCounts(
+                    total = propios.size,
+                    aprobados = propios.count { it.estado == ProjectStatus.APROBADO.value },
+                )
+            }
+        }
+    }
 
     fun loadAdminDashboard() = cargarProyectos(null)
 

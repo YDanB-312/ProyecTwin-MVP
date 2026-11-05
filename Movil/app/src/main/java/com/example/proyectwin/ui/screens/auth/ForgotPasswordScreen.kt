@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -36,7 +37,7 @@ fun ForgotPasswordScreen(
     onCodeSent: (correo: String, resetUrl: String?) -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
 ) {
-    var email by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
     var errorLocal by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
 

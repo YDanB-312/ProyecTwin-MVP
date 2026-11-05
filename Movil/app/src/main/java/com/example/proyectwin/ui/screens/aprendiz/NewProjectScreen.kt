@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -69,17 +70,17 @@ fun NewProjectScreen(
         sessionUser.role == UserRole.APRENDIZ.value &&
         sessionUser.fichaId == null
 
-    var precargado by remember { mutableStateOf(false) }
-    var title by remember { mutableStateOf("") }
-    var summary by remember { mutableStateOf("") }
-    var keywords by remember { mutableStateOf("") }
-    var area by remember { mutableStateOf(AREAS.first()) }
-    var generalObjective by remember { mutableStateOf("") }
-    var specificObjectives by remember { mutableStateOf("") }
-    var estadoActual by remember { mutableStateOf(ProjectStatus.BORRADOR.value) }
-    var idCreador by remember { mutableStateOf(0) }
-    var idInstructor by remember { mutableStateOf<Int?>(null) }
-    var idFicha by remember { mutableStateOf<Int?>(null) }
+    var precargado by rememberSaveable { mutableStateOf(false) }
+    var title by rememberSaveable { mutableStateOf("") }
+    var summary by rememberSaveable { mutableStateOf("") }
+    var keywords by rememberSaveable { mutableStateOf("") }
+    var area by rememberSaveable { mutableStateOf(AREAS.first()) }
+    var generalObjective by rememberSaveable { mutableStateOf("") }
+    var specificObjectives by rememberSaveable { mutableStateOf("") }
+    var estadoActual by rememberSaveable { mutableStateOf(ProjectStatus.BORRADOR.value) }
+    var idCreador by rememberSaveable { mutableStateOf(0) }
+    var idInstructor by rememberSaveable { mutableStateOf<Int?>(null) }
+    var idFicha by rememberSaveable { mutableStateOf<Int?>(null) }
     var errorLocal by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
@@ -186,7 +187,7 @@ fun NewProjectScreen(
     // Validación local espejo de la del backend (POST /projects/{id}/enviar):
     // cada mensaje dice qué campo está mal y cuánto falta, y se muestra bajo el
     // campo correspondiente en cuanto se intenta enviar.
-    var intentoEnvio by remember { mutableStateOf(false) }
+    var intentoEnvio by rememberSaveable { mutableStateOf(false) }
 
     fun errorTitulo(): String? = when {
         title.isBlank() -> "Escribe el título de la propuesta (mínimo 5 caracteres)."

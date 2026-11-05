@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,13 +28,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.data.local.ImagenUtils
-import com.example.proyectwin.data.model.ProjectStatus
 import com.example.proyectwin.navigation.AppNavigation
 import com.example.proyectwin.ui.components.*
+import com.example.proyectwin.ui.screens.ManualPdfProfileEntry
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
-import com.example.proyectwin.ui.viewmodel.DashboardUiState
 import com.example.proyectwin.ui.viewmodel.DashboardViewModel
 import com.example.proyectwin.ui.viewmodel.FichasUiState
 import com.example.proyectwin.ui.viewmodel.FichasViewModel
@@ -60,16 +60,16 @@ fun InstructorProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val fichasState by fichasViewModel.uiState.collectAsState()
 
-    var isEditing by remember { mutableStateOf(false) }
+    var isEditing by rememberSaveable { mutableStateOf(false) }
     // Usa los campos del modelo (nombre/apellido) y solo divide `name` como
     // fallback de cuentas antiguas, conservando apellidos compuestos.
-    var name by remember(user) { mutableStateOf(user?.nombre ?: user?.name?.substringBefore(' ') ?: "") }
-    var lastName by remember(user) { mutableStateOf(user?.apellido ?: user?.name?.substringAfter(' ', "") ?: "") }
-    var email by remember(user) { mutableStateOf(user?.email ?: "") }
+    var name by rememberSaveable(user?.id) { mutableStateOf(user?.nombre ?: user?.name?.substringBefore(' ') ?: "") }
+    var lastName by rememberSaveable(user?.id) { mutableStateOf(user?.apellido ?: user?.name?.substringAfter(' ', "") ?: "") }
+    var email by rememberSaveable(user?.id) { mutableStateOf(user?.email ?: "") }
 
     LaunchedEffect(Unit) {
         fichasViewModel.loadAllFichas()
-        user?.let { dashboardViewModel.loadInstructorDashboard(it.id) }
+        user?.let { dashboardViewModel.loadProjectCounts(it.id) }
     }
 
     LaunchedEffect(saveSuccess) {
@@ -86,10 +86,9 @@ fun InstructorProfileScreen(
         }
     }
 
-    val dashState by dashboardViewModel.uiState.collectAsState()
-    val instructorProjects = (dashState as? DashboardUiState.Success)?.projects.orEmpty()
-    val proyectosCount = instructorProjects.size
-    val proyectosAprobados = instructorProjects.count { it.estado == ProjectStatus.APROBADO.value }
+    val counts by dashboardViewModel.projectCounts.collectAsState()
+    val proyectosCount = counts?.total ?: 0
+    val proyectosAprobados = counts?.aprobados ?: 0
     val aprendicesCount = (fichasState as? FichasUiState.Success)?.fichas
         ?.flatMap { it.estudiantes }
         ?.distinctBy { it.id }
@@ -182,12 +181,12 @@ fun InstructorProfileScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MetricCardSmall(icon = Icons.Filled.Tasks, value = "$proyectosCount", label = "Proyectos", modifier = Modifier.weight(1f))
-                    MetricCardSmall(icon = Icons.Default.CheckCircle, value = "$proyectosAprobados", label = "Aprobados", modifier = Modifier.weight(1f))
-                    MetricCardSmall(icon = Icons.Default.People, value = "$aprendicesCount", label = "Aprendices", modifier = Modifier.weight(1f))
+                    MetricCardSmall(icon = Icons.Filled.Tasks, value = "$proyectosCount", label = "Proyectos", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
+                    MetricCardSmall(icon = Icons.Default.CheckCircle, value = "$proyectosAprobados", label = "Aprobados", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
+                    MetricCardSmall(icon = Icons.Default.People, value = "$aprendicesCount", label = "Aprendices", modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 80.dp))
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -203,11 +202,11 @@ fun InstructorProfileScreen(
                             SenaTextField(value = email, onValueChange = { email = it }, label = "Correo Institucional", leadingIcon = Icons.Default.Email, enabled = false)
 
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                SenaButton(text = "Cancelar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f))
+                                SenaButton(text = "Cancelar", onClick = { isEditing = false }, isPrimary = false, modifier = Modifier.weight(1f), minWidth = 0.dp)
                                 SenaButton(text = "Guardar", onClick = {
                                     profileViewModel.updateProfileNombres(name.trim(), lastName.trim())
                                     isEditing = false
-                                }, modifier = Modifier.weight(1f))
+                                }, modifier = Modifier.weight(1f), minWidth = 0.dp)
                             }
                         }
                     } else {
@@ -229,7 +228,6 @@ fun InstructorProfileScreen(
                                 },
                                 isPrimary = false,
                                 icon = Icons.Default.Edit,
-                                modifier = Modifier.height(44.dp)
                             )
                         }
                     }
@@ -310,6 +308,8 @@ fun InstructorProfileScreen(
                         onClick = { onNavigate(AppNavigation.MANUAL) }
                     )
                     HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
+                    ManualPdfProfileEntry()
+                    HorizontalDivider(color = senaColors().borderSoft, modifier = Modifier.padding(start = 56.dp))
                     SenaSettingsItem(
                         icon = Icons.Default.SystemUpdate,
                         title = "Actualizaciones",
@@ -353,13 +353,20 @@ fun MetricCardSmall(icon: ImageVector, value: String, label: String, modifier: M
         border = androidx.compose.foundation.BorderStroke(1.dp, senaColors().borderSoft)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxHeight().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(icon, contentDescription = null, tint = senaColors().green, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = senaColors().text)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = senaColors().textLight)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = senaColors().textLight,
+                maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }

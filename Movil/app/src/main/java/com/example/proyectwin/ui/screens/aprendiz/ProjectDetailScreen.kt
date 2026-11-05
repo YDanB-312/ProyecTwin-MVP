@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -58,12 +59,12 @@ fun ProjectDetailScreen(
 
     var confirmarEliminar by remember { mutableStateOf(false) }
     var mostrarHojaEquipo by remember { mutableStateOf(false) }
-    var nuevoComentario by remember { mutableStateOf("") }
+    var nuevoComentario by rememberSaveable { mutableStateOf("") }
     var respondiendoA by remember { mutableStateOf<Int?>(null) }
     var dialogoRechazo by remember { mutableStateOf(false) }
-    var observacionRechazo by remember { mutableStateOf("") }
+    var observacionRechazo by rememberSaveable { mutableStateOf("") }
     var comentarioEditando by remember { mutableStateOf<Comment?>(null) }
-    var textoEdicionComentario by remember { mutableStateOf("") }
+    var textoEdicionComentario by rememberSaveable { mutableStateOf("") }
     var comentarioParaEliminar by remember { mutableStateOf<Comment?>(null) }
 
     LaunchedEffect(projectId) {
@@ -399,7 +400,7 @@ private fun AccionesPropuesta(
                 SenaButton(
                     text = "APROBAR",
                     onClick = onAprobar,
-                    enabled = !enProceso,
+                    enabled = !enProceso && data.puedeAprobar,
                     isLoading = enProceso,
                     icon = Icons.Default.Check,
                     modifier = Modifier.weight(1f),
@@ -523,12 +524,38 @@ private fun SimilitudesPropuesta(
     SenaSectionHeader(title = "Similitudes (${data.similitudes.size})")
     SenaCard(elevation = 1.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (data.similitudes.isEmpty()) {
-                Text(
-                    "El motor no ha detectado coincidencias vigentes para esta propuesta.",
-                    color = senaColors().textSecondary,
-                )
-            } else {
+            when {
+                data.project.similitudPendiente -> {
+                    SenaAlertBanner(
+                        title = "Resultado en actualización",
+                        message = "Otra propuesta fue aprobada. Espera a que el motor actualice las coincidencias antes de aprobar.",
+                        icon = Icons.Default.Info,
+                        color = senaColors().warning,
+                    )
+                }
+                data.project.similitudConError -> {
+                    SenaAlertBanner(
+                        title = "No se pudo actualizar la similitud",
+                        message = "Reintenta o contacta al administrador antes de aprobar esta propuesta.",
+                        icon = Icons.Default.Warning,
+                        color = senaColors().danger,
+                    )
+                }
+                data.project.sinReferenciasSimilitud -> {
+                    SenaAlertBanner(
+                        title = "Sin propuestas de referencia",
+                        message = "Todavía no existen propuestas aprobadas de la misma red y programa. No hay un porcentaje calculado que mostrar.",
+                        icon = Icons.Default.Info,
+                        color = senaColors().info,
+                    )
+                }
+                data.similitudes.isEmpty() -> {
+                    Text(
+                        "El motor no ha detectado coincidencias vigentes para esta propuesta.",
+                        color = senaColors().textSecondary,
+                    )
+                }
+                else -> {
                 data.similitudes.forEach { par ->
                     val contraparte = if (par.projectId1 == data.project.id) par.project2 else par.project1
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -544,6 +571,17 @@ private fun SimilitudesPropuesta(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = senaColors().textLight,
                             )
+                            val fichaPrograma = listOfNotNull(
+                                contraparte?.fichaId?.let { "Ficha #$it" },
+                                contraparte?.programa,
+                            ).joinToString(" · ")
+                            if (fichaPrograma.isNotBlank()) {
+                                Text(
+                                    fichaPrograma,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = senaColors().textLight,
+                                )
+                            }
                         }
                         Text(
                             par.similitudPercent,
@@ -561,6 +599,7 @@ private fun SimilitudesPropuesta(
                             Icon(Icons.Default.ChevronRight, contentDescription = "Ver similitud")
                         }
                     }
+                }
                 }
             }
 

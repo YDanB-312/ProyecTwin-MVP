@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,7 +71,7 @@ fun InstructorDashboardScreen(
         if (!isLoading) isRefreshing = false
     }
 
-    var busqueda by remember { mutableStateOf("") }
+    var busqueda by rememberSaveable { mutableStateOf("") }
     val projects = (dashState as? DashboardUiState.Success)?.projects ?: emptyList()
     val pendingCount = projects.count { it.estado == ProjectStatus.PENDIENTE.value }
     val aprobadasCount = projects.count { it.estado == ProjectStatus.APROBADO.value }
@@ -86,6 +87,7 @@ fun InstructorDashboardScreen(
         topBar = {
             SenaTopBar(
                 title = "ProyecTwin",
+                notificationBadgeCount = (dashState as? DashboardUiState.Success)?.unreadCount ?: 0,
                 onNavigateToProfile = { onNavigate(AppNavigation.INSTRUCTOR_PROFILE) },
                 onNavigateToAlerts = { onNavigate(AppNavigation.INSTRUCTOR_ALERTS) },
                 onLogout = { authViewModel.logout() }

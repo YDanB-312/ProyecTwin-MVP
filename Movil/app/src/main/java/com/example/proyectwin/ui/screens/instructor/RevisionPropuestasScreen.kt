@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +40,8 @@ fun RevisionPropuestasScreen(
     bottomBar: @Composable () -> Unit = {},
     revisionViewModel: RevisionViewModel = hiltViewModel(),
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedStatus by remember { mutableStateOf("Pendiente") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedStatus by rememberSaveable { mutableStateOf("Pendiente") }
     val uiState by revisionViewModel.uiState.collectAsState()
     val statuses = listOf("Todos", "Pendiente", "Aprobado", "Rechazado")
 

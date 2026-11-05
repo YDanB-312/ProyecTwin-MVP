@@ -62,7 +62,10 @@ class RevisionViewModel @Inject constructor(
                 }
                 return@launch
             }
-            val pares = similaritiesRepository.listar().getOrDefault(emptyList())
+            val ids = proyectos.map { it.id }.joinToString(",")
+            val pares = similaritiesRepository.listar(
+                relatedTo = ids.takeIf { it.isNotBlank() },
+            ).getOrDefault(emptyList())
 
             val propuestas = proyectos
                 .filter { ProjectStatus.fromValue(it.estado) != ProjectStatus.BORRADOR }

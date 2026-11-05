@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -38,7 +39,8 @@ fun ResetPasswordScreen(
     onResetSuccess: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
 ) {
-    var correo by remember { mutableStateOf(correoInicial) }
+    var correo by rememberSaveable { mutableStateOf(correoInicial) }
+    // El token y las contraseñas son sensibles: no se guardan en el Bundle.
     var token by remember { mutableStateOf(tokenInicial) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }

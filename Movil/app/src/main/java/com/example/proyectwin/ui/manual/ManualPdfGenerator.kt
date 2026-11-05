@@ -31,7 +31,7 @@ object ManualPdfGenerator {
     private const val PAGE_HEIGHT = 842
     private const val MARGIN = 42f
     private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
-    private const val MAX_IMAGE_HEIGHT = 300f
+    private const val MAX_IMAGE_HEIGHT = 520f
 
     private val mutex = Mutex()
 
@@ -118,35 +118,35 @@ object ManualPdfGenerator {
         private val paintTitulo = TextPaint().apply {
             isAntiAlias = true
             color = Color.rgb(20, 65, 35)
-            textSize = 24f
+            textSize = 26f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         private val paintSubtitulo = TextPaint().apply {
             isAntiAlias = true
             color = Color.DKGRAY
-            textSize = 11f
+            textSize = 12f
         }
         private val paintParte = TextPaint().apply {
             isAntiAlias = true
             color = Color.rgb(20, 110, 55)
-            textSize = 17f
+            textSize = 18f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         private val paintCapitulo = TextPaint().apply {
             isAntiAlias = true
             color = Color.BLACK
-            textSize = 14f
+            textSize = 15f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         private val paintCuerpo = TextPaint().apply {
             isAntiAlias = true
             color = Color.rgb(55, 55, 55)
-            textSize = 10f
+            textSize = 12f
         }
         private val paintPie = TextPaint().apply {
             isAntiAlias = true
             color = Color.GRAY
-            textSize = 8f
+            textSize = 9f
         }
         private val paintLinea = Paint().apply {
             isAntiAlias = true
@@ -298,7 +298,7 @@ object ManualPdfGenerator {
                 CONTENT_WIDTH.toInt(),
             )
                 .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                .setLineSpacing(0f, 1.12f)
+                .setLineSpacing(0f, 1.22f)
                 .setIncludePad(false)
                 .build()
             asegurar(layout.height + espacioDespues)
@@ -325,21 +325,19 @@ object ManualPdfGenerator {
 
             val original = BitmapFactory.decodeResource(context.resources, recurso)
                 ?: error("No se pudo cargar la captura del manual (recurso $recurso).")
-            val ancho = CONTENT_WIDTH
-            var alto = ancho * original.height / original.width
-            if (alto > MAX_IMAGE_HEIGHT) {
-                alto = MAX_IMAGE_HEIGHT
-            }
-            val escalada = Bitmap.createScaledBitmap(
-                original,
-                ancho.toInt(),
-                alto.toInt(),
-                true,
+            // Una sola escala para ancho y alto: nunca deformar la captura.
+            val escala = minOf(
+                CONTENT_WIDTH / original.width.toFloat(),
+                MAX_IMAGE_HEIGHT / original.height.toFloat(),
             )
-            asegurar(alto + 22f)
-            canvas?.drawBitmap(escalada, MARGIN, y, null)
-            y += alto + 4f
-            texto(figura.descripcion, paintPie, 8f)
+            val ancho = (original.width * escala).toInt().coerceAtLeast(1)
+            val alto = (original.height * escala).toInt().coerceAtLeast(1)
+            val escalada = Bitmap.createScaledBitmap(original, ancho, alto, true)
+            asegurar(alto + 30f)
+            val x = MARGIN + (CONTENT_WIDTH - ancho) / 2f
+            canvas?.drawBitmap(escalada, x, y, null)
+            y += alto + 6f
+            texto(figura.descripcion, paintPie, 10f)
             if (escalada !== original) escalada.recycle()
             original.recycle()
         }

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,8 +41,8 @@ fun ProjectsScreen(
     dashboardViewModel: DashboardViewModel = hiltViewModel(),
     bottomBar: @Composable () -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Todos") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedFilter by rememberSaveable { mutableStateOf("Todos") }
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var isRefreshing by remember { mutableStateOf(false) }
     val filters = listOf("Todos", "Borrador", "En revisión", "Aprobado", "Rechazado")

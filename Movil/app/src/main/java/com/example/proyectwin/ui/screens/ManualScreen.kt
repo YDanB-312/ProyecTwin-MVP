@@ -43,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,10 +95,10 @@ fun ManualScreen(
     }
 
     // null = usar el rol de la sesión; el usuario puede cambiarlo con los chips.
-    var filtroManual by remember { mutableStateOf<ManualRole?>(null) }
+    var filtroManual by rememberSaveable { mutableStateOf<ManualRole?>(null) }
     val filtroRol = filtroManual ?: rolInicial
-    var busqueda by remember { mutableStateOf("") }
-    var expandida by remember { mutableStateOf<String?>(null) }
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    var expandida by rememberSaveable { mutableStateOf<String?>(null) }
     val listaState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -278,7 +279,7 @@ private fun PortadaManual(version: String) {
                     Icon(
                         Icons.AutoMirrored.Filled.MenuBook,
                         contentDescription = null,
-                        tint = senaColors().green,
+                        tint = senaColors().onHeader,
                         modifier = Modifier.size(30.dp),
                     )
                 }
@@ -287,17 +288,17 @@ private fun PortadaManual(version: String) {
                 "Manual de usuario",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black,
-                color = senaColors().text,
+                color = senaColors().onHeader,
             )
             Text(
                 "Guía paso a paso de ProyecTwin para aprendices, instructores y administradores.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = senaColors().textSecondary,
+                color = senaColors().onHeaderMuted,
             )
             Text(
                 "Versión instalada: $version",
                 style = MaterialTheme.typography.labelSmall,
-                color = senaColors().textLight,
+                color = senaColors().onHeaderMuted,
             )
         }
     }

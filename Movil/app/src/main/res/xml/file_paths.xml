@@ -2,4 +2,5 @@
 <!-- Solo se expone la carpeta de caché donde se guarda el APK descargado. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="updates" path="updates/" />
+    <cache-path name="manual" path="manual/" />
 </paths>

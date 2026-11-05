@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -31,7 +32,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.proyectwin.R
 import com.example.proyectwin.ui.components.*
-import com.example.proyectwin.ui.screens.ManualPdfDialog
 import com.example.proyectwin.ui.theme.*
 import com.example.proyectwin.ui.viewmodel.AuthUiState
 import com.example.proyectwin.ui.viewmodel.AuthViewModel
@@ -41,10 +41,10 @@ fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var correo by remember { mutableStateOf("") }
+    var correo by rememberSaveable { mutableStateOf("") }
+    // La contraseña es sensible: no se guarda en el Bundle ni en disco.
     var password by remember { mutableStateOf("") }
     var errorLocal by remember { mutableStateOf<String?>(null) }
-    var mostrarManualPdf by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val uiState by authViewModel.uiState.collectAsState()
     val isSubmitting by authViewModel.isSubmitting.collectAsState()
@@ -167,18 +167,6 @@ fun LoginScreen(
                         }
                     }
 
-                    TextButton(
-                        onClick = { mostrarManualPdf = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            "Manual de usuario (PDF)",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = senaColors().green,
-                            fontWeight = FontWeight.Black,
-                        )
-                    }
-
                     SenaButton(
                         text = "ENTRAR AL SISTEMA",
                         onClick = {
@@ -210,9 +198,6 @@ fun LoginScreen(
         Spacer(Modifier.height(40.dp))
     }
 
-    if (mostrarManualPdf) {
-        ManualPdfDialog(onDismiss = { mostrarManualPdf = false })
-    }
 }
 
 @Composable

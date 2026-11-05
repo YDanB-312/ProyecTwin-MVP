@@ -18,6 +18,8 @@ data class ProjectDto(
     @SerialName("id_creador") val idCreador: Int = 0,
     @SerialName("id_instructor_asignado") val idInstructorAsignado: Int? = null,
     @SerialName("id_class_group") val idClassGroup: Int? = null,
+    @SerialName("similitud_estado") val similitudEstado: String? = null,
+    @SerialName("similitud_actualizada_en") val similitudActualizadaEn: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     val creator: GeneralUserDto? = null,

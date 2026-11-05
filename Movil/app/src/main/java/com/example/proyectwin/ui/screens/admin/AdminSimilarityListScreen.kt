@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,8 +34,8 @@ fun AdminSimilarityListScreen(
     bottomBar: @Composable () -> Unit = {},
     adminViewModel: AdminViewModel = hiltViewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedStatus by remember { mutableStateOf("Todos") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedStatus by rememberSaveable { mutableStateOf("Todos") }
     val statusFilterItems = listOf(
         "Todos" to "Todos",
         "Vigentes" to "Vigentes",

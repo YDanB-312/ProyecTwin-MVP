@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -30,12 +31,12 @@ fun NewUserScreen(
     onBack: () -> Unit,
     adminViewModel: AdminViewModel = hiltViewModel(),
 ) {
-    var nombre by remember { mutableStateOf("") }
-    var apellido by remember { mutableStateOf("") }
-    var tipoDocumento by remember { mutableStateOf("CC") }
-    var numeroDocumento by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var rol by remember { mutableStateOf("aprendiz") }
+    var nombre by rememberSaveable { mutableStateOf("") }
+    var apellido by rememberSaveable { mutableStateOf("") }
+    var tipoDocumento by rememberSaveable { mutableStateOf("CC") }
+    var numeroDocumento by rememberSaveable { mutableStateOf("") }
+    var correo by rememberSaveable { mutableStateOf("") }
+    var rol by rememberSaveable { mutableStateOf("aprendiz") }
     var errorLocal by remember { mutableStateOf<String?>(null) }
     var enviando by remember { mutableStateOf(false) }
     var errorServidor by remember { mutableStateOf<String?>(null) }

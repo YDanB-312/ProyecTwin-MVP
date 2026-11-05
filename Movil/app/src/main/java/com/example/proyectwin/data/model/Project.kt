@@ -21,6 +21,9 @@ data class Project(
     val objetivosEspecificos: List<String> = emptyList(),
     val programa: String? = null,
     val fichaEstado: String? = null,
+    /** Estado del cálculo de similitud; null en respuestas antiguas. */
+    val similitudEstado: String? = null,
+    val similitudActualizadaEn: String? = null,
     val equipo: List<GeneralUser> = emptyList()
 ) {
     val projectStatus: ProjectStatus get() = ProjectStatus.fromValue(estado)
@@ -37,4 +40,15 @@ data class Project(
     /** Solo borrador y rechazado pueden enviarse/reenviarse. */
     val puedeEnviar: Boolean get() =
         projectStatus == ProjectStatus.BORRADOR || projectStatus == ProjectStatus.RECHAZADO
+
+    val similitudPendiente: Boolean get() =
+        similitudEstado == "pendiente" || similitudEstado == "en_proceso"
+
+    val similitudConError: Boolean get() = similitudEstado == "error"
+
+    val sinReferenciasSimilitud: Boolean get() = similitudEstado == "sin_referencias"
+
+    /** Compatibilidad: respuestas antiguas sin campo se consideran aprobables. */
+    val puedeAprobarConSimilitud: Boolean get() =
+        similitudConError.not() && similitudPendiente.not()
 }
