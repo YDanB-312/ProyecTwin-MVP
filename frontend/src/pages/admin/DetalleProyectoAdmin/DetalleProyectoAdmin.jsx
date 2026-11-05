@@ -26,6 +26,11 @@ import { agruparObservaciones, fechaDesdeApi, nombreCompleto } from '../../../ut
 import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { PROJECT_ESTADO_LABEL as ESTADO_LABEL, ROL_LABEL as ROL_CHIP } from '../../../constants/badgeVariants'
+import {
+  SIMILITUD_ESTADO_MENSAJE,
+  esSimilitudPendiente,
+  puedeAprobarConSimilitud,
+} from '../../../constants/similitudEstado'
 
 const ESTADOS = ['pendiente', 'aprobado', 'rechazado']
 
@@ -153,6 +158,9 @@ export default function DetalleProyectoAdmin() {
       setTimeout(() => setGuardado(false), 3000)
     } catch (err) {
       setAccionMsg(err?.data?.message || 'No se pudo actualizar el estado de la propuesta.')
+      if (err?.data?.code === 'similitud_desactualizada') {
+        await recargar()
+      }
     } finally {
       setAccionOcupada(false)
     }
@@ -205,6 +213,9 @@ export default function DetalleProyectoAdmin() {
   }
 
   const ficha = proyecto.classGroup || null
+  const estadoSimilitud = proyecto.similitud_estado || 'actualizado'
+  const similitudPendiente = esSimilitudPendiente(estadoSimilitud)
+  const aprobacionPermitida = puedeAprobarConSimilitud(proyecto)
 
   const iniciarEdicion = () => {
     setForm({
@@ -291,7 +302,7 @@ export default function DetalleProyectoAdmin() {
                       </option>
                     ))}
                   </Select>
-                  <Button type="submit" disabled={accionOcupada || nuevoEstado === proyecto.estado}>
+                  <Button type="submit" disabled={accionOcupada || nuevoEstado === proyecto.estado || (nuevoEstado === 'aprobado' && !aprobacionPermitida)}>
                     <CheckCircle size={14} /> Guardar
                   </Button>
                   <Button
@@ -379,18 +390,33 @@ export default function DetalleProyectoAdmin() {
             </DataPanel>
 
             <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
-              {similitudesProyecto.length === 0 ? (
+              {similitudPendiente ? (
+                <Alert variant="warning">{SIMILITUD_ESTADO_MENSAJE[estadoSimilitud]}</Alert>
+              ) : estadoSimilitud === 'error' ? (
+                <Alert variant="danger">{SIMILITUD_ESTADO_MENSAJE.error}</Alert>
+              ) : estadoSimilitud === 'sin_referencias' ? (
+                <Alert variant="info">{SIMILITUD_ESTADO_MENSAJE.sin_referencias}</Alert>
+              ) : similitudesProyecto.length === 0 ? (
                 <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
               ) : (
                 <ul className={s.simList}>
                   {similitudesProyecto.map((sim) => {
                     const pct = Math.round(Number(sim.porcentaje) || 0)
                     const otro = Number(sim.id_proyecto_1) === Number(proyecto.id) ? sim.project2 : sim.project1
+                    const otroAutor = nombreCompleto(otro?.creator) ||
+                      (otro?.apprentices || []).map((a) => nombreCompleto(a?.generalUser)).filter(Boolean).join(', ')
+                    const otroFicha = [otro?.classGroup?.nombre, otro?.classGroup?.program?.nombre]
+                      .filter(Boolean).join(' · ')
                     return (
                       <li key={sim.id}>
                         <Link to={`/admin/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
                           <span className={s.simPair}>
                             vs. {otro?.titulo || 'Propuesta no disponible'}
+                            {(otroAutor || otroFicha) && (
+                              <span className={s.simMeta}>
+                                {[otroAutor, otroFicha].filter(Boolean).join(' · ')}
+                              </span>
+                            )}
                           </span>
                           <span className={s.simRight}>
                             <GradeBadge score={pct} size="sm" />

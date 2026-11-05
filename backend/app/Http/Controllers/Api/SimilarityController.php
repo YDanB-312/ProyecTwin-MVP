@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\Similarity;
 use App\Models\MotorConfig;
 use App\Services\SimilitudService;
+use App\Similarity\EstadoSimilitud;
 use App\Similarity\Recomputador;
 use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
@@ -83,8 +84,18 @@ class SimilarityController extends Controller
             $request,
             Similarity::included()
                 ->vigentes()
-                ->when(!$supervision, fn (Builder $q) => $q->paraUsuario($user))
-                ->relatedTo($request->query('related_to'))
+                ->when(
+                    !$supervision && $request->filled('related_to'),
+                    fn (Builder $q) => $q->relacionadas($request->query('related_to'), $user),
+                )
+                ->when(
+                    !$supervision && !$request->filled('related_to'),
+                    fn (Builder $q) => $q->paraUsuario($user),
+                )
+                ->when(
+                    $supervision && $request->filled('related_to'),
+                    fn (Builder $q) => $q->relatedTo($request->query('related_to')),
+                )
                 ->search($request->query('search'))
                 ->byFicha($request->query('ficha_id'))
                 ->byPrograma($request->query('programa'))
@@ -181,7 +192,27 @@ class SimilarityController extends Controller
             return response()->json(['message' => 'No puedes analizar una propuesta que no es tuya.'], 403);
         }
 
-        return response()->json(['detectadas' => app(Recomputador::class)->detectar($propio)]);
+        $motor = app(Recomputador::class);
+        $detectadas = $motor->detectar($propio);
+        $propio->refresh();
+        if ($propio->estado === 'pendiente') {
+            $motor->marcarCalculado($propio);
+            $propio->refresh();
+        }
+
+        return response()->json([
+            'detectadas' => $detectadas,
+            'total' => $propio->similitud_estado === EstadoSimilitud::SIN_REFERENCIAS
+                ? 0
+                : \App\Models\Similarity::where('vigente', true)
+                    ->where(function ($q) use ($propio) {
+                        $q->where('id_proyecto_1', $propio->id)
+                            ->orWhere('id_proyecto_2', $propio->id);
+                    })->count(),
+            'estado' => $propio->similitud_estado,
+            'sin_referencias' => $propio->similitud_estado === EstadoSimilitud::SIN_REFERENCIAS,
+            'actualizado_en' => $propio->similitud_actualizada_en?->toJSON(),
+        ]);
     }
 
     // Recalibra toda la base con el umbral/ventana vigentes: purga los pares

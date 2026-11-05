@@ -28,6 +28,7 @@ import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.modul
 import n from '../../../components/FormularioBase/FormularioBase.module.css'
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { ChatCircle, CheckCircle, FileText, FolderOpen, MagnifyingGlass, PaperPlaneRight, PencilSimple, Plus, Trash, UsersThree, Warning, X } from 'phosphor-react'
+import { SIMILITUD_ESTADO_MENSAJE, esSimilitudPendiente } from '../../../constants/similitudEstado'
 import { ROL_LABEL } from '../../../constants/badgeVariants'
 
 
@@ -464,19 +465,37 @@ export default function DetalleProyecto() {
           {esPropio && (
             <aside className={s.rail} aria-label="Similitudes y observaciones">
               <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
-                {similitudes.length === 0 ? (
+                {esSimilitudPendiente(project.similitud_estado) ? (
+                  <Alert variant="warning">{SIMILITUD_ESTADO_MENSAJE[project.similitud_estado]}</Alert>
+                ) : project.similitud_estado === 'error' ? (
+                  <Alert variant="danger">{SIMILITUD_ESTADO_MENSAJE.error}</Alert>
+                ) : project.similitud_estado === 'sin_referencias' ? (
+                  <Alert variant="info">{SIMILITUD_ESTADO_MENSAJE.sin_referencias}</Alert>
+                ) : similitudes.length === 0 ? (
                   <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
                 ) : (
                   <ul className={s.simList}>
                     {similitudes.map((sim) => {
                       const pct = Math.round(Number(sim.porcentaje) || 0)
-                      const otroTitulo = Number(sim.id_proyecto_1) === Number(project.id)
-                        ? sim.project2?.titulo
-                        : sim.project1?.titulo
+                      const otro = Number(sim.id_proyecto_1) === Number(project.id)
+                        ? sim.project2
+                        : sim.project1
+                      const otroTitulo = otro?.titulo
+                      const otroAutor = nombreCompleto(otro?.creator) ||
+                        (otro?.apprentices || []).map((a) => nombreCompleto(a?.generalUser)).filter(Boolean).join(', ')
+                      const otroFicha = [otro?.classGroup?.nombre, otro?.classGroup?.program?.nombre]
+                        .filter(Boolean).join(' · ')
                       return (
                         <li key={sim.id}>
                           <Link to={`/aprendiz/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
-                            <span className={s.simPair}>vs. {otroTitulo || 'Proyecto no disponible'}</span>
+                            <span className={s.simPair}>
+                              vs. {otroTitulo || 'Proyecto no disponible'}
+                              {(otroAutor || otroFicha) && (
+                                <span className={s.simMeta}>
+                                  {[otroAutor, otroFicha].filter(Boolean).join(' · ')}
+                                </span>
+                              )}
+                            </span>
                             <span className={s.simRight}>
                               <GradeBadge score={pct} size="sm" />
                             </span>

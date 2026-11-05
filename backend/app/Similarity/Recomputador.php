@@ -8,12 +8,12 @@ use App\Models\Similarity;
 use App\Services\NotificacionesService;
 use App\Services\SimilitudService;
 use App\Support\Auditoria;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 // Recompone la tabla `similarities` con el motor actual: purga los pares que ya
-// no cumplen (umbral/programa/ventana/contraparte aprobada) y crea los que
-// faltan. Lo usan el comando `similitud:recalcular`, el seeder y la API (envío
-// de propuestas y recalibración): punto único de la orquestación del motor.
+// no cumplen (umbral/programa/red/ventana/contraparte aprobada) y crea los que
+// faltan. Es el punto único de orquestación del motor.
 class Recomputador
 {
     // Detección de UNA propuesta contra el corpus vigente: refresca los pares
@@ -96,7 +96,7 @@ class Recomputador
             // 2) Recomputa y crea los pares faltantes.
             // Solo propuestas enviadas participan del corpus (los borradores no
             // generan coincidencias ni notificaciones; una rechazada tampoco).
-            $proyectos = Project::with('classGroup')->whereIn('estado', ['pendiente', 'aprobado'])->get();
+            $proyectos = Project::with('classGroup.program')->whereIn('estado', ['pendiente', 'aprobado'])->get();
             $creadas = 0;
             foreach ($proyectos as $p) {
                 foreach (SimilitudService::puntaje($p, $this->corpus($p, $meses)) as $par) {
@@ -119,6 +119,10 @@ class Recomputador
                         app(NotificacionesService::class)->similitud($p, $par['project_id'], $par['porcentaje']);
                     }
                 }
+
+                if ($p->estado === 'pendiente') {
+                    $this->marcarCalculado($p);
+                }
             }
 
             if ($auditar) {
@@ -134,41 +138,126 @@ class Recomputador
         });
     }
 
-    // Corpus de comparación: propuestas APROBADAS del mismo programa dentro de
-    // la ventana. La propia se incluye solo para que exista en los vectores.
-    private function corpus(Project $propio, int $meses): array
+    /**
+     * Referencias aprobadas del mismo programa y red de conocimiento dentro de
+     * la ventana del motor. Nunca incluye pendientes, rechazadas ni borradores.
+     */
+    public function referenciasAprobadas(Project $propio): Collection
     {
-        $programaId = optional($propio->classGroup)->id_programa;
+        [$programaId, $redId] = $this->alcance($propio);
+        if ($programaId === null || $redId === null) return collect();
 
-        return Project::with('classGroup')
+        $meses = (int) MotorConfig::actual()->meses;
+
+        return Project::with('classGroup.program')
             ->where('id', '!=', $propio->id)
             ->where('estado', 'aprobado')
             ->where('created_at', '>=', now()->subMonths($meses))
-            ->whereHas('classGroup', fn ($q) => $q->where('id_programa', $programaId))
-            ->get()
+            ->whereHas('classGroup', function ($q) use ($programaId, $redId) {
+                $q->where('id_programa', $programaId)
+                    ->whereHas('program', fn ($p) => $p->where('knowledge_network_id', $redId));
+            })
+            ->get();
+    }
+
+    public function hashReferencias(Project $propio): string
+    {
+        $ids = $this->referenciasAprobadas($propio)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->sort()
+            ->implode(',');
+
+        return sha1($ids);
+    }
+
+    /** Hash del corpus aprobado de un ámbito (para el job y la validación). */
+    public function hashScope(int $programaId, int $redId): string
+    {
+        $ids = Project::where('estado', 'aprobado')
+            ->where('created_at', '>=', now()->subMonths((int) MotorConfig::actual()->meses))
+            ->whereHas('classGroup', function ($q) use ($programaId, $redId) {
+                $q->where('id_programa', $programaId)
+                    ->whereHas('program', fn ($p) => $p->where('knowledge_network_id', $redId));
+            })
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->implode(',');
+
+        return sha1($ids);
+    }
+
+    /** @return array{0: ?int, 1: ?int} programa, red de conocimiento */
+    public function alcance(Project $propio): array
+    {
+        $propio->loadMissing('classGroup.program');
+
+        return [
+            $propio->classGroup?->id_programa ? (int) $propio->classGroup->id_programa : null,
+            $propio->classGroup?->program?->knowledge_network_id
+                ? (int) $propio->classGroup->program->knowledge_network_id
+                : null,
+        ];
+    }
+
+    /** Marca el resultado de una propuesta pendiente como vigente. */
+    public function marcarCalculado(Project $propio): void
+    {
+        $referencias = $this->referenciasAprobadas($propio);
+        $propio->forceFill([
+            'similitud_estado' => $referencias->isEmpty()
+                ? EstadoSimilitud::SIN_REFERENCIAS
+                : EstadoSimilitud::ACTUALIZADO,
+            'similitud_hash' => $this->hashReferencias($propio),
+            'similitud_actualizada_en' => now(),
+        ])->saveQuietly();
+    }
+
+    public function marcarPendiente(Project $propio, string $estado = EstadoSimilitud::PENDIENTE): void
+    {
+        $propio->forceFill(['similitud_estado' => $estado])->saveQuietly();
+    }
+
+    /**
+     * Marca todas las pendientes del ámbito para que no puedan aprobarse con
+     * resultados anteriores mientras el job las recalcula.
+     */
+    public function marcarPendientesScope(int $programaId, int $redId): int
+    {
+        return Project::where('estado', 'pendiente')
+            ->whereHas('classGroup', function ($q) use ($programaId, $redId) {
+                $q->where('id_programa', $programaId)
+                    ->whereHas('program', fn ($p) => $p->where('knowledge_network_id', $redId));
+            })
+            ->update(['similitud_estado' => EstadoSimilitud::PENDIENTE]);
+    }
+
+    // Corpus de comparación: propuestas APROBADAS del mismo programa/red dentro
+    // de la ventana. La propia se incluye solo para que exista en los vectores.
+    private function corpus(Project $propio, int $meses): array
+    {
+        return $this->referenciasAprobadas($propio)
             ->prepend($propio)
             ->all();
     }
 
-    // Un par es válido si respeta umbral, mismo programa y ventana, y además
+    // Un par es válido si respeta umbral, mismo programa/red y ventana, y además
     // la referencia es una propuesta APROBADA (al menos uno de los dos).
-    //
-    // Regla temporal (intencional): el corpus solo compara contra aprobadas
-    // dentro de la ventana, mientras que un par vigente se conserva si
-    // CUALQUIERA de los dos está en ventana. Los proyectos antiguos se
-    // reanalizan al recalibrar desde Config (no en cada envío); está
-    // documentado en README y no es una inconsistencia accidental.
     private function parVigente(Similarity $s, float $umbral, int $meses): bool
     {
         if (($s->porcentaje / 100) < $umbral) return false;
 
-        $p1 = Project::with('classGroup')->find($s->id_proyecto_1);
-        $p2 = Project::with('classGroup')->find($s->id_proyecto_2);
+        $p1 = Project::with('classGroup.program')->find($s->id_proyecto_1);
+        $p2 = Project::with('classGroup.program')->find($s->id_proyecto_2);
         if (!$p1 || !$p2) return false;
         if (in_array($p1->estado, ['rechazado', 'borrador'], true)
             || in_array($p2->estado, ['rechazado', 'borrador'], true)) return false;
         if ($p1->estado !== 'aprobado' && $p2->estado !== 'aprobado') return false;
-        if (optional($p1->classGroup)->id_programa !== optional($p2->classGroup)->id_programa) return false;
+
+        [$prog1, $red1] = $this->alcance($p1);
+        [$prog2, $red2] = $this->alcance($p2);
+        if ($prog1 === null || $red1 === null || $prog1 !== $prog2 || $red1 !== $red2) return false;
 
         $desde = now()->subMonths($meses);
         return $p1->created_at >= $desde || $p2->created_at >= $desde;

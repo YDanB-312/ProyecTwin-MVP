@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Jobs\RecalcularSimilitudesPendientes;
 use App\Models\Apprentice;
 use App\Models\ApprenticeProject;
 use App\Models\ClassGroup;
@@ -13,6 +14,7 @@ use App\Models\Project;
 use App\Models\ProjectHistory;
 use App\Models\Similarity;
 use App\Services\NotificacionesService;
+use App\Similarity\EstadoSimilitud;
 use App\Similarity\Recomputador;
 use App\Support\PerfilEnRespuesta;
 use App\Http\Controllers\Controller;
@@ -220,7 +222,9 @@ class ProjectController extends Controller
             }
 
             // El motor corre en el servidor (guarda pares y notifica al creador).
-            $creadas = app(Recomputador::class)->detectar($project);
+            $motor = app(Recomputador::class);
+            $creadas = $motor->detectar($project);
+            $motor->marcarCalculado($project);
 
             \App\Support\Auditoria::registrar('enviar_propuesta', 'projects', $project->id, [
                 'titulo' => $project->titulo,
@@ -395,6 +399,23 @@ class ProjectController extends Controller
             $datos['estado'] = 'pendiente';
         }
 
+        $estadoAnterior = $project->estado;
+        $estadoNuevo = $datos['estado'] ?? $project->estado;
+        $observacion = trim((string) $request->input('observacion', ''));
+
+        $aprobando = $rol !== 'aprendiz'
+            && $estadoNuevo === 'aprobado'
+            && $project->estado === 'pendiente';
+
+        // La decisión no puede tomarse con pares calculados antes de una
+        // aprobación posterior. Si el corpus cambió, se recalcula esta única
+        // propuesta y se devuelve 409 para que el instructor vea el resultado
+        // nuevo y confirme de nuevo.
+        if ($aprobando && ! $contenidoCambio) {
+            $respuesta = $this->validarSimilitudParaAprobacion($project);
+            if ($respuesta) return $respuesta;
+        }
+
         $versionSolicitada = null;
         if ($request->filled('version')) {
             $versionSolicitada = Carbon::parse($request->input('version'));
@@ -403,13 +424,9 @@ class ProjectController extends Controller
             }
         }
 
-        $estadoAnterior = $project->estado;
-        $observacion = trim((string) $request->input('observacion', ''));
-
         // Aprobar exige el contenido completo, incluso si se edita y aprueba
         // en la misma petición. Se valida sobre una copia con los cambios
         // solicitados, antes de abrir la transacción.
-        $estadoNuevo = $datos['estado'] ?? $project->estado;
         if ($estadoNuevo === 'aprobado' && $estadoAnterior !== 'aprobado') {
             $candidato = clone $project;
             $candidato->fill($datos);
@@ -425,7 +442,7 @@ class ProjectController extends Controller
         $huellaVista = $this->huellaContenido($project);
 
         // Actualización atómica: propuesta + comentario + historial + avisos.
-        DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario, $huellaVista, $versionSolicitada) {
+        DB::transaction(function () use ($project, $datos, $rol, $estadoAnterior, $observacion, $contenidoCambio, $usuario, $huellaVista, $versionSolicitada, $aprobando) {
             // Orden global de bloqueos (D-2b): el mutex del motor se adquiere
             // SIEMPRE antes de tocar la propuesta (evita el AB-BA con destroy).
             $config = \App\Models\MotorConfig::actual();
@@ -447,6 +464,19 @@ class ProjectController extends Controller
             }
 
             $project = $bloqueado;
+
+            if ($aprobando && ! $contenidoCambio) {
+                $motor = app(Recomputador::class);
+                $hashActual = $motor->hashReferencias($project);
+                if (! EstadoSimilitud::aprobable($project->similitud_estado)
+                    || $project->similitud_hash !== $hashActual
+                ) {
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                        $this->respuestaSimilitudDesactualizada($project)
+                    );
+                }
+            }
+
             $project->update($datos);
 
             // Aprobar/rechazar queda en la bitácora (decisión con efecto académico).
@@ -502,6 +532,7 @@ class ProjectController extends Controller
                     $motor = app(Recomputador::class);
                     $motor->archivar($project);
                     $motor->detectar($project, false);
+                    $motor->marcarCalculado($project);
                 }
 
                 // Si se aprobó y el contenido cambió en la misma petición, los
@@ -511,6 +542,7 @@ class ProjectController extends Controller
                     $motor = app(Recomputador::class);
                     $motor->archivar($project);
                     $motor->detectar($project, false);
+                    $motor->marcarCalculado($project);
                 }
 
                 // Avisa al creador de la decisión (el rechazo incluye la observación).
@@ -530,7 +562,12 @@ class ProjectController extends Controller
                     $motor = app(Recomputador::class);
                     $motor->archivar($project);
                     $motor->detectar($project, false);
+                    $motor->marcarCalculado($project);
                 }
+            }
+
+            if ($estadoAnterior !== $project->estado && $project->estado === 'aprobado') {
+                $this->programarRecalculoPendientes($project);
             }
         });
 
@@ -669,6 +706,60 @@ class ProjectController extends Controller
             'code' => 'payload_obsoleto',
             'actualizado_en' => $project->updated_at?->toJSON(),
         ], 409);
+    }
+
+    /**
+     * Recalcula la propuesta antes de permitir la aprobación cuando el corpus
+     * aprobado cambió o el cálculo está pendiente. Devuelve 409 para que el
+     * instructor vea la lista actualizada y confirme otra vez.
+     */
+    private function validarSimilitudParaAprobacion(Project $project)
+    {
+        $motor = app(Recomputador::class);
+        $hashActual = $motor->hashReferencias($project);
+
+        if (EstadoSimilitud::aprobable($project->similitud_estado)
+            && $project->similitud_hash === $hashActual
+        ) {
+            return null;
+        }
+
+        $motor->detectar($project, false);
+        $fresco = $project->fresh();
+        $motor->marcarCalculado($fresco);
+
+        return $this->respuestaSimilitudDesactualizada($fresco);
+    }
+
+    private function respuestaSimilitudDesactualizada(Project $project)
+    {
+        return response()->json([
+            'message' => 'Los resultados de similitud cambiaron porque se aprobó otra propuesta. Revisa las coincidencias actualizadas y vuelve a confirmar la aprobación.',
+            'code' => 'similitud_desactualizada',
+            'similitud_estado' => $project->similitud_estado,
+            'actualizado_en' => $project->similitud_actualizada_en?->toJSON(),
+            'updated_at' => $project->updated_at?->toJSON(),
+        ], 409);
+    }
+
+    /**
+     * Marca las pendientes del mismo ámbito y encola su recálculo después del
+     * commit. El job se ejecuta fuera de la petición de aprobación.
+     */
+    private function programarRecalculoPendientes(Project $aprobada): void
+    {
+        $motor = app(Recomputador::class);
+        [$programaId, $redId] = $motor->alcance($aprobada);
+        if ($programaId === null || $redId === null) return;
+
+        $hash = $motor->hashScope($programaId, $redId);
+        $motor->marcarPendientesScope($programaId, $redId);
+
+        RecalcularSimilitudesPendientes::dispatch(
+            $programaId,
+            $redId,
+            $hash,
+        )->afterCommit();
     }
 
     private function datosProyecto($resultado, $usuario)

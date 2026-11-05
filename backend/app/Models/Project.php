@@ -22,6 +22,7 @@ class Project extends Model
 
     protected $casts = [
         'objetivos_especificos' => 'array',
+        'similitud_actualizada_en' => 'datetime',
     ];
 
     protected $allowIncluded = [

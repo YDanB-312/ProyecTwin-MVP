@@ -30,6 +30,11 @@ import s from '../../../components/DetalleProyectoBase/DetalleProyectoBase.modul
 import InformacionProyecto from '../../../components/DetalleProyectoBase/InformacionProyecto'
 import { ChatCircle, CheckCircle, FileText, FolderOpen, GraduationCap, MagnifyingGlass, X, LockKey, Plus, XCircle } from 'phosphor-react'
 import { ROL_LABEL } from '../../../constants/badgeVariants'
+import {
+  SIMILITUD_ESTADO_MENSAJE,
+  esSimilitudPendiente,
+  puedeAprobarConSimilitud,
+} from '../../../constants/similitudEstado'
 
 // Acciones de revisión disponibles para el instructor.
 const ACCIONES = {
@@ -150,18 +155,24 @@ export default function DetalleProyectoInstructor() {
 
   const estudiante = proyecto.creator || null
   const ficha = proyecto.classGroup || null
+  const estadoSimilitud = proyecto.similitud_estado || 'actualizado'
+  const similitudPendiente = esSimilitudPendiente(estadoSimilitud)
+  const puedeAprobar = puedeAprobarConSimilitud(proyecto)
 
   const confirmarAccion = async () => {
     if (!modal) return
     const estado = modal.estado
     setAccionError('')
     try {
-      // El backend registra historial/notifica; el motor ya corrió al enviar.
       await proyectos.actualizar(proyecto.id, { ...proyecto, estado, version: proyecto.updated_at })
       await Promise.all([recargarProyecto(), recargarSims()])
     } catch (err) {
-      // El error se muestra al usuario; la propuesta queda como estaba.
+      // Si el corpus cambió, el backend recalcula esta propuesta y exige una
+      // segunda confirmación con la lista actualizada.
       setAccionError(err?.data?.message || 'No se pudo actualizar el estado de la propuesta.')
+      if (err?.data?.code === 'similitud_desactualizada') {
+        await Promise.all([recargarProyecto(), recargarSims()])
+      }
     }
     setModal(null)
   }
@@ -219,7 +230,7 @@ export default function DetalleProyectoInstructor() {
           action={
             enMiCargo ? (
               <Actions>
-                <Button type="button" variant="success" disabled={proyecto.estado !== 'pendiente'} onClick={() => setModal(ACCIONES.aprobado)}>
+                <Button type="button" variant="success" disabled={proyecto.estado !== 'pendiente' || !puedeAprobar} onClick={() => setModal(ACCIONES.aprobado)}>
                   <CheckCircle size={14} /> Aprobar
                 </Button>
                 <Button type="button" variant="danger" disabled={proyecto.estado !== 'pendiente'} onClick={() => setModal(ACCIONES.rechazado)}>
@@ -266,20 +277,36 @@ export default function DetalleProyectoInstructor() {
 
         {enMiCargo && (
         <DataPanel title="Similitudes detectadas" icon={<MagnifyingGlass />}>
-          {similitudes.length === 0 ? (
+          {similitudPendiente ? (
+            <Alert variant="warning">{SIMILITUD_ESTADO_MENSAJE[estadoSimilitud]}</Alert>
+          ) : estadoSimilitud === 'error' ? (
+            <Alert variant="danger">{SIMILITUD_ESTADO_MENSAJE.error}</Alert>
+          ) : estadoSimilitud === 'sin_referencias' ? (
+            <Alert variant="info">{SIMILITUD_ESTADO_MENSAJE.sin_referencias}</Alert>
+          ) : similitudes.length === 0 ? (
             <p className={s.muted}>No se han detectado similitudes para esta propuesta.</p>
           ) : (
             <ul className={s.simList}>
               {similitudes.map((sim) => {
                 const pct = Math.round(Number(sim.porcentaje) || 0)
-                const otroTitulo = Number(sim.id_proyecto_1) === Number(proyecto.id)
-                  ? sim.project2?.titulo
-                  : sim.project1?.titulo
+                const otro = Number(sim.id_proyecto_1) === Number(proyecto.id)
+                  ? sim.project2
+                  : sim.project1
+                const otroTitulo = otro?.titulo
+                const otroAutor = nombreCompleto(otro?.creator) ||
+                  (otro?.apprentices || []).map((a) => nombreCompleto(a?.generalUser)).filter(Boolean).join(', ')
+                const otroFicha = [otro?.classGroup?.nombre, otro?.classGroup?.program?.nombre]
+                  .filter(Boolean).join(' · ')
                 return (
                   <li key={sim.id}>
                     <Link to={`/instructor/detalle-similitud/${sim.id}`} viewTransition className={s.simRow}>
                       <span className={s.simPair}>
                         vs. {otroTitulo || 'Proyecto no disponible'}
+                        {(otroAutor || otroFicha) && (
+                          <span className={s.simMeta}>
+                            {[otroAutor, otroFicha].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
                       </span>
                       <span className={s.simRight}>
                         <GradeBadge score={pct} size="sm" />

@@ -23,6 +23,11 @@ import s from '../../../components/ListaBase/ListaBase.module.css'
 import local from './RevisionPropuestas.module.css'
 import { ArrowRight, CheckCircle, ClipboardText, Tray, XCircle } from 'phosphor-react'
 import { PAGINA_TABLA } from '../../../constants/pagination'
+import {
+  SIMILITUD_ESTADO_MENSAJE,
+  esSimilitudPendiente,
+  puedeAprobarConSimilitud,
+} from '../../../constants/similitudEstado'
 import { PROJECT_ESTADO_LABEL as ESTADO_LABEL } from '../../../constants/badgeVariants'
 
 const ITEMS_POR_PAGINA = PAGINA_TABLA
@@ -126,6 +131,9 @@ export default function RevisionPropuestas() {
   const simsSel = simsProyecto || []
   const infoSel = seleccionada ? infoSimilitud(simsProyecto || [], seleccionada.id) : null
   const fichaSel = seleccionada?.classGroup || null
+  const estadoSimilitudSel = seleccionada?.similitud_estado || 'actualizado'
+  const similitudPendiente = esSimilitudPendiente(estadoSimilitudSel)
+  const aprobacionPermitida = seleccionada ? puedeAprobarConSimilitud(seleccionada) : false
 
   const abrirModal = (proyecto, accion) => {
     setObservacion('')
@@ -146,13 +154,12 @@ export default function RevisionPropuestas() {
         observacion: accion === 'rechazado' ? (observacion.trim() || undefined) : undefined,
       })
 
-      // 2) El motor ya corrió al enviar la propuesta: al aprobar solo se
-      // confirman las coincidencias detectadas (no se repite el análisis).
-      if (accion === 'aprobado') {
-        try {
-          // Una sola consulta: el motor ya corrió al enviar la propuesta.
-          const lista = await similitudesApi.listar({ proyecto_id: proyecto.id })
-          setSimsProyecto(lista)
+      // Refresca siempre las coincidencias de la propuesta afectada: al aprobar
+      // o rechazar el backend puede archivar pares o recalcular pendientes.
+      try {
+        const lista = await similitudesApi.listar({ proyecto_id: proyecto.id })
+        setSimsProyecto(lista)
+        if (accion === 'aprobado') {
           const total = lista.length
           setMsgAprobacion(
             total > 0
@@ -161,7 +168,9 @@ export default function RevisionPropuestas() {
           )
           if (msgTimer.current) clearTimeout(msgTimer.current)
           msgTimer.current = setTimeout(() => setMsgAprobacion(null), 6000)
-        } catch {
+        }
+      } catch {
+        if (accion === 'aprobado') {
           setMsgAprobacion('Propuesta aprobada. No se pudo cargar el resumen de coincidencias; puedes verlo en Similitudes.')
         }
       }
@@ -169,6 +178,15 @@ export default function RevisionPropuestas() {
       await recargarProyectos()
     } catch (err) {
       setErrorAccion(err?.data?.message || 'No se pudo actualizar la propuesta. Intenta de nuevo.')
+      if (err?.data?.code === 'similitud_desactualizada') {
+        await recargarProyectos()
+        try {
+          const lista = await similitudesApi.listar({ proyecto_id: modal.proyecto.id })
+          setSimsProyecto(lista)
+        } catch {
+          // La recarga de la lista de propuestas ya muestra el estado pendiente.
+        }
+      }
     }
     setModal(null)
   }
@@ -310,6 +328,13 @@ export default function RevisionPropuestas() {
                       {fichaSel ? ` · ${fichaSel.codigo} · ${fichaSel.nombre}` : ' · Sin ficha'}
                     </p>
                     <p className={local.previewDesc}>{seleccionada.resumen}</p>
+                    {similitudPendiente ? (
+                      <Alert variant="warning">{SIMILITUD_ESTADO_MENSAJE[estadoSimilitudSel]}</Alert>
+                    ) : estadoSimilitudSel === 'error' ? (
+                      <Alert variant="danger">{SIMILITUD_ESTADO_MENSAJE.error}</Alert>
+                    ) : estadoSimilitudSel === 'sin_referencias' ? (
+                      <Alert variant="info">{SIMILITUD_ESTADO_MENSAJE.sin_referencias}</Alert>
+                    ) : null}
                     <div className={local.previewSims}>
                       <span className={local.previewLabel}>Similitud máxima</span>
                       {infoSel ? (
@@ -331,6 +356,7 @@ export default function RevisionPropuestas() {
                             size="sm"
                             variant="ghost"
                             aria-label={`Aprobar ${seleccionada.titulo}`}
+                            disabled={!aprobacionPermitida}
                             onClick={() => abrirModal(seleccionada, 'aprobado')}
                           >
                             <CheckCircle size={14} /> Aprobar

@@ -97,7 +97,7 @@ export default function DetalleSimilitudBase({
   // (`related_to`). El backend además acota por rol: el aprendiz solo recibe
   // pares de sus proyectos, así que no puede ver similitudes ajenas.
   const relatedTo = [proyecto1?.id, proyecto2?.id].filter(Boolean).join(',')
-  const { data: todas } = useApi(
+  const { data: todas, cargando: cargandoOtras, error: errorOtras } = useApi(
     () => similitudes.listar(relatedTo ? { related_to: relatedTo } : {}),
     [relatedTo],
     { inicial: [] }
@@ -191,7 +191,17 @@ export default function DetalleSimilitudBase({
 
   function autorDe(p) {
     const nombre = nombreCompleto(p?.creator)
-    return nombre || p?.classGroup?.program?.nombre || '—'
+    if (nombre) return nombre
+    const equipo = (p?.apprentices || [])
+      .map((a) => nombreCompleto(a?.generalUser))
+      .filter(Boolean)
+    return equipo.join(', ') || '—'
+  }
+
+  function fichaDe(p) {
+    const ficha = p?.classGroup?.nombre || p?.classGroup?.numero
+    const programa = p?.classGroup?.program?.nombre
+    return [ficha, programa].filter(Boolean).join(' · ')
   }
 
   const crumbPrevio =
@@ -318,31 +328,40 @@ export default function DetalleSimilitudBase({
         </DataPanel>
       )}
 
-      {otras.length > 0 && (
+      {(otras.length > 0 || cargandoOtras || errorOtras) && (
         <DataPanel title={`Otras coincidencias relacionadas (${otras.length})`} icon={<MagnifyingGlass />}>
-          <ul className={s.otrasList}>
-            {otras.map((x) => {
-              const pctX = Math.round(Number(x.porcentaje) || 0)
-              const otro = proyectosPorId.get(Number(x.otroPid))
-              return (
-                <li key={x.id}>
-                  <Link to={`/${role}/detalle-similitud/${x.id}`} className={s.otrasRow}>
-                    <Tag variant={x.origen === 'A' ? 'a' : 'b'}>
-                      Proyecto {x.origen}
-                    </Tag>
-                    <span className={s.otrasInfo}>
-                      <span className={s.otrasTitle}>{otro?.titulo || 'Proyecto no disponible'}</span>
-                      <span className={s.otrasMeta}>
-                        <User size={12} /> {autorDe(otro)}
+          {errorOtras ? (
+            <p className={s.muted}>No se pudieron cargar las demás coincidencias.</p>
+          ) : cargandoOtras && otras.length === 0 ? (
+            <p className={s.muted}>Cargando otras coincidencias…</p>
+          ) : (
+            <ul className={s.otrasList}>
+              {otras.map((x) => {
+                const pctX = Math.round(Number(x.porcentaje) || 0)
+                const otro = proyectosPorId.get(Number(x.otroPid))
+                return (
+                  <li key={x.id}>
+                    <Link to={`/${role}/detalle-similitud/${x.id}`} className={s.otrasRow}>
+                      <Tag variant={x.origen === 'A' ? 'a' : 'b'}>
+                        Proyecto {x.origen}
+                      </Tag>
+                      <span className={s.otrasInfo}>
+                        <span className={s.otrasTitle}>{otro?.titulo || 'Proyecto no disponible'}</span>
+                        <span className={s.otrasMeta}>
+                          <User size={12} /> {autorDe(otro)}
+                        </span>
+                        {fichaDe(otro) && (
+                          <span className={s.otrasMeta}>{fichaDe(otro)}</span>
+                        )}
                       </span>
-                    </span>
-                    <GradeBadge score={pctX} size="sm" />
-                    <ArrowRight size={14} className={s.otrasChevron} />
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+                      <GradeBadge score={pctX} size="sm" />
+                      <ArrowRight size={14} className={s.otrasChevron} />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </DataPanel>
       )}
 

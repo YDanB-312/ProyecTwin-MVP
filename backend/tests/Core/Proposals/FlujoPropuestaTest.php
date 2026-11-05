@@ -14,6 +14,7 @@ use App\Models\Similarity;
 use App\Models\TrainingProgram;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 // Flujo de propuestas: nace en borrador, se envía explícitamente (validación +
@@ -685,9 +686,14 @@ class FlujoPropuestaTest extends TestCase
 
         // El contenido cambia y se aprueba en la misma petición: el motor debe
         // archivar los pares del texto anterior y analizar el nuevo.
-        $this->mock(\App\Similarity\Recomputador::class, function ($mock) {
+        Queue::fake();
+        $this->mock(\App\Similarity\Recomputador::class, function ($mock) use ($programa) {
             $mock->shouldReceive('archivar')->once();
             $mock->shouldReceive('detectar')->once()->andReturn(0);
+            $mock->shouldReceive('marcarCalculado')->once();
+            $mock->shouldReceive('alcance')->once()->andReturn([(int) $programa->id, (int) $programa->knowledge_network_id]);
+            $mock->shouldReceive('hashScope')->once()->andReturn('scope-hash');
+            $mock->shouldReceive('marcarPendientesScope')->once();
         });
 
         $this->como($instructorUser)

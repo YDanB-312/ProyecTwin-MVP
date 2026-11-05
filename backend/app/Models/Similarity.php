@@ -275,16 +275,58 @@ class Similarity extends Model
     // Filtra los pares que tocan uno o varios proyectos (lista separada por comas).
     public function scopeRelatedTo(Builder $query, $projectIds): Builder
     {
-        $ids = collect(is_array($projectIds) ? $projectIds : explode(',', (string) $projectIds))
-            ->map(fn ($id) => (int) trim((string) $id))
-            ->filter()
-            ->values();
-
+        $ids = $this->idsRelacionados($projectIds);
         if ($ids->isEmpty()) return $query;
 
         return $query->where(function (Builder $q) use ($ids) {
             $q->whereIn('id_proyecto_1', $ids)->orWhereIn('id_proyecto_2', $ids);
         });
+    }
+
+    /**
+     * Pares relacionados para «Otras coincidencias». A diferencia del listado
+     * general, permite el par pendiente/aprobado y lo acota por rol; nunca
+     * devuelve pendiente–pendiente porque exige al menos un lado aprobado.
+     */
+    public function scopeRelacionadas(Builder $query, $projectIds, $user): Builder
+    {
+        $ids = $this->idsRelacionados($projectIds);
+        if ($ids->isEmpty() || !$user) return $query->whereRaw('1 = 0');
+
+        $query->where(function (Builder $q) use ($ids) {
+            $q->whereIn('id_proyecto_1', $ids)->orWhereIn('id_proyecto_2', $ids);
+        })->where(function (Builder $q) {
+            $q->whereHas('project1', fn (Builder $p) => $p->where('estado', 'aprobado'))
+                ->orWhereHas('project2', fn (Builder $p) => $p->where('estado', 'aprobado'));
+        });
+
+        if ($user->rol === 'admin') {
+            return $query;
+        }
+
+        if ($user->rol === 'instructor') {
+            $fichaIds = ClassGroup::whereHas('instructor', fn (Builder $q) => $q->where('id_usuario', $user->id))
+                ->pluck('id');
+
+            return $query->where(function (Builder $q) use ($fichaIds) {
+                $q->whereHas('project1', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds))
+                    ->orWhereHas('project2', fn (Builder $qq) => $qq->whereIn('id_class_group', $fichaIds));
+            })->where(function (Builder $q) use ($user) {
+                $q->whereHas('project1', fn (Builder $qq) => $qq->paraDetalle($user))
+                    ->whereHas('project2', fn (Builder $qq) => $qq->paraDetalle($user));
+            });
+        }
+
+        // Aprendiz: conserva exactamente la regla de visibilidad del listado.
+        return $query->paraUsuario($user);
+    }
+
+    private function idsRelacionados($projectIds)
+    {
+        return collect(is_array($projectIds) ? $projectIds : explode(',', (string) $projectIds))
+            ->map(fn ($id) => (int) trim((string) $id))
+            ->filter()
+            ->values();
     }
 
     // ---------------------------------------------------------------- Relaciones

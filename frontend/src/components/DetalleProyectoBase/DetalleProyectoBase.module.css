@@ -231,6 +231,14 @@
   color: var(--c-primary);
 }
 
+.simMeta {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--c-text-3);
+}
+
 .simRight {
   display: inline-flex;
   align-items: center;
