@@ -7,9 +7,9 @@ return [
 
     'android' => [
         // Metadatos de la app Android publicada.
-        'version' => env('ANDROID_APP_VERSION', '1.4.1'),
+        'version' => env('ANDROID_APP_VERSION', '1.4.5'),
         // Criterio principal de actualización; debe crecer en cada release.
-        'version_code' => (int) env('ANDROID_APP_VERSION_CODE', 6),
+        'version_code' => (int) env('ANDROID_APP_VERSION_CODE', 10),
 
         // Versión mínima soportada: con `enforce_minimum` activo, los clientes
         // por debajo reciben un aviso obligatorio (no posponible). La política
@@ -21,12 +21,12 @@ return [
         // Descarga estable. En producción Railway ya define esta variable con
         // la URL HTTPS del APK publicado.
         'download_url' => env('ANDROID_APP_DOWNLOAD_URL', '/apk/ProyecTWin.apk'),
-        'sha256' => env('ANDROID_APP_APK_SHA256', 'F47D2A8321840F9C9CF2836192140C7AC16D7A8BBF695ECEFEB43286AE4D47BC'),
-        'size' => (int) env('ANDROID_APP_APK_SIZE', 16392336),
-        'published_at' => env('ANDROID_APP_PUBLISHED_AT', '2026-11-04T06:34:14Z'),
+        'sha256' => env('ANDROID_APP_APK_SHA256', '58F32F5DAD83768F3096FD8801A2E0C6225F439581A5CA9ED65D816E6CA9E8F1'),
+        'size' => (int) env('ANDROID_APP_APK_SIZE', 16418595),
+        'published_at' => env('ANDROID_APP_PUBLISHED_AT', '2026-11-05T06:03:28Z'),
 
         // Nota breve opcional que acompaña el aviso.
-        'release_notes' => env('ANDROID_APP_RELEASE_NOTES', 'Actualización 1.4.1: manual de usuario integrado, nuevas métricas en los paneles de aprendiz e instructor y notificaciones locales de actualización.'),
+        'release_notes' => env('ANDROID_APP_RELEASE_NOTES', 'Actualización 1.4.5: manual PDF, estado de similitud y mejoras de interfaz.'),
     ],
 
 ];
