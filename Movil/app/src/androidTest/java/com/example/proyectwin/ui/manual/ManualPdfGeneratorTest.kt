@@ -4,6 +4,7 @@ import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.proyectwin.BuildConfig
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -19,7 +20,7 @@ class ManualPdfGeneratorTest {
             context = context,
             secciones = ManualContent.secciones,
             faqs = ManualContent.preguntasFrecuentes,
-            versionName = "test",
+            versionName = BuildConfig.VERSION_NAME,
         )
 
         assertTrue("El PDF no se generó", archivo.isFile)
